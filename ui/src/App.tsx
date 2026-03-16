@@ -22,8 +22,8 @@ function App() {
       setUser(userData);
     } catch (error) {
       console.error("Token invalid or expired", error);
-      //localStorage.removeItem("access_token");
-      // setToken(null);
+      localStorage.removeItem("access_token");
+      setToken(null);
       setUser(null);
     } finally {
       setLoading(false);

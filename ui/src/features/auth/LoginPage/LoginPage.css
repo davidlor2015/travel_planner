@@ -1,4 +1,4 @@
-/* Theme tokens for login page colors, spacing, and radius values. */
+// src/features/auth/LoginPage/LoginPage.css
 :root {
   --login-bg-1: #f2efe9;
   --login-bg-2: #dbe7f3;
@@ -139,6 +139,23 @@
   cursor: allowed;
   opacity: 0.65;
   box-shadow: none;
+}
+
+.login-toggle {
+  test-align: center;
+  margin-top: 12px;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.login-toggle button {
+  background: none;
+  border: none;
+  color: #2563eb;
+  cursor: pointer;
+  font-size: inherit;
+  padding: 0;
+  text-decoration: underline;
 }
 
 /* Entry animation for the login card on first render. */

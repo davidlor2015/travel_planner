@@ -20,12 +20,25 @@ export const login = async (email: string, password: string): Promise<LoginRespo
         method: 'POST',
         body: formData,
     });
-    console.log("API_URL =", API_URL);
+
 
     if (!response.ok) {
         throw new Error('Login failed');
     }
     return response.json();
+};
+
+export const register = async (email:string, password: string): Promise<UserProfile> => {
+  const response = await fetch(`${API_URL}/v1/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Registration failed');
+  }
+  return response.json();
 };
 
 // fetch current user profile

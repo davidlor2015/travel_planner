@@ -69,7 +69,7 @@ export const createTrip = async (token: string, data: TripCreate): Promise<Trip>
 };
 
 export const deleteTrip = async (token: string, id: number): Promise<void> => {
-    const response = await fetch(`${API_URL}/trips/${id}`, {
+    const response = await fetch(`${API_URL}/v1/trips/${id}`, {
         method: "DELETE",
         headers: {
             'Authorization': `Bearer ${token}`,

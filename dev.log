@@ -22,3 +22,20 @@ AI Itinerary Feature — built today
    loaded
   - .env — updated OLLAMA_BASE_URL to Windows host IP so WSL can reach Ollama
 ------------------------------------------------------------------------------------------------------------
+# 3/16/2026
+
+Modified files
+- ui/src/shared/api/trips.ts
+- ui/src/shared/api/auth.ts
+- ui/src/App.tsx
+- ui/src/features/auth/LoginPage/LoginPage.css
+- ui/src/features/auth/LoginPage/LoginPage.tsx
+
+Features
+  - add export register function: returns user object -> need to call login to get a token after register
+  - added mode state ("login" | "register"), toggle link, and a confirm-pass field when in register mode
+
+Bug Fix
+  - Corrected path for TRIP URL, was getting 404 error on every delete
+  - Set token and user to null, user was still logged in on localstorage after logging out
+  - reinstalled requirements.txt. env was installed before file was moved
