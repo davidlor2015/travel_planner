@@ -39,3 +39,21 @@ Bug Fix
   - Corrected path for TRIP URL, was getting 404 error on every delete
   - Set token and user to null, user was still logged in on localstorage after logging out
   - reinstalled requirements.txt. env was installed before file was moved
+----------------------------------------------------------------------------------------------------------------
+# 3/17/2026
+New Files
+  .github/workflows/ci.yml
+
+
+Features
+  - Tests use SQLite in-memory
+  - Ollama env vars are set to dummy values
+  - pip and npm caches are enabled so subsequent runs are faster
+  - backend-test
+    -installs Python 3.12 deps + pytest/httpx, runs pytest test/ -v
+  - frontend-checl
+    -installs Node 20 deps, runs npm run lint then npm run build
+  - npm run lint: ESLint checks for code quality issues
+  - npm run build - TypeScript type check + Vite bundle
+
+

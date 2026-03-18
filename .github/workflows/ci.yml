@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-test:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest httpx
+
+      - name: Run tests
+        env:
+          DATABASE_URL: sqlite+pysqlite:///./test.db
+          JWT_SECRET: ci-test-secret-not-for-production
+          JWT_ALG: HS256
+          ACCESS_TOKEN_EXPIRE_MINUTES: "60"
+          OLLAMA_BASE_URL: http://localhost:11434
+          OLLAMA_MODEL: llama3
+          OLLAMA_TIMEOUT_SECONDS: "30"
+        run: pytest tests/ -v
+
+  frontend-check:
+    name: Frontend Lint & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ui
+        run: npm install
+
+      - name: Lint
+        working-directory: ui
+        run: npm run lint
+
+      - name: Build
+        working-directory: ui
+        run: npm run build
