@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { getTrips, deleteTrip } from "../../../shared/api/trips";
-import { planItinerary, applyItinerary, type Itinerary } from "../../../shared/api/ai";
+import {
+  planItinerary,
+  applyItinerary,
+  type Itinerary,
+} from "../../../shared/api/ai";
 import { ItineraryPanel } from "../ItineraryPanel";
 import "./TripList.css";
 
@@ -19,14 +23,43 @@ interface TripListProps {
   onCreateClick: () => void;
 }
 
+const LoadingSkeleton = () => {
+  return (
+    <div className="trip-list-shell container stack-lg">
+      <header className="trip-list-header row-between">
+        <div className="skeleton skeleton-title" />
+        <div className="skeleton skeleton-pill" />
+      </header>
+
+      <ul className="trip-list-items stack-md" aria-hidden="true">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <li
+            key={index}
+            className="trip-card ui-card ui-card--padded stack-md"
+          >
+            <div className="skeleton skeleton-title" />
+            <div className="skeleton skeleton-line" />
+            <div className="skeleton skeleton-line" />
+            <div className="actions-row">
+              <div className="skeleton skeleton-pill" />
+              <div className="skeleton skeleton-pill" />
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
 export const TripList = ({ token, onCreateClick }: TripListProps) => {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  // Per-trip AI state: tripId → itinerary being previewed
-  const [pendingItineraries, setPendingItineraries] = useState<Record<number, Itinerary>>({});
-  // Tracks which trips are currently generating or applying
+  const [pendingItineraries, setPendingItineraries] = useState<
+    Record<number, Itinerary>
+  >({});
   const [generatingIds, setGeneratingIds] = useState<Set<number>>(new Set());
   const [applyingIds, setApplyingIds] = useState<Set<number>>(new Set());
 
@@ -39,7 +72,7 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
         setTrips(data);
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : "An unknown error occured",
+          err instanceof Error ? err.message : "An unknown error occurred",
         );
       } finally {
         setLoading(false);
@@ -52,22 +85,27 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
   const handleDelete = async (id: number) => {
     if (!window.confirm("Are you sure you want to delete this trip?")) return;
 
+    setActionError(null);
     try {
       await deleteTrip(token, id);
       setTrips((prevTrips) => prevTrips.filter((trip) => trip.id !== id));
     } catch (err) {
       console.error("Failed to delete trip:", err);
-      alert("Failed to delete the trip. Please try again.");
+      setActionError("Failed to delete trip. Please try again.");
     }
   };
 
   const handleGenerate = async (tripId: number) => {
+    setActionError(null);
     setGeneratingIds((prev) => new Set(prev).add(tripId));
+
     try {
       const itinerary = await planItinerary(token, tripId);
       setPendingItineraries((prev) => ({ ...prev, [tripId]: itinerary }));
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to generate itinerary.");
+      setActionError(
+        err instanceof Error ? err.message : "Failed to generate itinerary.",
+      );
     } finally {
       setGeneratingIds((prev) => {
         const next = new Set(prev);
@@ -81,14 +119,17 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
     const itinerary = pendingItineraries[tripId];
     if (!itinerary) return;
 
+    setActionError(null);
     setApplyingIds((prev) => new Set(prev).add(tripId));
+
     try {
       await applyItinerary(token, tripId, itinerary);
-      // Save itinerary JSON into the trip's description locally so the saved badge appears
       setTrips((prev) =>
         prev.map((t) =>
-          t.id === tripId ? { ...t, description: JSON.stringify(itinerary) } : t
-        )
+          t.id === tripId
+            ? { ...t, description: JSON.stringify(itinerary) }
+            : t,
+        ),
       );
       setPendingItineraries((prev) => {
         const next = { ...prev };
@@ -96,7 +137,9 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
         return next;
       });
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to apply itinerary.");
+      setActionError(
+        err instanceof Error ? err.message : "Failed to apply itinerary.",
+      );
     } finally {
       setApplyingIds((prev) => {
         const next = new Set(prev);
@@ -106,20 +149,64 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
     }
   };
 
-  if (loading) return <div>Loading trips...</div>;
-  if (error) return <div className="trip-error">{error}</div>;
+  if (loading) return <LoadingSkeleton />;
+
+  if (error) {
+    return (
+      <div className="trip-list-shell container stack-lg">
+        <header className="trip-list-header row-between">
+          <h2 className="section-title">My Trips</h2>
+          <button
+            onClick={onCreateClick}
+            className="btn btn-primary trip-list-create-btn"
+          >
+            + Create New Trip
+          </button>
+        </header>
+        <div className="status status-error" role="alert">
+          {error}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="trip-list-container">
-      <header className="trip-list-header">
-        <h2>My Trips</h2>
-        <button onClick={onCreateClick}>+ Create New Trip</button>
+    <div className="trip-list-shell container stack-lg">
+      <header className="trip-list-header row-between">
+        <div className="stack-xs">
+          <h2 className="section-title">My Trips</h2>
+          <p className="section-subtitle">
+            Plan, generate, and save itineraries in one place.
+          </p>
+        </div>
+        <button
+          onClick={onCreateClick}
+          className="btn btn-primary trip-list-create-btn"
+        >
+          + Create New Trip
+        </button>
       </header>
 
+      {actionError && (
+        <div className="status status-error" role="alert">
+          {actionError}
+        </div>
+      )}
+
       {trips.length === 0 ? (
-        <p>You don't have any trips planned yet.</p>
+        <section className="empty-state stack-md" aria-live="polite">
+          <h3 className="trip-empty-title">No trips yet</h3>
+          <p className="status-muted">
+            Create your first trip to start planning your itinerary.
+          </p>
+          <div>
+            <button onClick={onCreateClick} className="btn btn-primary">
+              + Create New Trip
+            </button>
+          </div>
+        </section>
       ) : (
-        <ul className="trip-list-items">
+        <ul className="trip-list-items stack-md">
           {trips.map((trip) => {
             const isGenerating = generatingIds.has(trip.id);
             const isApplying = applyingIds.has(trip.id);
@@ -127,21 +214,30 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
             const hasSavedItinerary = !!trip.description;
 
             return (
-              <li key={trip.id} className="trip-card">
-                <h3 className="trip-title">
-                  {trip.title}
+              <li
+                key={trip.id}
+                className="trip-card ui-card ui-card--padded stack-md"
+              >
+                <div className="trip-title-row">
+                  <h3 className="trip-title">{trip.title}</h3>
                   {hasSavedItinerary && (
-                    <span className="trip-saved-badge">Itinerary saved</span>
+                    <span className="badge badge-success">Itinerary saved</span>
                   )}
-                </h3>
-                <p>
-                  <strong>Destination:</strong> {trip.destination}
-                </p>
-                <p>
-                  <strong>Dates:</strong>{" "}
-                  {new Date(trip.start_date).toLocaleDateString()} -{" "}
-                  {new Date(trip.end_date).toLocaleDateString()}
-                </p>
+                </div>
+
+                <dl className="trip-meta">
+                  <div className="trip-meta-row">
+                    <dt>Destination</dt>
+                    <dd>{trip.destination}</dd>
+                  </div>
+                  <div className="trip-meta-row">
+                    <dt>Dates</dt>
+                    <dd>
+                      {new Date(trip.start_date).toLocaleDateString()} -{" "}
+                      {new Date(trip.end_date).toLocaleDateString()}
+                    </dd>
+                  </div>
+                </dl>
 
                 {pendingItinerary ? (
                   <ItineraryPanel
@@ -150,21 +246,27 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
                     applying={isApplying}
                   />
                 ) : (
-                  <button
-                    onClick={() => handleGenerate(trip.id)}
-                    disabled={isGenerating}
-                    className="trip-generate-btn"
-                  >
-                    {isGenerating ? "Generating..." : hasSavedItinerary ? "Regenerate Itinerary" : "Generate Itinerary"}
-                  </button>
-                )}
+                  <div className="actions-row">
+                    <button
+                      onClick={() => handleGenerate(trip.id)}
+                      disabled={isGenerating}
+                      className="btn btn-primary"
+                    >
+                      {isGenerating
+                        ? "Generating..."
+                        : hasSavedItinerary
+                          ? "Regenerate Itinerary"
+                          : "Generate Itinerary"}
+                    </button>
 
-                <button
-                  onClick={() => handleDelete(trip.id)}
-                  className="trip-delete-btn"
-                >
-                  Delete Trip
-                </button>
+                    <button
+                      onClick={() => handleDelete(trip.id)}
+                      className="btn btn-danger"
+                    >
+                      Delete Trip
+                    </button>
+                  </div>
+                )}
               </li>
             );
           })}
