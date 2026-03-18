@@ -20,7 +20,7 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install -r requirements.txt pytest httpx email-validator
+        run: pip install -r requirements.txt pytest httpx email-validator pytest-cov
 
       - name: Run tests
         env:
@@ -31,7 +31,7 @@ jobs:
           OLLAMA_BASE_URL: http://localhost:11434
           OLLAMA_MODEL: llama3
           OLLAMA_TIMEOUT_SECONDS: "30"
-        run: pytest tests/ -v
+        run: pytest tests/ -v --cov=app --cov-report=term-missing
 
   frontend-check:
     name: Frontend Lint & Build
