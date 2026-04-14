@@ -2,14 +2,12 @@ import { motion } from 'framer-motion';
 import type { Trip } from '../../shared/api/trips';
 import { useProfileStats, type Badge, type TravelStats } from './useProfileStats';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+
 
 interface ProfilePageProps {
   trips: Trip[];
   userEmail: string;
 }
-
-// ── Animation variants ────────────────────────────────────────────────────────
 
 const containerVariants = {
   hidden: {},
@@ -21,7 +19,7 @@ const itemVariants = {
   show:   { opacity: 1, y: 0, transition: { type: 'spring' as const, bounce: 0.25, duration: 0.45 } },
 };
 
-// ── Stat card config ──────────────────────────────────────────────────────────
+
 
 interface StatConfig {
   label: string;
@@ -88,7 +86,6 @@ const STAT_CONFIGS: StatConfig[] = [
   },
 ];
 
-// ── Sub-components ────────────────────────────────────────────────────────────
 
 const StatCard = ({ config, stats }: { config: StatConfig; stats: TravelStats }) => (
   <motion.div
@@ -127,7 +124,6 @@ const BadgeCard = ({ badge }: { badge: Badge }) => (
   </motion.div>
 );
 
-// ── Main component ────────────────────────────────────────────────────────────
 
 export const ProfilePage = ({ trips, userEmail }: ProfilePageProps) => {
   const { stats, badges, title } = useProfileStats(trips);

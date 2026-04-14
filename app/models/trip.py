@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from sqlalchemy.sql import func
-from sqlalchemy import String, Date, ForeignKey, Text, Integer, DateTime
+from sqlalchemy import String, Date, ForeignKey, Text, Integer, DateTime, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base_class import Base
 
@@ -21,10 +21,15 @@ class Trip(Base):
     notes: Mapped[str] = mapped_column(Text, nullable=True)
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
+    is_discoverable: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     
     owner: Mapped["User"] = relationship("User", back_populates="trips")
+    match_requests: Mapped[list["MatchRequest"]] = relationship(
+        "MatchRequest",
+        back_populates="trip",
+    )
     itinerary_days: Mapped[list["ItineraryDay"]] = relationship(
         "ItineraryDay",
         back_populates="trip",

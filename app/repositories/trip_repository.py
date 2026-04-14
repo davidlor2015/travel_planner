@@ -28,3 +28,13 @@ class TripRepository(BaseRepository[Trip]):
         self.db.commit()
         self.db.refresh(trip)
         return trip
+
+    def set_discoverable_for_user(self, user_id: int, is_discoverable: bool) -> None:
+        trips = list(
+            self.db.scalars(
+                select(Trip).where(Trip.user_id == user_id)
+            ).all()
+        )
+        for trip in trips:
+            trip.is_discoverable = is_discoverable
+        self.db.commit()

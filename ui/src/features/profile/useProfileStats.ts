@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import type { Trip } from '../../shared/api/trips';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface TravelStats {
   totalTrips: number;
@@ -25,7 +24,6 @@ export interface ProfileStats {
   title: string;
 }
 
-// ── Badge config ──────────────────────────────────────────────────────────────
 
 interface BadgeConfig {
   id: string;
@@ -130,7 +128,6 @@ const BADGE_CONFIGS: BadgeConfig[] = [
   },
 ];
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function computeTravelTitle(tripCount: number): string {
   if (tripCount === 0) return 'Aspiring Adventurer';
@@ -152,7 +149,7 @@ function computeTotalDays(trips: Trip[]): number {
   }, 0);
 }
 
-// ── Hook ──────────────────────────────────────────────────────────────────────
+
 
 export function useProfileStats(trips: Trip[]): ProfileStats {
   return useMemo(() => {

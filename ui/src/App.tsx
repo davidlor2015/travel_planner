@@ -6,7 +6,7 @@ import { getMe, type UserProfile } from "./shared/api/auth";
 import { TripList } from "./features/trips/TripList";
 import { CreateTripForm } from "./features/trips/CreateTripForm";
 import { Dashboard } from "./features/dashboard";
-import { ProfilePage } from "./features/profile";
+import { MatchingPage, ProfilePage } from "./features/profile";
 import { ExplorePage } from "./features/explore";
 import { getTrips, type Trip } from "./shared/api/trips";
 import { AppShell, type AppView } from "./app/AppShell";
@@ -87,6 +87,7 @@ function App() {
       >
         {view === "dashboard" && <Dashboard trips={trips} />}
         {view === "explore"   && <ExplorePage token={token!} onPlanTrip={handlePlanTrip} />}
+        {view === "matching"  && <MatchingPage token={token!} />}
         {view === "profile"   && <ProfilePage trips={trips} userEmail={user.email} />}
 
         {view === "trips" &&

@@ -17,3 +17,20 @@ class User(Base):
         back_populates="owner",
         cascade="all, delete-orphan",
     )
+    sent_match_requests: Mapped[list["MatchRequest"]] = relationship(
+        "MatchRequest",
+        back_populates="sender",
+        foreign_keys="MatchRequest.sender_id",
+    )
+    received_match_requests: Mapped[list["MatchRequest"]] = relationship(
+        "MatchRequest",
+        back_populates="receiver",
+        foreign_keys="MatchRequest.receiver_id",
+    )
+    travel_profile: Mapped["TravelProfile"] = relationship(
+        "TravelProfile",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+        single_parent=True,
+    )

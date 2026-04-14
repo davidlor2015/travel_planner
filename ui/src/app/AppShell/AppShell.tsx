@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export type AppView = 'dashboard' | 'trips' | 'explore' | 'profile';
+export type AppView = 'dashboard' | 'trips' | 'explore' | 'matching' | 'profile';
 
 interface NavTab {
   id: AppView;
@@ -44,6 +44,13 @@ const ExploreIcon = () => (
   </svg>
 );
 
+const CompanionsIcon = () => (
+  <svg viewBox="0 0 20 20" className="w-4 h-4" fill="currentColor" aria-hidden="true">
+    <path d="M6.5 9a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM13.5 10a2 2 0 100-4 2 2 0 000 4z" />
+    <path d="M2.5 15.5a4 4 0 018 0v.5h-8v-.5zM10.5 16v-.5a3.5 3.5 0 014.915-3.196A3.5 3.5 0 0117.5 15.5v.5h-7z" />
+  </svg>
+);
+
 const ProfileIcon = () => (
   <svg viewBox="0 0 20 20" className="w-4 h-4" fill="currentColor" aria-hidden="true">
     <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
@@ -56,6 +63,7 @@ const NAV_TABS: NavTab[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <DashboardIcon /> },
   { id: 'trips',     label: 'My Trips',  icon: <TripsIcon />     },
   { id: 'explore',   label: 'Explore',   icon: <ExploreIcon />   },
+  { id: 'matching',  label: 'Companions', icon: <CompanionsIcon /> },
   { id: 'profile',   label: 'Profile',   icon: <ProfileIcon />   },
 ];
 

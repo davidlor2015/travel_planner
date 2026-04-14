@@ -6,7 +6,6 @@ import { tripSchema, type TripFormData } from '../schemas/tripSchema';
 import { FormField } from '../../../shared/ui/FormField';
 import { inputCls } from '../../../shared/ui/inputCls';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
 
 interface CreateTripFormProps {
   token: string;
@@ -14,8 +13,6 @@ interface CreateTripFormProps {
   onCancel: () => void;
   defaultDestination?: string;
 }
-
-// ── Main Component ────────────────────────────────────────────────────────────
 
 export const CreateTripForm = ({ token, onSuccess, onCancel, defaultDestination }: CreateTripFormProps) => {
   const {

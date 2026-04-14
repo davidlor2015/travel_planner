@@ -1,63 +1,56 @@
 import { test, expect } from '@playwright/test';
+import {
+  expectAuthenticatedApp,
+  goToLogin,
+  goToRegister,
+  uniqueEmail,
+} from './helpers';
 
 const PASSWORD = 'TestPassword123!';
 
 test.describe('Authentication', () => {
-
   test('user can register and lands on My Trips', async ({ page }) => {
-    const email = `e2e_${Date.now()}@example.com`;
+    const email = uniqueEmail();
 
-    await page.goto('/');
+    await goToRegister(page);
+    await page.getByLabel('Email').fill(email);
+    await page.getByLabel('Password').fill(PASSWORD);
+    await page.getByLabel('Confirm Password').fill(PASSWORD);
+    await page.getByRole('button', { name: /^sign up$/i }).first().click();
 
-    // The login card should be visible
-    await expect(page.getByRole('heading', { name: 'TravelPlanner' })).toBeVisible();
-
-    // Switch to register mode
-    await page.locator('button[type="button"]').filter({ hasText: 'Sign up' }).click();
-    await expect(page.locator('#confirmPassword')).toBeVisible();
-
-    // Fill and submit
-    await page.fill('#email', email);
-    await page.fill('#password', PASSWORD);
-    await page.fill('#confirmPassword', PASSWORD);
-    await page.locator('button[type="submit"]').click();
-
-    // Should reach the authenticated app
-    await expect(page.getByRole('heading', { name: 'My Trips' })).toBeVisible({ timeout: 10_000 });
+    await expectAuthenticatedApp(page);
   });
 
   test('user can log out and log back in', async ({ page }) => {
-    const email = `e2e_${Date.now()}@example.com`;
+    const email = uniqueEmail();
 
-    // Register
-    await page.goto('/');
-    await page.locator('button[type="button"]').filter({ hasText: 'Sign up' }).click();
-    await page.fill('#email', email);
-    await page.fill('#password', PASSWORD);
-    await page.fill('#confirmPassword', PASSWORD);
-    await page.locator('button[type="submit"]').click();
-    await expect(page.getByRole('heading', { name: 'My Trips' })).toBeVisible({ timeout: 10_000 });
+    await goToRegister(page);
+    await page.getByLabel('Email').fill(email);
+    await page.getByLabel('Password').fill(PASSWORD);
+    await page.getByLabel('Confirm Password').fill(PASSWORD);
+    await page.getByRole('button', { name: /^sign up$/i }).first().click();
+    await expectAuthenticatedApp(page);
 
-    // Log out
     await page.getByRole('button', { name: 'Logout' }).click();
-    await expect(page.locator('#email')).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: /^sign in$/i }).first(),
+    ).toBeVisible();
 
-    // Log back in
-    await page.fill('#email', email);
-    await page.fill('#password', PASSWORD);
-    await page.locator('button[type="submit"]').click();
+    await goToLogin(page);
+    await page.getByLabel('Email').fill(email);
+    await page.getByLabel('Password').fill(PASSWORD);
+    await page.getByRole('button', { name: /^log in$/i }).click();
 
-    await expect(page.getByRole('heading', { name: 'My Trips' })).toBeVisible({ timeout: 10_000 });
+    await expectAuthenticatedApp(page);
   });
 
   test('shows error banner on wrong credentials', async ({ page }) => {
-    await page.goto('/');
+    await goToLogin(page);
 
-    await page.fill('#email', 'nobody@example.com');
-    await page.fill('#password', 'wrongpassword');
-    await page.locator('button[type="submit"]').click();
+    await page.getByLabel('Email').fill('nobody@example.com');
+    await page.getByLabel('Password').fill('wrongpassword');
+    await page.getByRole('button', { name: /^log in$/i }).click();
 
     await expect(page.locator('[role="alert"]')).toBeVisible({ timeout: 8_000 });
   });
-
 });

@@ -2,13 +2,11 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBudgetTracker, type ExpenseCategory } from './useBudgetTracker';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
 
 interface BudgetTrackerProps {
   tripId: number;
 }
 
-// ── Constants ─────────────────────────────────────────────────────────────────
 
 const CATEGORIES: { value: ExpenseCategory; label: string; activeCls: string; pillCls: string }[] = [
   { value: 'food',       label: 'Food',       activeCls: 'bg-amber text-white border-amber',                    pillCls: 'bg-amber/15 text-amber border-amber/30' },
@@ -18,7 +16,6 @@ const CATEGORIES: { value: ExpenseCategory; label: string; activeCls: string; pi
   { value: 'other',      label: 'Other',      activeCls: 'bg-espresso/80 text-white border-espresso/60',        pillCls: 'bg-parchment text-flint border-smoke' },
 ];
 
-// ── Animation variants ────────────────────────────────────────────────────────
 
 const itemVariants = {
   hidden: { opacity: 0, x: -12 },
@@ -26,7 +23,6 @@ const itemVariants = {
   exit:   { opacity: 0, x: 12, transition: { duration: 0.18 } },
 };
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function formatCurrency(amount: number): string {
   return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -38,7 +34,6 @@ function progressBarCls(pct: number): string {
   return 'bg-olive';
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
 
 export const BudgetTracker = ({ tripId }: BudgetTrackerProps) => {
   const {
@@ -46,18 +41,16 @@ export const BudgetTracker = ({ tripId }: BudgetTrackerProps) => {
     setLimit, addExpense, removeExpense,
   } = useBudgetTracker(tripId);
 
-  // ── Local form state ───────────────────────────────────────────────────────
   const [draftLabel,    setDraftLabel]    = useState('');
   const [draftAmount,   setDraftAmount]   = useState('');
   const [draftCategory, setDraftCategory] = useState<ExpenseCategory>('other');
   const [draftLimit,    setDraftLimit]    = useState(limit !== null ? String(limit) : '');
   const [editingLimit,  setEditingLimit]  = useState(limit === null);
 
-  // ── Derived ────────────────────────────────────────────────────────────────
+
   const spentPct   = limit ? Math.min((totalSpent / limit) * 100, 100) : 0;
   const canAdd     = draftLabel.trim().length > 0 && Number(draftAmount) > 0;
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
   const handleSaveLimit = useCallback(() => {
     const parsed = parseFloat(draftLimit);
     if (!isNaN(parsed) && parsed > 0) {
@@ -85,7 +78,6 @@ export const BudgetTracker = ({ tripId }: BudgetTrackerProps) => {
   const categoryMeta = (cat: ExpenseCategory) =>
     CATEGORIES.find((c) => c.value === cat) ?? CATEGORIES[4];
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="mt-2 rounded-2xl border border-amber/25 bg-amber/5 overflow-hidden">
 
