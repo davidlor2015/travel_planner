@@ -68,21 +68,21 @@ export const AppShell = ({
   onLogout,
   children,
 }: AppShellProps) => (
-  <div className="min-h-screen bg-white font-sans">
+  <div className="min-h-screen bg-ivory font-sans">
     {/* ── Top Navbar ── */}
-    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm">
+    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-smoke/60 shadow-sm">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
 
         {/* Logo */}
         <div className="flex items-center gap-2 select-none flex-shrink-0">
           <PlaneIcon />
-          <span className="text-lg font-extrabold text-navy tracking-tight">
-            Travel<span className="text-coral">Planner</span>
+          <span className="text-lg font-bold text-espresso tracking-tight font-display">
+            Travel<span className="text-clay">Planner</span>
           </span>
         </div>
 
         {/* Nav Tabs */}
-        <nav className="flex items-center gap-1 bg-silver rounded-full p-1">
+        <nav className="flex items-center gap-1 bg-parchment rounded-full p-1">
           {NAV_TABS.map((tab) => (
             <button
               key={tab.id}
@@ -93,13 +93,13 @@ export const AppShell = ({
               {view === tab.id && (
                 <motion.div
                   layoutId="nav-active-pill"
-                  className="absolute inset-0 bg-ocean rounded-full shadow-sm"
+                  className="absolute inset-0 bg-espresso rounded-full shadow-sm"
                   transition={{ type: 'spring', bounce: 0.25, duration: 0.4 }}
                 />
               )}
               <span
                 className={`relative z-10 flex items-center gap-1.5 transition-colors duration-150 ${
-                  view === tab.id ? 'text-white' : 'text-gray-500 hover:text-navy'
+                  view === tab.id ? 'text-white' : 'text-flint hover:text-espresso'
                 }`}
               >
                 {tab.icon}
@@ -112,7 +112,7 @@ export const AppShell = ({
         {/* User + Logout */}
         <div className="flex items-center gap-3 flex-shrink-0">
           <span
-            className="hidden sm:block text-sm text-gray font-medium truncate max-w-[180px]"
+            className="hidden sm:block text-sm text-flint font-medium truncate max-w-[180px]"
             title={userEmail}
           >
             {userEmail}
@@ -121,7 +121,7 @@ export const AppShell = ({
             onClick={onLogout}
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.97 }}
-            className="px-4 py-1.5 rounded-full text-sm font-semibold bg-silver text-navy hover:bg-gray-200 transition-colors cursor-pointer"
+            className="px-4 py-1.5 rounded-full text-sm font-semibold bg-parchment text-espresso hover:bg-smoke transition-colors cursor-pointer"
           >
             Logout
           </motion.button>

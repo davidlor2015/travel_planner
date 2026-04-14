@@ -53,11 +53,11 @@ interface TagConfig {
 }
 
 const TAG_CONFIG: Record<DestinationTag, TagConfig> = {
-  Beach:     { pillCls: 'bg-ocean/10 text-ocean border-ocean/25',       headerBgCls: 'bg-ocean',   headerTextCls: 'text-white',  filterActiveCls: 'bg-ocean text-white border-ocean' },
-  Culture:   { pillCls: 'bg-sunny/30 text-sunny-dark border-sunny/40',  headerBgCls: 'bg-sunny',   headerTextCls: 'text-navy',   filterActiveCls: 'bg-sunny text-navy border-sunny' },
-  Adventure: { pillCls: 'bg-coral/10 text-coral border-coral/25',       headerBgCls: 'bg-coral',   headerTextCls: 'text-white',  filterActiveCls: 'bg-coral text-white border-coral' },
-  Food:      { pillCls: 'bg-success/10 text-success border-success/25', headerBgCls: 'bg-success', headerTextCls: 'text-white',  filterActiveCls: 'bg-success text-white border-success' },
-  Nature:    { pillCls: 'bg-navy/10 text-navy border-navy/20',          headerBgCls: 'bg-navy',    headerTextCls: 'text-white',  filterActiveCls: 'bg-navy text-white border-navy' },
+  Beach:     { pillCls: 'bg-amber/15 text-amber border-amber/30',              headerBgCls: 'bg-amber',    headerTextCls: 'text-white',  filterActiveCls: 'bg-amber text-white border-amber'           },
+  Culture:   { pillCls: 'bg-clay/15 text-clay border-clay/25',                 headerBgCls: 'bg-clay',     headerTextCls: 'text-white',  filterActiveCls: 'bg-clay text-white border-clay'             },
+  Adventure: { pillCls: 'bg-espresso/10 text-espresso border-espresso/20',     headerBgCls: 'bg-espresso', headerTextCls: 'text-ivory',  filterActiveCls: 'bg-espresso text-ivory border-espresso'     },
+  Food:      { pillCls: 'bg-amber/15 text-amber border-amber/30',              headerBgCls: 'bg-amber',    headerTextCls: 'text-white',  filterActiveCls: 'bg-amber text-white border-amber'           },
+  Nature:    { pillCls: 'bg-olive/10 text-olive border-olive/20',              headerBgCls: 'bg-olive',    headerTextCls: 'text-white',  filterActiveCls: 'bg-olive text-white border-olive'           },
 };
 
 // ── Animation variants ────────────────────────────────────────────────────────
@@ -79,16 +79,16 @@ const TeleportBadge = ({ city }: { city: string }) => {
 
   if (loading) {
     return (
-      <span className="inline-block w-16 h-4 rounded-full bg-gray-100 animate-pulse" />
+      <span className="inline-block w-16 h-4 rounded-full bg-parchment animate-pulse" />
     );
   }
   if (!data) return null;
 
   const score = data.teleport_city_score;
   const color =
-    score >= 70 ? 'text-success border-success/30 bg-success/10' :
-    score >= 45 ? 'text-sunny-dark border-sunny/40 bg-sunny/20' :
-                  'text-coral border-coral/25 bg-coral/10';
+    score >= 70 ? 'text-olive border-olive/30 bg-olive/10' :
+    score >= 45 ? 'text-amber border-amber/40 bg-amber/15' :
+                  'text-danger border-danger/25 bg-danger/10';
 
   return (
     <span
@@ -115,11 +115,11 @@ const DestinationCard = ({ destination, onPlanTrip }: DestinationCardProps) => {
     <motion.div
       variants={cardVariants}
       layout
-      className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden flex flex-col"
+      className="bg-white rounded-2xl border border-smoke/60 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden flex flex-col"
     >
       {/* Coloured header */}
       <div className={`${config.headerBgCls} px-5 py-5 flex flex-col justify-end min-h-[88px]`}>
-        <p className={`text-xl font-extrabold leading-tight ${config.headerTextCls}`}>
+        <p className={`text-xl font-bold leading-tight font-display ${config.headerTextCls}`}>
           {destination.city}
         </p>
         <p className={`text-sm font-semibold mt-0.5 opacity-80 ${config.headerTextCls}`}>
@@ -129,11 +129,11 @@ const DestinationCard = ({ destination, onPlanTrip }: DestinationCardProps) => {
 
       {/* Body */}
       <div className="px-5 py-4 flex flex-col gap-3 flex-1">
-        <p className="text-sm text-gray leading-relaxed flex-1">{destination.description}</p>
+        <p className="text-sm text-flint leading-relaxed flex-1">{destination.description}</p>
 
         {/* Teleport score */}
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-gray">City score:</span>
+          <span className="text-xs text-flint">City score:</span>
           <TeleportBadge city={destination.city} />
         </div>
 
@@ -148,8 +148,8 @@ const DestinationCard = ({ destination, onPlanTrip }: DestinationCardProps) => {
             onClick={() => onPlanTrip(fullDestination)}
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.96 }}
-            className="px-3 py-1.5 rounded-full bg-ocean text-white text-xs font-bold
-                       shadow-sm shadow-ocean/25 hover:bg-ocean-dark transition-colors duration-150 cursor-pointer"
+            className="px-3 py-1.5 rounded-full bg-amber text-white text-xs font-bold
+                       shadow-sm shadow-amber/25 hover:bg-amber-dark transition-colors duration-150 cursor-pointer"
           >
             Plan this trip
           </motion.button>
@@ -182,8 +182,8 @@ export const ExplorePage = ({ token, onPlanTrip }: ExplorePageProps) => {
 
       {/* ── Header ── */}
       <div>
-        <h2 className="text-2xl font-extrabold text-navy">Explore</h2>
-        <p className="text-sm text-gray mt-0.5">Find your next adventure and start planning instantly.</p>
+        <h2 className="text-2xl font-bold text-espresso">Explore</h2>
+        <p className="text-sm text-flint mt-0.5">Find your next adventure and start planning instantly.</p>
       </div>
 
       {/* ── Flight Search (Amadeus) ── */}
@@ -191,9 +191,9 @@ export const ExplorePage = ({ token, onPlanTrip }: ExplorePageProps) => {
 
       {/* ── Divider ── */}
       <div className="flex items-center gap-3">
-        <div className="flex-1 h-px bg-gray-100" />
-        <span className="text-xs text-gray font-semibold uppercase tracking-widest">Curated Destinations</span>
-        <div className="flex-1 h-px bg-gray-100" />
+        <div className="flex-1 h-px bg-smoke/50" />
+        <span className="text-xs text-flint font-semibold uppercase tracking-widest">Curated Destinations</span>
+        <div className="flex-1 h-px bg-smoke/50" />
       </div>
 
       {/* ── Search + filter row ── */}
@@ -203,8 +203,8 @@ export const ExplorePage = ({ token, onPlanTrip }: ExplorePageProps) => {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search destinations..."
-          className="flex-1 px-4 py-2.5 rounded-full border border-gray-200 bg-white text-sm text-navy
-                     placeholder:text-gray focus:outline-none focus:ring-2 focus:ring-ocean/35 focus:border-ocean
+          className="flex-1 px-4 py-2.5 rounded-full border border-smoke bg-white text-sm text-espresso
+                     placeholder:text-flint focus:outline-none focus:ring-2 focus:ring-amber/35 focus:border-amber
                      transition-all duration-150"
         />
 
@@ -213,11 +213,11 @@ export const ExplorePage = ({ token, onPlanTrip }: ExplorePageProps) => {
             const isActive = activeTag === tag;
             const activeCls =
               tag === 'All'
-                ? 'bg-navy text-white border-navy'
+                ? 'bg-espresso text-white border-espresso'
                 : TAG_CONFIG[tag].filterActiveCls;
             const inactiveCls =
               tag === 'All'
-                ? 'bg-gray-100 text-gray border-gray-200 hover:bg-gray-200'
+                ? 'bg-parchment text-flint border-smoke hover:bg-smoke'
                 : `${TAG_CONFIG[tag].pillCls} hover:opacity-80`;
 
             return (
@@ -238,7 +238,7 @@ export const ExplorePage = ({ token, onPlanTrip }: ExplorePageProps) => {
       </div>
 
       {/* ── Results count ── */}
-      <p className="text-xs text-gray font-medium">
+      <p className="text-xs text-flint font-medium">
         {filtered.length} {filtered.length === 1 ? 'destination' : 'destinations'}
         &nbsp;·&nbsp;
         <span title="Live quality scores from Teleport API">City scores via Teleport</span>
@@ -258,14 +258,14 @@ export const ExplorePage = ({ token, onPlanTrip }: ExplorePageProps) => {
           ))}
         </motion.div>
       ) : (
-        <div className="flex flex-col items-center justify-center gap-3 py-20 border-2 border-dashed border-gray-200 rounded-2xl text-center">
-          <h3 className="text-lg font-bold text-navy">No matches found</h3>
-          <p className="text-sm text-gray">Try a different search or clear the filter.</p>
+        <div className="flex flex-col items-center justify-center gap-3 py-20 border-2 border-dashed border-smoke rounded-2xl text-center">
+          <h3 className="text-lg font-bold text-espresso">No matches found</h3>
+          <p className="text-sm text-flint">Try a different search or clear the filter.</p>
           <motion.button
             onClick={() => { setSearch(''); setActiveTag('All'); }}
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.96 }}
-            className="px-5 py-2 rounded-full bg-silver text-navy text-sm font-semibold hover:bg-gray-200 transition-colors cursor-pointer"
+            className="px-5 py-2 rounded-full bg-parchment text-espresso text-sm font-semibold hover:bg-smoke transition-colors cursor-pointer"
           >
             Clear filters
           </motion.button>

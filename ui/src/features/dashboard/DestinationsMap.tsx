@@ -14,9 +14,9 @@ interface DestinationsMapProps {
 // ── Custom pin icon ───────────────────────────────────────────────────────────
 
 // Defined once at module scope to avoid recreating on every render.
-const oceanPin = L.divIcon({
+const amberPin = L.divIcon({
   className: '',
-  html: '<div style="width:14px;height:14px;border-radius:50%;background:#0077FF;border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.22)"></div>',
+  html: '<div style="width:14px;height:14px;border-radius:50%;background:#B45309;border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.22)"></div>',
   iconSize: [14, 14],
   iconAnchor: [7, 7],
   popupAnchor: [0, -12],
@@ -44,8 +44,8 @@ export const DestinationsMap = ({ trips }: DestinationsMapProps) => {
 
   if (loading && pins.length === 0) {
     return (
-      <div className="flex items-center justify-center gap-2 h-64 text-gray text-sm">
-        <div className="w-4 h-4 rounded-full border-2 border-ocean border-t-transparent animate-spin flex-shrink-0" />
+      <div className="flex items-center justify-center gap-2 h-64 text-flint text-sm">
+        <div className="w-4 h-4 rounded-full border-2 border-amber border-t-transparent animate-spin flex-shrink-0" />
         Locating destinations...
       </div>
     );
@@ -53,8 +53,8 @@ export const DestinationsMap = ({ trips }: DestinationsMapProps) => {
 
   if (pins.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-gray text-sm gap-1">
-        <span className="text-2xl" aria-hidden="true">No destinations to map yet.</span>
+      <div className="flex flex-col items-center justify-center h-64 text-flint text-sm gap-1">
+        <span aria-hidden="true">No destinations to map yet.</span>
       </div>
     );
   }
@@ -73,13 +73,13 @@ export const DestinationsMap = ({ trips }: DestinationsMapProps) => {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       />
       {pins.map((pin) => (
-        <Marker key={pin.destination} position={pin.coords} icon={oceanPin}>
+        <Marker key={pin.destination} position={pin.coords} icon={amberPin}>
           <Popup>
-            <div style={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.8125rem' }}>
-              <p style={{ fontWeight: 700, marginBottom: '4px', color: '#1E293B' }}>
+            <div style={{ fontFamily: 'Manrope, sans-serif', fontSize: '0.8125rem' }}>
+              <p style={{ fontWeight: 700, marginBottom: '4px', color: '#1C1917' }}>
                 {pin.destination}
               </p>
-              <ul style={{ margin: 0, paddingLeft: '14px', color: '#6B7280' }}>
+              <ul style={{ margin: 0, paddingLeft: '14px', color: '#78716C' }}>
                 {(tripsByDestination.get(pin.destination) ?? []).map((title) => (
                   <li key={title}>{title}</li>
                 ))}

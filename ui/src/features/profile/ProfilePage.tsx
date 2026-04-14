@@ -65,25 +65,25 @@ const STAT_CONFIGS: StatConfig[] = [
   {
     label: 'Total Trips',
     getValue: (s) => s.totalTrips,
-    accentCls: 'text-ocean bg-ocean/10',
+    accentCls: 'text-amber bg-amber/10',
     icon: <PlaneIcon />,
   },
   {
     label: 'Destinations',
     getValue: (s) => s.uniqueDestinations.length,
-    accentCls: 'text-coral bg-coral/10',
+    accentCls: 'text-clay bg-clay/10',
     icon: <PinIcon />,
   },
   {
     label: 'Days Planned',
     getValue: (s) => s.totalDays,
-    accentCls: 'text-sunny-dark bg-sunny/20',
+    accentCls: 'text-espresso bg-parchment',
     icon: <CalendarIcon />,
   },
   {
     label: 'Itineraries',
     getValue: (s) => s.tripsWithItinerary,
-    accentCls: 'text-success bg-success/10',
+    accentCls: 'text-olive bg-olive/10',
     icon: <ListIcon />,
   },
 ];
@@ -93,14 +93,14 @@ const STAT_CONFIGS: StatConfig[] = [
 const StatCard = ({ config, stats }: { config: StatConfig; stats: TravelStats }) => (
   <motion.div
     variants={itemVariants}
-    className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4"
+    className="bg-white rounded-2xl border border-smoke/60 shadow-sm p-5 flex items-center gap-4"
   >
     <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${config.accentCls}`}>
       {config.icon}
     </div>
     <div>
-      <p className="text-2xl font-extrabold text-navy leading-none">{config.getValue(stats)}</p>
-      <p className="text-xs text-gray mt-1 font-medium">{config.label}</p>
+      <p className="text-2xl font-extrabold text-espresso leading-none">{config.getValue(stats)}</p>
+      <p className="text-xs text-flint mt-1 font-medium">{config.label}</p>
     </div>
   </motion.div>
 );
@@ -121,7 +121,7 @@ const BadgeCard = ({ badge }: { badge: Badge }) => (
         </span>
       )}
     </div>
-    <p className={`text-xs leading-snug ${badge.earned ? 'opacity-80' : 'text-gray'}`}>
+    <p className={`text-xs leading-snug ${badge.earned ? 'opacity-80' : 'text-flint'}`}>
       {badge.description}
     </p>
   </motion.div>
@@ -148,16 +148,16 @@ export const ProfilePage = ({ trips, userEmail }: ProfilePageProps) => {
         {/* Avatar */}
         <motion.div
           variants={itemVariants}
-          className="w-20 h-20 rounded-full bg-ocean flex items-center justify-center shadow-lg shadow-ocean/25 flex-shrink-0"
+          className="w-20 h-20 rounded-full bg-espresso flex items-center justify-center shadow-lg shadow-espresso/20 flex-shrink-0"
         >
-          <span className="text-3xl font-extrabold text-white select-none">{initial}</span>
+          <span className="text-3xl font-extrabold text-ivory select-none">{initial}</span>
         </motion.div>
 
         {/* Identity */}
         <motion.div variants={itemVariants} className="text-center sm:text-left">
-          <h2 className="text-2xl font-extrabold text-navy leading-tight">{userEmail}</h2>
-          <p className="text-sm font-semibold text-ocean mt-0.5">{title}</p>
-          <p className="text-xs text-gray mt-1">
+          <h2 className="text-2xl font-bold text-espresso leading-tight">{userEmail}</h2>
+          <p className="text-sm font-semibold text-amber mt-0.5">{title}</p>
+          <p className="text-xs text-flint mt-1">
             {earnedCount} of {badges.length} badges earned
           </p>
         </motion.div>
@@ -165,7 +165,7 @@ export const ProfilePage = ({ trips, userEmail }: ProfilePageProps) => {
 
       {/* ── Stats grid ── */}
       <section>
-        <h3 className="text-base font-extrabold text-navy mb-3">Travel Stats</h3>
+        <h3 className="text-base font-bold text-espresso mb-3">Travel Stats</h3>
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -180,7 +180,7 @@ export const ProfilePage = ({ trips, userEmail }: ProfilePageProps) => {
 
       {/* ── Badges ── */}
       <section>
-        <h3 className="text-base font-extrabold text-navy mb-3">Badges</h3>
+        <h3 className="text-base font-bold text-espresso mb-3">Badges</h3>
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -196,7 +196,7 @@ export const ProfilePage = ({ trips, userEmail }: ProfilePageProps) => {
       {/* ── Destinations ── */}
       {stats.uniqueDestinations.length > 0 && (
         <section>
-          <h3 className="text-base font-extrabold text-navy mb-3">Destinations</h3>
+          <h3 className="text-base font-bold text-espresso mb-3">Destinations</h3>
           <motion.div
             variants={containerVariants}
             initial="hidden"
@@ -207,7 +207,7 @@ export const ProfilePage = ({ trips, userEmail }: ProfilePageProps) => {
               <motion.span
                 key={dest}
                 variants={itemVariants}
-                className="px-3 py-1.5 rounded-full bg-ocean/10 border border-ocean/20 text-ocean text-sm font-semibold"
+                className="px-3 py-1.5 rounded-full bg-amber/10 border border-amber/20 text-amber text-sm font-semibold"
               >
                 {dest}
               </motion.span>
@@ -218,9 +218,9 @@ export const ProfilePage = ({ trips, userEmail }: ProfilePageProps) => {
 
       {/* ── Empty state ── */}
       {trips.length === 0 && (
-        <div className="flex flex-col items-center justify-center gap-3 py-16 border-2 border-dashed border-gray-200 rounded-2xl text-center">
-          <h3 className="text-lg font-bold text-navy">No adventures yet</h3>
-          <p className="text-sm text-gray">Create your first trip to start earning badges and stats.</p>
+        <div className="flex flex-col items-center justify-center gap-3 py-16 border-2 border-dashed border-smoke rounded-2xl text-center">
+          <h3 className="text-lg font-bold text-espresso">No adventures yet</h3>
+          <p className="text-sm text-flint">Create your first trip to start earning badges and stats.</p>
         </div>
       )}
 

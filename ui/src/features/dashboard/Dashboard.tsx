@@ -49,27 +49,27 @@ const CheckIcon = () => (
 );
 
 const ChartIcon = () => (
-  <svg viewBox="0 0 20 20" className="w-8 h-8 text-gray-300" fill="currentColor" aria-hidden="true">
+  <svg viewBox="0 0 20 20" className="w-8 h-8 text-smoke" fill="currentColor" aria-hidden="true">
     <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
   </svg>
 );
 
 const MapIcon = () => (
-  <svg viewBox="0 0 20 20" className="w-10 h-10 text-gray-200" fill="currentColor" aria-hidden="true">
+  <svg viewBox="0 0 20 20" className="w-10 h-10 text-smoke" fill="currentColor" aria-hidden="true">
     <path fillRule="evenodd" d="M12 1.586l-4 4V17l4-4V1.586zM3.707 3.293A1 1 0 002 4v10a1 1 0 00.293.707L6 18.414V5.586L3.707 3.293zM17.707 4.293L14 .586V13.414l2.293 2.293A1 1 0 0018 15V5a1 1 0 00-.293-.707z" clipRule="evenodd" />
   </svg>
 );
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const CHART_COLORS = ['#0077FF', '#FF6B6B', '#FFD166', '#10B981', '#005FCC'];
+const CHART_COLORS = ['#B45309', '#8B5A3E', '#3F6212', '#881337', '#92400E'];
 
 const TOOLTIP_STYLE: React.CSSProperties = {
   borderRadius: '12px',
-  border: '1px solid #F3F4F6',
-  boxShadow: '0 4px 16px rgba(30,41,59,0.08)',
+  border: '1px solid #E7E5E4',
+  boxShadow: '0 4px 16px rgba(28,25,23,0.08)',
   fontSize: '0.8125rem',
-  fontFamily: 'Poppins, sans-serif',
+  fontFamily: 'Manrope, sans-serif',
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -110,7 +110,7 @@ const StatCard = ({ icon, value, label, valueColor, bgColor, borderColor }: Stat
     <span className={`text-3xl font-extrabold tabular-nums leading-none mt-2 ${valueColor}`}>
       {value}
     </span>
-    <span className="text-sm text-gray font-medium mt-0.5">{label}</span>
+    <span className="text-sm text-flint font-medium mt-0.5">{label}</span>
   </motion.div>
 );
 
@@ -124,11 +124,11 @@ interface ChartCardProps {
 const ChartCard = ({ title, empty, emptyMessage, children }: ChartCardProps) => (
   <motion.div
     variants={chartVariants}
-    className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6"
+    className="bg-white rounded-2xl border border-smoke/60 shadow-sm p-6"
   >
-    <h3 className="text-sm font-bold text-navy mb-4">{title}</h3>
+    <h3 className="text-sm font-bold text-espresso mb-4">{title}</h3>
     {empty ? (
-      <div className="flex flex-col items-center justify-center h-48 text-gray text-sm gap-2">
+      <div className="flex flex-col items-center justify-center h-48 text-flint text-sm gap-2">
         <ChartIcon />
         {emptyMessage}
       </div>
@@ -173,10 +173,10 @@ export function Dashboard({ trips }: DashboardProps) {
   }, [trips]);
 
   const statCards: StatConfig[] = [
-    { icon: <GlobeIcon />,    value: trips.length,        label: 'Total Trips',       valueColor: 'text-ocean',      bgColor: 'bg-ocean/5',   borderColor: 'border-ocean/15'   },
-    { icon: <CalendarIcon />, value: stats.totalDays,     label: 'Days Traveling',    valueColor: 'text-coral',      bgColor: 'bg-coral/5',   borderColor: 'border-coral/15'   },
-    { icon: <MapPinIcon />,   value: stats.destinations,  label: 'Destinations',      valueColor: 'text-sunny-dark', bgColor: 'bg-sunny/10',  borderColor: 'border-sunny/30'   },
-    { icon: <CheckIcon />,    value: stats.withItinerary, label: 'Saved Itineraries', valueColor: 'text-success',    bgColor: 'bg-success/5', borderColor: 'border-success/15' },
+    { icon: <GlobeIcon />,    value: trips.length,        label: 'Total Trips',       valueColor: 'text-amber',    bgColor: 'bg-amber/5',    borderColor: 'border-amber/20'    },
+    { icon: <CalendarIcon />, value: stats.totalDays,     label: 'Days Traveling',    valueColor: 'text-clay',     bgColor: 'bg-clay/5',     borderColor: 'border-clay/15'     },
+    { icon: <MapPinIcon />,   value: stats.destinations,  label: 'Destinations',      valueColor: 'text-espresso', bgColor: 'bg-parchment',  borderColor: 'border-smoke'       },
+    { icon: <CheckIcon />,    value: stats.withItinerary, label: 'Saved Itineraries', valueColor: 'text-olive',    bgColor: 'bg-olive/5',    borderColor: 'border-olive/20'    },
   ];
 
   // Empty state — no trips at all
@@ -185,8 +185,8 @@ export function Dashboard({ trips }: DashboardProps) {
       <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
         <MapIcon />
         <div>
-          <h3 className="text-lg font-bold text-navy">No data yet</h3>
-          <p className="text-sm text-gray mt-1">Create and plan trips to see your dashboard stats.</p>
+          <h3 className="text-lg font-bold text-espresso">No data yet</h3>
+          <p className="text-sm text-flint mt-1">Create and plan trips to see your dashboard stats.</p>
         </div>
       </div>
     );
@@ -197,8 +197,8 @@ export function Dashboard({ trips }: DashboardProps) {
 
       {/* ── Page title ── */}
       <div>
-        <h2 className="text-2xl font-extrabold text-navy">Dashboard</h2>
-        <p className="text-sm text-gray mt-0.5">An overview of all your adventures.</p>
+        <h2 className="text-2xl font-bold text-espresso">Dashboard</h2>
+        <p className="text-sm text-flint mt-0.5">An overview of all your adventures.</p>
       </div>
 
       {/* ── Stat cards ── */}
@@ -227,10 +227,10 @@ export function Dashboard({ trips }: DashboardProps) {
         >
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={durationData} margin={{ top: 4, right: 8, left: -16, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
-              <XAxis dataKey="name" tick={{ fontSize: 11, fontFamily: 'Poppins, sans-serif', fill: '#6B7280' }} axisLine={false} tickLine={false} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 11, fontFamily: 'Poppins, sans-serif', fill: '#6B7280' }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: '#F3F4F6' }} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E7E5E4" />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fontFamily: 'Manrope, sans-serif', fill: '#78716C' }} axisLine={false} tickLine={false} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11, fontFamily: 'Manrope, sans-serif', fill: '#78716C' }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: '#F5F5F4' }} />
               <Bar dataKey="days" radius={[6, 6, 0, 0]}>
                 {durationData.map((_, i) => (
                   <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
@@ -247,10 +247,10 @@ export function Dashboard({ trips }: DashboardProps) {
         >
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={budgetData} margin={{ top: 4, right: 8, left: -16, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
-              <XAxis dataKey="name" tick={{ fontSize: 11, fontFamily: 'Poppins, sans-serif', fill: '#6B7280' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fontFamily: 'Poppins, sans-serif', fill: '#6B7280' }} axisLine={false} tickLine={false} />
-              <Tooltip formatter={(v) => `$${v}`} contentStyle={TOOLTIP_STYLE} cursor={{ fill: '#F3F4F6' }} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E7E5E4" />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fontFamily: 'Manrope, sans-serif', fill: '#78716C' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fontFamily: 'Manrope, sans-serif', fill: '#78716C' }} axisLine={false} tickLine={false} />
+              <Tooltip formatter={(v) => `$${v}`} contentStyle={TOOLTIP_STYLE} cursor={{ fill: '#F5F5F4' }} />
               <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                 {budgetData.map((_, i) => (
                   <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
@@ -266,9 +266,9 @@ export function Dashboard({ trips }: DashboardProps) {
         variants={chartVariants}
         initial="hidden"
         animate="show"
-        className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6"
+        className="bg-white rounded-2xl border border-smoke/60 shadow-sm p-6"
       >
-        <h3 className="text-sm font-bold text-navy mb-4">Destinations</h3>
+        <h3 className="text-sm font-bold text-espresso mb-4">Destinations</h3>
         <DestinationsMap trips={trips} />
       </motion.div>
 

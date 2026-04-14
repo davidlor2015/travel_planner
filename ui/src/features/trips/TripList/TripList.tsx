@@ -12,6 +12,7 @@ import { EditTripModal } from '../EditTripModal';
 import { useStreamingItinerary } from '../../../shared/hooks/useStreamingItinerary';
 import { PackingList } from '../PackingList';
 import { BudgetTracker } from '../BudgetTracker';
+import { ItineraryMap } from '../ItineraryMap';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -43,17 +44,17 @@ const LoadingSkeleton = () => (
     {[1, 2, 3].map((i) => (
       <div
         key={i}
-        className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 animate-pulse"
+        className="bg-white rounded-2xl border border-smoke/50 shadow-sm p-6 animate-pulse"
       >
         <div className="flex justify-between items-center mb-4">
-          <div className="h-5 bg-gray-200 rounded-full w-1/3" />
-          <div className="h-5 bg-gray-100 rounded-full w-20" />
+          <div className="h-5 bg-smoke rounded-full w-1/3" />
+          <div className="h-5 bg-parchment rounded-full w-20" />
         </div>
-        <div className="h-4 bg-gray-100 rounded-full w-1/2 mb-2" />
-        <div className="h-4 bg-gray-100 rounded-full w-2/5 mb-5" />
+        <div className="h-4 bg-parchment rounded-full w-1/2 mb-2" />
+        <div className="h-4 bg-parchment rounded-full w-2/5 mb-5" />
         <div className="flex gap-2">
-          <div className="h-9 bg-gray-200 rounded-full w-24" />
-          <div className="h-9 bg-gray-100 rounded-full w-28" />
+          <div className="h-9 bg-smoke rounded-full w-24" />
+          <div className="h-9 bg-parchment rounded-full w-28" />
         </div>
       </div>
     ))}
@@ -77,18 +78,18 @@ const StreamingDisplay = ({ text, onCancel }: StreamingDisplayProps) => {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div className="flex items-center gap-2 text-sm font-medium text-ocean">
-          <div className="w-4 h-4 rounded-full border-2 border-ocean border-t-transparent animate-spin flex-shrink-0" />
+        <div className="flex items-center gap-2 text-sm font-medium text-amber">
+          <div className="w-4 h-4 rounded-full border-2 border-amber border-t-transparent animate-spin flex-shrink-0" />
           Generating itinerary...
           {text.length > 0 && (
-            <span className="text-gray font-normal tabular-nums">
+            <span className="text-flint font-normal tabular-nums">
               {text.length} chars
             </span>
           )}
         </div>
         <button
           onClick={onCancel}
-          className="text-xs font-semibold text-gray hover:text-navy transition-colors cursor-pointer"
+          className="text-xs font-semibold text-flint hover:text-espresso transition-colors cursor-pointer"
         >
           Cancel
         </button>
@@ -96,7 +97,7 @@ const StreamingDisplay = ({ text, onCancel }: StreamingDisplayProps) => {
       {text.length > 0 && (
         <pre
           ref={scrollRef}
-          className="text-xs font-mono text-gray bg-silver rounded-xl p-3 max-h-28 overflow-y-auto whitespace-pre-wrap break-all leading-relaxed"
+          className="text-xs font-mono text-flint bg-parchment rounded-xl p-3 max-h-28 overflow-y-auto whitespace-pre-wrap break-all leading-relaxed"
         >
           {text}
         </pre>
@@ -118,10 +119,10 @@ const PillButton = ({ onClick, disabled, variant, busy, children }: PillButtonPr
     'inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
 
   const variants = {
-    ocean:  'bg-ocean text-white hover:bg-ocean-dark shadow-sm shadow-ocean/25',
-    coral:  'bg-coral text-white hover:bg-coral-dark shadow-sm shadow-coral/25',
-    ghost:  'bg-silver text-navy hover:bg-gray-200',
-    danger: 'bg-coral/10 text-coral border border-coral/25 hover:bg-coral/20',
+    ocean:  'bg-amber text-white hover:bg-amber-dark shadow-sm shadow-amber/25',
+    coral:  'bg-clay text-white hover:bg-clay-dark shadow-sm shadow-clay/20',
+    ghost:  'bg-parchment text-espresso hover:bg-smoke',
+    danger: 'bg-danger/10 text-danger border border-danger/25 hover:bg-danger/15',
   };
 
   return (
@@ -153,6 +154,7 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
   const [editingTrip, setEditingTrip]               = useState<Trip | null>(null);
   const [packingIds, setPackingIds]                 = useState<Set<number>>(new Set());
   const [budgetIds, setBudgetIds]                   = useState<Set<number>>(new Set());
+  const [mapIds, setMapIds]                         = useState<Set<number>>(new Set());
 
   const { streams, start: startStream, reset: resetStream } = useStreamingItinerary(token);
 
@@ -189,6 +191,14 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
 
   const toggleBudget = (tripId: number) => {
     setBudgetIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(tripId)) { next.delete(tripId); } else { next.add(tripId); }
+      return next;
+    });
+  };
+
+  const toggleMap = (tripId: number) => {
+    setMapIds((prev) => {
       const next = new Set(prev);
       if (next.has(tripId)) { next.delete(tripId); } else { next.add(tripId); }
       return next;
@@ -259,7 +269,6 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
   };
 
   const handleApply = async (tripId: number) => {
-    // Itinerary may come from the streaming hook or the Smart Plan pending state.
     const itinerary = streams[tripId]?.itinerary ?? pendingItineraries[tripId];
     if (!itinerary) return;
 
@@ -294,16 +303,16 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-extrabold text-navy">My Trips</h2>
+          <h2 className="text-2xl font-bold text-espresso">My Trips</h2>
           <motion.button
             whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
             onClick={onCreateClick}
-            className="px-5 py-2.5 rounded-full bg-ocean text-white text-sm font-bold shadow-sm shadow-ocean/25 cursor-pointer"
+            className="px-5 py-2.5 rounded-full bg-amber text-white text-sm font-bold shadow-sm shadow-amber/25 cursor-pointer"
           >
             + New Trip
           </motion.button>
         </div>
-        <div className="px-4 py-3 rounded-xl bg-coral/10 border border-coral/25 text-coral text-sm" role="alert">
+        <div className="px-4 py-3 rounded-xl bg-danger/10 border border-danger/25 text-danger text-sm" role="alert">
           {error}
         </div>
       </div>
@@ -316,13 +325,13 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-extrabold text-navy">My Trips</h2>
-          <p className="text-sm text-gray mt-0.5">Plan, generate, and save itineraries in one place.</p>
+          <h2 className="text-2xl font-bold text-espresso">My Trips</h2>
+          <p className="text-sm text-flint mt-0.5">Plan, generate, and save itineraries in one place.</p>
         </div>
         <motion.button
           whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
           onClick={onCreateClick}
-          className="px-5 py-2.5 rounded-full bg-ocean text-white text-sm font-bold shadow-sm shadow-ocean/25 cursor-pointer flex-shrink-0"
+          className="px-5 py-2.5 rounded-full bg-amber text-white text-sm font-bold shadow-sm shadow-amber/25 cursor-pointer flex-shrink-0"
         >
           + New Trip
         </motion.button>
@@ -333,7 +342,7 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
         {actionError && (
           <motion.div
             initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            className="px-4 py-3 rounded-xl bg-coral/10 border border-coral/25 text-coral text-sm font-medium"
+            className="px-4 py-3 rounded-xl bg-danger/10 border border-danger/25 text-danger text-sm font-medium"
             role="alert"
           >
             {actionError}
@@ -343,15 +352,15 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
 
       {/* ── Empty state ── */}
       {trips.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-4 py-20 border-2 border-dashed border-gray-200 rounded-2xl text-center">
+        <div className="flex flex-col items-center justify-center gap-4 py-20 border-2 border-dashed border-smoke rounded-2xl text-center">
           <div>
-            <h3 className="text-lg font-bold text-navy">No trips yet</h3>
-            <p className="text-sm text-gray mt-1">Create your first trip to start planning.</p>
+            <h3 className="text-lg font-bold text-espresso">No trips yet</h3>
+            <p className="text-sm text-flint mt-1">Create your first trip to start planning.</p>
           </div>
           <motion.button
             whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
             onClick={onCreateClick}
-            className="px-6 py-2.5 rounded-full bg-ocean text-white text-sm font-bold shadow-sm shadow-ocean/25 cursor-pointer"
+            className="px-6 py-2.5 rounded-full bg-amber text-white text-sm font-bold shadow-sm shadow-amber/25 cursor-pointer"
           >
             + Create your first trip
           </motion.button>
@@ -376,8 +385,8 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
             const isViewing         = viewingIds.has(trip.id);
             const isShowingPacking  = packingIds.has(trip.id);
             const isShowingBudget   = budgetIds.has(trip.id);
+            const isShowingMap      = mapIds.has(trip.id);
 
-            // Completed itinerary from either streaming or Smart Plan
             const pendingItinerary  = streamItinerary ?? pendingItineraries[trip.id] ?? null;
             const hasSavedItinerary = !!trip.description;
             const savedItinerary    = hasSavedItinerary ? parseItinerary(trip.description!) : null;
@@ -390,21 +399,21 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
                 key={trip.id}
                 variants={cardVariants}
                 layout
-                className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 p-6 space-y-4"
+                className="bg-white rounded-2xl border border-smoke/60 shadow-sm hover:shadow-md transition-shadow duration-200 p-6 space-y-4"
               >
                 {/* Title row */}
                 <div className="flex flex-wrap items-start justify-between gap-2">
-                  <h3 className="text-lg font-extrabold text-navy leading-tight">{trip.title}</h3>
+                  <h3 className="text-lg font-bold text-espresso leading-tight">{trip.title}</h3>
                   {hasSavedItinerary && (
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-sunny/30 text-sunny-dark text-xs font-bold">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-amber/20 text-amber text-xs font-bold">
                       Itinerary saved
                     </span>
                   )}
                 </div>
 
                 {/* Meta */}
-                <div className="flex flex-col gap-1 text-sm text-gray">
-                  <span className="font-medium text-navy">{trip.destination}</span>
+                <div className="flex flex-col gap-1 text-sm text-flint">
+                  <span className="font-medium text-espresso">{trip.destination}</span>
                   <span>{startDate} – {endDate}</span>
                 </div>
 
@@ -413,7 +422,7 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
                   {streamError && (
                     <motion.div
                       initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                      className="px-4 py-3 rounded-xl bg-coral/10 border border-coral/25 text-coral text-sm font-medium"
+                      className="px-4 py-3 rounded-xl bg-danger/10 border border-danger/25 text-danger text-sm font-medium"
                       role="alert"
                     >
                       {streamError}
@@ -431,9 +440,9 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
 
                 {/* Smart Plan spinner */}
                 {isGeneratingSmart && (
-                  <div className="flex items-center gap-3 px-4 py-3 bg-coral/5 border border-coral/20 rounded-xl">
-                    <div className="w-4 h-4 rounded-full border-2 border-coral border-t-transparent animate-spin flex-shrink-0" />
-                    <span className="text-sm font-medium text-coral">Generating Smart Plan...</span>
+                  <div className="flex items-center gap-3 px-4 py-3 bg-clay/5 border border-clay/20 rounded-xl">
+                    <div className="w-4 h-4 rounded-full border-2 border-clay border-t-transparent animate-spin flex-shrink-0" />
+                    <span className="text-sm font-medium text-clay">Generating Smart Plan...</span>
                   </div>
                 )}
 
@@ -476,6 +485,12 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
                           </PillButton>
                         )}
 
+                        {savedItinerary && (
+                          <PillButton variant="ghost" onClick={() => toggleMap(trip.id)}>
+                            {isShowingMap ? 'Hide Map' : 'Map'}
+                          </PillButton>
+                        )}
+
                         <PillButton variant="ghost" onClick={() => togglePacking(trip.id)}>
                           {isShowingPacking ? 'Hide Packing' : 'Packing List'}
                         </PillButton>
@@ -494,6 +509,7 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
                       </div>
                     )}
 
+                    {isShowingMap     && savedItinerary && <ItineraryMap itinerary={savedItinerary} />}
                     {isShowingPacking && <PackingList tripId={trip.id} />}
                     {isShowingBudget  && <BudgetTracker tripId={trip.id} />}
                   </>

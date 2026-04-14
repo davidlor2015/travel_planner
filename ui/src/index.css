@@ -1,27 +1,37 @@
 @import "tailwindcss";
 
-/* ── "Vibrant Adventurer" design tokens ── */
+/* ── "Cultured Traveller" design tokens ── */
 @theme {
-  /* Brand palette */
-  --color-ocean:   #0077FF;
-  --color-ocean-dark: #005FCC;
-  --color-coral:   #FF6B6B;
-  --color-coral-dark: #E05555;
-  --color-sunny:   #FFD166;
-  --color-sunny-dark: #E6B84D;
+  /* Primary text / headings */
+  --color-espresso:       #1C1917;   /* stone-900 — headings, primary text */
+  --color-espresso-dark:  #0C0A09;   /* near-black — hover on espresso buttons */
 
-  /* Neutrals */
-  --color-navy:    #1E293B;
-  --color-gray:    #6B7280;
-  --color-silver:  #F3F4F6;
-  --color-white:   #FFFFFF;
+  /* Warm clay accent (secondary CTA, packing list, feature tints) */
+  --color-clay:           #8B5A3E;   /* muted warm clay */
+  --color-clay-dark:      #7A4E33;   /* darker clay for hover */
 
-  /* State colours */
-  --color-success: #10B981;
-  --color-danger:  #EF4444;
+  /* Neutral surfaces */
+  --color-ivory:          #FAFAF9;   /* stone-50 — page background */
+  --color-parchment:      #F5F5F4;   /* stone-100 — nav pills, ghost buttons, subtle fills */
+  --color-smoke:          #E7E5E4;   /* stone-200 — borders, dividers */
+  --color-flint:          #78716C;   /* stone-500 — secondary / muted text */
+  --color-white:          #FFFFFF;   /* card surfaces */
+
+  /* Warm accent — primary CTA */
+  --color-amber:          #B45309;   /* amber-700 */
+  --color-amber-dark:     #92400E;   /* amber-800 — hover */
+
+  /* Olive — nature / success */
+  --color-olive:          #3F6212;   /* lime-800 */
+  --color-olive-dark:     #365314;   /* lime-900 — hover */
+
+  /* State */
+  --color-danger:         #881337;   /* rose-900 — errors, destructive */
+  --color-success:        #3F6212;   /* same as olive */
 
   /* Typography */
-  --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+  --font-sans:    'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Cormorant Garamond', ui-serif, Georgia, serif;
 
   /* Extended border-radius for pill shapes */
   --radius-pill: 9999px;
@@ -43,14 +53,19 @@
     font-family: var(--font-sans);
     font-size: 0.9375rem;
     line-height: 1.5;
-    color: theme(--color-navy);
-    background-color: theme(--color-white);
+    color: theme(--color-espresso);
+    background-color: theme(--color-ivory);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }
 
-  h1, h2, h3, h4, h5, h6, p {
+  h1, h2, h3, h4, h5, h6 {
+    margin: 0;
+    font-family: var(--font-display);
+  }
+
+  p {
     margin: 0;
   }
 

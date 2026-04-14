@@ -41,32 +41,32 @@ const BADGE_CONFIGS: BadgeConfig[] = [
     id: 'first-adventure',
     name: 'First Adventure',
     description: 'Created your first trip',
-    unearnedCls: 'bg-gray-100 text-gray border-gray-200',
-    earnedCls: 'bg-ocean text-white border-ocean shadow-sm shadow-ocean/25',
+    unearnedCls: 'bg-parchment text-flint border-smoke',
+    earnedCls: 'bg-amber text-white border-amber shadow-sm shadow-amber/25',
     check: (trips) => trips.length >= 1,
   },
   {
     id: 'itinerary-pro',
     name: 'Itinerary Pro',
     description: 'Saved an AI-generated itinerary',
-    unearnedCls: 'bg-gray-100 text-gray border-gray-200',
-    earnedCls: 'bg-coral text-white border-coral shadow-sm shadow-coral/25',
+    unearnedCls: 'bg-parchment text-flint border-smoke',
+    earnedCls: 'bg-clay text-white border-clay shadow-sm shadow-clay/20',
     check: (trips) => trips.some((t) => !!t.description),
   },
   {
     id: 'explorer',
     name: 'Explorer',
     description: '3 unique destinations planned',
-    unearnedCls: 'bg-gray-100 text-gray border-gray-200',
-    earnedCls: 'bg-sunny text-navy border-sunny shadow-sm shadow-sunny/25',
+    unearnedCls: 'bg-parchment text-flint border-smoke',
+    earnedCls: 'bg-amber/20 text-espresso border-amber/40 shadow-sm',
     check: (trips) => new Set(trips.map((t) => t.destination.trim())).size >= 3,
   },
   {
     id: 'packing-pro',
     name: 'Packing Pro',
     description: 'Built a packing list for a trip',
-    unearnedCls: 'bg-gray-100 text-gray border-gray-200',
-    earnedCls: 'bg-coral text-white border-coral shadow-sm shadow-coral/25',
+    unearnedCls: 'bg-parchment text-flint border-smoke',
+    earnedCls: 'bg-clay text-white border-clay shadow-sm shadow-clay/20',
     check: (trips) =>
       trips.some((t) => {
         try {
@@ -83,8 +83,8 @@ const BADGE_CONFIGS: BadgeConfig[] = [
     id: 'budget-savvy',
     name: 'Budget Savvy',
     description: 'Set a budget for a trip',
-    unearnedCls: 'bg-gray-100 text-gray border-gray-200',
-    earnedCls: 'bg-sunny text-navy border-sunny shadow-sm shadow-sunny/25',
+    unearnedCls: 'bg-parchment text-flint border-smoke',
+    earnedCls: 'bg-amber/20 text-espresso border-amber/40 shadow-sm',
     check: (trips) =>
       trips.some((t) => {
         try {
@@ -102,8 +102,8 @@ const BADGE_CONFIGS: BadgeConfig[] = [
     id: 'long-hauler',
     name: 'Long Hauler',
     description: 'Planned a trip of 7 or more days',
-    unearnedCls: 'bg-gray-100 text-gray border-gray-200',
-    earnedCls: 'bg-success text-white border-success shadow-sm shadow-success/25',
+    unearnedCls: 'bg-parchment text-flint border-smoke',
+    earnedCls: 'bg-olive text-white border-olive shadow-sm shadow-olive/20',
     check: (trips) =>
       trips.some((t) => {
         const days = Math.round(
@@ -116,16 +116,16 @@ const BADGE_CONFIGS: BadgeConfig[] = [
     id: 'globetrotter',
     name: 'Globetrotter',
     description: '5 or more unique destinations',
-    unearnedCls: 'bg-gray-100 text-gray border-gray-200',
-    earnedCls: 'bg-success text-white border-success shadow-sm shadow-success/25',
+    unearnedCls: 'bg-parchment text-flint border-smoke',
+    earnedCls: 'bg-olive text-white border-olive shadow-sm shadow-olive/20',
     check: (trips) => new Set(trips.map((t) => t.destination.trim())).size >= 5,
   },
   {
     id: 'frequent-flyer',
     name: 'Frequent Flyer',
     description: '5 or more trips created',
-    unearnedCls: 'bg-gray-100 text-gray border-gray-200',
-    earnedCls: 'bg-navy text-white border-navy shadow-sm',
+    unearnedCls: 'bg-parchment text-flint border-smoke',
+    earnedCls: 'bg-espresso text-white border-espresso shadow-sm',
     check: (trips) => trips.length >= 5,
   },
 ];

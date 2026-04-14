@@ -1,5 +1,6 @@
 // src/App.tsx
 import { useState, useEffect } from "react";
+import { LandingPage } from "./features/landing";
 import { LoginPage } from "./features/auth/LoginPage";
 import { getMe, type UserProfile } from "./shared/api/auth";
 import { TripList } from "./features/trips/TripList";
@@ -22,6 +23,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [prefillDestination, setPrefillDestination] = useState<string | null>(null);
+  const [authMode, setAuthMode] = useState<'login' | 'register' | null>(null);
 
   const fetchUser = async (accessToken: string) => {
     setLoading(true);
@@ -70,7 +72,7 @@ function App() {
 
   if (loading)
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white font-sans text-gray text-sm">
+      <div className="min-h-screen flex items-center justify-center bg-ivory font-sans text-flint text-sm">
         Loading…
       </div>
     );
@@ -112,7 +114,22 @@ function App() {
     );
   }
 
-  return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+  if (authMode !== null) {
+    return (
+      <LoginPage
+        initialMode={authMode}
+        onLoginSuccess={handleLoginSuccess}
+        onBack={() => setAuthMode(null)}
+      />
+    );
+  }
+
+  return (
+    <LandingPage
+      onGetStarted={() => setAuthMode('register')}
+      onSignIn={() => setAuthMode('login')}
+    />
+  );
 }
 
 export default App;

@@ -75,7 +75,7 @@ export const EditTripModal = ({ token, trip, onSuccess, onClose }: EditTripModal
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-navy/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-espresso/40 backdrop-blur-sm"
         aria-hidden="true"
         onClick={onClose}
       />
@@ -86,20 +86,20 @@ export const EditTripModal = ({ token, trip, onSuccess, onClose }: EditTripModal
         aria-modal="true"
         aria-label="Edit trip"
         variants={panelVariants}
-        className="relative z-10 w-full max-w-lg bg-white rounded-2xl border border-gray-100 shadow-xl p-8"
+        className="relative z-10 w-full max-w-lg bg-white rounded-2xl border border-smoke/60 shadow-xl p-8"
       >
         {/* Header */}
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-extrabold text-navy tracking-tight">
+            <h2 className="text-2xl font-bold text-espresso tracking-tight">
               <span className="mr-2" aria-hidden="true">✏️</span>Edit Trip
             </h2>
-            <p className="text-sm text-gray mt-1">Update the details for <span className="font-semibold text-navy">{trip.title}</span>.</p>
+            <p className="text-sm text-flint mt-1">Update the details for <span className="font-semibold text-espresso">{trip.title}</span>.</p>
           </div>
           <button
             onClick={onClose}
             aria-label="Close"
-            className="flex-shrink-0 text-gray hover:text-navy transition-colors text-xl leading-none cursor-pointer mt-1"
+            className="flex-shrink-0 text-flint hover:text-espresso transition-colors text-xl leading-none cursor-pointer mt-1"
           >
             ✕
           </button>
@@ -168,7 +168,7 @@ export const EditTripModal = ({ token, trip, onSuccess, onClose }: EditTripModal
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.18 }}
                 role="alert"
-                className="px-4 py-3 rounded-xl bg-coral/10 border border-coral/25 text-coral text-sm font-medium"
+                className="px-4 py-3 rounded-xl bg-danger/10 border border-danger/25 text-danger text-sm font-medium"
               >
                 {errors.root.message}
               </motion.div>
@@ -182,8 +182,8 @@ export const EditTripModal = ({ token, trip, onSuccess, onClose }: EditTripModal
               disabled={isSubmitting}
               whileHover={!isSubmitting ? { scale: 1.03 } : undefined}
               whileTap={!isSubmitting ? { scale: 0.97 } : undefined}
-              className="flex-1 py-3 rounded-full bg-ocean text-white text-sm font-bold
-                         shadow-sm shadow-ocean/25 hover:bg-ocean-dark transition-colors duration-150
+              className="flex-1 py-3 rounded-full bg-amber text-white text-sm font-bold
+                         shadow-sm shadow-amber/25 hover:bg-amber-dark transition-colors duration-150
                          disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {isSubmitting ? 'Saving…' : '💾 Save Changes'}
@@ -194,8 +194,8 @@ export const EditTripModal = ({ token, trip, onSuccess, onClose }: EditTripModal
               onClick={onClose}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
-              className="flex-1 py-3 rounded-full bg-silver text-navy text-sm font-semibold
-                         hover:bg-gray-200 transition-colors duration-150 cursor-pointer"
+              className="flex-1 py-3 rounded-full bg-parchment text-espresso text-sm font-semibold
+                         hover:bg-smoke transition-colors duration-150 cursor-pointer"
             >
               Cancel
             </motion.button>

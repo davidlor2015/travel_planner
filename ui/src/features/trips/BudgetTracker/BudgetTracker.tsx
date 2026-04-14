@@ -11,11 +11,11 @@ interface BudgetTrackerProps {
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const CATEGORIES: { value: ExpenseCategory; label: string; activeCls: string; pillCls: string }[] = [
-  { value: 'food',       label: 'Food',       activeCls: 'bg-sunny text-navy border-sunny',              pillCls: 'bg-sunny/20 text-sunny-dark border-sunny/40' },
-  { value: 'transport',  label: 'Transport',  activeCls: 'bg-ocean text-white border-ocean',             pillCls: 'bg-ocean/10 text-ocean border-ocean/25' },
-  { value: 'stay',       label: 'Stay',       activeCls: 'bg-coral text-white border-coral',             pillCls: 'bg-coral/10 text-coral border-coral/25' },
-  { value: 'activities', label: 'Activities', activeCls: 'bg-success text-white border-success',         pillCls: 'bg-success/10 text-success border-success/25' },
-  { value: 'other',      label: 'Other',      activeCls: 'bg-navy text-white border-navy',               pillCls: 'bg-gray-100 text-gray border-gray-200' },
+  { value: 'food',       label: 'Food',       activeCls: 'bg-amber text-white border-amber',                    pillCls: 'bg-amber/15 text-amber border-amber/30' },
+  { value: 'transport',  label: 'Transport',  activeCls: 'bg-espresso text-white border-espresso',              pillCls: 'bg-espresso/10 text-espresso border-espresso/20' },
+  { value: 'stay',       label: 'Stay',       activeCls: 'bg-clay text-white border-clay',                      pillCls: 'bg-clay/10 text-clay border-clay/25' },
+  { value: 'activities', label: 'Activities', activeCls: 'bg-olive text-white border-olive',                    pillCls: 'bg-olive/10 text-olive border-olive/25' },
+  { value: 'other',      label: 'Other',      activeCls: 'bg-espresso/80 text-white border-espresso/60',        pillCls: 'bg-parchment text-flint border-smoke' },
 ];
 
 // ── Animation variants ────────────────────────────────────────────────────────
@@ -33,9 +33,9 @@ function formatCurrency(amount: number): string {
 }
 
 function progressBarCls(pct: number): string {
-  if (pct >= 100) return 'bg-coral';
-  if (pct >= 75)  return 'bg-sunny';
-  return 'bg-ocean';
+  if (pct >= 100) return 'bg-danger';
+  if (pct >= 75)  return 'bg-amber';
+  return 'bg-olive';
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -87,19 +87,19 @@ export const BudgetTracker = ({ tripId }: BudgetTrackerProps) => {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="mt-2 rounded-2xl border border-sunny/30 bg-sunny/5 overflow-hidden">
+    <div className="mt-2 rounded-2xl border border-amber/25 bg-amber/5 overflow-hidden">
 
       {/* ── Header ── */}
-      <div className="px-5 pt-5 pb-4 border-b border-sunny/20">
+      <div className="px-5 pt-5 pb-4 border-b border-amber/15">
         <div className="flex items-start justify-between gap-3 flex-wrap">
 
           {/* Title + budget status */}
           <div>
-            <h4 className="text-base font-extrabold text-navy">Budget Tracker</h4>
+            <h4 className="text-base font-bold text-espresso">Budget Tracker</h4>
             {limit !== null && !editingLimit && (
               <p className={[
                 'text-xs font-semibold mt-0.5',
-                isOverBudget ? 'text-coral' : 'text-gray',
+                isOverBudget ? 'text-danger' : 'text-flint',
               ].join(' ')}>
                 {isOverBudget
                   ? `${formatCurrency(Math.abs(remaining!))} over budget`
@@ -111,7 +111,7 @@ export const BudgetTracker = ({ tripId }: BudgetTrackerProps) => {
           {/* Budget limit control */}
           {editingLimit ? (
             <div className="flex items-center gap-1.5">
-              <span className="text-sm text-gray font-medium">$</span>
+              <span className="text-sm text-flint font-medium">$</span>
               <input
                 type="number"
                 min="0"
@@ -120,8 +120,8 @@ export const BudgetTracker = ({ tripId }: BudgetTrackerProps) => {
                 onChange={(e) => setDraftLimit(e.target.value)}
                 onKeyDown={handleLimitKeyDown}
                 placeholder="Set budget"
-                className="w-28 px-3 py-1.5 rounded-full border border-sunny/50 bg-white text-sm text-navy
-                           focus:outline-none focus:ring-2 focus:ring-sunny/40 focus:border-sunny
+                className="w-28 px-3 py-1.5 rounded-full border border-amber/40 bg-white text-sm text-espresso
+                           focus:outline-none focus:ring-2 focus:ring-amber/40 focus:border-amber
                            transition-all duration-150"
                 autoFocus
               />
@@ -129,8 +129,8 @@ export const BudgetTracker = ({ tripId }: BudgetTrackerProps) => {
                 onClick={handleSaveLimit}
                 disabled={!draftLimit || isNaN(parseFloat(draftLimit))}
                 whileTap={{ scale: 0.95 }}
-                className="px-3 py-1.5 rounded-full bg-sunny text-navy text-xs font-bold
-                           shadow-sm shadow-sunny/30 hover:bg-sunny-dark transition-colors duration-150
+                className="px-3 py-1.5 rounded-full bg-amber text-white text-xs font-bold
+                           shadow-sm shadow-amber/25 hover:bg-amber-dark transition-colors duration-150
                            disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               >
                 Set
@@ -138,7 +138,7 @@ export const BudgetTracker = ({ tripId }: BudgetTrackerProps) => {
               {limit !== null && (
                 <button
                   onClick={() => setEditingLimit(false)}
-                  className="text-xs text-gray hover:text-navy transition-colors cursor-pointer"
+                  className="text-xs text-flint hover:text-espresso transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -147,7 +147,7 @@ export const BudgetTracker = ({ tripId }: BudgetTrackerProps) => {
           ) : (
             <button
               onClick={() => { setDraftLimit(String(limit ?? '')); setEditingLimit(true); }}
-              className="text-xs font-semibold text-sunny-dark hover:text-navy transition-colors cursor-pointer"
+              className="text-xs font-semibold text-amber hover:text-espresso transition-colors cursor-pointer"
             >
               {limit !== null ? `Budget: ${formatCurrency(limit)}` : 'Set budget'}
             </button>
@@ -156,7 +156,7 @@ export const BudgetTracker = ({ tripId }: BudgetTrackerProps) => {
 
         {/* Progress bar */}
         {limit !== null && !editingLimit && (
-          <div className="mt-3 h-1.5 rounded-full bg-sunny/20 overflow-hidden">
+          <div className="mt-3 h-1.5 rounded-full bg-amber/15 overflow-hidden">
             <motion.div
               className={`h-full rounded-full transition-colors duration-500 ${progressBarCls(spentPct)}`}
               initial={{ width: 0 }}
@@ -169,8 +169,8 @@ export const BudgetTracker = ({ tripId }: BudgetTrackerProps) => {
         {/* Totals row */}
         {expenses.length > 0 && (
           <div className="mt-3 flex items-center gap-3 flex-wrap">
-            <span className="text-xs text-gray">
-              Spent: <span className="font-bold text-navy">{formatCurrency(totalSpent)}</span>
+            <span className="text-xs text-flint">
+              Spent: <span className="font-bold text-espresso">{formatCurrency(totalSpent)}</span>
             </span>
             {CATEGORIES.map(({ value, label, pillCls }) => {
               const catTotal = expenses
@@ -192,7 +192,7 @@ export const BudgetTracker = ({ tripId }: BudgetTrackerProps) => {
 
       {/* ── Expense list ── */}
       {expenses.length > 0 && (
-        <ul className="divide-y divide-sunny/15 list-none p-0 m-0">
+        <ul className="divide-y divide-amber/10 list-none p-0 m-0">
           <AnimatePresence initial={false}>
             {[...expenses].reverse().map((expense) => {
               const meta = categoryMeta(expense.category);
@@ -212,12 +212,12 @@ export const BudgetTracker = ({ tripId }: BudgetTrackerProps) => {
                   </span>
 
                   {/* Label */}
-                  <span className="flex-1 text-sm font-medium text-navy truncate">
+                  <span className="flex-1 text-sm font-medium text-espresso truncate">
                     {expense.label}
                   </span>
 
                   {/* Amount */}
-                  <span className="flex-shrink-0 text-sm font-bold text-navy tabular-nums">
+                  <span className="flex-shrink-0 text-sm font-bold text-espresso tabular-nums">
                     {formatCurrency(expense.amount)}
                   </span>
 
@@ -227,7 +227,7 @@ export const BudgetTracker = ({ tripId }: BudgetTrackerProps) => {
                     whileHover={{ scale: 1.15 }}
                     whileTap={{ scale: 0.9 }}
                     aria-label="Remove expense"
-                    className="flex-shrink-0 text-gray hover:text-coral transition-colors duration-150 cursor-pointer"
+                    className="flex-shrink-0 text-flint hover:text-danger transition-colors duration-150 cursor-pointer"
                   >
                     <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none">
                       <path
@@ -246,7 +246,7 @@ export const BudgetTracker = ({ tripId }: BudgetTrackerProps) => {
       )}
 
       {/* ── Add expense form ── */}
-      <div className="px-5 py-4 border-t border-sunny/20 space-y-3">
+      <div className="px-5 py-4 border-t border-amber/15 space-y-3">
 
         {/* Category selector */}
         <div className="flex gap-1.5 flex-wrap">
@@ -273,8 +273,8 @@ export const BudgetTracker = ({ tripId }: BudgetTrackerProps) => {
             onChange={(e) => setDraftLabel(e.target.value)}
             onKeyDown={handleExpenseKeyDown}
             placeholder="What did you spend on?"
-            className="flex-1 min-w-0 px-4 py-2 rounded-full border border-gray-200 bg-white text-sm text-navy
-                       placeholder:text-gray focus:outline-none focus:ring-2 focus:ring-sunny/40 focus:border-sunny
+            className="flex-1 min-w-0 px-4 py-2 rounded-full border border-smoke bg-white text-sm text-espresso
+                       placeholder:text-flint focus:outline-none focus:ring-2 focus:ring-amber/40 focus:border-amber
                        transition-all duration-150"
           />
           <input
@@ -285,8 +285,8 @@ export const BudgetTracker = ({ tripId }: BudgetTrackerProps) => {
             onChange={(e) => setDraftAmount(e.target.value)}
             onKeyDown={handleExpenseKeyDown}
             placeholder="$0"
-            className="w-20 px-3 py-2 rounded-full border border-gray-200 bg-white text-sm text-navy text-right
-                       placeholder:text-gray focus:outline-none focus:ring-2 focus:ring-sunny/40 focus:border-sunny
+            className="w-20 px-3 py-2 rounded-full border border-smoke bg-white text-sm text-espresso text-right
+                       placeholder:text-flint focus:outline-none focus:ring-2 focus:ring-amber/40 focus:border-amber
                        transition-all duration-150"
           />
           <motion.button
@@ -294,8 +294,8 @@ export const BudgetTracker = ({ tripId }: BudgetTrackerProps) => {
             disabled={!canAdd}
             whileHover={canAdd ? { scale: 1.04 } : undefined}
             whileTap={canAdd ? { scale: 0.96 } : undefined}
-            className="px-4 py-2 rounded-full bg-sunny text-navy text-sm font-bold shadow-sm shadow-sunny/30
-                       hover:bg-sunny-dark transition-colors duration-150
+            className="px-4 py-2 rounded-full bg-amber text-white text-sm font-bold shadow-sm shadow-amber/25
+                       hover:bg-amber-dark transition-colors duration-150
                        disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
             Add

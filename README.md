@@ -37,6 +37,8 @@ Travel Planner lets users:
 * Search live flight offers and get destination inspiration via the Amadeus sandbox API (clearly labelled as test data)
 * View per-destination quality scores (housing, cost of living, safety, etc.) sourced from the Teleport public API
 * View a gamified traveller profile with stats, earned badges, and destination history
+* Land on a polished marketing page before signing in, with animated feature highlights and CTAs that route into registration or login
+* View an interactive map of a saved itinerary's locations — per-day colour-coded pins, dashed route polylines, and popup details, powered by Leaflet and OpenStreetMap
 
 ## Tech Stack
 
@@ -78,7 +80,7 @@ Travel Planner lets users:
 
 | Technology           | Purpose                                     |
 | -------------------- | ------------------------------------------- |
-| MySQL 8.0            | Primary relational database                 |
+| PostgreSQL 15        | Primary relational database                 |
 | Ollama + llama3.2:3b | Local LLM for AI itinerary generation       |
 | OpenTripMap API      | Real-world POI data for rule-based planning           |
 | Nominatim (OSM)      | Free geocoding (city name to lat/lon)                 |
@@ -175,7 +177,7 @@ travel-planner/
 |       +-- test_itinerary_apply.py
 |       +-- test_rate_limit.py
 +-- ui/                               # React frontend
-    +-- index.html                    # Poppins font loaded via Google Fonts
+    +-- index.html                    # Manrope + Cormorant Garamond loaded via Google Fonts
     +-- src/
         +-- index.css                 # Tailwind v4 import + @theme design tokens
         +-- App.tsx
@@ -183,8 +185,10 @@ travel-planner/
         |   +-- config.ts
         |   +-- AppShell/             # Sticky navbar, animated tab indicator, logout
         +-- features/
+        |   +-- landing/
+        |   |   +-- LandingPage.tsx   # Marketing page: hero, features, steps, CTA strip, footer
         |   +-- auth/
-        |   |   +-- LoginPage/        # Card entrance animation, register/login toggle
+        |   |   +-- LoginPage/        # Card entrance animation, register/login toggle; initialMode + onBack props
         |   +-- dashboard/
         |   |   +-- Dashboard.tsx     # Stat cards (staggered), dual bar charts, destinations map
         |   |   +-- DestinationsMap.tsx # react-leaflet map with geocoded trip pins
@@ -199,7 +203,10 @@ travel-planner/
         |       +-- TripList/         # Staggered card list, SSE streaming display
         |       +-- CreateTripForm/   # react-hook-form + zod, animated field errors, defaultDestination prop
         |       +-- EditTripModal/    # Prefilled edit form in an animated modal overlay
-        |       +-- ItineraryPanel/   # Day/event breakdown, apply button
+        |       +-- ItineraryPanel/   # Day/event breakdown, apply button; SVG pin icons
+        |       +-- ItineraryMap/     # Interactive Leaflet map: per-day coloured pins, route polylines
+        |       |   +-- ItineraryMap.tsx    # MapContainer, BoundsFitter, DayLegend, createPin divIcon
+        |       |   +-- useItineraryPins.ts # Merges item.lat/lon with Nominatim fallback into ItineraryPin[]
         |       +-- PackingList/      # Per-trip checklist, localStorage, progress bar, AnimatePresence items
         |       +-- BudgetTracker/    # Per-trip expense tracker, localStorage, category pills, dynamic progress bar
         |       +-- schemas/
@@ -268,16 +275,29 @@ Pydantic v2 validates all incoming request data. Invalid requests are rejected b
 
 The frontend uses Tailwind CSS v4 (via `@tailwindcss/vite`) with a custom theme defined in `index.css` using the `@theme` block. All custom design tokens are declared there and generate standard Tailwind utility classes automatically. No separate `tailwind.config.js` is required.
 
-The visual theme is built around three brand colours, bold Poppins typography, and fully rounded pill-shaped interactive elements:
+The visual theme ("Cultured Traveller") is built around a warm editorial palette, dual-family typography, and fully rounded pill-shaped interactive elements:
 
-| Token          | Value    | Usage                            |
-| -------------- | -------- | -------------------------------- |
-| `--color-ocean`  | #0077FF  | Primary actions, focus rings     |
-| `--color-coral`  | #FF6B6B  | Secondary actions, error states  |
-| `--color-sunny`  | #FFD166  | Badges, time indicators          |
-| `--font-sans`    | Poppins  | All text, loaded via Google Fonts|
+| Token               | Value    | Usage                                          |
+| ------------------- | -------- | ---------------------------------------------- |
+| `--color-ivory`     | #FAFAF9  | Page background                                |
+| `--color-smoke`     | #E7E5E4  | Borders and dividers                           |
+| `--color-parchment` | #F5F5F4  | Subtle fills, ghost buttons, card hover states |
+| `--color-espresso`  | #1C1917  | Primary text, headings, active nav pill        |
+| `--color-flint`     | #78716C  | Secondary / muted text                         |
+| `--color-amber`     | #B45309  | Primary CTA, focus rings, badges               |
+| `--color-amber-dark`| #92400E  | Amber hover state                              |
+| `--color-clay`      | #8B5A3E  | Secondary accent (PackingList, second buttons) |
+| `--color-clay-dark` | #7A4E33  | Clay hover state                               |
+| `--color-olive`     | #3F6212  | Nature / success (cost pills, budget progress) |
+| `--color-danger`    | #881337  | Error banners, over-budget indicators          |
+| `--font-sans`       | Manrope  | All UI text, loaded via Google Fonts           |
+| `--font-display`    | Cormorant Garamond | Headlines; auto-applied to h1–h6 via `@layer base`; add `font-display` class to non-heading elements styled as headings |
 
 Framer Motion handles all transitions. Spring-based animations (`type: 'spring', bounce: 0.28`) are used consistently across card entrances, tab indicators, and button interactions so the UI feels responsive and energetic rather than mechanical.
+
+The base font size is set to `0.9375rem` (15 px) in `index.css` so all `rem`-based utility classes scale proportionally without touching individual component styles.
+
+All icons throughout the application are inline SVG components — no emoji characters are used anywhere. This guarantees pixel-perfect, consistent rendering across platforms and colour schemes. SVG icon components (`PlaneIcon`, `GlobeIcon`, `MapPinIcon`, etc.) are co-located with the component that uses them or placed in `shared/ui/` when reused across features.
 
 ### Shared Primitives
 
@@ -292,8 +312,8 @@ To enforce DRY across feature components, reusable UI elements live in `shared/`
 
 `AppShell` (`src/app/AppShell/`) is the persistent layout wrapper rendered for all authenticated views. It contains:
 
-* A sticky top navigation bar with the app logo
-* An animated tab indicator that slides between four tabs — Dashboard, My Trips, Explore, and Profile — using Framer Motion's `layoutId` prop. The pill slides smoothly to the active tab without JavaScript measurement or manual positioning.
+* A sticky top navigation bar with the app logo (inline SVG plane icon)
+* An animated tab indicator that slides between four tabs — Dashboard, My Trips, Explore, and Profile — using Framer Motion's `layoutId` prop. The pill slides smoothly to the active tab without JavaScript measurement or manual positioning. Each tab uses an inline SVG icon instead of an emoji.
 * A logout button with hover and tap scale animations
 
 ### Feature-Based Structure
@@ -302,8 +322,15 @@ The frontend is organized by feature. Each feature owns its components, hooks, a
 
 ```
 features/
+  landing/
+    LandingPage.tsx      pre-auth marketing page; sticky navbar, hero section with Framer Motion blob
+                         animations, animated features grid (whileInView), numbered how-it-works steps,
+                         CTA strip, footer; "Get Started" routes to register, "Sign In" routes to login;
+                         no "AI" copy, no emoji — inline SVG icons throughout
   auth/
-    LoginPage/           entrance animation, register/login toggle with AnimatePresence
+    LoginPage/           entrance animation, register/login toggle with AnimatePresence;
+                         accepts initialMode ('login' | 'register') and onBack props so App.tsx
+                         can route back to the landing page from the auth screen
   dashboard/
     Dashboard.tsx        stat cards with staggered entrance, dual Recharts bar charts
     DestinationsMap.tsx  Leaflet map with one pin per unique destination, OSM tiles
@@ -324,12 +351,18 @@ features/
     CreateTripForm/      react-hook-form + zod, animated per-field error messages
                          accepts optional defaultDestination prop for Explore handoff
     EditTripModal/       animated modal overlay with prefilled form, PUT /v1/trips/{id}
-    ItineraryPanel/      day and event breakdown, apply button
-    PackingList/         per-trip checklist persisted in localStorage; coral-accented panel;
+    ItineraryPanel/      day and event breakdown, apply button; SVG map-pin icons replace emoji
+    ItineraryMap/        interactive Leaflet map rendered below a saved itinerary; per-day
+                         colour-coded numbered pins (L.DivIcon), dashed route polylines per day,
+                         BoundsFitter inner component reactively fits the viewport, DayLegend
+                         shows coloured day pills when itinerary spans multiple days;
+                         useItineraryPins hook resolves coordinates from item.lat/lon first,
+                         falls back to Nominatim geocoding for plain location strings
+    PackingList/         per-trip checklist persisted in localStorage; clay-accented panel;
                          progress bar, AnimatePresence item enter/exit; usePackingList hook
-    BudgetTracker/       per-trip expense tracker persisted in localStorage; sunny-accented;
+    BudgetTracker/       per-trip expense tracker persisted in localStorage; amber-accented;
                          category pills (Food/Transport/Stay/Activities/Other); progress bar
-                         transitions ocean → sunny → coral as spend approaches limit;
+                         transitions olive → amber → danger as spend approaches limit;
                          useBudgetTracker hook
     schemas/
       tripSchema.ts      Zod schema mirroring backend TripCreate
@@ -364,6 +397,16 @@ The rule-based "Smart Plan" uses a standard `POST` request with a 3-minute `Abor
 ### API Layer Separation
 
 All `fetch` calls are isolated in `shared/api/` or `shared/hooks/`. React components never call `fetch` directly.
+
+### Landing Page Routing
+
+`App.tsx` manages an `authMode: 'login' | 'register' | null` state alongside the authenticated `user` state:
+
+* `authMode === null` and no user → renders `<LandingPage>` (marketing page)
+* `authMode === 'login'` or `'register'` and no user → renders `<LoginPage initialMode={authMode} onBack={...}>` (clicking Back returns to landing page)
+* `user` present → renders `<AppShell>` (authenticated views)
+
+Logging out clears both `user` and resets `authMode` to `null`, so the user lands back on the marketing page rather than the login form.
 
 ```
 shared/api/auth.ts                -> login(), register()
@@ -550,7 +593,7 @@ Tests use `pytest` with the following approach.
 
 ### Isolated Test Database
 
-Tests run against an in-memory SQLite database, not the production MySQL instance. Each test gets a fresh transaction that is rolled back after the test. No test data persists and no cleanup code is needed.
+Tests run against an in-memory SQLite database, not the production PostgreSQL instance. Each test gets a fresh transaction that is rolled back after the test. No test data persists and no cleanup code is needed.
 
 ### Dependency Override
 
@@ -602,7 +645,7 @@ All secrets and environment-specific values are loaded from environment variable
 
 * Python 3.11+
 * Node.js 18+
-* MySQL 8.0
+* PostgreSQL 15
 * Ollama with `llama3.2:3b` pulled
 
 ### Backend Setup
@@ -644,7 +687,7 @@ pytest tests/ -v
 
 | Variable                      | Required | Description                                                        |
 | ----------------------------- | -------- | ------------------------------------------------------------------ |
-| `DATABASE_URL`                | Yes      | MySQL connection string                                            |
+| `DATABASE_URL`                | Yes      | PostgreSQL connection string                                       |
 | `JWT_SECRET`                  | Yes      | Secret key for signing JWT tokens                                  |
 | `JWT_ALG`                     | Yes      | JWT algorithm (default: HS256)                                     |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Yes      | Token lifetime in minutes                                          |

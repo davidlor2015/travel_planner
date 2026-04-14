@@ -50,14 +50,14 @@ export const CreateTripForm = ({ token, onSuccess, onCancel, defaultDestination 
       initial={{ opacity: 0, y: 24, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ type: 'spring', bounce: 0.28, duration: 0.52 }}
-      className="w-full max-w-lg bg-white rounded-2xl border border-gray-100 shadow-sm p-8"
+      className="w-full max-w-lg bg-white rounded-2xl border border-smoke/60 shadow-sm p-8"
     >
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-2xl font-extrabold text-navy tracking-tight">
+        <h2 className="text-2xl font-bold text-espresso tracking-tight">
           <span className="mr-2" aria-hidden="true">✈️</span>New Trip
         </h2>
-        <p className="text-sm text-gray mt-1">Fill in the details and start planning your adventure.</p>
+        <p className="text-sm text-flint mt-1">Fill in the details and start planning your adventure.</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
@@ -128,7 +128,7 @@ export const CreateTripForm = ({ token, onSuccess, onCancel, defaultDestination 
               exit={{ opacity: 0 }}
               transition={{ duration: 0.18 }}
               role="alert"
-              className="px-4 py-3 rounded-xl bg-coral/10 border border-coral/25 text-coral text-sm font-medium"
+              className="px-4 py-3 rounded-xl bg-danger/10 border border-danger/25 text-danger text-sm font-medium"
             >
               {errors.root.message}
             </motion.div>
@@ -142,8 +142,8 @@ export const CreateTripForm = ({ token, onSuccess, onCancel, defaultDestination 
             disabled={isSubmitting}
             whileHover={!isSubmitting ? { scale: 1.03 } : undefined}
             whileTap={!isSubmitting ? { scale: 0.97 } : undefined}
-            className="flex-1 py-3 rounded-full bg-ocean text-white text-sm font-bold
-                       shadow-sm shadow-ocean/25 hover:bg-ocean-dark transition-colors duration-150
+            className="flex-1 py-3 rounded-full bg-amber text-white text-sm font-bold
+                       shadow-sm shadow-amber/25 hover:bg-amber-dark transition-colors duration-150
                        disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {isSubmitting ? 'Creating…' : '🚀 Create Trip'}
@@ -154,8 +154,8 @@ export const CreateTripForm = ({ token, onSuccess, onCancel, defaultDestination 
             onClick={onCancel}
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
-            className="flex-1 py-3 rounded-full bg-silver text-navy text-sm font-semibold
-                       hover:bg-gray-200 transition-colors duration-150 cursor-pointer"
+            className="flex-1 py-3 rounded-full bg-parchment text-espresso text-sm font-semibold
+                       hover:bg-smoke transition-colors duration-150 cursor-pointer"
           >
             Cancel
           </motion.button>
