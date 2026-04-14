@@ -68,29 +68,24 @@ export function useGeocode(destinations: string[]): { pins: GeocodedPin[]; loadi
     // Reconstruct unique list from the stable key so the effect closure is
     // only bound to `stableKey`, avoiding stale-closure issues.
     const unique = stableKey.length > 0 ? stableKey.split('||') : [];
-
-    if (unique.length === 0) {
-      setPins([]);
-      return;
-    }
-
-    const toFetch = unique.filter((d) => !geocodeCache.has(d));
-
-    // All results already cached — resolve without setting loading.
-    if (toFetch.length === 0) {
-      setPins(buildPins(unique));
-      return;
-    }
-
     let cancelled = false;
-    setLoading(true);
 
     (async () => {
-      for (let i = 0; i < toFetch.length; i++) {
-        if (cancelled) break;
-        if (i > 0) await sleep(1100); // Nominatim policy: max 1 request/second
-        const coords = await fetchCoords(toFetch[i]);
-        geocodeCache.set(toFetch[i], coords);
+      if (unique.length === 0) {
+        setPins([]);
+        return;
+      }
+
+      const toFetch = unique.filter((d) => !geocodeCache.has(d));
+
+      if (toFetch.length > 0) {
+        setLoading(true);
+        for (let i = 0; i < toFetch.length; i++) {
+          if (cancelled) break;
+          if (i > 0) await sleep(1100); // Nominatim policy: max 1 request/second
+          const coords = await fetchCoords(toFetch[i]);
+          geocodeCache.set(toFetch[i], coords);
+        }
       }
 
       if (!cancelled) {

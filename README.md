@@ -28,6 +28,9 @@ Travel Planner lets users:
 * Generate day-by-day itineraries via a local LLM (Ollama) or a rule-based engine using live POI data
 * Preview a generated itinerary before saving it, then apply it to the trip record
 * View saved itineraries stored relationally (per-day, per-event) in the database
+* Track per-trip packing lists and budget expenses, persisted in localStorage
+* Browse curated destination cards on an Explore page and launch trip planning directly from a card
+* View a gamified traveller profile with stats, earned badges, and destination history
 
 ## Tech Stack
 
@@ -172,11 +175,18 @@ travel-planner/
         |   +-- dashboard/
         |   |   +-- Dashboard.tsx     # Stat cards (staggered), dual bar charts, destinations map
         |   |   +-- DestinationsMap.tsx # react-leaflet map with geocoded trip pins
+        |   +-- explore/
+        |   |   +-- ExplorePage.tsx   # 16 curated destination cards, search + tag filter, Plan CTA
+        |   +-- profile/
+        |   |   +-- useProfileStats.ts # useMemo derivation: stats, 8 badge rules, traveller title
+        |   |   +-- ProfilePage.tsx   # Avatar, stat grid, badge grid (earned/locked), destinations
         |   +-- trips/
         |       +-- TripList/         # Staggered card list, SSE streaming display
-        |       +-- CreateTripForm/   # react-hook-form + zod, animated field errors
+        |       +-- CreateTripForm/   # react-hook-form + zod, animated field errors, defaultDestination prop
         |       +-- EditTripModal/    # Prefilled edit form in an animated modal overlay
         |       +-- ItineraryPanel/   # Day/event breakdown, apply button
+        |       +-- PackingList/      # Per-trip checklist, localStorage, progress bar, AnimatePresence items
+        |       +-- BudgetTracker/    # Per-trip expense tracker, localStorage, category pills, dynamic progress bar
         |       +-- schemas/
         |           +-- tripSchema.ts # Zod schema mirroring TripCreate Pydantic model
         +-- shared/
@@ -188,7 +198,8 @@ travel-planner/
             |   +-- useGeocode.ts     # Nominatim geocoding with module-level session cache
             |   +-- useStreamingItinerary.ts # SSE fetch stream reader, per-trip state management
             +-- ui/
-                +-- FormField.tsx     # Shared label + animated error wrapper, inputCls helper
+                +-- FormField.tsx     # Shared label + animated error wrapper
+                +-- inputCls.ts       # Shared input className helper
 ```
 
 ## Backend Design
@@ -255,7 +266,8 @@ Framer Motion handles all transitions. Spring-based animations (`type: 'spring',
 
 To enforce DRY across feature components, reusable UI elements live in `shared/`:
 
-* `shared/ui/FormField.tsx` — label, animated error message, and `inputCls` helper used by every form in the app. Adding a third form means importing, not copying.
+* `shared/ui/FormField.tsx` — label and animated error message wrapper used by every form in the app.
+* `shared/ui/inputCls.ts` — shared input className helper (border, focus ring, error state). Kept in its own file so `FormField.tsx` exports only a component and satisfies the Fast Refresh constraint.
 * `shared/hooks/useGeocode.ts` — geocodes destination strings via Nominatim. Results are stored in a module-level `Map` so the same city is never fetched twice within a session, and requests are spaced 1.1 s apart to respect Nominatim's rate limit.
 * `shared/hooks/useStreamingItinerary.ts` — manages one SSE fetch stream per trip. Parses `token`, `complete`, and `error` events from the server, accumulates raw text for live display, and exposes `start()` / `reset()` per trip ID.
 
@@ -264,12 +276,12 @@ To enforce DRY across feature components, reusable UI elements live in `shared/`
 `AppShell` (`src/app/AppShell/`) is the persistent layout wrapper rendered for all authenticated views. It contains:
 
 * A sticky top navigation bar with the app logo
-* An animated tab indicator that slides between "Dashboard" and "My Trips" using Framer Motion's `layoutId` prop. The pill slides smoothly to the active tab without JavaScript measurement or manual positioning.
+* An animated tab indicator that slides between four tabs — Dashboard, My Trips, Explore, and Profile — using Framer Motion's `layoutId` prop. The pill slides smoothly to the active tab without JavaScript measurement or manual positioning.
 * A logout button with hover and tap scale animations
 
 ### Feature-Based Structure
 
-The frontend is organized by feature. Each feature owns its components, styles, and validation schemas:
+The frontend is organized by feature. Each feature owns its components, hooks, and validation schemas:
 
 ```
 features/
@@ -278,11 +290,25 @@ features/
   dashboard/
     Dashboard.tsx        stat cards with staggered entrance, dual Recharts bar charts
     DestinationsMap.tsx  Leaflet map with one pin per unique destination, OSM tiles
+  explore/
+    ExplorePage.tsx      16 curated destination cards; search and tag filter; Plan CTA
+                         pre-fills CreateTripForm destination and switches tab automatically
+  profile/
+    useProfileStats.ts   pure useMemo hook — derives stats, 8 badge rules (including
+                         localStorage reads for packing/budget badges), traveller title
+    ProfilePage.tsx      avatar, 4 stat cards, badge grid (earned/locked), destination pills
   trips/
     TripList/            staggered card list, SSE streaming display, edit modal trigger
     CreateTripForm/      react-hook-form + zod, animated per-field error messages
+                         accepts optional defaultDestination prop for Explore handoff
     EditTripModal/       animated modal overlay with prefilled form, PUT /v1/trips/{id}
     ItineraryPanel/      day and event breakdown, apply button
+    PackingList/         per-trip checklist persisted in localStorage; coral-accented panel;
+                         progress bar, AnimatePresence item enter/exit; usePackingList hook
+    BudgetTracker/       per-trip expense tracker persisted in localStorage; sunny-accented;
+                         category pills (Food/Transport/Stay/Activities/Other); progress bar
+                         transitions ocean → sunny → coral as spend approaches limit;
+                         useBudgetTracker hook
     schemas/
       tripSchema.ts      Zod schema mirroring backend TripCreate
 ```

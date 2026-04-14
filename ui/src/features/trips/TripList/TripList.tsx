@@ -10,6 +10,8 @@ import {
 import { ItineraryPanel } from '../ItineraryPanel';
 import { EditTripModal } from '../EditTripModal';
 import { useStreamingItinerary } from '../../../shared/hooks/useStreamingItinerary';
+import { PackingList } from '../PackingList';
+import { BudgetTracker } from '../BudgetTracker';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -149,6 +151,8 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
   const [applyingIds, setApplyingIds]               = useState<Set<number>>(new Set());
   const [viewingIds, setViewingIds]                 = useState<Set<number>>(new Set());
   const [editingTrip, setEditingTrip]               = useState<Trip | null>(null);
+  const [packingIds, setPackingIds]                 = useState<Set<number>>(new Set());
+  const [budgetIds, setBudgetIds]                   = useState<Set<number>>(new Set());
 
   const { streams, start: startStream, reset: resetStream } = useStreamingItinerary(token);
 
@@ -169,6 +173,22 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
 
   const toggleView = (tripId: number) => {
     setViewingIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(tripId)) { next.delete(tripId); } else { next.add(tripId); }
+      return next;
+    });
+  };
+
+  const togglePacking = (tripId: number) => {
+    setPackingIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(tripId)) { next.delete(tripId); } else { next.add(tripId); }
+      return next;
+    });
+  };
+
+  const toggleBudget = (tripId: number) => {
+    setBudgetIds((prev) => {
       const next = new Set(prev);
       if (next.has(tripId)) { next.delete(tripId); } else { next.add(tripId); }
       return next;
@@ -354,6 +374,8 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
             const isAnyGenerating   = isStreaming || isGeneratingSmart;
             const isApplying        = applyingIds.has(trip.id);
             const isViewing         = viewingIds.has(trip.id);
+            const isShowingPacking  = packingIds.has(trip.id);
+            const isShowingBudget   = budgetIds.has(trip.id);
 
             // Completed itinerary from either streaming or Smart Plan
             const pendingItinerary  = streamItinerary ?? pendingItineraries[trip.id] ?? null;
@@ -454,6 +476,14 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
                           </PillButton>
                         )}
 
+                        <PillButton variant="ghost" onClick={() => togglePacking(trip.id)}>
+                          {isShowingPacking ? 'Hide Packing' : 'Packing List'}
+                        </PillButton>
+
+                        <PillButton variant="ghost" onClick={() => toggleBudget(trip.id)}>
+                          {isShowingBudget ? 'Hide Budget' : 'Budget'}
+                        </PillButton>
+
                         <PillButton variant="ghost" onClick={() => setEditingTrip(trip)}>
                           Edit
                         </PillButton>
@@ -463,6 +493,9 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
                         </PillButton>
                       </div>
                     )}
+
+                    {isShowingPacking && <PackingList tripId={trip.id} />}
+                    {isShowingBudget  && <BudgetTracker tripId={trip.id} />}
                   </>
                 )}
               </motion.li>

@@ -3,7 +3,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createTrip, type Trip } from '../../../shared/api/trips';
 import { tripSchema, type TripFormData } from '../schemas/tripSchema';
-import { FormField, inputCls } from '../../../shared/ui/FormField';
+import { FormField } from '../../../shared/ui/FormField';
+import { inputCls } from '../../../shared/ui/inputCls';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -11,17 +12,21 @@ interface CreateTripFormProps {
   token: string;
   onSuccess: (newTrip: Trip) => void;
   onCancel: () => void;
+  defaultDestination?: string;
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
-export const CreateTripForm = ({ token, onSuccess, onCancel }: CreateTripFormProps) => {
+export const CreateTripForm = ({ token, onSuccess, onCancel, defaultDestination }: CreateTripFormProps) => {
   const {
     register,
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm<TripFormData>({ resolver: zodResolver(tripSchema) });
+  } = useForm<TripFormData>({
+    resolver: zodResolver(tripSchema),
+    defaultValues: defaultDestination ? { destination: defaultDestination } : undefined,
+  });
 
   const onSubmit = async (data: TripFormData) => {
     try {

@@ -5,6 +5,8 @@ import { getMe, type UserProfile } from "./shared/api/auth";
 import { TripList } from "./features/trips/TripList";
 import { CreateTripForm } from "./features/trips/CreateTripForm";
 import { Dashboard } from "./features/dashboard";
+import { ProfilePage } from "./features/profile";
+import { ExplorePage } from "./features/explore";
 import { getTrips, type Trip } from "./shared/api/trips";
 import { AppShell, type AppView } from "./app/AppShell";
 
@@ -19,6 +21,7 @@ function App() {
   );
   const [loading, setLoading] = useState(false);
   const [trips, setTrips] = useState<Trip[]>([]);
+  const [prefillDestination, setPrefillDestination] = useState<string | null>(null);
 
   const fetchUser = async (accessToken: string) => {
     setLoading(true);
@@ -56,6 +59,13 @@ function App() {
   const switchView = (v: View) => {
     setView(v);
     setShowCreateForm(false);
+    setPrefillDestination(null);
+  };
+
+  const handlePlanTrip = (destination: string) => {
+    setPrefillDestination(destination);
+    setView('trips');
+    setShowCreateForm(true);
   };
 
   if (loading)
@@ -74,16 +84,23 @@ function App() {
         onLogout={handleLogout}
       >
         {view === "dashboard" && <Dashboard trips={trips} />}
+        {view === "explore"   && <ExplorePage onPlanTrip={handlePlanTrip} />}
+        {view === "profile"   && <ProfilePage trips={trips} userEmail={user.email} />}
 
         {view === "trips" &&
           (showCreateForm ? (
             <CreateTripForm
               token={token!}
+              defaultDestination={prefillDestination ?? undefined}
               onSuccess={(newTrip) => {
                 setTrips((prev) => [...prev, newTrip]);
                 setShowCreateForm(false);
+                setPrefillDestination(null);
               }}
-              onCancel={() => setShowCreateForm(false)}
+              onCancel={() => {
+                setShowCreateForm(false);
+                setPrefillDestination(null);
+              }}
             />
           ) : (
             <TripList

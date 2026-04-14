@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export type AppView = 'dashboard' | 'trips';
+export type AppView = 'dashboard' | 'trips' | 'explore' | 'profile';
 
 interface NavTab {
   id: AppView;
@@ -23,6 +23,8 @@ interface AppShellProps {
 const NAV_TABS: NavTab[] = [
   { id: 'dashboard', label: 'Dashboard', emoji: '📊' },
   { id: 'trips',     label: 'My Trips',  emoji: '🗺️' },
+  { id: 'explore',   label: 'Explore',   emoji: '🔍' },
+  { id: 'profile',   label: 'Profile',   emoji: '👤' },
 ];
 
 // ── Component ─────────────────────────────────────────────────────────────────
