@@ -303,7 +303,7 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-espresso">My Trips</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-espresso">My Trips</h2>
           <motion.button
             whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
             onClick={onCreateClick}
@@ -325,7 +325,7 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-espresso">My Trips</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-espresso">My Trips</h2>
           <p className="text-sm text-flint mt-0.5">Plan, generate, and save itineraries in one place.</p>
         </div>
         <motion.button

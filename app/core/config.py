@@ -15,8 +15,12 @@ class Settings(BaseSettings):
     AI_RATE_LIMIT: str = "10/minute"
 
     OLLAMA_BASE_URL: str = "http://127.0.0.1:11434"
-    OLLAMA_MODEL: str = "llama3.2:3b"
+    OLLAMA_MODEL: str = "qwen2.5:14b"
     OLLAMA_TIMEOUT_SECONDS: int = 60
+    # Maximum tokens the model may generate per request.
+    # A 14-day itinerary at 3 activities/day needs ~4 200 tokens; 8 192 gives
+    # comfortable headroom while staying well within llama3.2's context window.
+    OLLAMA_NUM_PREDICT: int = 8192
 
     OPENTRIPMAP_API_KEY: str = "5ae2e3f221c38a28845f05b6cf278d9b31c8db8c4432be2b5e5c6b12"
 

@@ -58,6 +58,7 @@ Waypoint lets users:
 | python-jose      | 3.5.0         | JWT token encoding/decoding                            |
 | passlib + bcrypt | 1.7.4 / 4.3.0 | Password hashing                                       |
 | httpx            | 0.28.1        | Async HTTP client (Ollama + OpenTripMap calls)         |
+| requests         | 2.32.3        | Sync HTTP client used by offline pipeline scripts      |
 | slowapi          | 0.1.9         | Rate limiting on AI generation endpoints               |
 | cachetools       | 7.0.5         | In-memory TTLCache for geocoding, POI, and flight data |
 | amadeus          | 9.0+          | Official SDK for Amadeus travel APIs                   |
@@ -81,14 +82,15 @@ Waypoint lets users:
 
 ### Infrastructure
 
-| Technology           | Purpose                                               |
-| -------------------- | ----------------------------------------------------- |
-| PostgreSQL 15        | Primary relational database                           |
-| Ollama + llama3.2:3b | Local LLM for AI itinerary generation                 |
-| OpenTripMap API      | Real-world POI data for rule-based planning           |
-| Nominatim (OSM)      | Free geocoding (city name to lat/lon)                 |
-| Amadeus (sandbox)    | Flight search and destination inspiration (test data) |
-| Teleport API         | City quality-of-life scores — public, no key needed   |
+| Technology                      | Purpose                                               |
+| ------------------------------- | ----------------------------------------------------- |
+| PostgreSQL 15 + pgvector        | Primary relational database + vector similarity search |
+| Ollama + qwen2.5:14b            | Local LLM for AI itinerary generation                 |
+| Ollama + mxbai-embed-large      | Local embedding model for itinerary vectorization     |
+| OpenTripMap API                 | Real-world POI data for rule-based planning           |
+| Nominatim (OSM)                 | Free geocoding (city name to lat/lon)                 |
+| Amadeus (sandbox)               | Flight search and destination inspiration (test data) |
+| Teleport API                    | City quality-of-life scores — public, no key needed   |
 
 ## Architecture
 
@@ -174,7 +176,19 @@ travel-planner/
 |       +-- llm/
 |       |   +-- ollama_client.py
 |       +-- travel/
-|           +-- amadeus_service.py    # Amadeus SDK wrapper; asyncio.to_thread; 60 s TTLCache
+|       |   +-- amadeus_service.py    # Amadeus SDK wrapper; asyncio.to_thread; 60 s TTLCache
+|       +-- embedding_service.py      # Ollama mxbai-embed-large wrapper; 1024-dim vectors
+|       +-- vector_store.py           # psycopg2 + pgvector upsert into itinerary_chunks
+|       +-- ollama_service.py         # Sync Ollama client for offline pipeline scripts
++-- app/scripts/                      # Offline pipeline scripts (not part of the API)
+|   +-- seed_itineraries.py           # Validates data/seed_itineraries.json
+|   +-- generate_itineraries.py       # Mass-generates itinerary records via Ollama
+|   +-- embed_itineraries.py          # Embeds records and upserts into itinerary_chunks
+|   +-- verify_embedding.py           # Smoke-test: embeds a test string, prints dim count
++-- data/
+|   +-- schema.sql                    # pgvector table + IVFFlat index (run once against Postgres)
+|   +-- seed_itineraries.json         # 3 hand-crafted itinerary records (Tokyo, Paris, Cape Town)
+|   +-- generated_itineraries.json    # Output of generate_itineraries.py (git-ignored)
 +-- alembic/
 |   +-- versions/
 |       +-- eb8ceb58b88e_create_user_table.py
@@ -480,7 +494,7 @@ The app supports two independent itinerary generation strategies, both returning
 
 ### Strategy 1 — LLM (Ollama)
 
-Uses a local Ollama instance running `llama3.2:3b`. No external API keys required.
+Uses a local Ollama instance running `qwen2.5:14b`. No external API keys required.
 
 ```
 1. Fetch trip from DB         -> verify ownership, get destination/dates
@@ -530,6 +544,69 @@ If no POIs match the requested interest categories, the service automatically re
 ```
 
 If Ollama raises an error or the JSON is invalid, an `error` SSE event is yielded and the generator returns cleanly. `X-Accel-Buffering: no` is set on the response so nginx proxies do not buffer the stream.
+
+### Itinerary Vectorization Pipeline
+
+An offline pipeline generates and stores vector embeddings of itinerary content in a pgvector table for future semantic search.
+
+```
+seed_itineraries.json  (or generated_itineraries.json)
+        |
+        v
+embed_itineraries.py   -> embed_text() via Ollama mxbai-embed-large
+        |
+        v
+itinerary_chunks       (Postgres table with vector(1024) column)
+```
+
+**Step 1 — Validate seed data**
+
+```bash
+python -m app.scripts.seed_itineraries
+```
+
+Checks `data/seed_itineraries.json` for schema correctness. Exits non-zero on any validation error.
+
+**Step 2 — Generate additional itinerary records (optional)**
+
+```bash
+python -m app.scripts.generate_itineraries
+```
+
+Calls the local Ollama model (`qwen2.5:14b` by default) for each combination in the generation matrix (destinations × interest combos × days × budget × pace). Saves results incrementally to `data/generated_itineraries.json`. The `MAX_RECORDS` constant caps the run — set to `None` for all 240 combinations.
+
+**Step 3 — Embed and upsert**
+
+```bash
+python -m app.scripts.embed_itineraries
+```
+
+Reads JSON records, builds one overview chunk and one chunk per day per record, embeds each chunk via `mxbai-embed-large` (1024 dims), and batch-upserts into `itinerary_chunks`. Switch `DATA_PATH` in the script to target seed or generated data.
+
+**Step 4 — Verify the embedding service (optional)**
+
+```bash
+python -m app.scripts.verify_embedding
+```
+
+Embeds a test string and asserts the returned vector is 1024-dimensional.
+
+**Schema setup (run once)**
+
+```bash
+psql $DATABASE_URL -f data/schema.sql
+```
+
+Creates the `itinerary_chunks` table with a `vector(1024)` column, an IVFFlat cosine index, and metadata indexes on `destination` and `itinerary_id`.
+
+**Chunking strategy**
+
+Each itinerary record produces:
+
+- One **overview** chunk: title + summary + destination + budget + pace + interests
+- One **day** chunk per day: day number + theme + content
+
+Chunks are upserted by `itinerary_id` (delete then re-insert) to keep the table idempotent on re-runs.
 
 ### Two-Step Save Flow
 
@@ -746,8 +823,13 @@ All secrets and environment-specific values are loaded from environment variable
 
 - Python 3.11+
 - Node.js 18+
-- PostgreSQL 15
-- Ollama with `llama3.2:3b` pulled
+- PostgreSQL 15 with the [pgvector extension](https://github.com/pgvector/pgvector) installed
+- Ollama with `qwen2.5:14b` and `mxbai-embed-large` pulled
+
+```bash
+ollama pull qwen2.5:14b
+ollama pull mxbai-embed-large
+```
 
 ### Backend Setup
 
@@ -794,8 +876,9 @@ pytest tests/ -v
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Yes      | Token lifetime in minutes                                           |
 | `CORS_ORIGINS`                | No       | Comma-separated allowed origins (default: http://localhost:5173)    |
 | `OLLAMA_BASE_URL`             | Yes      | Ollama server URL                                                   |
-| `OLLAMA_MODEL`                | Yes      | Model name (e.g. llama3.2:3b)                                       |
+| `OLLAMA_MODEL`                | Yes      | Model name (default: qwen2.5:14b)                                   |
 | `OLLAMA_TIMEOUT_SECONDS`      | Yes      | Request timeout for LLM calls                                       |
+| `OLLAMA_NUM_PREDICT`          | No       | Max tokens per LLM response (default: 8192)                         |
 | `OPENTRIPMAP_API_KEY`         | No       | Free key from opentripmap.com, required for /v1/ai/plan-smart       |
 | `AI_RATE_LIMIT`               | No       | slowapi limit string for AI endpoints (default: 10/minute)          |
 | `AMADEUS_CLIENT_ID`           | No       | Amadeus self-service app Client ID — required for /v1/search/\*     |

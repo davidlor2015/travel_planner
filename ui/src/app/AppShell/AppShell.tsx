@@ -18,10 +18,12 @@ interface AppShellProps {
   children: React.ReactNode;
 }
 
-// ── Icons ──────────────────────────────────────────────────────────────────────
+// ── Icons ─────────────────────────────────────────────────────────────────────
 
-const PlaneIcon = () => (
-  <svg viewBox="0 0 20 20" className="w-4 h-4" fill="currentColor" aria-hidden="true">
+interface IconProps { className?: string; }
+
+const PlaneIcon = ({ className = 'w-4 h-4' }: IconProps) => (
+  <svg viewBox="0 0 20 20" className={className} fill="currentColor" aria-hidden="true">
     <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11h2v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
   </svg>
 );
@@ -60,11 +62,11 @@ const ProfileIcon = () => (
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const NAV_TABS: NavTab[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: <DashboardIcon /> },
-  { id: 'trips',     label: 'My Trips',  icon: <TripsIcon />     },
-  { id: 'explore',   label: 'Explore',   icon: <ExploreIcon />   },
+  { id: 'dashboard', label: 'Dashboard',  icon: <DashboardIcon />  },
+  { id: 'trips',     label: 'My Trips',   icon: <TripsIcon />      },
+  { id: 'explore',   label: 'Explore',    icon: <ExploreIcon />    },
   { id: 'matching',  label: 'Companions', icon: <CompanionsIcon /> },
-  { id: 'profile',   label: 'Profile',   icon: <ProfileIcon />   },
+  { id: 'profile',   label: 'Profile',    icon: <ProfileIcon />    },
 ];
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -77,15 +79,16 @@ export const AppShell = ({
   children,
 }: AppShellProps) => (
   <div className="min-h-screen bg-ivory font-sans">
+
     {/* ── Top Navbar ── */}
-    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-smoke/60 shadow-sm">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-smoke">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
 
-        {/* Logo */}
-        <div className="flex items-center gap-2 select-none flex-shrink-0">
-          <PlaneIcon />
-          <span className="text-lg font-bold text-espresso tracking-tight font-display">
-            Travel<span className="text-clay">Planner</span>
+        {/* Logo — group enables coordinated hover across icon + wordmark */}
+        <div className="group flex items-center gap-2 select-none flex-shrink-0 cursor-default">
+          <PlaneIcon className="w-4 h-4 text-clay group-hover:text-amber transition-colors duration-300" />
+          <span className="text-xl sm:text-2xl md:text-3xl font-bold tracking-[-0.03em] font-display text-espresso group-hover:text-amber transition-colors duration-300">
+            Way<span className="text-clay group-hover:text-amber transition-colors duration-300">point</span>
           </span>
         </div>
 
@@ -95,7 +98,7 @@ export const AppShell = ({
             <button
               key={tab.id}
               onClick={() => onViewChange(tab.id)}
-              className="relative px-4 py-1.5 rounded-full text-sm font-semibold transition-colors duration-150 cursor-pointer"
+              className="relative px-2.5 sm:px-4 py-1.5 rounded-full text-sm font-semibold transition-colors duration-150 cursor-pointer"
             >
               {/* Animated sliding pill */}
               {view === tab.id && (
@@ -111,27 +114,28 @@ export const AppShell = ({
                 }`}
               >
                 {tab.icon}
-                {tab.label}
+                <span className="hidden sm:inline">{tab.label}</span>
               </span>
             </button>
           ))}
         </nav>
 
-        {/* User + Logout */}
-        <div className="flex items-center gap-3 flex-shrink-0">
+        {/* User + Sign out */}
+        <div className="flex items-center gap-4 flex-shrink-0">
           <span
-            className="hidden sm:block text-sm text-flint font-medium truncate max-w-[180px]"
+            className="hidden sm:block text-sm text-muted font-normal truncate max-w-[180px]"
             title={userEmail}
           >
             {userEmail}
           </span>
           <motion.button
             onClick={onLogout}
-            whileHover={{ scale: 1.04 }}
+            whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
-            className="px-4 py-1.5 rounded-full text-sm font-semibold bg-parchment text-espresso hover:bg-smoke transition-colors cursor-pointer"
+            className="px-4 py-1.5 rounded-full text-sm font-medium text-flint border border-smoke
+                       hover:border-espresso hover:text-espresso transition-colors duration-200 cursor-pointer"
           >
-            Logout
+            Sign out
           </motion.button>
         </div>
 
@@ -142,5 +146,6 @@ export const AppShell = ({
     <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
       {children}
     </main>
+
   </div>
 );

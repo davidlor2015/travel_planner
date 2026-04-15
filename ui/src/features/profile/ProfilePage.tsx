@@ -96,7 +96,7 @@ const StatCard = ({ config, stats }: { config: StatConfig; stats: TravelStats })
       {config.icon}
     </div>
     <div>
-      <p className="text-2xl font-extrabold text-espresso leading-none">{config.getValue(stats)}</p>
+      <p className="text-xl sm:text-2xl font-extrabold text-espresso leading-none">{config.getValue(stats)}</p>
       <p className="text-xs text-flint mt-1 font-medium">{config.label}</p>
     </div>
   </motion.div>
@@ -146,12 +146,12 @@ export const ProfilePage = ({ trips, userEmail }: ProfilePageProps) => {
           variants={itemVariants}
           className="w-20 h-20 rounded-full bg-espresso flex items-center justify-center shadow-lg shadow-espresso/20 flex-shrink-0"
         >
-          <span className="text-3xl font-extrabold text-ivory select-none">{initial}</span>
+          <span className="text-2xl sm:text-3xl font-extrabold text-ivory select-none">{initial}</span>
         </motion.div>
 
         {/* Identity */}
         <motion.div variants={itemVariants} className="text-center sm:text-left">
-          <h2 className="text-2xl font-bold text-espresso leading-tight">{userEmail}</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-espresso leading-tight">{userEmail}</h2>
           <p className="text-sm font-semibold text-amber mt-0.5">{title}</p>
           <p className="text-xs text-flint mt-1">
             {earnedCount} of {badges.length} badges earned

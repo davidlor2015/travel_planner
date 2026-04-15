@@ -2,11 +2,15 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 
 import { TravelProfileForm } from './TravelProfileForm';
+import { MatchRequestList } from './MatchRequestList';
 import { useMatchingProfile } from './useMatchingProfile';
+import { useMatchRequests } from './useMatchRequests';
+import type { Trip } from '../../shared/api/trips';
 
 
 interface MatchingPageProps {
   token: string;
+  trips: Trip[];
 }
 
 
@@ -18,8 +22,9 @@ function formatLabel(value: string): string {
 }
 
 
-export const MatchingPage = ({ token }: MatchingPageProps) => {
+export const MatchingPage = ({ token, trips }: MatchingPageProps) => {
   const { profile, loading, error, upsert } = useMatchingProfile(token);
+  const { requests, loading: requestsLoading } = useMatchRequests(token);
   const [editing, setEditing] = useState(false);
 
   if (loading) {
@@ -34,7 +39,7 @@ export const MatchingPage = ({ token }: MatchingPageProps) => {
     return (
       <div className="space-y-6">
         <div className="max-w-2xl">
-          <h2 className="text-2xl font-bold text-espresso">Find compatible travellers</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-espresso">Find compatible travellers</h2>
           <p className="text-sm text-flint mt-1">
             Set up your matching profile first so we can compare travel style, budget, interests, and group size.
           </p>
@@ -55,7 +60,7 @@ export const MatchingPage = ({ token }: MatchingPageProps) => {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h2 className="text-2xl font-bold text-espresso">Matching</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-espresso">Matching</h2>
           <p className="text-sm text-flint mt-1">
             Your profile is ready. Open a trip request to start seeing compatible travellers.
           </p>
@@ -147,13 +152,17 @@ export const MatchingPage = ({ token }: MatchingPageProps) => {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-dashed border-amber/30 bg-amber/5 px-4 py-4">
-            <p className="text-sm font-semibold text-espresso">Next step</p>
-            <p className="text-sm text-flint mt-1">
-              Open a match request from one of your trips to view scored results here.
-            </p>
-          </div>
         </motion.div>
+      )}
+
+      {!editing && !requestsLoading && (
+        <MatchRequestList trips={trips} requests={requests} />
+      )}
+
+      {!editing && requestsLoading && (
+        <div className="min-h-[80px] flex items-center justify-center text-sm font-medium text-flint">
+          Loading match requests…
+        </div>
       )}
     </div>
   );

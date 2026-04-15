@@ -182,7 +182,7 @@ export const ExplorePage = ({ token, onPlanTrip }: ExplorePageProps) => {
 
       {/* ── Header ── */}
       <div>
-        <h2 className="text-2xl font-bold text-espresso">Explore</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-espresso">Explore</h2>
         <p className="text-sm text-flint mt-0.5">Find your next adventure and start planning instantly.</p>
       </div>
 

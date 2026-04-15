@@ -36,7 +36,7 @@ class OllamaClient:
 
             "options": {
                 "temperature": 0.7,
-                "num_predict": 2048,
+                "num_predict": settings.OLLAMA_NUM_PREDICT,
             }
         }
 
@@ -88,7 +88,7 @@ class OllamaClient:
             "format": "json",
             "options": {
                 "temperature": 0.7,
-                "num_predict": 2048,
+                "num_predict": settings.OLLAMA_NUM_PREDICT,
             },
         }
 

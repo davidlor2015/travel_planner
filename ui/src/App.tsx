@@ -11,38 +11,90 @@ import { ExplorePage } from "./features/explore";
 import { getTrips, type Trip } from "./shared/api/trips";
 import { AppShell, type AppView } from "./app/AppShell";
 
+// ── Auth storage ──────────────────────────────────────────────────────────────
+
+const TOKEN_KEY = "access_token";
+const USER_KEY  = "waypoint_user";
+
+function isUserProfile(value: unknown): value is UserProfile {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as Record<string, unknown>).email === "string"
+  );
+}
+
+function readStoredUser(): UserProfile | null {
+  try {
+    const raw = localStorage.getItem(USER_KEY);
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    return isUserProfile(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
 type View = AppView;
 
 function App() {
-  const [view, setView] = useState<View>("trips");
+  const [view, setView]           = useState<View>("trips");
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [token, setToken] = useState<string | null>(
-    localStorage.getItem("access_token"),
-  );
-  const [loading, setLoading] = useState(false);
-  const [trips, setTrips] = useState<Trip[]>([]);
   const [prefillDestination, setPrefillDestination] = useState<string | null>(null);
-  const [authMode, setAuthMode] = useState<'login' | 'register' | null>(null);
+  const [authMode, setAuthMode]   = useState<"login" | "register" | null>(null);
+  const [trips, setTrips]         = useState<Trip[]>([]);
 
-  const fetchUser = async (accessToken: string) => {
-    setLoading(true);
-    try {
-      const userData = await getMe(accessToken);
-      setUser(userData);
-    } catch (error) {
-      console.error("Token invalid or expired", error);
-      localStorage.removeItem("access_token");
-      setToken(null);
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Restored synchronously from localStorage — no loading flash for returning users.
+  const [user,  setUser]  = useState<UserProfile | null>(() => readStoredUser());
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
+
+  // Only true when we have a token but no cached user (first login, cleared cache).
+  const [loading, setLoading] = useState(false);
+
+  // ── Auth revalidation ────────────────────────────────────────────────────────
 
   useEffect(() => {
-    if (token && !user) fetchUser(token);
-  }, [token, user]);
+    if (!token) return;
+
+    if (user) {
+      // Optimistic: app is already visible. Silently revalidate in the background
+      // and refresh the cached profile. If the token is no longer valid, log out.
+      getMe(token)
+        .then((fresh) => {
+          setUser(fresh);
+          localStorage.setItem(USER_KEY, JSON.stringify(fresh));
+        })
+        .catch(() => {
+          localStorage.removeItem(TOKEN_KEY);
+          localStorage.removeItem(USER_KEY);
+          setToken(null);
+          setUser(null);
+        });
+      return;
+    }
+
+    // No cached user — must fetch before rendering (post-login or cleared cache).
+    setLoading(true);
+    getMe(token)
+      .then((userData) => {
+        setUser(userData);
+        localStorage.setItem(USER_KEY, JSON.stringify(userData));
+      })
+      .catch(() => {
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(USER_KEY);
+        setToken(null);
+        setUser(null);
+      })
+      .finally(() => setLoading(false));
+
+  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Intentionally omits `user`: this effect should only re-run when the token
+  // changes (login / logout), not each time the background refresh updates user.
+
+  // ── Trip fetch ───────────────────────────────────────────────────────────────
 
   useEffect(() => {
     if (token && user) {
@@ -50,10 +102,13 @@ function App() {
     }
   }, [token, user]);
 
+  // ── Handlers ─────────────────────────────────────────────────────────────────
+
   const handleLoginSuccess = (newToken: string) => setToken(newToken);
 
   const handleLogout = () => {
-    localStorage.removeItem("access_token");
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
     setToken(null);
     setUser(null);
   };
@@ -66,9 +121,11 @@ function App() {
 
   const handlePlanTrip = (destination: string) => {
     setPrefillDestination(destination);
-    setView('trips');
+    setView("trips");
     setShowCreateForm(true);
   };
+
+  // ── Render ────────────────────────────────────────────────────────────────────
 
   if (loading)
     return (
@@ -87,7 +144,7 @@ function App() {
       >
         {view === "dashboard" && <Dashboard trips={trips} />}
         {view === "explore"   && <ExplorePage token={token!} onPlanTrip={handlePlanTrip} />}
-        {view === "matching"  && <MatchingPage token={token!} />}
+        {view === "matching"  && <MatchingPage token={token!} trips={trips} />}
         {view === "profile"   && <ProfilePage trips={trips} userEmail={user.email} />}
 
         {view === "trips" &&
@@ -127,8 +184,8 @@ function App() {
 
   return (
     <LandingPage
-      onGetStarted={() => setAuthMode('register')}
-      onSignIn={() => setAuthMode('login')}
+      onGetStarted={() => setAuthMode("register")}
+      onSignIn={() => setAuthMode("login")}
     />
   );
 }

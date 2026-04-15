@@ -107,7 +107,7 @@ const StatCard = ({ icon, value, label, valueColor, bgColor, borderColor }: Stat
     className={`flex flex-col items-center justify-center gap-1 rounded-2xl border p-6 text-center ${bgColor} ${borderColor}`}
   >
     <span className={`${valueColor} opacity-70`}>{icon}</span>
-    <span className={`text-3xl font-extrabold tabular-nums leading-none mt-2 ${valueColor}`}>
+    <span className={`text-2xl sm:text-3xl font-extrabold tabular-nums leading-none mt-2 ${valueColor}`}>
       {value}
     </span>
     <span className="text-sm text-flint font-medium mt-0.5">{label}</span>
@@ -197,7 +197,7 @@ export function Dashboard({ trips }: DashboardProps) {
 
       {/* ── Page title ── */}
       <div>
-        <h2 className="text-2xl font-bold text-espresso">Dashboard</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-espresso">Dashboard</h2>
         <p className="text-sm text-flint mt-0.5">An overview of all your adventures.</p>
       </div>
 

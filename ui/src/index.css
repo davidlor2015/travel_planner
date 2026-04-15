@@ -1,43 +1,75 @@
 @import "tailwindcss";
 
-/* ── "Cultured Traveller" design tokens ── */
+/* ── "Desert Editorial" design tokens ── */
 @theme {
-  /* Primary text / headings */
-  --color-espresso:       #1C1917;   /* stone-900 — headings, primary text */
-  --color-espresso-dark:  #0C0A09;   /* near-black — hover on espresso buttons */
 
-  /* Warm clay accent (secondary CTA, packing list, feature tints) */
-  --color-clay:           #8B5A3E;   /* muted warm clay */
-  --color-clay-dark:      #7A4E33;   /* darker clay for hover */
+  /* ── Text ── */
 
-  /* Neutral surfaces */
-  --color-ivory:          #FAFAF9;   /* stone-50 — page background */
-  --color-parchment:      #F5F5F4;   /* stone-100 — nav pills, ghost buttons, subtle fills */
-  --color-smoke:          #E7E5E4;   /* stone-200 — borders, dividers */
-  --color-flint:          #78716C;   /* stone-500 — secondary / muted text */
-  --color-white:          #FFFFFF;   /* card surfaces */
+  /* Primary text / headings — stone-800 (warmer, slightly lifted from near-black) */
+  --color-espresso:       #292524;
+  /* Hover / deepest contrast — stone-900 */
+  --color-espresso-dark:  #1C1917;
 
-  /* Warm accent — primary CTA */
-  --color-amber:          #B45309;   /* amber-700 */
-  --color-amber-dark:     #92400E;   /* amber-800 — hover */
+  /* Secondary / supporting text — stone-700 (richer, warmer than the old stone-500) */
+  --color-flint:          #44403C;
+  /* Subdued hints, placeholders, timestamps — stone-500 */
+  --color-muted:          #78716C;
 
-  /* Olive — nature / success */
-  --color-olive:          #3F6212;   /* lime-800 */
-  --color-olive-dark:     #365314;   /* lime-900 — hover */
 
-  /* State */
-  --color-danger:         #881337;   /* rose-900 — errors, destructive */
-  --color-success:        #3F6212;   /* same as olive */
+  /* ── Surfaces ── */
 
-  /* Typography */
-  --font-sans:    'Manrope', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Cormorant Garamond', ui-serif, Georgia, serif;
+  /* Page background — stone-50 warm ivory */
+  --color-ivory:          #FAFAF9;
+  /* Subtle fills, nav pills, ghost button bg — stone-100 */
+  --color-parchment:      #F5F5F4;
+  /* Borders, dividers, rule lines — stone-200 */
+  --color-smoke:          #E7E5E4;
+  /* Card surfaces */
+  --color-white:          #FFFFFF;
 
-  /* Extended border-radius for pill shapes */
-  --radius-pill: 9999px;
+
+  /* ── Accent — primary CTA ── */
+
+  /* Muted amber / desert clay — amber-700 */
+  --color-amber:          #B45309;
+  /* Hover depth — amber-800 */
+  --color-amber-dark:     #92400E;
+
+
+  /* ── Accent — secondary / warmth ── */
+
+  /* Warm clay — terracotta brown */
+  --color-clay:           #8B5A3E;
+  --color-clay-dark:      #7A4E33;
+
+
+  /* ── Accent — nature / success ── */
+
+  /* Muted olive — lime-800 */
+  --color-olive:          #3F6212;
+  --color-olive-dark:     #365314;
+
+
+  /* ── State ── */
+
+  /* Danger / errors — rose-900 */
+  --color-danger:         #881337;
+  /* Deep richness / optional depth accent — orange-900 */
+  --color-depth:          #7C2D12;
+
+
+  /* ── Typography ── */
+
+  --font-sans:            'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --font-display:         'Cormorant Garamond', ui-serif, Georgia, serif;
+
+
+  /* ── Spacing ── */
+
+  --radius-pill:          9999px;
 }
 
-/* ── Base layer resets ── */
+/* ── Base layer resets & editorial type defaults ── */
 @layer base {
   *, *::before, *::after {
     box-sizing: border-box;
@@ -50,19 +82,28 @@
   }
 
   body {
-    font-family: var(--font-sans);
-    font-size: 0.9375rem;
-    line-height: 1.5;
-    color: theme(--color-espresso);
-    background-color: theme(--color-ivory);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
+    font-family:              var(--font-sans);
+    font-size:                0.9375rem;   /* 15px — clean, readable UI size */
+    line-height:              1.6;         /* generous body rhythm */
+    color:                    theme(--color-espresso);
+    background-color:         theme(--color-ivory);
+    -webkit-font-smoothing:   antialiased;
+    -moz-osx-font-smoothing:  grayscale;
+    text-rendering:           optimizeLegibility;
   }
 
+  /*
+   * Editorial heading defaults.
+   * All headings use Cormorant Garamond SemiBold with tight tracking
+   * and a compressed line-height — the defining quality of premium editorial type.
+   */
   h1, h2, h3, h4, h5, h6 {
-    margin: 0;
-    font-family: var(--font-display);
+    margin:           0;
+    font-family:      var(--font-display);
+    font-weight:      600;               /* SemiBold — intentional, not heavy */
+    letter-spacing:   -0.03em;           /* tighter tracking for editorial feel */
+    line-height:      1.15;              /* compressed — suits large display text */
+    color:            theme(--color-espresso);
   }
 
   p {

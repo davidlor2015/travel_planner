@@ -1,0 +1,449 @@
+[
+  {
+    "itinerary_id": "tokyo-jp-5d-mid-culture-history-moderate",
+    "destination": "Tokyo",
+    "country": "Japan",
+    "days": 5,
+    "budget": "mid_range",
+    "interests": ["culture", "history"],
+    "pace": "moderate",
+    "source_type": "seed",
+    "title": "5-Day Tokyo Cultural & Historical Journey",
+    "summary": "An enriching mid-range journey through Tokyo's layered history and living culture. Balances iconic landmarks with quiet neighbourhood streets and museum visits, leaving room for spontaneous discovery each afternoon.",
+    "day_plans": [
+      {
+        "day_number": 1,
+        "theme": "Ancient Tokyo — Asakusa & Ueno",
+        "activities": [
+          {
+            "time": "09:00 AM",
+            "title": "Senso-ji Temple",
+            "location": "Asakusa, Tokyo",
+            "notes": "Japan's oldest temple. Arrive early to experience morning rituals before the crowds. Walk the Nakamise shopping street for traditional snacks.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "01:00 PM",
+            "title": "Tokyo National Museum",
+            "location": "Ueno Park, Tokyo",
+            "notes": "Largest collection of Japanese art and artefacts in the country. Allow at least two hours for the main Honkan building.",
+            "cost_estimate": "$7"
+          },
+          {
+            "time": "06:00 PM",
+            "title": "Dinner at Ueno Yabu Soba",
+            "location": "Ueno, Tokyo",
+            "notes": "Historic soba restaurant operating since 1892. Order the cold zaru soba with a side of kakiage tempura.",
+            "cost_estimate": "$18"
+          }
+        ]
+      },
+      {
+        "day_number": 2,
+        "theme": "Imperial Tokyo — Chiyoda & Nihonbashi",
+        "activities": [
+          {
+            "time": "09:30 AM",
+            "title": "Imperial Palace East Gardens",
+            "location": "Chiyoda, Tokyo",
+            "notes": "Free public garden on former castle grounds. Seasonal flowers make morning light exceptional for photography.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "01:00 PM",
+            "title": "Intermediatheque Museum",
+            "location": "Marunouchi, Tokyo",
+            "notes": "Free academic museum inside the old post office. Eclectic collection spanning natural history, architecture, and design.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "05:00 PM",
+            "title": "Nihonbashi Bridge & surrounding mercantile streets",
+            "location": "Nihonbashi, Tokyo",
+            "notes": "Tokyo's historic commercial heart. Explore department stores that have operated for over a century.",
+            "cost_estimate": "Free"
+          }
+        ]
+      },
+      {
+        "day_number": 3,
+        "theme": "Samurai & Shitamachi — Yanaka & Nezu",
+        "activities": [
+          {
+            "time": "09:00 AM",
+            "title": "Yanaka Cemetery morning walk",
+            "location": "Yanaka, Tokyo",
+            "notes": "Tokyo's best-preserved Edo-period neighbourhood. The cemetery is serene and reveals centuries of local history.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "12:00 PM",
+            "title": "Lunch at Yanaka Ginza shopping street",
+            "location": "Yanaka, Tokyo",
+            "notes": "Traditional shotengai with indie food stalls. Try menchi katsu (fried minced-meat cutlet) from a street vendor.",
+            "cost_estimate": "$10"
+          },
+          {
+            "time": "03:30 PM",
+            "title": "Nezu Shrine",
+            "location": "Bunkyo, Tokyo",
+            "notes": "One of Tokyo's oldest shrines with a tunnel of torii gates rivalling Fushimi Inari. Far fewer tourists.",
+            "cost_estimate": "Free"
+          }
+        ]
+      },
+      {
+        "day_number": 4,
+        "theme": "Modern Japan — Akihabara & TeamLab",
+        "activities": [
+          {
+            "time": "10:00 AM",
+            "title": "Akihabara Electric Town exploration",
+            "location": "Akihabara, Tokyo",
+            "notes": "Walk the main street and side alleys. Visit the retro video-game floors of Yodobashi Camera.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "01:30 PM",
+            "title": "Curry lunch at Go Go Curry",
+            "location": "Akihabara, Tokyo",
+            "notes": "Cult Kanazawa-style curry chain. Order the Katsu curry with large rice.",
+            "cost_estimate": "$9"
+          },
+          {
+            "time": "04:00 PM",
+            "title": "teamLab Borderless",
+            "location": "Azabudai Hills, Tokyo",
+            "notes": "Book timed entry online. The largest digital art installation in the world. Allow 2–3 hours minimum.",
+            "cost_estimate": "$30"
+          }
+        ]
+      },
+      {
+        "day_number": 5,
+        "theme": "West Tokyo — Harajuku, Meiji, Shinjuku",
+        "activities": [
+          {
+            "time": "09:00 AM",
+            "title": "Meiji Jingu Shrine",
+            "location": "Harajuku, Tokyo",
+            "notes": "Serene forested shrine dedicated to Emperor Meiji. Morning is quietest. Walk the entire forested approach.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "12:00 PM",
+            "title": "Takeshita Street lunch & Harajuku browsing",
+            "location": "Harajuku, Tokyo",
+            "notes": "Grab a crepe from Marion Crepes (operating since 1977) and explore the side streets off Omotesando.",
+            "cost_estimate": "$12"
+          },
+          {
+            "time": "06:00 PM",
+            "title": "Golden Gai farewell drinks",
+            "location": "Shinjuku, Tokyo",
+            "notes": "Maze of narrow alleys with tiny bars, each fitting 5–8 people. Pick any bar showing a welcoming sign — most welcome foreigners.",
+            "cost_estimate": "$20"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "itinerary_id": "paris-fr-3d-budget-food-markets-relaxed",
+    "destination": "Paris",
+    "country": "France",
+    "days": 3,
+    "budget": "budget",
+    "interests": ["food", "markets"],
+    "pace": "relaxed",
+    "source_type": "seed",
+    "title": "3-Day Budget Paris Food & Markets Tour",
+    "summary": "A relaxed, budget-conscious exploration of Paris through its street markets, boulangeries, and neighbourhood bistros. Prioritises slow mornings, picnics, and the free pleasures of the city over paid attractions.",
+    "day_plans": [
+      {
+        "day_number": 1,
+        "theme": "Left Bank & Rue Mouffetard",
+        "activities": [
+          {
+            "time": "09:00 AM",
+            "title": "Rue Mouffetard market morning",
+            "location": "5th arrondissement, Paris",
+            "notes": "One of Paris's oldest market streets. Busy Tuesday–Sunday. Pick up fresh bread, cheese, and fruit for a later picnic.",
+            "cost_estimate": "$10"
+          },
+          {
+            "time": "12:30 PM",
+            "title": "Picnic in the Jardin des Plantes",
+            "location": "5th arrondissement, Paris",
+            "notes": "Free botanical garden next to the market. Quiet benches and sprawling lawns. Perfect for unpacking your market haul.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "04:00 PM",
+            "title": "Café crème at a classic zinc bar",
+            "location": "Saint-Germain, Paris",
+            "notes": "Pull up a stool at a traditional zinc counter — avoid tourist-facing terraces. Order standing for the lowest price.",
+            "cost_estimate": "$4"
+          }
+        ]
+      },
+      {
+        "day_number": 2,
+        "theme": "Canal Saint-Martin & Belleville",
+        "activities": [
+          {
+            "time": "10:00 AM",
+            "title": "Canal Saint-Martin stroll & brunch",
+            "location": "10th arrondissement, Paris",
+            "notes": "Walk the tree-lined canal and stop for brunch at one of the affordable neighbourhood cafés. Du Pain et des Idées bakery is nearby.",
+            "cost_estimate": "$12"
+          },
+          {
+            "time": "01:30 PM",
+            "title": "Belleville Brûlerie coffee roasters",
+            "location": "Belleville, Paris",
+            "notes": "Celebrated Parisian roastery. Buy beans or sit for a pour-over. The neighbourhood is multicultural — explore the Vietnamese and Chinese restaurants nearby.",
+            "cost_estimate": "$5"
+          },
+          {
+            "time": "05:00 PM",
+            "title": "Marché Belleville (Tuesday/Friday only)",
+            "location": "Belleville, Paris",
+            "notes": "Paris's most diverse outdoor market. Extraordinary range of North African and Asian produce. Arrive before 6 PM.",
+            "cost_estimate": "Free to browse"
+          }
+        ]
+      },
+      {
+        "day_number": 3,
+        "theme": "Bastille & Marché d'Aligre",
+        "activities": [
+          {
+            "time": "09:30 AM",
+            "title": "Marché d'Aligre",
+            "location": "12th arrondissement, Paris",
+            "notes": "Locals-only feel. Covered Beauvau market hall plus a sprawling outdoor flea market. Cheapest fresh produce in Paris.",
+            "cost_estimate": "$8"
+          },
+          {
+            "time": "12:30 PM",
+            "title": "Lunch at Café de l'Industrie",
+            "location": "Bastille, Paris",
+            "notes": "Classic Parisian brasserie with a two-course lunch formule. Book or arrive at noon sharp to avoid a wait.",
+            "cost_estimate": "$18"
+          },
+          {
+            "time": "04:00 PM",
+            "title": "Promenade Plantée (Coulée Verte)",
+            "location": "12th arrondissement, Paris",
+            "notes": "World's first elevated park, predating New York's High Line. Free to walk. 4.5 km of gardens above a former railway viaduct.",
+            "cost_estimate": "Free"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "itinerary_id": "cape-town-za-7d-luxury-nature-adventure-intensive",
+    "destination": "Cape Town",
+    "country": "South Africa",
+    "days": 7,
+    "budget": "luxury",
+    "interests": ["nature", "adventure"],
+    "pace": "intensive",
+    "source_type": "seed",
+    "title": "7-Day Cape Town Luxury Nature & Adventure",
+    "summary": "An intensive luxury expedition across Cape Town's dramatic landscapes — from Table Mountain abseiling and Cape Point drives to shark cage diving and sunset whale-watching. Every day is an adventure.",
+    "day_plans": [
+      {
+        "day_number": 1,
+        "theme": "Table Mountain & Signal Hill",
+        "activities": [
+          {
+            "time": "07:00 AM",
+            "title": "Table Mountain sunrise hike (Platteklip Gorge)",
+            "location": "Table Mountain, Cape Town",
+            "notes": "Start before sunrise to reach the summit for first light. The 1.5 km gorge trail takes 1.5–2 hours. Book a guide for safety.",
+            "cost_estimate": "$35"
+          },
+          {
+            "time": "11:00 AM",
+            "title": "Table Mountain Abseiling",
+            "location": "Table Mountain, Cape Town",
+            "notes": "Abseil Africa operates 112 m descents off the back face. One of the world's highest commercial abseils. Book same day.",
+            "cost_estimate": "$80"
+          },
+          {
+            "time": "07:00 PM",
+            "title": "Dinner at The Test Kitchen",
+            "location": "Woodstock, Cape Town",
+            "notes": "Cape Town's most celebrated restaurant. Book months in advance. The 'Dark Room' tasting menu is exceptional.",
+            "cost_estimate": "$150"
+          }
+        ]
+      },
+      {
+        "day_number": 2,
+        "theme": "Cape Peninsula Drive",
+        "activities": [
+          {
+            "time": "08:00 AM",
+            "title": "Chapman's Peak Drive",
+            "location": "Hout Bay to Noordhoek",
+            "notes": "One of the world's most scenic coastal drives. 9 km of cliff-hugging road with 114 curves. Stop at every viewpoint.",
+            "cost_estimate": "$4 toll"
+          },
+          {
+            "time": "11:30 AM",
+            "title": "Cape Point & Cape of Good Hope",
+            "location": "Cape Peninsula National Park",
+            "notes": "Hike to the lighthouse for the most southwesterly point of Africa. Watch for Cape mountain zebra and ostriches.",
+            "cost_estimate": "$25"
+          },
+          {
+            "time": "03:30 PM",
+            "title": "Boulder's Beach penguin colony",
+            "location": "Simon's Town, Cape Town",
+            "notes": "African penguin colony of over 3,000 birds. Book timed entry. The snorkelling section is remarkable.",
+            "cost_estimate": "$12"
+          }
+        ]
+      },
+      {
+        "day_number": 3,
+        "theme": "Winelands Adventure",
+        "activities": [
+          {
+            "time": "09:00 AM",
+            "title": "Stellenbosch mountain biking",
+            "location": "Stellenbosch, Cape Winelands",
+            "notes": "Hire a full-suspension bike from Bikeabout. The Jonkershoek Valley trail is technically challenging with exceptional views.",
+            "cost_estimate": "$45"
+          },
+          {
+            "time": "12:30 PM",
+            "title": "Lunch at Jordan Restaurant",
+            "location": "Stellenbosch, Cape Winelands",
+            "notes": "Estate restaurant with panoramic views over Stellenbosch valley. The six-course tasting menu pairs each course with estate wine.",
+            "cost_estimate": "$90"
+          },
+          {
+            "time": "04:00 PM",
+            "title": "Franschhoek wine tram & valley sunset",
+            "location": "Franschhoek, Cape Winelands",
+            "notes": "Hop-on-hop-off tram touring the valley's top estates. Book the late afternoon loop for golden-hour vineyard light.",
+            "cost_estimate": "$35"
+          }
+        ]
+      },
+      {
+        "day_number": 4,
+        "theme": "Ocean Adventures",
+        "activities": [
+          {
+            "time": "06:00 AM",
+            "title": "Great White Shark cage diving",
+            "location": "Gansbaai, Cape Overberg",
+            "notes": "2.5-hour drive from Cape Town. Marine Dynamics is the most ethical operator. No diving experience needed. Sea conditions permitting.",
+            "cost_estimate": "$180"
+          },
+          {
+            "time": "01:30 PM",
+            "title": "Walker Bay whale watching (seasonal Jun–Nov)",
+            "location": "Hermanus, Cape Overberg",
+            "notes": "Best land-based whale watching in the world. Southern right whales calve in the bay. Book a boat tour for closer encounters.",
+            "cost_estimate": "$40"
+          },
+          {
+            "time": "07:00 PM",
+            "title": "Dinner at Harbour House Hermanus",
+            "location": "Hermanus, Cape Overberg",
+            "notes": "Perched above the old harbour with Atlantic views. Order the West Coast line-fish caught that morning.",
+            "cost_estimate": "$60"
+          }
+        ]
+      },
+      {
+        "day_number": 5,
+        "theme": "Kite Surf & V&A Waterfront",
+        "activities": [
+          {
+            "time": "09:00 AM",
+            "title": "Kitesurfing lesson at Bloubergstrand",
+            "location": "Bloubergstrand, Cape Town",
+            "notes": "Cape Town is among the world's top kitesurfing destinations. Capricorn Kitesurfing offers 3-hour beginner lessons with all equipment.",
+            "cost_estimate": "$100"
+          },
+          {
+            "time": "01:00 PM",
+            "title": "Lunch at The Boathouse Bloubergstrand",
+            "location": "Bloubergstrand, Cape Town",
+            "notes": "Watch kite-surfers while eating fish and chips with a direct Table Mountain view across the bay.",
+            "cost_estimate": "$25"
+          },
+          {
+            "time": "05:00 PM",
+            "title": "V&A Waterfront sunset & cocktails",
+            "location": "V&A Waterfront, Cape Town",
+            "notes": "Sunset from the harbour is spectacular with Table Mountain as backdrop. Seapoint Pavilion nearby for a post-swim drink.",
+            "cost_estimate": "$30"
+          }
+        ]
+      },
+      {
+        "day_number": 6,
+        "theme": "Cape Flats & Cultural Immersion",
+        "activities": [
+          {
+            "time": "09:00 AM",
+            "title": "Bo-Kaap neighbourhood walk",
+            "location": "Bo-Kaap, Cape Town",
+            "notes": "Cape Malay heritage neighbourhood with brightly painted houses. Book a guided walking tour to understand the community's history.",
+            "cost_estimate": "$30"
+          },
+          {
+            "time": "12:00 PM",
+            "title": "Lunch at Biesmiellah Restaurant",
+            "location": "Bo-Kaap, Cape Town",
+            "notes": "Legendary Cape Malay restaurant in operation since 1960. Order the denningvleis (tamarind lamb) and koesisters for dessert.",
+            "cost_estimate": "$22"
+          },
+          {
+            "time": "03:30 PM",
+            "title": "Norval Foundation & art walk",
+            "location": "Steenberg, Cape Town",
+            "notes": "World-class contemporary art museum with sculpture gardens. The permanent collection focuses on South African artists.",
+            "cost_estimate": "$12"
+          }
+        ]
+      },
+      {
+        "day_number": 7,
+        "theme": "Paragliding & Final Sunset",
+        "activities": [
+          {
+            "time": "09:30 AM",
+            "title": "Tandem paragliding off Signal Hill",
+            "location": "Signal Hill, Cape Town",
+            "notes": "Fly with Para-Pax over the city bowl, sea point, and Camps Bay. The 10–15 minute flight lands on the beach. Book early morning for calm winds.",
+            "cost_estimate": "$120"
+          },
+          {
+            "time": "01:00 PM",
+            "title": "Brunch at Café Caprice",
+            "location": "Camps Bay, Cape Town",
+            "notes": "Cape Town institution on the Camps Bay beach strip. Outdoor terrace with white-sand beach views. Order the eggs benedict.",
+            "cost_estimate": "$28"
+          },
+          {
+            "time": "06:30 PM",
+            "title": "Sunset dinner at La Colombe",
+            "location": "Constantia, Cape Town",
+            "notes": "Consistently ranked among Africa's top ten restaurants. The 'World in a Can' tasting menu is the signature dish. Essential booking.",
+            "cost_estimate": "$160"
+          }
+        ]
+      }
+    ]
+  }
+]

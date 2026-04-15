@@ -14,9 +14,9 @@ interface FormFieldProps {
 
 export const FormField = ({ id, label, hint, error, children }: FormFieldProps) => (
   <div className="flex flex-col gap-1.5">
-    <label htmlFor={id} className="text-sm font-semibold text-espresso">
+    <label htmlFor={id} className="text-sm font-medium text-espresso">
       {label}
-      {hint && <span className="ml-1.5 font-normal text-flint">{hint}</span>}
+      {hint && <span className="ml-1.5 font-normal text-muted">{hint}</span>}
     </label>
     {children}
     <AnimatePresence>
