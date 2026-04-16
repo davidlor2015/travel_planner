@@ -37,8 +37,8 @@ export const MatchingPage = ({ token, trips }: MatchingPageProps) => {
 
   if (!profile) {
     return (
-      <div className="space-y-6">
-        <div className="max-w-2xl">
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div>
           <h2 className="text-xl sm:text-2xl font-bold text-espresso">Find compatible travellers</h2>
           <p className="text-sm text-flint mt-1">
             Set up your matching profile first so we can compare travel style, budget, interests, and group size.
@@ -46,7 +46,7 @@ export const MatchingPage = ({ token, trips }: MatchingPageProps) => {
         </div>
 
         {error ? (
-          <div className="max-w-2xl px-4 py-3 rounded-xl bg-danger/10 border border-danger/25 text-danger text-sm font-medium">
+          <div className="px-4 py-3 rounded-xl bg-danger/10 border border-danger/25 text-danger text-sm font-medium">
             {error}
           </div>
         ) : null}

@@ -11,23 +11,132 @@
       "walking"
     ],
     "pace": "relaxed",
-    "title": "Relaxed Rome Explorer",
-    "summary": "Experience the best of Rome at a leisurely pace, blending historical landmarks with local culinary delights over three days.",
+    "source_type": "generated",
+    "title": "Rome Relaxed Food and History Tour",
+    "summary": "Experience the heart of Rome with a mix of historical sights and culinary delights over three days in a relaxed pace. Each day offers opportunities to explore ancient ruins, taste authentic Italian cuisine, and stroll through charming neighborhoods.",
     "day_plans": [
       {
-        "day": 1,
-        "theme": "Historic Center and Ancient Cuisine",
-        "content": "Start your day by exploring the Colosseum and Roman Forum. In the afternoon, wander through Trastevere to enjoy authentic Italian cuisine at a local trattoria."
+        "day_number": 1,
+        "theme": "Historic Center",
+        "activities": [
+          {
+            "time": "Morning, 09:00",
+            "title": "Colosseum Guided Tour",
+            "location": "Via San Giovanni in Laterano, 6, 00184 Roma RM, Italy",
+            "notes": "Book tickets in advance to avoid long queues and consider a guided tour for more insight.",
+            "cost_estimate": "$25-30"
+          },
+          {
+            "time": "Late Morning, 11:30",
+            "title": "Roman Forum Exploration",
+            "location": "Piazza del Colosseo, 00184 Roma RM, Italy",
+            "notes": "Wear comfortable shoes as there's a lot of walking on uneven terrain.",
+            "cost_estimate": "$25-30"
+          },
+          {
+            "time": "Lunch, 13:30",
+            "title": "Trastevere Lunch at Da Enzo al 29",
+            "location": "Via del Governo Vecchio, 87/89, 00186 Roma RM, Italy",
+            "notes": "Reservations are recommended; enjoy traditional Roman dishes.",
+            "cost_estimate": "$35-40"
+          },
+          {
+            "time": "Afternoon, 15:00",
+            "title": "Vatican Museums and Sistine Chapel",
+            "location": "Viale Vaticano, 00165 Città del Vaticano, Italy",
+            "notes": "Arrive early to beat the crowds; book tickets in advance.",
+            "cost_estimate": "$20-25"
+          },
+          {
+            "time": "Evening, 18:30",
+            "title": "Piazza Navona and Pantheon Night Stroll",
+            "location": "Piazza della Rotonda, 00186 Roma RM, Italy",
+            "notes": "Enjoy the lively atmosphere of Piazza Navona in the evening.",
+            "cost_estimate": "Free"
+          }
+        ]
       },
       {
-        "day": 2,
-        "theme": "Vatican City and Gelato Tasting",
-        "content": "Visit Vatican City including St. Peter's Basilica and the Sistine Chapel. End your day with a sweet treat at Giolitti, famous for its extensive gelato flavors."
+        "day_number": 2,
+        "theme": "Food and Wine Tour",
+        "activities": [
+          {
+            "time": "Morning, 09:30",
+            "title": "Mercato Centrale Food Market Visit",
+            "location": "Piazza Vittorio Emanuele II, 146, 00185 Roma RM, Italy",
+            "notes": "Sample local delicacies and enjoy a casual breakfast.",
+            "cost_estimate": "$20-30"
+          },
+          {
+            "time": "Late Morning, 11:30",
+            "title": "Aventine Hill Visit",
+            "location": "Via Santa Maria in Monticello, 85/97, 00153 Roma RM, Italy",
+            "notes": "Enjoy panoramic views of Rome from the Keyhole on Aventine Hill.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Lunch, 13:30",
+            "title": "Ristorante Roscioli Lunch",
+            "location": "Via Panisperna, 78/82, 00184 Roma RM, Italy",
+            "notes": "Book a table for lunch and enjoy gourmet cuisine.",
+            "cost_estimate": "$50-60"
+          },
+          {
+            "time": "Afternoon, 15:30",
+            "title": "Castel Sant'Angelo Tour",
+            "location": "Piazza Celimontana, 84, 00192 Roma RM, Italy",
+            "notes": "Explore the history and architecture of this fortress.",
+            "cost_estimate": "$15-20"
+          },
+          {
+            "time": "Evening, 19:00",
+            "title": "Appia Antica Park Sunset Walk",
+            "location": "Via Appia Nuova, 647/653, 00178 Roma RM, Italy",
+            "notes": "Take a peaceful walk along the ancient Roman road.",
+            "cost_estimate": "Free"
+          }
+        ]
       },
       {
-        "day": 3,
-        "theme": "Pantheon and Piazza Navona",
-        "content": "Spend the morning admiring the Pantheon's architectural beauty followed by lunch in Piazza Navona. Conclude your trip with a leisurely walk around Campo de' Fiori market."
+        "day_number": 3,
+        "theme": "Day at Ostia Antica",
+        "activities": [
+          {
+            "time": "Morning, 09:00",
+            "title": "Train to Ostia Antica",
+            "location": "Rome Termini Station, Piazza dei Cinquecento, 58/62, 00184 Roma RM, Italy",
+            "notes": "Purchase a ticket and catch the train from Rome's central station.",
+            "cost_estimate": "$3-5"
+          },
+          {
+            "time": "Late Morning, 10:30",
+            "title": "Ostia Antica Ruins Exploration",
+            "location": "Via di Ostia 468/528, 00076 Roma RM, Italy",
+            "notes": "Wear comfortable shoes and bring water.",
+            "cost_estimate": "$10-15"
+          },
+          {
+            "time": "Lunch, 13:30",
+            "title": "Ostia Antica Pizza Lunch",
+            "location": "Pizzeria Da Mario, Via Ostiense Km 67, Ostia Antica, Italy",
+            "notes": "Enjoy authentic pizza at a local pizzeria.",
+            "cost_estimate": "$25-30"
+          },
+          {
+            "time": "Afternoon, 14:30",
+            "title": "Beach Day in Lido di Ostia",
+            "location": "Lungomare Roma Ovest, 00076 Ostia (Rm), Italy",
+            "notes": "Relax and swim at the beach.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Evening, 18:30",
+            "title": "Back to Rome by Train",
+            "location": "Ostia Antica Station, Via Ostiense Km 67, 00076 Roma RM, Italy",
+            "notes": "Catch the last train back to central Rome.",
+            "cost_estimate": "$3-5"
+          }
+        ]
       }
     ]
   },
@@ -43,23 +152,90 @@
       "walking"
     ],
     "pace": "balanced",
-    "title": "Rome Budget Itinerary",
-    "summary": "Experience the best of Rome's historical sites and culinary delights over three days at a balanced pace.",
+    "source_type": "generated",
+    "title": "Rome Food and History Adventure",
+    "summary": "Explore the historical heart of Rome while indulging in its culinary delights over three days. Walk through ancient ruins and taste traditional Roman cuisine.",
     "day_plans": [
       {
-        "day": 1,
+        "day_number": 1,
         "theme": "Historic Center",
-        "content": "Start your day with a visit to the Colosseum, followed by a stroll through the Roman Forum. End the day at Trastevere for authentic Italian dining."
+        "activities": [
+          {
+            "time": "Morning, 09:00",
+            "title": "Colosseum Tour",
+            "location": "Piazza del Colosseo, 1, 00184 Roma RM, Italy",
+            "notes": "Arrive early to avoid crowds and long lines.",
+            "cost_estimate": "$20-30"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Roman Forum Visit",
+            "location": "Piazza del Colosseo, 1, 00184 Roma RM, Italy",
+            "notes": "Rent an audio guide for historical context.",
+            "cost_estimate": "$20-30"
+          },
+          {
+            "time": "Evening, 19:00",
+            "title": "Trastevere Dinner",
+            "location": "Via dei Vascellari, Trastevere, Rome, Italy",
+            "notes": "Try authentic Roman pasta dishes.",
+            "cost_estimate": "$25-40"
+          }
+        ]
       },
       {
-        "day": 2,
-        "theme": "Vatican City",
-        "content": "Spend the morning exploring Vatican Museums and St. Peter's Basilica. In the afternoon, enjoy a traditional pizza lunch in Testaccio before visiting the Roman Market."
+        "day_number": 2,
+        "theme": "Vatican City and Pantheon",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "St. Peter's Basilica",
+            "location": "Via della Conciliazione, 00120 Città del Vaticano, Vatican City",
+            "notes": "Free admission; dress modestly.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Afternoon, 13:30",
+            "title": "Vatican Museums and Sistine Chapel",
+            "location": "Viale Vaticano, 6, 00165 Città del Vaticano, Vatican City",
+            "notes": "Book tickets in advance to save time.",
+            "cost_estimate": "$25-35"
+          },
+          {
+            "time": "Evening, 18:00",
+            "title": "Pantheon Dinner",
+            "location": "Piazza della Rotonda, 00186 Roma RM, Italy",
+            "notes": "Enjoy Roman pizza al taglio.",
+            "cost_estimate": "$20-30"
+          }
+        ]
       },
       {
-        "day": 3,
-        "theme": "Borghese Gallery & Pincian Hill",
-        "content": "Begin with the Borghese Gallery for art and sculpture, then relax on Pincian Hill. Conclude your trip with a casual dinner at one of Rome's charming trattorias."
+        "day_number": 3,
+        "theme": "Trevi Fountain and Local Markets",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Piazza Navona and Pantheon",
+            "location": "Piazza della Rotonda, 00186 Roma RM, Italy",
+            "notes": "Capture photos of the beautiful fountains.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Campo de' Fiori and Roman Cuisine Cooking Class",
+            "location": "Via dei Giubbonari, 28/36, 00186 Roma RM, Italy",
+            "notes": "Learn to cook traditional Italian dishes.",
+            "cost_estimate": "$50-70"
+          },
+          {
+            "time": "Evening, 19:00",
+            "title": "Testaccio Dinner",
+            "location": "Piazza Testaccio, 62, 00153 Roma RM, Italy",
+            "notes": "Sample hearty Roman food in a local setting.",
+            "cost_estimate": "$25-40"
+          }
+        ]
       }
     ]
   },
@@ -75,727 +251,90 @@
       "walking"
     ],
     "pace": "relaxed",
-    "title": "Rome Relaxed Explorer",
-    "summary": "Explore the culinary delights and historical sites of Rome over three days at a leisurely pace. Enjoy walks through charming neighborhoods and taste authentic Italian cuisine.",
+    "source_type": "generated",
+    "title": "Rome Food and History",
+    "summary": "Explore the culinary delights of Rome while immersing yourself in its rich historical heritage over three leisurely days.",
     "day_plans": [
       {
-        "day": 1,
+        "day_number": 1,
         "theme": "Historic Center",
-        "content": "Start your day in the historic center, visiting the Colosseum and Roman Forum. In the afternoon, stroll through the vibrant Trastevere neighborhood to enjoy its traditional restaurants and cafes."
+        "activities": [
+          {
+            "time": "Morning, 09:00",
+            "title": "Colosseum and Roman Forum",
+            "location": "Piazza del Colosseo, Rome",
+            "notes": "Wear comfortable shoes as there's a lot of walking.",
+            "cost_estimate": "$20-30"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "Trastevere Food Tour",
+            "location": "Piazza Santa Maria in Trastevere, Rome",
+            "notes": "Reserve tickets in advance to skip the line.",
+            "cost_estimate": "$50+"
+          },
+          {
+            "time": "Evening, 19:00",
+            "title": "Osteria del Pegno Dinner",
+            "location": "Via dei Chiavari, 23, Rome",
+            "notes": "Try the Roman classics like carbonara and amatriciana.",
+            "cost_estimate": "$50+"
+          }
+        ]
       },
       {
-        "day": 2,
+        "day_number": 2,
         "theme": "Vatican City",
-        "content": "Spend a relaxed day in Vatican City, exploring St. Peter's Basilica and the Sistine Chapel. Enjoy lunch at one of the cozy trattorias near Piazza Navona, known for its exquisite Roman cuisine."
+        "activities": [
+          {
+            "time": "Morning, 09:30",
+            "title": "St. Peter's Basilica and Square",
+            "location": "Piazza San Pietro, Vatican City",
+            "notes": "Check the schedule for the Pope's audience if you're lucky.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "Vatican Museums and Sistine Chapel",
+            "location": "Viale Vaticano, Vatican City",
+            "notes": "Arrive early to avoid long lines.",
+            "cost_estimate": "$20-30"
+          },
+          {
+            "time": "Evening, 18:30",
+            "title": "Aroma di Gusti Italian Cuisine Dinner",
+            "location": "Via dei Pettinari, 95/97, Rome",
+            "notes": "Enjoy authentic Roman dishes.",
+            "cost_estimate": "$40-60"
+          }
+        ]
       },
       {
-        "day": 3,
-        "theme": "Taste of Rome",
-        "content": "Dedicate your final day to culinary exploration with a visit to Mercato Testaccio for local ingredients and street food. Later in the evening, attend an Italian cooking class to learn how to make traditional Roman dishes."
-      }
-    ]
-  },
-  {
-    "itinerary_id": "rome-3d-mod-food-hist-walk-bal",
-    "destination": "Rome",
-    "country": "Italy",
-    "days": 3,
-    "budget": "moderate",
-    "interests": [
-      "food",
-      "history",
-      "walking"
-    ],
-    "pace": "balanced",
-    "title": "Rome Food and History Adventure",
-    "summary": "Explore the historic heart of Rome while indulging in its culinary delights over three days.",
-    "day_plans": [
-      {
-        "day": 1,
-        "theme": "Colosseum and Roman Forum",
-        "content": "Start your day with a tour of the Colosseum and Roman Forum, then enjoy lunch at Trastevere's La Pergola restaurant."
-      },
-      {
-        "day": 2,
-        "theme": "Vatican City and Pantheon",
-        "content": "Visit Vatican Museums in the morning, followed by a stroll to see the Pantheon. Savor dinner at Roscioli, known for its cheese tasting."
-      },
-      {
-        "day": 3,
-        "theme": "Trevi Fountain and Shopping",
-        "content": "Take an afternoon walk through Piazza di Spagna and throw a coin into Trevi Fountain before shopping in Via Condotti."
-      }
-    ]
-  },
-  {
-    "itinerary_id": "rome-5d-bud-food-hist-walk-rel",
-    "destination": "Rome",
-    "country": "Italy",
-    "days": 5,
-    "budget": "budget",
-    "interests": [
-      "food",
-      "history",
-      "walking"
-    ],
-    "pace": "relaxed",
-    "title": "Relaxed Rome Food and History Adventure",
-    "summary": "Explore the culinary delights and historical sites of Rome at a leisurely pace over five days, immersing yourself in local culture through food tours, museum visits, and scenic walks.",
-    "day_plans": [
-      {
-        "day": 1,
-        "theme": "Historic Center",
-        "content": "Start your journey with a visit to the Colosseum and Roman Forum. Enjoy a guided tour followed by lunch at a traditional trattoria nearby."
-      },
-      {
-        "day": 2,
-        "theme": "Vatican City",
-        "content": "Spend the day exploring St. Peter's Basilica and the Vatican Museums, including the Sistine Chapel. End your day with dinner in Trastevere, known for its vibrant food scene."
-      },
-      {
-        "day": 3,
-        "theme": "Taste of Rome",
-        "content": "Join a local food tour to discover authentic Roman cuisine, from street foods like supplì and saltimbocca alla romana to gelato at some of the best shops in town."
-      },
-      {
-        "day": 4,
-        "theme": "Pantheon and Piazza Navona",
-        "content": "Wander through this charming area with its ancient buildings, fountains, and lively markets. Enjoy a leisurely lunch featuring Roman classics like carbonara or cacio e pepe."
-      },
-      {
-        "day": 5,
-        "theme": "Day Trip to Tivoli",
-        "content": "Take an excursion to the nearby town of Tivoli to visit Hadrian's Villa and the beautiful gardens at Villa d'Este. Return to Rome for a farewell dinner with Roman specialties."
-      }
-    ]
-  },
-  {
-    "itinerary_id": "rome-5d-bud-food-hist-walk-bal",
-    "destination": "Rome",
-    "country": "Italy",
-    "days": 5,
-    "budget": "budget",
-    "interests": [
-      "food",
-      "history",
-      "walking"
-    ],
-    "pace": "balanced",
-    "title": "Rome in Five Days",
-    "summary": "Explore the historical and culinary delights of Rome over five days with a focus on both ancient landmarks and contemporary cuisine.",
-    "day_plans": [
-      {
-        "day": 1,
-        "theme": "Historic Center",
-        "content": "Start your day at the Colosseum, then continue to the Roman Forum. In the evening, enjoy authentic Italian food in Trastevere."
-      },
-      {
-        "day": 2,
-        "theme": "Vatican City",
-        "content": "Visit St. Peter's Basilica and the Vatican Museums with the Sistine Chapel. End your day at Piazza Navona for dinner."
-      },
-      {
-        "day": 3,
-        "theme": "Pantheon to Trastevere",
-        "content": "Morning walk around Pantheon, explore nearby cafes and shops. Afternoon in Trastevere for a food tour and wine tasting."
-      },
-      {
-        "day": 4,
-        "theme": "Borghese Gallery and Pincio Terrace",
-        "content": "Begin at the Borghese Gallery with its impressive art collection, followed by a relaxing stroll on Pincio Terrace overlooking the city."
-      },
-      {
-        "day": 5,
-        "theme": "Castel Sant'Angelo and Jewish Ghetto",
-        "content": "Visit Castel Sant'Angelo and enjoy lunch in Rome's vibrant Jewish Ghetto area, known for its delicious Roman-Jewish cuisine."
-      }
-    ]
-  },
-  {
-    "itinerary_id": "rome-5d-mod-food-hist-walk-rel",
-    "destination": "Rome",
-    "country": "Italy",
-    "days": 5,
-    "budget": "moderate",
-    "interests": [
-      "food",
-      "history",
-      "walking"
-    ],
-    "pace": "relaxed",
-    "title": "Rome Delights",
-    "summary": "Explore the culinary delights and rich history of Rome at a leisurely pace over five days. Enjoy walking through charming neighborhoods to discover hidden gems and savor local flavors.",
-    "day_plans": [
-      {
-        "day": 1,
-        "theme": "Historic Center",
-        "content": "Begin your journey in the heart of Rome, starting with a morning stroll around the Colosseum and Roman Forum. Spend the afternoon exploring lesser-known sites like the Basilica di San Clemente."
-      },
-      {
-        "day": 2,
-        "theme": "Vatican City",
-        "content": "Take your time visiting Vatican City, spending hours in awe at St. Peter's Basilica and the Sistine Chapel. Don't forget to enjoy a traditional Roman lunch nearby."
-      },
-      {
-        "day": 3,
-        "theme": "Roman Markets",
-        "content": "Spend an afternoon wandering through the vibrant Mercato Testaccio for authentic Italian food experiences, then relax with a late lunch at one of the local trattorias."
-      },
-      {
-        "day": 4,
-        "theme": "Ancient Appia Antica",
-        "content": "Enjoy a peaceful walk along the Ancient Appian Way, stopping to explore catacombs and ancient ruins. End your day with a casual dinner in the Trastevere area."
-      },
-      {
-        "day": 5,
-        "theme": "Local Flavors",
-        "content": "Dive into Rome's culinary scene by attending a cooking class or joining a food tour to discover traditional recipes and ingredients of Roman cuisine."
-      }
-    ]
-  },
-  {
-    "itinerary_id": "rome-5d-mod-food-hist-walk-bal",
-    "destination": "Rome",
-    "country": "Italy",
-    "days": 5,
-    "budget": "moderate",
-    "interests": [
-      "food",
-      "history",
-      "walking"
-    ],
-    "pace": "balanced",
-    "title": "Rome Food and History Adventure",
-    "summary": "Explore the historical heart of Rome while indulging in its culinary delights over five days. Each day offers a mix of sightseeing at ancient sites and enjoying local cuisine.",
-    "day_plans": [
-      {
-        "day": 1,
-        "theme": "Historic Center Discovery",
-        "content": "Start with the Colosseum, followed by lunch at Testaccio Market where you can taste authentic Roman dishes. End the day at the Pantheon and Piazza Navona."
-      },
-      {
-        "day": 2,
-        "theme": "Vatican Museums and Trastevere",
-        "content": "Morning visit to Vatican Museums and St. Peter’s Basilica, followed by an afternoon in the charming neighborhood of Trastevere for some of Rome's best pizza."
-      },
-      {
-        "day": 3,
-        "theme": "Roman Forum and Jewish Ghetto Exploration",
-        "content": "Spend the morning at the Roman Forum and Palatine Hill. In the evening, head to the Jewish Ghetto for a traditional kosher dinner in one of its renowned eateries."
-      },
-      {
-        "day": 4,
-        "theme": "Monti District and Centrale Food Market",
-        "content": "Discover Monti’s trendy boutiques and cafes, then lunch at Mercato Centrale. End the day by visiting Cestello Church with its famous Baroque staircase."
-      },
-      {
-        "day": 5,
-        "theme": "Trevi Fountain and Spanish Steps",
-        "content": "Begin with a visit to Trevi Fountain for your wish, then walk through Piazza di Spagna. End the day at the Borghese Gallery after lunch in its cozy cafe."
-      }
-    ]
-  },
-  {
-    "itinerary_id": "rome-7d-bud-food-hist-walk-rel",
-    "destination": "Rome",
-    "country": "Italy",
-    "days": 7,
-    "budget": "budget",
-    "interests": [
-      "food",
-      "history",
-      "walking"
-    ],
-    "pace": "relaxed",
-    "title": "Relaxed Roman Adventure",
-    "summary": "Explore the culinary delights and rich historical sites of Rome at a leisurely pace over seven days. Enjoy the best food and wine experiences while strolling through ancient ruins and vibrant neighborhoods.",
-    "day_plans": [
-      {
-        "day": 1,
-        "theme": "Historic Center",
-        "content": "Start your day with a visit to the Colosseum, followed by walking around the Roman Forum. In the evening, enjoy dinner at Trastevere's local trattoria."
-      },
-      {
-        "day": 2,
-        "theme": "Vatican City",
-        "content": "Spend the morning in Vatican City, starting with St. Peter's Basilica and ending at the Sistine Chapel. Have lunch near Campo de' Fiori for a taste of Roman cuisine."
-      },
-      {
-        "day": 3,
-        "theme": "Trevi Fountain & Pantheon",
-        "content": "Visit Trevi Fountain in the morning, toss a coin for good luck and then explore the beautiful architecture of the Pantheon. Enjoy an authentic pizza lunch at Pizzeria La Montecarlo."
-      },
-      {
-        "day": 4,
-        "theme": "Castel Sant'Angelo",
-        "content": "Explore Castel Sant'Angelo, a fortress with panoramic views of Rome. Spend午后继续游览罗马的其他景点，如许愿喷泉和万神殿，并在特拉斯泰弗雷区享用晚餐。"
-      },
-      {
-        "day": 5,
-        "theme": "Roman Markets",
-        "content": "Visit the bustling Mercato di Testaccio for fresh produce and local delicacies. Spend an afternoon in the charming neighborhood of Monti, known for its trendy shops and cafes."
-      },
-      {
-        "day": 6,
-        "theme": "Jewish Ghetto",
-        "content": "Discover Rome's Jewish Quarter with a visit to the Synagogue and a walk through the narrow streets lined with kosher restaurants. Enjoy lunch at Pizzeria La Montecarlo."
-      },
-      {
-        "day": 7,
-        "theme": "Day Trip to Tivoli",
-        "content": "Take an early train to Tivoli for a day trip to see Hadrian's Villa and the beautiful Villa d'Este gardens. Return to Rome in the evening for a farewell dinner in Trastevere."
-      }
-    ]
-  },
-  {
-    "itinerary_id": "rome-7d-bud-food-hist-walk-bal",
-    "destination": "Rome",
-    "country": "Italy",
-    "days": 7,
-    "budget": "budget",
-    "interests": [
-      "food",
-      "history",
-      "walking"
-    ],
-    "pace": "balanced",
-    "title": "Rome Budget Explorer",
-    "summary": "Experience the best of Rome with this budget-friendly itinerary that balances historical exploration and culinary adventures. Spend seven days immersed in ancient wonders and modern flavors, all while enjoying a balanced pace.",
-    "day_plans": [
-      {
-        "day": 1,
-        "theme": "Historic Center",
-        "content": "Start your journey by visiting the Colosseum and Roman Forum to marvel at the grandeur of Imperial Rome. Later in the day, explore nearby Piazza Navona for a taste of local street food."
-      },
-      {
-        "day": 2,
-        "theme": "Vatican City",
-        "content": "Head over to Vatican City to see St. Peter's Basilica and the Sistine Chapel. Take some time in the afternoon to stroll through Trastevere for a relaxed dinner with traditional Roman dishes."
-      },
-      {
-        "day": 3,
+        "day_number": 3,
         "theme": "Trevi Fountain and Pantheon",
-        "content": "Begin your day at Trevi Fountain, throwing in a coin for good luck. Continue on to the Pantheon and Piazza della Rotonda before exploring the vibrant Campo de' Fiori market."
-      },
-      {
-        "day": 4,
-        "theme": "Castel Sant'Angelo",
-        "content": "Visit Castel Sant'Angelo, once a fortress and now a museum. Enjoy lunch in Prati, then wander along Lungotevere Aventino for beautiful views of the city."
-      },
-      {
-        "day": 5,
-        "theme": "Appia Antica Regional Park",
-        "content": "Spend an afternoon walking through Appia Antica Regional Park, dotted with ancient tombs and catacombs. End your day at a local enoteca for wine tasting paired with cheese and charcuterie."
-      },
-      {
-        "day": 6,
-        "theme": "Esquilino and Monti",
-        "content": "Explore the charming neighborhoods of Esquilino and Monti, known for their unique shops and street art. Don't miss a meal at one of the area's authentic trattorias."
-      },
-      {
-        "day": 7,
-        "theme": "Last Day in Rome",
-        "content": "On your final day, revisit any sites you didn't get to see or take a leisurely walk through Villa Borghese for a peaceful end to your trip. For dinner, enjoy one last Roman feast at a cozy restaurant."
-      }
-    ]
-  },
-  {
-    "itinerary_id": "rome-7d-mod-food-hist-walk-rel",
-    "destination": "Rome",
-    "country": "Italy",
-    "days": 7,
-    "budget": "moderate",
-    "interests": [
-      "food",
-      "history",
-      "walking"
-    ],
-    "pace": "relaxed",
-    "title": "Rome Uncovered",
-    "summary": "Explore the culinary delights and historical sites of Rome over a week at a leisurely pace. Each day offers a mix of famous landmarks and local flavors to satisfy your curiosity about this ancient city.",
-    "day_plans": [
-      {
-        "day": 1,
-        "theme": "Colosseum and Roman Forum",
-        "content": "Start your trip with an early morning visit to the Colosseum and Roman Forum, then enjoy a traditional Italian lunch at a local trattoria."
-      },
-      {
-        "day": 2,
-        "theme": "Vatican City",
-        "content": "Spend the day exploring Vatican City including St. Peter's Basilica and the Sistine Chapel, followed by an evening stroll through Trastevere for dinner."
-      },
-      {
-        "day": 3,
-        "theme": "Trevi Fountain and Pantheon",
-        "content": "Visit the iconic Trevi Fountain and explore the charming streets around it. Enjoy a leisurely lunch in Piazza Navona, then head to the Pantheon."
-      },
-      {
-        "day": 4,
-        "theme": "Castel Sant'Angelo and Jewish Ghetto",
-        "content": "Begin with Castel Sant'Angelo, once an imperial mausoleum turned fortress. Walk through the vibrant Jewish Ghetto for lunch at a kosher restaurant."
-      },
-      {
-        "day": 5,
-        "theme": "Borghese Gallery and Villa Borghese",
-        "content": "Spend your day exploring the art collection of the Borghese family in their private gallery, followed by a leisurely walk through Villa Borghese gardens."
-      },
-      {
-        "day": 6,
-        "theme": "Café Culture and Shopping",
-        "content": "Enjoy breakfast at an authentic Roman cafe, then spend the day shopping for souvenirs in Via Condotti. In the evening, visit a local pizzeria."
-      },
-      {
-        "day": 7,
-        "theme": "Day Trip to Tivoli",
-        "content": "Take a day trip to Tivoli to explore Villa d'Este and Hadrian's Villa, then return to Rome for a farewell dinner at a Michelin-starred restaurant."
-      }
-    ]
-  },
-  {
-    "itinerary_id": "rome-7d-mod-food-hist-walk-bal",
-    "destination": "Rome",
-    "country": "Italy",
-    "days": 7,
-    "budget": "moderate",
-    "interests": [
-      "food",
-      "history",
-      "walking"
-    ],
-    "pace": "balanced",
-    "title": "Rome Food and History Adventure",
-    "summary": "Explore the culinary delights and rich historical tapestry of Rome over a week. From ancient ruins to modern trattorias, this balanced itinerary is perfect for those interested in both food and history.",
-    "day_plans": [
-      {
-        "day": 1,
-        "theme": "Historic Center",
-        "content": "Begin your Roman adventure by exploring the Colosseum and Forum, followed by a visit to Piazza Navona and Pantheon. End with dinner at Trastevere for authentic Italian cuisine."
-      },
-      {
-        "day": 2,
-        "theme": "Vatican City",
-        "content": "Spend the day in Vatican City, visiting St. Peter's Basilica, the Sistine Chapel, and the Vatican Museums to see masterpieces like Michelangelo's ceiling and Raphael's Rooms."
-      },
-      {
-        "day": 3,
-        "theme": "Roman Hills",
-        "content": "Take a leisurely stroll up to the Janiculum Hill for panoramic views of Rome. Visit Villa Farnesina, then enjoy lunch at an atmospheric trattoria in the Monti district."
-      },
-      {
-        "day": 4,
-        "theme": "Appian Way and Catacombs",
-        "content": "Explore ancient Appian Way with its Roman tombs and catacombs. In the evening, savor a traditional Roman dinner at Testaccio Market."
-      },
-      {
-        "day": 5,
-        "theme": "Castel Gandolfo Day Trip",
-        "content": "Travel to Castel Gandolfo for a visit to the Papal Palace and Villa Borghese gardens. Return in time for an evening stroll along the Appia Antica bike path."
-      },
-      {
-        "day": 6,
-        "theme": "Ostia Antica",
-        "content": "Head out to Ostia Antica, Rome's ancient seaport, and explore its well-preserved ruins. Return in time for a late lunch at the historic Caffè Greco."
-      },
-      {
-        "day": 7,
-        "theme": "Leisure Day",
-        "content": "Enjoy your last day with a relaxed morning walk through Villa Borghese or a visit to Rome's botanical gardens, followed by a farewell dinner in Trastevere."
-      }
-    ]
-  },
-  {
-    "itinerary_id": "rome-3d-bud-cult-food-city-rel",
-    "destination": "Rome",
-    "country": "Italy",
-    "days": 3,
-    "budget": "budget",
-    "interests": [
-      "culture",
-      "food",
-      "city exploration"
-    ],
-    "pace": "relaxed",
-    "title": "Relaxed Roman Exploration",
-    "summary": "This three-day itinerary offers a blend of cultural immersion and culinary delights in Rome, with plenty of leisurely exploration at your own pace.",
-    "day_plans": [
-      {
-        "day": 1,
-        "theme": "Colosseum and Forum",
-        "content": "Start the day early to explore the Colosseum and Roman Forum. Afterward, wander through the bustling streets of Trastevere for a taste of authentic Italian life."
-      },
-      {
-        "day": 2,
-        "theme": "Vatican City",
-        "content": "Spend your second day in Vatican City, marveling at St. Peter's Basilica and the Sistine Chapel. End the day with a traditional Roman dinner in Monti."
-      },
-      {
-        "day": 3,
-        "theme": "Borghese Gallery and Pincio",
-        "content": "On your final day, visit the Borghese Gallery for its impressive art collection. Later, enjoy a leisurely stroll through the Pincian Hill gardens before trying some local street food."
-      }
-    ]
-  },
-  {
-    "itinerary_id": "rome-3d-bud-cult-food-city-bal",
-    "destination": "Rome",
-    "country": "Italy",
-    "days": 3,
-    "budget": "budget",
-    "interests": [
-      "culture",
-      "food",
-      "city exploration"
-    ],
-    "pace": "balanced",
-    "title": "Rome Budget Itinerary",
-    "summary": "Explore the cultural and culinary delights of Rome over three days with a balanced pace that includes both iconic sights and local experiences.",
-    "day_plans": [
-      {
-        "day": 1,
-        "theme": "Historic Center",
-        "content": "Start your day at the Colosseum, then continue to Palatine Hill for ancient Roman ruins. End with an evening walk through the vibrant Trastevere neighborhood."
-      },
-      {
-        "day": 2,
-        "theme": "Vatican City",
-        "content": "Visit St. Peter's Basilica and the Sistine Chapel; explore the Vatican Museums, including the famous Gallery of Tapestries and Raphael Rooms."
-      },
-      {
-        "day": 3,
-        "theme": "Local Food Experience",
-        "content": "Enjoy a traditional Roman cooking class or visit Testaccio Market for fresh produce. Dine at local trattorias to sample authentic Italian cuisine."
-      }
-    ]
-  },
-  {
-    "itinerary_id": "rome-3d-mod-cult-food-city-rel",
-    "destination": "Rome",
-    "country": "Italy",
-    "days": 3,
-    "budget": "moderate",
-    "interests": [
-      "culture",
-      "food",
-      "city exploration"
-    ],
-    "pace": "relaxed",
-    "title": "Rome Uncovered",
-    "summary": "Explore the cultural and culinary delights of Rome at a relaxed pace over three days, from the historic center to charming neighborhoods.",
-    "day_plans": [
-      {
-        "day": 1,
-        "theme": "Historic Center",
-        "content": "Start with a morning visit to the Colosseum followed by a walk through the Roman Forum. In the afternoon, explore Palatine Hill and enjoy an authentic Italian lunch at a local trattoria."
-      },
-      {
-        "day": 2,
-        "theme": "City Exploration",
-        "content": "Begin with a leisurely stroll along Via Condotti for luxury shopping and coffee at historic cafes. Spend the afternoon in Trastevere, enjoying its vibrant street art and sampling traditional Roman cuisine."
-      },
-      {
-        "day": 3,
-        "theme": "Cultural Delights",
-        "content": "Visit Vatican City early to avoid crowds, exploring St. Peter's Basilica and the Sistine Chapel before lunch at a nearby pizzeria. Conclude your trip with an evening passeggiata through Piazza Navona."
-      }
-    ]
-  },
-  {
-    "itinerary_id": "rome-3d-mod-cult-food-city-bal",
-    "destination": "Rome",
-    "country": "Italy",
-    "days": 3,
-    "budget": "moderate",
-    "interests": [
-      "culture",
-      "food",
-      "city exploration"
-    ],
-    "pace": "balanced",
-    "title": "Rome Culture and Cuisine",
-    "summary": "Explore the heart of Rome with a mix of historical sites and culinary delights over three days. Discover ancient wonders, taste traditional Roman cuisine, and immerse yourself in the city's vibrant culture.",
-    "day_plans": [
-      {
-        "day": 1,
-        "theme": "Historic Center",
-        "content": "Start your day at the Colosseum, then explore the Roman Forum. In the afternoon, visit the Pantheon and Piazza Navona. End the evening with dinner in Trastevere."
-      },
-      {
-        "day": 2,
-        "theme": "Vatican City",
-        "content": "Devote your day to Vatican City, starting at St. Peter's Basilica, then move on to the Sistine Chapel and the Vatican Museums. Enjoy lunch near Campo de' Fiori before wandering through the Jewish Ghetto."
-      },
-      {
-        "day": 3,
-        "theme": "Local Flavors",
-        "content": "Spend a day tasting your way around Rome with a food tour in Testaccio or Monti neighborhoods. Visit artisanal gelato shops and local markets. End with an authentic Roman dinner experience."
-      }
-    ]
-  },
-  {
-    "itinerary_id": "rome-5d-bud-cult-food-city-rel",
-    "destination": "Rome",
-    "country": "Italy",
-    "days": 5,
-    "budget": "budget",
-    "interests": [
-      "culture",
-      "food",
-      "city exploration"
-    ],
-    "pace": "relaxed",
-    "title": "Relaxed Roman Adventure",
-    "summary": "Explore the cultural and culinary delights of Rome at a leisurely pace over five days. From ancient ruins to vibrant markets, this itinerary offers a perfect blend of history, food, and city exploration.",
-    "day_plans": [
-      {
-        "day": 1,
-        "theme": "Colosseum and Roman Forum",
-        "content": "Start your day with an early visit to the Colosseum and Roman Forum to avoid crowds. Enjoy a guided tour if desired, then relax at nearby Piazza Venezia for lunch."
-      },
-      {
-        "day": 2,
-        "theme": "Vatican Museums and Sistine Chapel",
-        "content": "Head over to Vatican City for an enriching day exploring the Vatican Museums and Sistine Chapel. End your visit with a stroll through St. Peter's Square and Basilica."
-      },
-      {
-        "day": 3,
-        "theme": "Trastevere Food Tour",
-        "content": "Discover Trastevere’s charming streets on a leisurely food tour, sampling local delicacies like pizza al taglio and gelato. Spend the afternoon exploring the area's historical sites."
-      },
-      {
-        "day": 4,
-        "theme": "Pantheon and Piazza Navona",
-        "content": "Visit the stunning Pantheon followed by a leisurely walk through Piazza Navona, enjoying its baroque architecture and lively street performers. End with a relaxing dinner in the area."
-      },
-      {
-        "day": 5,
-        "theme": "Castel Sant'Angelo and Mouthwatering Roman Cuisine",
-        "content": "Begin your final day at Castel Sant'Angelo, then enjoy a leisurely lunch of traditional Roman dishes. Spend the afternoon shopping in Via Condotti or visiting the Spanish Steps."
-      }
-    ]
-  },
-  {
-    "itinerary_id": "rome-5d-bud-cult-food-city-bal",
-    "destination": "Rome",
-    "country": "Italy",
-    "days": 5,
-    "budget": "budget",
-    "interests": [
-      "culture",
-      "food",
-      "city exploration"
-    ],
-    "pace": "balanced",
-    "title": "Rome in Five Days",
-    "summary": "This five-day trip to Rome offers a well-rounded experience of the city's rich history and vibrant culture, with daily explorations that include iconic landmarks, local cuisine, and hidden gems.",
-    "day_plans": [
-      {
-        "day": 1,
-        "theme": "Historic Center",
-        "content": "Start your day at the Colosseum, followed by a visit to the Roman Forum and Palatine Hill. In the afternoon, explore the Pantheon and Piazza Navona before ending with a stroll through Trastevere for dinner."
-      },
-      {
-        "day": 2,
-        "theme": "Vatican City",
-        "content": "Spend your morning at the Vatican Museums, including the Sistine Chapel. After lunch, visit St. Peter's Basilica and square before exploring Castel Sant'Angelo in the afternoon."
-      },
-      {
-        "day": 3,
-        "theme": "City Exploration",
-        "content": "Discover lesser-known neighborhoods like Monti for artisanal gelato shops and boutiques. In the afternoon, take a cooking class to learn traditional Roman recipes. End your day with an evening walk along the Tiber River."
-      },
-      {
-        "day": 4,
-        "theme": "Ancient Sites",
-        "content": "Visit Ostia Antica, Rome's ancient seaport and one of the best-preserved archaeological sites in Italy. After exploring the ruins, head to a local trattoria for lunch featuring fresh seafood."
-      },
-      {
-        "day": 5,
-        "theme": "Leisure",
-        "content": "Enjoy a relaxing morning at the Borghese Gallery followed by a trip to Villa Borghese gardens. Spend your afternoon browsing shops in Via Condotti and enjoy a farewell dinner at a rooftop restaurant with city views."
-      }
-    ]
-  },
-  {
-    "itinerary_id": "rome-5d-mod-cult-food-city-rel",
-    "destination": "Rome",
-    "country": "Italy",
-    "days": 5,
-    "budget": "moderate",
-    "interests": [
-      "culture",
-      "food",
-      "city exploration"
-    ],
-    "pace": "relaxed",
-    "title": "Rome Relaxed Cultural Journey",
-    "summary": "Spend five days exploring the cultural and culinary delights of Rome at a leisurely pace. Enjoy historical sites, local cuisine, and charming city exploration.",
-    "day_plans": [
-      {
-        "day": 1,
-        "theme": "Historic Center",
-        "content": "Start your day with a visit to the Colosseum and Roman Forum. In the afternoon, explore the Pantheon and Piazza Navona. End the day with an evening stroll through Trastevere for dinner at one of its cozy trattorias."
-      },
-      {
-        "day": 2,
-        "theme": "Vatican City",
-        "content": "Spend a full day in Vatican City, starting with St. Peter's Basilica and ending the day at the Sistine Chapel to admire Michelangelo's famous frescoes. Don't miss lunch at a local pizzeria near the Piazza."
-      },
-      {
-        "day": 3,
-        "theme": "Rome's Museums",
-        "content": "Visit the Borghese Gallery in the morning and see its impressive collection of Renaissance art and ancient sculptures. In the afternoon, explore the National Roman Museum for a deeper understanding of ancient Rome’s history."
-      },
-      {
-        "day": 4,
-        "theme": "Urban Exploration",
-        "content": "Take a walking tour through lesser-known parts of Rome like Monti neighborhood or Esquilino to discover local life and hidden gems. Enjoy lunch at a casual Italian eatery recommended by locals, then spend the afternoon shopping in the boutique stores."
-      },
-      {
-        "day": 5,
-        "theme": "Day Trip to Tivoli",
-        "content": "Head out of Rome for a day trip to Tivoli and visit Hadrian's Villa and Villa d'Este. These stunning sites offer beautiful gardens, fountains, and historical artifacts. Return late afternoon in time for dinner at an authentic Roman trattoria."
-      }
-    ]
-  },
-  {
-    "itinerary_id": "rome-5d-mod-cult-food-city-bal",
-    "destination": "Rome",
-    "country": "Italy",
-    "days": 5,
-    "budget": "moderate",
-    "interests": [
-      "culture",
-      "food",
-      "city exploration"
-    ],
-    "pace": "balanced",
-    "title": "Rome in Balance",
-    "summary": "This itinerary offers a balanced mix of cultural immersion and culinary delights, perfect for travelers interested in exploring the heart of Rome while enjoying its rich food scene.",
-    "day_plans": [
-      {
-        "day": 1,
-        "theme": "Historic Center",
-        "content": "Start your day at the Colosseum and Roman Forum to soak up ancient history, then enjoy lunch at Trastevere's vibrant cafes. End with a stroll around Piazza Navona and Pantheon."
-      },
-      {
-        "day": 2,
-        "theme": "Vatican City",
-        "content": "Explore the Vatican Museums and Sistine Chapel early in the morning to avoid crowds, then visit St. Peter's Basilica and its iconic dome for panoramic views of Rome."
-      },
-      {
-        "day": 3,
-        "theme": "City Exploration",
-        "content": "Discover lesser-known neighborhoods like Monti and Pigneto, known for their charming local vibe. Enjoy a leisurely lunch at a neighborhood trattoria before visiting the Quirinal Hill."
-      },
-      {
-        "day": 4,
-        "theme": "Food & Wine Tour",
-        "content": "Join a guided food tour to explore Roman cuisine and wine tasting in bustling markets like Mercato Testaccio. End your day with gelato at Gelateria del Teatro."
-      },
-      {
-        "day": 5,
-        "theme": "Day Trip to Tivoli",
-        "content": "Take the train to Tivoli for a half-day visit to Villa d'Este, renowned for its stunning Renaissance gardens and fountains. Return to Rome in the afternoon for a final dinner at one of Trastevere's cozy restaurants."
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Piazza Navona and Bernini's Fountains",
+            "location": "Piazza Navona, Rome",
+            "notes": "Perfect for people watching.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Trevi Fountain and Shopping",
+            "location": "Via del Corso, Rome",
+            "notes": "Don't forget to toss a coin into the fountain.",
+            "cost_estimate": "$20-30"
+          },
+          {
+            "time": "Evening, 18:00",
+            "title": "La Pergola Dinner",
+            "location": "Piazza dell'Accursio, 75, Rome",
+            "notes": "Enjoy exquisite views and cuisine.",
+            "cost_estimate": "$60+"
+          }
+        ]
       }
     ]
   }

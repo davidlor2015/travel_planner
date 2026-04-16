@@ -1,12 +1,13 @@
 import json
 import logging
 import re
+from datetime import timedelta
 from typing import AsyncGenerator, Optional
 from sqlalchemy.orm import Session
 
 from app.models.trip import Trip
-from app.schemas.ai import ItineraryResponse
-from app.services.llm.ollama_client import OllamaClient
+from app.schemas.ai import DayPlan, ItineraryItem, ItineraryResponse
+from app.services.llm.ollama_client import LLMUnavailableError, OllamaClient
 from app.services.ai.rule_based_service import generate_rule_based_itinerary
 from app.repositories.trip_repository import TripRepository
 from app.repositories.itinerary_repository import ItineraryRepository
@@ -60,6 +61,54 @@ def _recover_partial_days(raw: str) -> list[dict]:
             break  # clean end of days array
 
     return days
+
+
+def _parse_activity_line(line: str) -> ItineraryItem | None:
+    """Parse one activity line produced by embed_itineraries._day_content().
+
+    Expected format:
+        [time] title — location. notes (cost_estimate)
+
+    Returns None for lines that don't match (e.g. the day-header line).
+    """
+    line = line.strip()
+    if not line.startswith("["):
+        return None
+    try:
+        time_end = line.index("]")
+    except ValueError:
+        return None
+
+    time = line[1:time_end]
+    rest = line[time_end + 1:].strip()
+
+    # Extract trailing (cost_estimate) — use the last " (...)" group.
+    cost = ""
+    if rest.endswith(")"):
+        paren_start = rest.rfind(" (")
+        if paren_start != -1:
+            cost = rest[paren_start + 2:-1]
+            rest = rest[:paren_start].strip()
+
+    # Split on the em-dash separator.
+    if " — " in rest:
+        title, remainder = rest.split(" — ", 1)
+    else:
+        return ItineraryItem(time=time, title=rest, location="", notes="", cost_estimate=cost)
+
+    # First ". " separates location from notes.
+    if ". " in remainder:
+        location, notes = remainder.split(". ", 1)
+    else:
+        location, notes = remainder, ""
+
+    return ItineraryItem(
+        time=time,
+        title=title.strip(),
+        location=location.strip(),
+        notes=notes.strip(),
+        cost_estimate=cost,
+    )
 
 
 class ItineraryService:
@@ -173,6 +222,92 @@ class ItineraryService:
             logger.error("Partial recovery assembly failed: %s", exc)
             return None
 
+    # ── Vector DB fallback ────────────────────────────────────────────────────
+
+    def _itinerary_from_chunks(
+        self,
+        trip: Trip,
+        overview: dict,
+        day_chunks: list[dict],
+        interests: list[str],
+        budget: str,
+    ) -> ItineraryResponse:
+        """Assemble an ItineraryResponse from pre-stored itinerary_chunks rows."""
+        days: list[DayPlan] = []
+        for chunk in day_chunks:
+            day_number: int = chunk["day_number"]
+            date = (
+                str(trip.start_date + timedelta(days=day_number - 1))
+                if trip.start_date else None
+            )
+            lines = chunk.get("content", "").strip().split("\n")
+            items = [_parse_activity_line(ln) for ln in lines[1:]]  # skip header
+            days.append(DayPlan(
+                day_number=day_number,
+                date=date,
+                items=[item for item in items if item is not None],
+            ))
+
+        # Overview content format: "{title}\n\n{summary}\n\nDestination: ..."
+        # Extract just the summary paragraph (second block).
+        content_parts = overview.get("content", "").split("\n\n", 2)
+        summary = content_parts[1] if len(content_parts) >= 2 else overview.get("content", "")
+
+        interest_label = ", ".join(interests) if interests else "general sightseeing"
+        return ItineraryResponse(
+            title=overview["title"],
+            summary=(
+                f"{summary} "
+                f"(Pre-generated itinerary for {interest_label} — Ollama was unavailable.)"
+            ),
+            days=days,
+        )
+
+    def _generate_from_vector_db(
+        self,
+        trip: Trip,
+        interests_override: Optional[str],
+        budget_override: Optional[str],
+    ) -> ItineraryResponse:
+        """Fallback path: find the closest pre-generated itinerary in pgvector."""
+        from app.services.vector_store import find_best_itinerary, get_day_chunks
+
+        budget = (budget_override or "moderate").strip().lower()
+        interests = [
+            i.strip().lower()
+            for i in (interests_override or "").split(",")
+            if i.strip()
+        ]
+        calendar_days = (
+            (trip.end_date - trip.start_date).days + 1
+            if trip.start_date and trip.end_date else 3
+        )
+
+        overview = find_best_itinerary(
+            destination=trip.destination,
+            days=calendar_days,
+            budget=budget,
+            interests=interests,
+        )
+        if not overview:
+            raise ValueError(
+                f"Ollama is unavailable and no pre-generated itinerary exists for "
+                f"'{trip.destination}'. Run the generation pipeline or start Ollama."
+            )
+
+        day_chunks = get_day_chunks(overview["itinerary_id"])
+        if not day_chunks:
+            raise ValueError(
+                f"Ollama is unavailable and the stored itinerary for "
+                f"'{trip.destination}' has no day data."
+            )
+
+        logger.info(
+            "Vector DB fallback: itinerary_id=%s (%d days) for trip_id=%s dest=%r",
+            overview["itinerary_id"], len(day_chunks), trip.id, trip.destination,
+        )
+        return self._itinerary_from_chunks(trip, overview, day_chunks, interests, budget)
+
     # ── Public methods ────────────────────────────────────────────────────────
 
     async def generate_itinerary(
@@ -189,7 +324,14 @@ class ItineraryService:
         sys_prompt = self._build_system_prompt()
         user_prompt = self._build_user_prompt(trip, interests_override, budget_override)
 
-        raw_response = await self.llm_client.generate_json(sys_prompt, user_prompt)
+        try:
+            raw_response = await self.llm_client.generate_json(sys_prompt, user_prompt)
+        except LLMUnavailableError:
+            logger.warning(
+                "Ollama unavailable for trip_id=%s — attempting vector DB fallback", trip_id
+            )
+            return self._generate_from_vector_db(trip, interests_override, budget_override)
+
         logger.info("LLM raw response length: %d chars", len(raw_response))
 
         itinerary = self._parse_or_recover(raw_response)
@@ -239,6 +381,18 @@ class ItineraryService:
             async for token in self.llm_client.stream_json(sys_prompt, user_prompt):
                 full_text += token
                 yield f"event: token\ndata: {json.dumps({'token': token})}\n\n"
+        except LLMUnavailableError:
+            logger.warning(
+                "Ollama unavailable during streaming for trip_id=%s — trying vector DB fallback",
+                trip_id,
+            )
+            try:
+                fallback = self._generate_from_vector_db(trip, interests_override, budget_override)
+                yield f"event: complete\ndata: {fallback.model_dump_json()}\n\n"
+            except Exception as fallback_err:
+                logger.error("Vector DB fallback failed for trip_id=%s: %s", trip_id, fallback_err)
+                yield f"event: error\ndata: {json.dumps({'message': str(fallback_err)})}\n\n"
+            return
         except Exception as e:
             logger.error("Streaming LLM error: %s", e)
             yield f"event: error\ndata: {json.dumps({'message': 'LLM connection failed. Is Ollama running?'})}\n\n"

@@ -10,8 +10,19 @@ Schema produced by this service:
         "title": "string",
         "summary": "string",
         "day_plans": [
-            {"day": 1, "theme": "string", "content": "string"},
-            ...
+            {
+                "day_number": 1,
+                "theme": "string",
+                "activities": [
+                    {
+                        "time": "string",
+                        "title": "string",
+                        "location": "string",
+                        "notes": "string",
+                        "cost_estimate": "string"
+                    }
+                ]
+            }
         ]
     }
 """
@@ -24,13 +35,13 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-# ── Defaults ──────────────────────────────────────────────────────────────────
+
 
 _DEFAULT_BASE_URL = "http://localhost:11434"
-_DEFAULT_MODEL = "llama3"
+_DEFAULT_MODEL = "qwen2.5:14b"
 _DEFAULT_TIMEOUT = 120  # seconds
 
-# ── Prompt templates ──────────────────────────────────────────────────────────
+
 
 _SYSTEM_PROMPT = """\
 You are a travel itinerary generator. Output ONLY valid JSON — no markdown, \
@@ -42,17 +53,27 @@ The JSON must match this exact structure:
   "summary": "string — 2 to 3 sentences describing the trip",
   "day_plans": [
     {
-      "day": 1,
+      "day_number": 1,
       "theme": "string — a short theme for this day (e.g. Historic Center)",
-      "content": "string — 3 to 5 sentences describing what to do this day"
+      "activities": [
+        {
+          "time": "string — time of day (e.g. Morning, 09:00)",
+          "title": "string — activity name",
+          "location": "string — specific place or address",
+          "notes": "string — 1 to 2 sentences of practical tips",
+          "cost_estimate": "string — e.g. Free, $10-20, $50+"
+        }
+      ]
     }
   ]
 }
 
 Rules:
 - Generate exactly the number of days requested. No more, no less.
-- Every day_plan object must include all three fields: day, theme, content.
-- content must be written in English only.
+- Every day_plan object must include all three fields: day_number, theme, activities.
+- Each day must have 3 to 5 activities.
+- Every activity must include all five fields: time, title, location, notes, cost_estimate.
+- All text must be written in English only.
 - Do not add any keys outside the schema above.
 - Return valid JSON only.
 """
@@ -76,7 +97,7 @@ def _build_user_prompt(
     )
 
 
-# ── Validation ────────────────────────────────────────────────────────────────
+
 
 def _validate(data: dict, expected_days: int) -> None:
     """Raise ValueError with a descriptive message if *data* does not conform."""
@@ -100,14 +121,21 @@ def _validate(data: dict, expected_days: int) -> None:
         )
 
     for i, day in enumerate(day_plans):
-        for field in ("day", "theme", "content"):
+        for field in ("day_number", "theme", "activities"):
             if field not in day:
                 raise ValueError(f"day_plans[{i}] is missing field '{field}'")
-        if not isinstance(day["content"], str) or not day["content"].strip():
-            raise ValueError(f"day_plans[{i}]['content'] must be a non-empty string")
+        activities = day["activities"]
+        if not isinstance(activities, list) or len(activities) == 0:
+            raise ValueError(f"day_plans[{i}]['activities'] must be a non-empty list")
+        for j, act in enumerate(activities):
+            for field in ("time", "title", "location", "notes", "cost_estimate"):
+                if field not in act:
+                    raise ValueError(
+                        f"day_plans[{i}]['activities'][{j}] is missing field '{field}'"
+                    )
 
 
-# ── Service class ─────────────────────────────────────────────────────────────
+
 
 class OllamaService:
     """Synchronous wrapper around the local Ollama /api/chat endpoint."""

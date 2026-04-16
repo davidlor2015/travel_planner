@@ -2,6 +2,7 @@
 .env.docker
 __pycache__/
 .venv/
+.venv-win/
 .pytest_cache/
 *.pyc
 app/core/__pycache__/

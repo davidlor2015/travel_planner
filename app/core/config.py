@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     # comfortable headroom while staying well within llama3.2's context window.
     OLLAMA_NUM_PREDICT: int = 8192
 
-    OPENTRIPMAP_API_KEY: str = "5ae2e3f221c38a28845f05b6cf278d9b31c8db8c4432be2b5e5c6b12"
+    OPENTRIPMAP_API_KEY: str = ""
 
     # Amadeus — self-service sandbox credentials.
     # Sign up at https://developers.amadeus.com and copy the Client ID / Secret

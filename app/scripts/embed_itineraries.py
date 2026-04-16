@@ -1,21 +1,23 @@
+# app/scripts/embed_itineraries.py
 """
 Read itinerary records from a JSON file, build text chunks, embed them,
-and upsert into the itinerary_chunks Postgres table.
+and upsert into the itinerary_chunks Postgres/pgvector table.
 
-Run:
-    python -m app.scripts.embed_itineraries
+Run standalone:
+    python -m app.scripts.embed_itineraries --data-path data/generated_itineraries.json
 
-Switch between seed and generated data by changing DATA_PATH below.
+Or import run() to call from the pipeline orchestrator.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import logging
 import sys
 from pathlib import Path
 from typing import Any
 
-from app.services.embedding_service import embed_text
+from app.services.embedding_service import EmbeddingService, MODEL_NAME
 from app.services.vector_store import upsert_chunks, chunk_count
 
 logging.basicConfig(
@@ -25,13 +27,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-
-# Switch this path to data/generated_itineraries.json for bulk data.
-DATA_PATH = Path("data/seed_itineraries.json")
-
-# Rows are inserted in batches to avoid holding large lists in memory.
-BATCH_SIZE = 50
-
+DEFAULT_DATA_PATH = Path("data/seed_itineraries.json")
+DEFAULT_BATCH_SIZE = 50
 
 _REQUIRED = {
     "itinerary_id", "destination", "country", "days",
@@ -39,6 +36,8 @@ _REQUIRED = {
     "title", "summary", "day_plans",
 }
 
+
+# ── Validation ────────────────────────────────────────────────────────────────
 
 def _is_valid(record: dict) -> bool:
     missing = _REQUIRED - set(record.keys())
@@ -54,9 +53,9 @@ def _is_valid(record: dict) -> bool:
     return True
 
 
+# ── Chunk builders ────────────────────────────────────────────────────────────
 
 def _overview_content(record: dict) -> str:
-    """Build the text for the overview chunk."""
     interests = ", ".join(record["interests"])
     return (
         f"{record['title']}\n\n"
@@ -70,7 +69,6 @@ def _overview_content(record: dict) -> str:
 
 
 def _day_content(day: dict) -> str:
-    """Build the text for a single day chunk."""
     lines = [f"Day {day['day_number']}: {day['theme']}"]
     for act in day.get("activities", []):
         lines.append(
@@ -83,30 +81,25 @@ def _day_content(day: dict) -> str:
 
 
 def build_chunks(record: dict) -> list[dict[str, Any]]:
-    """Return a list of chunk dicts ready for insertion (without embeddings)."""
     base: dict[str, Any] = {
         "itinerary_id": record["itinerary_id"],
         "destination":  record["destination"],
         "country":      record["country"],
         "days":         record["days"],
         "budget":       record["budget"],
-        "interests":    record["interests"],   # TEXT[] — psycopg2 handles list→array
+        "interests":    record["interests"],
         "pace":         record["pace"],
         "source_type":  record["source_type"],
     }
-
-    chunks: list[dict[str, Any]] = []
-
-    # Overview chunk
-    chunks.append({
-        **base,
-        "chunk_type": "overview",
-        "day_number": None,
-        "title":      record["title"],
-        "content":    _overview_content(record),
-    })
-
-    # One chunk per day
+    chunks: list[dict[str, Any]] = [
+        {
+            **base,
+            "chunk_type": "overview",
+            "day_number": None,
+            "title":      record["title"],
+            "content":    _overview_content(record),
+        }
+    ]
     for day in record["day_plans"]:
         chunks.append({
             **base,
@@ -115,38 +108,50 @@ def build_chunks(record: dict) -> list[dict[str, Any]]:
             "title":      f"Day {day['day_number']}: {day['theme']}",
             "content":    _day_content(day),
         })
-
     return chunks
 
 
+# ── Public interface ──────────────────────────────────────────────────────────
 
-def main() -> None:
-    if not DATA_PATH.exists():
-        logger.error("Data file not found: %s", DATA_PATH)
-        sys.exit(1)
+def run(
+    data_path: Path,
+    embed_model: str = MODEL_NAME,
+    batch_size: int = DEFAULT_BATCH_SIZE,
+) -> dict:
+    """Embed records from *data_path* and upsert into itinerary_chunks.
 
-    with DATA_PATH.open(encoding="utf-8") as f:
+    Returns a summary dict: records_loaded, records_valid, records_skipped,
+    chunks_inserted, total_rows.
+
+    Raises FileNotFoundError if *data_path* does not exist.
+    """
+    if not data_path.exists():
+        raise FileNotFoundError(f"Data file not found: {data_path}")
+
+    with data_path.open(encoding="utf-8") as f:
         records: list[dict] = json.load(f)
 
-    logger.info("Loaded %d records from %s", len(records), DATA_PATH)
+    logger.info(
+        "Loaded %d records from %s | embed model: %s",
+        len(records), data_path, embed_model,
+    )
 
     valid = [r for r in records if _is_valid(r)]
     skipped = len(records) - len(valid)
     if skipped:
         logger.warning("Skipped %d invalid record(s).", skipped)
 
+    embedder = EmbeddingService(model=embed_model)
     total_inserted = 0
     batch: list[dict] = []
 
     for idx, record in enumerate(valid, start=1):
         chunks = build_chunks(record)
-
         for chunk in chunks:
-            chunk["embedding"] = embed_text(chunk["content"])
-
+            chunk["embedding"] = embedder.embed_text(chunk["content"])
         batch.extend(chunks)
 
-        if len(batch) >= BATCH_SIZE or idx == len(valid):
+        if len(batch) >= batch_size or idx == len(valid):
             total_inserted += upsert_chunks(batch)
             logger.info(
                 "Progress: %d/%d records | %d chunks inserted so far",
@@ -154,12 +159,50 @@ def main() -> None:
             )
             batch = []
 
-    rows_now = chunk_count()
+    total_rows = chunk_count()
     logger.info(
-        "Done. Inserted %d chunks from %d records. "
+        "Embedding complete: %d chunks from %d records. "
         "Total rows in itinerary_chunks: %d.",
-        total_inserted, len(valid), rows_now,
+        total_inserted, len(valid), total_rows,
     )
+    return {
+        "records_loaded":  len(records),
+        "records_valid":   len(valid),
+        "records_skipped": skipped,
+        "chunks_inserted": total_inserted,
+        "total_rows":      total_rows,
+    }
+
+
+# ── CLI entry point ───────────────────────────────────────────────────────────
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Embed itinerary records and upsert into pgvector.",
+    )
+    parser.add_argument(
+        "--data-path", default=str(DEFAULT_DATA_PATH), metavar="PATH",
+        help=f"Path to the itinerary JSON file (default: {DEFAULT_DATA_PATH})",
+    )
+    parser.add_argument(
+        "--embed-model", default=MODEL_NAME, metavar="MODEL",
+        help=f"Ollama embedding model (default: {MODEL_NAME})",
+    )
+    parser.add_argument(
+        "--batch-size", type=int, default=DEFAULT_BATCH_SIZE, metavar="N",
+        help=f"Upsert batch size (default: {DEFAULT_BATCH_SIZE})",
+    )
+    args = parser.parse_args()
+
+    try:
+        run(
+            data_path=Path(args.data_path),
+            embed_model=args.embed_model,
+            batch_size=args.batch_size,
+        )
+    except FileNotFoundError as exc:
+        logger.error("%s", exc)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

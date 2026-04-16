@@ -181,9 +181,10 @@ travel-planner/
 |       +-- vector_store.py           # psycopg2 + pgvector upsert into itinerary_chunks
 |       +-- ollama_service.py         # Sync Ollama client for offline pipeline scripts
 +-- app/scripts/                      # Offline pipeline scripts (not part of the API)
+|   +-- run_itinerary_pipeline.py     # Orchestrator: generate + embed in one command (CLI flags)
+|   +-- generate_itineraries.py       # Mass-generates itinerary records via Ollama (CLI flags)
+|   +-- embed_itineraries.py          # Embeds records and upserts into itinerary_chunks (CLI flags)
 |   +-- seed_itineraries.py           # Validates data/seed_itineraries.json
-|   +-- generate_itineraries.py       # Mass-generates itinerary records via Ollama
-|   +-- embed_itineraries.py          # Embeds records and upserts into itinerary_chunks
 |   +-- verify_embedding.py           # Smoke-test: embeds a test string, prints dim count
 +-- data/
 |   +-- schema.sql                    # pgvector table + IVFFlat index (run once against Postgres)
@@ -502,10 +503,12 @@ Uses a local Ollama instance running `qwen2.5:14b`. No external API keys require
 3. Build user prompt          -> inject trip details, interests, budget
 4. Call Ollama                -> async HTTP POST via httpx
 5. Clean response             -> strip markdown code fences if present
-6. Parse JSON                 -> json.loads()
+6. Parse JSON                 -> json.loads(); partial-day recovery on truncated output
 7. Validate with Pydantic     -> ItineraryResponse(**parsed_dict)
 8. Return structured object   -> guaranteed shape, safe to use
 ```
+
+**Offline fallback:** If Ollama is unreachable (`LLMUnavailableError`), the service automatically falls back to the vector DB. It queries `itinerary_chunks` using metadata (destination, budget, days proximity) — no embedding or LLM needed — and assembles an `ItineraryResponse` from the stored content. A note is appended to the summary so the user knows the source.
 
 ### Strategy 2 — Rule-Based (OpenTripMap)
 
@@ -539,27 +542,66 @@ If no POIs match the requested interest categories, the service automatically re
 3. Call Ollama (stream=True)     -> OllamaClient.stream_json() reads NDJSON line by line
 4. Yield token SSE events        -> one event per non-empty content chunk
 5. Assemble full text            -> concatenate all tokens
-6. Validate with Pydantic        -> ItineraryResponse(**parsed_dict)
+6. Validate with Pydantic        -> ItineraryResponse(**parsed_dict); partial-day recovery on truncation
 7. Yield complete SSE event      -> validated JSON payload
 ```
 
-If Ollama raises an error or the JSON is invalid, an `error` SSE event is yielded and the generator returns cleanly. `X-Accel-Buffering: no` is set on the response so nginx proxies do not buffer the stream.
+If Ollama raises a network error (`LLMUnavailableError`), the stream handler falls back to the vector DB (same metadata search as Strategy 1) and yields a single `complete` SSE event — the client receives a valid response without any visible error. If the JSON is invalid after streaming completes, an `error` SSE event is yielded and the generator returns cleanly. All exceptions are caught inside the async generator to prevent `ERR_INCOMPLETE_CHUNKED_ENCODING`. `X-Accel-Buffering: no` is set on the response so nginx proxies do not buffer the stream.
 
 ### Itinerary Vectorization Pipeline
 
-An offline pipeline generates and stores vector embeddings of itinerary content in a pgvector table for future semantic search.
+An offline pipeline generates itinerary records with a local LLM and stores them in a pgvector table. When Ollama is unavailable at request time, the API falls back to this table using a pure-SQL metadata search (no embedding needed).
 
 ```
-seed_itineraries.json  (or generated_itineraries.json)
+Ollama (qwen2.5:14b)
         |
         v
-embed_itineraries.py   -> embed_text() via Ollama mxbai-embed-large
+generate_itineraries.py  -> data/generated_itineraries.json
         |
         v
-itinerary_chunks       (Postgres table with vector(1024) column)
+embed_itineraries.py     -> embeds via mxbai-embed-large
+        |
+        v
+itinerary_chunks         (Postgres table with vector(1024) column)
 ```
 
-**Step 1 — Validate seed data**
+**Recommended: use the orchestrator**
+
+`run_itinerary_pipeline.py` runs both steps end-to-end with a single command:
+
+```bash
+# Default run — 20 records, both steps
+python -m app.scripts.run_itinerary_pipeline
+
+# All combinations (~288 records across the full generation matrix)
+python -m app.scripts.run_itinerary_pipeline --max-records 0
+
+# Already have the JSON — just re-embed it
+python -m app.scripts.run_itinerary_pipeline --skip-generate
+
+# Custom models and output path
+python -m app.scripts.run_itinerary_pipeline \
+    --gen-model qwen2.5:14b \
+    --embed-model mxbai-embed-large \
+    --output-path data/my_batch.json \
+    --max-records 50
+
+# Generate only — inspect the JSON before committing to embed
+python -m app.scripts.run_itinerary_pipeline --skip-embed
+# Then embed when ready:
+python -m app.scripts.run_itinerary_pipeline --skip-generate
+```
+
+**Running steps individually**
+
+Each script is independently runnable with the same CLI flags:
+
+```bash
+python -m app.scripts.generate_itineraries --max-records 5 --model llama3
+python -m app.scripts.embed_itineraries --data-path data/generated_itineraries.json
+```
+
+**Step — Validate seed data (optional)**
 
 ```bash
 python -m app.scripts.seed_itineraries
@@ -567,23 +609,7 @@ python -m app.scripts.seed_itineraries
 
 Checks `data/seed_itineraries.json` for schema correctness. Exits non-zero on any validation error.
 
-**Step 2 — Generate additional itinerary records (optional)**
-
-```bash
-python -m app.scripts.generate_itineraries
-```
-
-Calls the local Ollama model (`qwen2.5:14b` by default) for each combination in the generation matrix (destinations × interest combos × days × budget × pace). Saves results incrementally to `data/generated_itineraries.json`. The `MAX_RECORDS` constant caps the run — set to `None` for all 240 combinations.
-
-**Step 3 — Embed and upsert**
-
-```bash
-python -m app.scripts.embed_itineraries
-```
-
-Reads JSON records, builds one overview chunk and one chunk per day per record, embeds each chunk via `mxbai-embed-large` (1024 dims), and batch-upserts into `itinerary_chunks`. Switch `DATA_PATH` in the script to target seed or generated data.
-
-**Step 4 — Verify the embedding service (optional)**
+**Step — Verify the embedding service (optional)**
 
 ```bash
 python -m app.scripts.verify_embedding
@@ -604,7 +630,7 @@ Creates the `itinerary_chunks` table with a `vector(1024)` column, an IVFFlat co
 Each itinerary record produces:
 
 - One **overview** chunk: title + summary + destination + budget + pace + interests
-- One **day** chunk per day: day number + theme + content
+- One **day** chunk per day: day number + activities list
 
 Chunks are upserted by `itinerary_id` (delete then re-insert) to keep the table idempotent on re-runs.
 

@@ -90,3 +90,78 @@ def chunk_count() -> int:
         with connection.cursor() as cur:
             cur.execute("SELECT COUNT(*) FROM itinerary_chunks")
             return cur.fetchone()[0]
+
+
+def find_best_itinerary(
+    destination: str,
+    days: int,
+    budget: str,
+    interests: list[str],
+) -> dict | None:
+    """Return the overview chunk that best matches the given trip parameters.
+
+    Matching priority:
+      1. Exact destination (case-insensitive); falls back to prefix LIKE.
+      2. Budget match preferred.
+      3. Closest days count.
+
+    Returns a dict with keys: itinerary_id, title, summary, budget, days,
+    interests, pace — or None if the table is empty or no destination match
+    is found.
+    """
+    _SELECT = """
+        SELECT itinerary_id, title, content, budget, days, interests, pace
+        FROM   itinerary_chunks
+        WHERE  chunk_type = 'overview'
+          AND  LOWER(destination) {dest_clause}
+        ORDER BY
+            (budget = %(budget)s)::int DESC,
+            ABS(days - %(days)s) ASC
+        LIMIT 1
+    """
+
+    params: dict = {"budget": budget, "days": days}
+
+    with _conn() as connection:
+        with connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            # Try exact match first.
+            cur.execute(
+                _SELECT.format(dest_clause="= LOWER(%(destination)s)"),
+                {**params, "destination": destination},
+            )
+            row = cur.fetchone()
+
+            if row is None:
+                # Fall back to prefix match (e.g. "Rome" matches "Rome, Italy").
+                cur.execute(
+                    _SELECT.format(dest_clause="LIKE LOWER(%(destination)s) || '%'"),
+                    {**params, "destination": destination},
+                )
+                row = cur.fetchone()
+
+    if row is None:
+        logger.warning("find_best_itinerary: no match for destination=%r", destination)
+        return None
+
+    logger.info(
+        "find_best_itinerary: matched itinerary_id=%s (dest=%r budget=%s days=%d)",
+        row["itinerary_id"], destination, row["budget"], row["days"],
+    )
+    return dict(row)
+
+
+def get_day_chunks(itinerary_id: str) -> list[dict]:
+    """Return all day chunks for *itinerary_id*, ordered by day_number."""
+    with _conn() as connection:
+        with connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT day_number, title, content
+                FROM   itinerary_chunks
+                WHERE  itinerary_id = %(itinerary_id)s
+                  AND  chunk_type   = 'day'
+                ORDER BY day_number
+                """,
+                {"itinerary_id": itinerary_id},
+            )
+            return [dict(row) for row in cur.fetchall()]

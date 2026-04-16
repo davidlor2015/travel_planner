@@ -66,7 +66,7 @@ interface OpenRequestResponse {
     results: MatchResult[];
 }
 
-export const getProfile = async (token: string): Promise<TravelProfile> => {
+export const getProfile = async (token: string): Promise<TravelProfile | null> => {
     if (!token) {
         throw new Error("No access token provided");
     }
@@ -77,6 +77,10 @@ export const getProfile = async (token: string): Promise<TravelProfile> => {
             Authorization: `Bearer ${token}`,
         },
     });
+
+    if (response.status === 404) {
+        return null;
+    }
 
     if (!response.ok) {
         const text = await response.text();
