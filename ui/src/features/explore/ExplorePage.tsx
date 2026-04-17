@@ -4,8 +4,8 @@ import { FlightSearch } from '../search';
 import { useTeleportScoreBySlug } from '../../shared/hooks/useTeleportScoreBySlug';
 import { useTeleportCityImage } from '../../shared/hooks/useTeleportCityImage';
 import { useWishlist } from '../../shared/hooks/useWishlist';
-import { useAllTeleportScores } from '../../shared/hooks/useAllTeleportScores';
-import { useTeleportRegionCities, type Region } from '../../shared/hooks/useTeleportRegionCities';
+import { useExploreDestinations } from '../../shared/hooks/useExploreDestinations';
+import type { Region } from '../../shared/api/search';
 import { WishlistButton } from '../../shared/ui';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -27,7 +27,7 @@ interface Destination {
 
 // ── Static popular data ───────────────────────────────────────────────────────
 
-const POPULAR_DESTINATIONS: Destination[] = [
+const FALLBACK_POPULAR_DESTINATIONS: Destination[] = [
   { id: 'tokyo',      city: 'Tokyo',        country: 'Japan',        tag: 'Culture',   description: 'Neon lights, ancient temples, and world-class ramen.'          },
   { id: 'bali',       city: 'Bali',         country: 'Indonesia',    tag: 'Beach',     description: 'Terraced rice fields, hidden temples, and turquoise surf.'      },
   { id: 'paris',      city: 'Paris',        country: 'France',       tag: 'Culture',   description: 'Café culture, art museums, and a tower lit at midnight.'        },
@@ -108,13 +108,15 @@ const cardVariants = {
 
 // ── Score badge ───────────────────────────────────────────────────────────────
 
-const TeleportBadge = ({ slug }: { slug: string }) => {
-  const { data, loading } = useTeleportScoreBySlug(slug);
+const TeleportBadge = ({ slug, prefetchedScore }: { slug: string; prefetchedScore?: number }) => {
+  const shouldFetch = typeof prefetchedScore !== 'number';
+  const { data, loading } = useTeleportScoreBySlug(slug, shouldFetch);
+
+  const score = typeof prefetchedScore === 'number' ? prefetchedScore : data?.teleport_city_score;
 
   if (loading) return <span className="inline-block w-16 h-4 rounded-full bg-parchment animate-pulse" />;
-  if (!data) return null;
+  if (typeof score !== 'number') return null;
 
-  const score = data.teleport_city_score;
   const color =
     score >= 70 ? 'text-olive border-olive/30 bg-olive/10' :
     score >= 45 ? 'text-amber border-amber/40 bg-amber/15' :
@@ -144,12 +146,13 @@ const SkeletonCard = () => (
 
 interface FeaturedHeroProps {
   destination: Destination;
+  score?: number;
   onPlanTrip: (dest: string) => void;
   isSaved: boolean;
   onToggleWishlist: () => void;
 }
 
-const FeaturedHero = ({ destination, onPlanTrip, isSaved, onToggleWishlist }: FeaturedHeroProps) => {
+const FeaturedHero = ({ destination, score, onPlanTrip, isSaved, onToggleWishlist }: FeaturedHeroProps) => {
   const { imageUrl, loading: imgLoading } = useTeleportCityImage(destination.city);
   const [imgError, setImgError] = useState(false);
   const config = destination.tag ? TAG_CONFIG[destination.tag] : DEFAULT_FALLBACK;
@@ -203,7 +206,7 @@ const FeaturedHero = ({ destination, onPlanTrip, isSaved, onToggleWishlist }: Fe
           )}
           <div className="flex items-center gap-1.5">
             <span className="text-xs text-white/60">Score:</span>
-            <TeleportBadge slug={destination.id} />
+            <TeleportBadge slug={destination.id} prefetchedScore={score} />
           </div>
           <motion.button
             onClick={() => onPlanTrip(fullDestination)}
@@ -224,13 +227,14 @@ const FeaturedHero = ({ destination, onPlanTrip, isSaved, onToggleWishlist }: Fe
 
 interface DestinationCardProps {
   destination: Destination;
+  score?: number;
   onPlanTrip: (dest: string) => void;
   onViewDetails: (dest: Destination) => void;
   isSaved: boolean;
   onToggleWishlist: () => void;
 }
 
-const DestinationCard = ({ destination, onPlanTrip, onViewDetails, isSaved, onToggleWishlist }: DestinationCardProps) => {
+const DestinationCard = ({ destination, score, onPlanTrip, onViewDetails, isSaved, onToggleWishlist }: DestinationCardProps) => {
   const { imageUrl, loading: imgLoading } = useTeleportCityImage(destination.city);
   const [imgError, setImgError] = useState(false);
   const config = destination.tag ? TAG_CONFIG[destination.tag] : DEFAULT_FALLBACK;
@@ -299,7 +303,7 @@ const DestinationCard = ({ destination, onPlanTrip, onViewDetails, isSaved, onTo
 
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-flint">City score:</span>
-          <TeleportBadge slug={destination.id} />
+          <TeleportBadge slug={destination.id} prefetchedScore={score} />
         </div>
 
         <div className="flex items-center justify-end">
@@ -504,33 +508,41 @@ export const ExplorePage = ({ token, onPlanTrip }: ExplorePageProps) => {
   const [selectedDest,  setSelectedDest]  = useState<Destination | null>(null);
 
   const { savedIds, toggle, isSaved } = useWishlist();
-  const [featured] = useState<Destination>(
-    () => POPULAR_DESTINATIONS[Math.floor(Math.random() * POPULAR_DESTINATIONS.length)],
-  );
+  const {
+    popular: popularDestinations,
+    regions: regionDestinations,
+    loading: exploreLoading,
+    error: exploreError,
+    scoresBySlug,
+  } = useExploreDestinations(token, activeRegion);
 
-  const { cities: regionCities, loading: regionLoading, error: regionError } =
-    useTeleportRegionCities(activeRegion);
+  const effectivePopular: Destination[] = popularDestinations.length > 0
+    ? popularDestinations.map((d) => ({
+      id: d.slug,
+      city: d.city,
+      country: d.country,
+      tag: d.tag,
+      description: d.description,
+    }))
+    : FALLBACK_POPULAR_DESTINATIONS;
+
+  const [featured] = useState<Destination>(
+    () => effectivePopular[Math.floor(Math.random() * effectivePopular.length)],
+  );
 
   const destinations: Destination[] = useMemo(
     () =>
       activeRegion === 'popular'
-        ? POPULAR_DESTINATIONS
-        : regionCities.map((c) => ({ id: c.id, city: c.city, country: '' })),
-    [activeRegion, regionCities],
+        ? effectivePopular
+        : (regionDestinations[activeRegion] ?? []).map((d) => ({
+          id: d.slug,
+          city: d.city,
+          country: d.country,
+          tag: d.tag,
+          description: d.description,
+        })),
+    [activeRegion, effectivePopular, regionDestinations],
   );
-
-  // Reset tag filter when switching away from popular (tags don't exist on region cities)
-  useEffect(() => {
-    if (activeRegion !== 'popular') {
-      setActiveTag('All');
-      if (sort === 'default') setSort('az');
-    } else {
-      setSort('default');
-    }
-  }, [activeRegion]);
-
-  const sortSlugs = sort === 'score-desc' ? destinations.map((d) => d.id) : [];
-  const { scores, loading: scoresLoading } = useAllTeleportScores(sortSlugs);
 
   const filtered = useMemo(() => {
     const base = destinations.filter((d) => {
@@ -547,9 +559,9 @@ export const ExplorePage = ({ token, onPlanTrip }: ExplorePageProps) => {
     });
 
     if (sort === 'az') return [...base].sort((a, b) => a.city.localeCompare(b.city));
-    if (sort === 'score-desc') return [...base].sort((a, b) => (scores.get(b.id) ?? -1) - (scores.get(a.id) ?? -1));
+    if (sort === 'score-desc') return [...base].sort((a, b) => (scoresBySlug[b.id] ?? -1) - (scoresBySlug[a.id] ?? -1));
     return base;
-  }, [destinations, search, activeTag, showSavedOnly, savedIds, sort, scores]);
+  }, [destinations, search, activeTag, showSavedOnly, savedIds, sort, scoresBySlug]);
 
   const availableSorts: SortOption[] = activeRegion === 'popular'
     ? ['default', 'az', 'score-desc']
@@ -579,6 +591,7 @@ export const ExplorePage = ({ token, onPlanTrip }: ExplorePageProps) => {
       {/* Featured hero — always from popular set */}
       <FeaturedHero
         destination={featured}
+        score={scoresBySlug[featured.id]}
         onPlanTrip={onPlanTrip}
         isSaved={isSaved(featured.id)}
         onToggleWishlist={() => toggle(featured.id)}
@@ -591,7 +604,15 @@ export const ExplorePage = ({ token, onPlanTrip }: ExplorePageProps) => {
           return (
             <motion.button
               key={region}
-              onClick={() => setActiveRegion(region)}
+              onClick={() => {
+                setActiveRegion(region);
+                if (region !== 'popular') {
+                  setActiveTag('All');
+                  if (sort === 'default') setSort('az');
+                } else {
+                  setSort('default');
+                }
+              }}
               whileTap={{ scale: 0.93 }}
               className={[
                 'text-xs font-bold px-3 py-1.5 rounded-full border transition-colors duration-150 cursor-pointer',
@@ -668,13 +689,13 @@ export const ExplorePage = ({ token, onPlanTrip }: ExplorePageProps) => {
       {/* Results count + sort */}
       <div className="flex items-center justify-between gap-4">
         <p className="text-xs text-flint font-medium">
-          {regionLoading ? 'Loading…' : `${filtered.length} ${filtered.length === 1 ? 'destination' : 'destinations'}`}
+          {exploreLoading ? 'Loading…' : `${filtered.length} ${filtered.length === 1 ? 'destination' : 'destinations'}`}
           &nbsp;·&nbsp;
           <span title="Live quality scores from Teleport API">City scores via Teleport</span>
         </p>
 
         <div className="flex items-center gap-2 shrink-0">
-          {scoresLoading && (
+          {exploreLoading && (
             <span className="w-3 h-3 rounded-full border-2 border-amber border-t-transparent animate-spin" />
           )}
           <select
@@ -692,14 +713,14 @@ export const ExplorePage = ({ token, onPlanTrip }: ExplorePageProps) => {
       </div>
 
       {/* Grid */}
-      {regionLoading ? (
+      {exploreLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {Array.from({ length: 12 }).map((_, i) => <SkeletonCard key={i} />)}
         </div>
-      ) : regionError ? (
+      ) : exploreError && popularDestinations.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 py-16 border-2 border-dashed border-smoke rounded-2xl text-center">
           <h3 className="text-lg font-bold text-espresso">Could not load destinations</h3>
-          <p className="text-sm text-flint">{regionError}</p>
+          <p className="text-sm text-flint">{exploreError}</p>
           <motion.button
             onClick={() => setActiveRegion('popular')}
             whileHover={{ scale: 1.04 }}
@@ -721,6 +742,7 @@ export const ExplorePage = ({ token, onPlanTrip }: ExplorePageProps) => {
             <DestinationCard
               key={dest.id}
               destination={dest}
+              score={scoresBySlug[dest.id]}
               onPlanTrip={onPlanTrip}
               onViewDetails={setSelectedDest}
               isSaved={isSaved(dest.id)}

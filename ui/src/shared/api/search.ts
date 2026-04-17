@@ -42,6 +42,24 @@ export interface InspirationResult {
   test_env: boolean;
 }
 
+export type Region = 'popular' | 'europe' | 'asia' | 'americas' | 'africa' | 'oceania';
+
+export interface ExploreDestination {
+  slug: string;
+  city: string;
+  country: string;
+  region: Region;
+  tag?: 'Beach' | 'Culture' | 'Adventure' | 'Food' | 'Nature';
+  description?: string;
+  sort_order: number;
+  teleport_score?: number;
+}
+
+export interface ExploreDestinationsResult {
+  popular: ExploreDestination[];
+  regions: Record<Exclude<Region, 'popular'>, ExploreDestination[]>;
+}
+
 export async function searchFlights(
   token: string,
   origin: string,
@@ -78,6 +96,24 @@ export async function getInspirations(
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error((body as { detail?: string }).detail ?? `Inspirations failed (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function getExploreDestinations(
+  token: string,
+  region?: Region,
+): Promise<ExploreDestinationsResult> {
+  const params = new URLSearchParams();
+  if (region) params.set('region', region);
+  params.set('include_scores', 'true');
+  const q = params.toString();
+  const res = await fetch(`${API_URL}/v1/search/explore-destinations${q ? `?${q}` : ''}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body as { detail?: string }).detail ?? `Explore destinations failed (${res.status})`);
   }
   return res.json();
 }

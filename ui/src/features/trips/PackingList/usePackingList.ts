@@ -26,10 +26,13 @@ export function usePackingList(token: string, tripId: number): UsePackingListRet
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
     getPackingItems(token, tripId)
-      .then((data) => { if (!cancelled) setItems(data); })
+      .then((data) => {
+        if (!cancelled) {
+          setItems(data);
+          setError(null);
+        }
+      })
       .catch((err) => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load'); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };

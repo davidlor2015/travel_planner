@@ -32,13 +32,12 @@ export function useBudgetTracker(token: string, tripId: number): UseBudgetTracke
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
     getBudget(token, tripId)
       .then((data) => {
         if (!cancelled) {
           setLimitState(data.limit);
           setExpenses(data.expenses);
+          setError(null);
         }
       })
       .catch((err) => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load'); })
