@@ -8,7 +8,6 @@ import { useAllTeleportScores } from '../../shared/hooks/useAllTeleportScores';
 import { useTeleportRegionCities, type Region } from '../../shared/hooks/useTeleportRegionCities';
 import { WishlistButton } from '../../shared/ui';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
 
 interface ExplorePageProps {
   token: string;
@@ -25,7 +24,6 @@ interface Destination {
   description?: string;
 }
 
-// ── Static popular data ───────────────────────────────────────────────────────
 
 const POPULAR_DESTINATIONS: Destination[] = [
   { id: 'tokyo',      city: 'Tokyo',        country: 'Japan',        tag: 'Culture',   description: 'Neon lights, ancient temples, and world-class ramen.'          },
@@ -50,7 +48,6 @@ const POPULAR_DESTINATIONS: Destination[] = [
   { id: 'vienna',     city: 'Vienna',       country: 'Austria',      tag: 'Culture',   description: 'Imperial grandeur, coffee houses, and Mozart at every corner.'  },
 ];
 
-// ── Region config ─────────────────────────────────────────────────────────────
 
 const REGION_LABELS: Record<Region, string> = {
   popular:  'Popular',
@@ -63,7 +60,7 @@ const REGION_LABELS: Record<Region, string> = {
 
 const ALL_REGIONS: Region[] = ['popular', 'europe', 'asia', 'americas', 'africa', 'oceania'];
 
-// ── Tag config ────────────────────────────────────────────────────────────────
+
 
 const ALL_TAGS: Array<'All' | DestinationTag> = ['All', 'Beach', 'Culture', 'Adventure', 'Food', 'Nature'];
 
@@ -84,7 +81,6 @@ const TAG_CONFIG: Record<DestinationTag, TagConfig> = {
 
 const DEFAULT_FALLBACK = { fallbackBgCls: 'bg-espresso', fallbackTextCls: 'text-ivory', filterActiveCls: 'bg-espresso text-ivory border-espresso', pillCls: '' };
 
-// ── Sort config ───────────────────────────────────────────────────────────────
 
 type SortOption = 'default' | 'az' | 'score-desc';
 
@@ -94,7 +90,7 @@ const SORT_LABELS: Record<SortOption, string> = {
   'score-desc': 'Top Rated',
 };
 
-// ── Animation variants ────────────────────────────────────────────────────────
+
 
 const containerVariants = {
   hidden: {},
@@ -106,7 +102,6 @@ const cardVariants = {
   show:   { opacity: 1, y: 0, transition: { type: 'spring' as const, bounce: 0.25, duration: 0.45 } },
 };
 
-// ── Score badge ───────────────────────────────────────────────────────────────
 
 const TeleportBadge = ({ slug }: { slug: string }) => {
   const { data, loading } = useTeleportScoreBySlug(slug);
@@ -127,7 +122,6 @@ const TeleportBadge = ({ slug }: { slug: string }) => {
   );
 };
 
-// ── Skeleton card ─────────────────────────────────────────────────────────────
 
 const SkeletonCard = () => (
   <div className="bg-white rounded-2xl border border-smoke/60 shadow-sm overflow-hidden animate-pulse">
@@ -140,7 +134,7 @@ const SkeletonCard = () => (
   </div>
 );
 
-// ── Featured hero ─────────────────────────────────────────────────────────────
+
 
 interface FeaturedHeroProps {
   destination: Destination;
@@ -220,7 +214,7 @@ const FeaturedHero = ({ destination, onPlanTrip, isSaved, onToggleWishlist }: Fe
   );
 };
 
-// ── Destination card ──────────────────────────────────────────────────────────
+
 
 interface DestinationCardProps {
   destination: Destination;
@@ -318,7 +312,7 @@ const DestinationCard = ({ destination, onPlanTrip, onViewDetails, isSaved, onTo
   );
 };
 
-// ── Destination modal ─────────────────────────────────────────────────────────
+
 
 interface DestinationModalProps {
   destination: Destination;
@@ -493,7 +487,7 @@ const DestinationModal = ({ destination, onClose, onPlanTrip, isSaved, onToggleW
   );
 };
 
-// ── Main component ────────────────────────────────────────────────────────────
+
 
 export const ExplorePage = ({ token, onPlanTrip }: ExplorePageProps) => {
   const [search,        setSearch]        = useState('');
@@ -519,15 +513,15 @@ export const ExplorePage = ({ token, onPlanTrip }: ExplorePageProps) => {
     [activeRegion, regionCities],
   );
 
-  // Reset tag filter when switching away from popular (tags don't exist on region cities)
-  useEffect(() => {
-    if (activeRegion !== 'popular') {
+  const handleRegionChange = (region: Region) => {
+    setActiveRegion(region);
+    if (region !== 'popular') {
       setActiveTag('All');
       if (sort === 'default') setSort('az');
     } else {
       setSort('default');
     }
-  }, [activeRegion]);
+  };
 
   const sortSlugs = sort === 'score-desc' ? destinations.map((d) => d.id) : [];
   const { scores, loading: scoresLoading } = useAllTeleportScores(sortSlugs);
@@ -591,7 +585,7 @@ export const ExplorePage = ({ token, onPlanTrip }: ExplorePageProps) => {
           return (
             <motion.button
               key={region}
-              onClick={() => setActiveRegion(region)}
+              onClick={() => handleRegionChange(region)}
               whileTap={{ scale: 0.93 }}
               className={[
                 'text-xs font-bold px-3 py-1.5 rounded-full border transition-colors duration-150 cursor-pointer',
@@ -701,7 +695,7 @@ export const ExplorePage = ({ token, onPlanTrip }: ExplorePageProps) => {
           <h3 className="text-lg font-bold text-espresso">Could not load destinations</h3>
           <p className="text-sm text-flint">{regionError}</p>
           <motion.button
-            onClick={() => setActiveRegion('popular')}
+            onClick={() => handleRegionChange('popular')}
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.96 }}
             className="px-5 py-2 rounded-full bg-parchment text-espresso text-sm font-semibold hover:bg-smoke transition-colors cursor-pointer"
