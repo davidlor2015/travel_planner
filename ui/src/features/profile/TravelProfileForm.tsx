@@ -114,6 +114,8 @@ export const TravelProfileForm = ({
   const isDiscoverable    = useWatch({ control, name: 'is_discoverable' });
   const groupSizeMin      = useWatch({ control, name: 'group_size_min' });
   const groupSizeMax      = useWatch({ control, name: 'group_size_max' });
+  const normalizedGroupSizeMin = typeof groupSizeMin === 'number' ? groupSizeMin : Number(groupSizeMin ?? profile?.group_size_min ?? 1);
+  const normalizedGroupSizeMax = typeof groupSizeMax === 'number' ? groupSizeMax : Number(groupSizeMax ?? profile?.group_size_max ?? 4);
 
   const completeness = getProfileCompleteness({
     id: profile?.id ?? 0,
@@ -121,8 +123,8 @@ export const TravelProfileForm = ({
     travel_style: selectedStyle,
     budget_range: selectedBudget,
     interests: selectedInterests,
-    group_size_min: groupSizeMin,
-    group_size_max: groupSizeMax,
+    group_size_min: normalizedGroupSizeMin,
+    group_size_max: normalizedGroupSizeMax,
     is_discoverable: isDiscoverable,
   });
 

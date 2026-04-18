@@ -20,7 +20,7 @@ export interface ItineraryPin {
 // Cycles through brand colours per day (amber, clay, olive, danger, espresso).
 const DAY_COLORS = ['#B45309', '#8B5A3E', '#3F6212', '#881337', '#1C1917'];
 
-function hasFiniteCoords(lat: number | null | undefined, lon: number | null | undefined): lat is number {
+function hasFiniteCoords(lat: number | null | undefined, lon: number | null | undefined): boolean {
   return Number.isFinite(lat) && Number.isFinite(lon);
 }
 
@@ -117,7 +117,7 @@ export function useItineraryPins(
         let coords: [number, number] | null = null;
 
         if (hasFiniteCoords(item.lat, item.lon)) {
-          coords = [item.lat, item.lon];
+          coords = [item.lat as number, item.lon as number];
         } else if (item.location) {
           coords = geocodedMap.get(`${day.day_number}-${eventIndex}`) ?? null;
         }
