@@ -55,6 +55,8 @@ export const BudgetTracker = ({ token, tripId, onSummaryChange }: BudgetTrackerP
   const [draftCategory, setDraftCategory] = useState<ExpenseCategory>('other');
   const [draftLimit,    setDraftLimit]    = useState('');
   const [editingLimit,  setEditingLimit]  = useState(false);
+  const [showExpenseForm, setShowExpenseForm] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
 
 
   const spentPct   = limit ? Math.min((totalSpent / limit) * 100, 100) : 0;
@@ -71,11 +73,17 @@ export const BudgetTracker = ({ token, tripId, onSummaryChange }: BudgetTrackerP
     });
   }, [expenses.length, isOverBudget, limit, loading, onSummaryChange, remaining, totalSpent]);
 
-  const handleSaveLimit = useCallback(() => {
+  const handleSaveLimit = useCallback(async () => {
     const parsed = parseFloat(draftLimit);
     if (!isNaN(parsed) && parsed > 0) {
-      setLimit(parsed);
-      setEditingLimit(false);
+      setFeedback(null);
+      try {
+        await setLimit(parsed);
+        setEditingLimit(false);
+        setFeedback('Budget updated.');
+      } catch {
+        return;
+      }
     }
   }, [draftLimit, setLimit]);
 
@@ -84,11 +92,18 @@ export const BudgetTracker = ({ token, tripId, onSummaryChange }: BudgetTrackerP
     if (e.key === 'Escape') setEditingLimit(false);
   }, [handleSaveLimit]);
 
-  const handleAddExpense = useCallback(() => {
+  const handleAddExpense = useCallback(async () => {
     const amount = parseFloat(draftAmount);
-    addExpense(draftLabel, amount, draftCategory);
-    setDraftLabel('');
-    setDraftAmount('');
+    setFeedback(null);
+    try {
+      await addExpense(draftLabel, amount, draftCategory);
+      setDraftLabel('');
+      setDraftAmount('');
+      setShowExpenseForm(false);
+      setFeedback('Expense added.');
+    } catch {
+      return;
+    }
   }, [addExpense, draftLabel, draftAmount, draftCategory]);
 
   const handleExpenseKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -107,7 +122,7 @@ export const BudgetTracker = ({ token, tripId, onSummaryChange }: BudgetTrackerP
 
           {/* Title + budget status */}
           <div>
-            <h4 className="text-base font-bold text-espresso">Budget Tracker</h4>
+            <h4 className="text-base font-bold text-espresso">Money</h4>
             {loading ? (
               <p className="text-xs text-flint mt-0.5">Loading…</p>
             ) : limit !== null && !editingLimit && (
@@ -159,12 +174,23 @@ export const BudgetTracker = ({ token, tripId, onSummaryChange }: BudgetTrackerP
               )}
             </div>
           ) : (
-            <button
-              onClick={() => { setDraftLimit(String(limit ?? '')); setEditingLimit(true); }}
-              className="text-xs font-semibold text-amber hover:text-espresso transition-colors cursor-pointer"
-            >
-              {limit !== null ? `Budget: ${formatCurrency(limit)}` : 'Set budget'}
-            </button>
+            <div className="flex items-center gap-3 flex-wrap justify-end">
+              <button
+                onClick={() => { setDraftLimit(String(limit ?? '')); setEditingLimit(true); }}
+                className="text-xs font-semibold text-amber hover:text-espresso transition-colors cursor-pointer"
+              >
+                {limit !== null ? `Budget: ${formatCurrency(limit)}` : 'Set budget'}
+              </button>
+              <motion.button
+                type="button"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setShowExpenseForm((prev) => !prev)}
+                className="px-4 py-2 rounded-full bg-amber text-white text-sm font-bold shadow-sm shadow-amber/25"
+              >
+                {showExpenseForm ? 'Close expense form' : 'Add expense'}
+              </motion.button>
+            </div>
           )}
         </div>
 
@@ -202,6 +228,20 @@ export const BudgetTracker = ({ token, tripId, onSummaryChange }: BudgetTrackerP
             })}
           </div>
         )}
+
+        <AnimatePresence>
+          {feedback && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="mt-3 px-4 py-3 rounded-xl bg-olive/10 border border-olive/20 text-olive text-sm font-medium"
+              role="status"
+            >
+              {feedback}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* ── Expense list ── */}
@@ -237,7 +277,15 @@ export const BudgetTracker = ({ token, tripId, onSummaryChange }: BudgetTrackerP
 
                   {/* Remove */}
                   <motion.button
-                    onClick={() => removeExpense(expense.id)}
+                    onClick={async () => {
+                      setFeedback(null);
+                      try {
+                        await removeExpense(expense.id);
+                        setFeedback('Expense removed.');
+                      } catch {
+                        return;
+                      }
+                    }}
                     whileHover={{ scale: 1.15 }}
                     whileTap={{ scale: 0.9 }}
                     aria-label="Remove expense"
@@ -260,62 +308,71 @@ export const BudgetTracker = ({ token, tripId, onSummaryChange }: BudgetTrackerP
       )}
 
       {/* ── Add expense form ── */}
-      <div className="px-5 py-4 border-t border-amber/15 space-y-3">
-
-        {/* Category selector */}
-        <div className="flex gap-1.5 flex-wrap">
-          {CATEGORIES.map(({ value, label, activeCls, pillCls }) => (
-            <motion.button
-              key={value}
-              onClick={() => setDraftCategory(value)}
-              whileTap={{ scale: 0.93 }}
-              className={[
-                'text-xs font-bold px-2.5 py-1 rounded-full border transition-colors duration-150 cursor-pointer',
-                draftCategory === value ? activeCls : pillCls,
-              ].join(' ')}
-            >
-              {label}
-            </motion.button>
-          ))}
-        </div>
-
-        {/* Label + amount + add */}
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={draftLabel}
-            onChange={(e) => setDraftLabel(e.target.value)}
-            onKeyDown={handleExpenseKeyDown}
-            placeholder="What did you spend on?"
-            className="flex-1 min-w-0 px-4 py-2 rounded-full border border-smoke bg-white text-sm text-espresso
-                       placeholder:text-flint focus:outline-none focus:ring-2 focus:ring-amber/40 focus:border-amber
-                       transition-all duration-150"
-          />
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={draftAmount}
-            onChange={(e) => setDraftAmount(e.target.value)}
-            onKeyDown={handleExpenseKeyDown}
-            placeholder="$0"
-            className="w-20 px-3 py-2 rounded-full border border-smoke bg-white text-sm text-espresso text-right
-                       placeholder:text-flint focus:outline-none focus:ring-2 focus:ring-amber/40 focus:border-amber
-                       transition-all duration-150"
-          />
-          <motion.button
-            onClick={handleAddExpense}
-            disabled={!canAdd}
-            whileHover={canAdd ? { scale: 1.04 } : undefined}
-            whileTap={canAdd ? { scale: 0.96 } : undefined}
-            className="px-4 py-2 rounded-full bg-amber text-white text-sm font-bold shadow-sm shadow-amber/25
-                       hover:bg-amber-dark transition-colors duration-150
-                       disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+      <AnimatePresence initial={false}>
+        {showExpenseForm && (
+          <motion.div
+            initial={{ opacity: 0, height: 0, y: -6 }}
+            animate={{ opacity: 1, height: 'auto', y: 0 }}
+            exit={{ opacity: 0, height: 0, y: -6 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
           >
-            Add
-          </motion.button>
-        </div>
-      </div>
+            <div className="px-5 py-4 border-t border-amber/15 space-y-3">
+              <div className="flex gap-1.5 flex-wrap">
+                {CATEGORIES.map(({ value, label, activeCls, pillCls }) => (
+                  <motion.button
+                    key={value}
+                    onClick={() => setDraftCategory(value)}
+                    whileTap={{ scale: 0.93 }}
+                    className={[
+                      'text-xs font-bold px-2.5 py-1 rounded-full border transition-colors duration-150 cursor-pointer',
+                      draftCategory === value ? activeCls : pillCls,
+                    ].join(' ')}
+                  >
+                    {label}
+                  </motion.button>
+                ))}
+              </div>
+
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={draftLabel}
+                  onChange={(e) => setDraftLabel(e.target.value)}
+                  onKeyDown={handleExpenseKeyDown}
+                  placeholder="What did you spend on?"
+                  className="flex-1 min-w-0 px-4 py-2 rounded-full border border-smoke bg-white text-sm text-espresso
+                             placeholder:text-flint focus:outline-none focus:ring-2 focus:ring-amber/40 focus:border-amber
+                             transition-all duration-150"
+                />
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={draftAmount}
+                  onChange={(e) => setDraftAmount(e.target.value)}
+                  onKeyDown={handleExpenseKeyDown}
+                  placeholder="$0"
+                  className="w-20 px-3 py-2 rounded-full border border-smoke bg-white text-sm text-espresso text-right
+                             placeholder:text-flint focus:outline-none focus:ring-2 focus:ring-amber/40 focus:border-amber
+                             transition-all duration-150"
+                />
+                <motion.button
+                  onClick={() => void handleAddExpense()}
+                  disabled={!canAdd}
+                  whileHover={canAdd ? { scale: 1.04 } : undefined}
+                  whileTap={canAdd ? { scale: 0.96 } : undefined}
+                  className="px-4 py-2 rounded-full bg-amber text-white text-sm font-bold shadow-sm shadow-amber/25
+                             hover:bg-amber-dark transition-colors duration-150
+                             disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  Add
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

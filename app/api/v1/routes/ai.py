@@ -9,7 +9,7 @@ from app.api.deps import get_current_user, get_db
 from app.core.config import settings
 from app.core.limiter import limiter
 from app.models.user import User
-from app.schemas.ai import AIPlanRequest, ItineraryResponse, AIApplyRequest
+from app.schemas.ai import AIApplyRequest, AIPlanRequest, AIRefineRequest, ItineraryResponse
 from app.services.ai.itinerary_service import ItineraryService
 
 logger = logging.getLogger(__name__)
@@ -117,3 +117,32 @@ async def apply_trip_plan(
         return {"message": "Itinerary applied successfully", "trip_id": updated_trip.id}
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.post("/refine", response_model=ItineraryResponse)
+@limiter.limit(settings.AI_RATE_LIMIT)
+async def refine_trip_plan(
+    request: Request,
+    body: AIRefineRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    """Refines one day or time block of an existing draft itinerary."""
+    if body.regenerate_day_number is None:
+        raise HTTPException(status_code=400, detail="regenerate_day_number is required.")
+
+    service = ItineraryService(db)
+    try:
+        return await service.refine_itinerary(
+            trip_id=body.trip_id,
+            user_id=current_user.id,
+            current_itinerary=body.current_itinerary,
+            regenerate_day_number=body.regenerate_day_number,
+            regenerate_time_block=body.regenerate_time_block,
+            variant=body.variant,
+            locked_items=body.locked_items,
+            favorite_items=body.favorite_items,
+        )
+    except ValueError as e:
+        logger.warning("AI refine failed (trip_id=%s): %s", body.trip_id, e)
+        raise HTTPException(status_code=400, detail=str(e))

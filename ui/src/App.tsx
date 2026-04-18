@@ -49,8 +49,12 @@ function App() {
   const [trips, setTrips]         = useState<Trip[]>([]);
 
   // Restored synchronously from localStorage — no loading flash for returning users.
-  const [user,  setUser]  = useState<UserProfile | null>(() => readStoredUser());
+  const [user,  setUser]  = useState<UserProfile | null>(() => {
+    const storedToken = localStorage.getItem(TOKEN_KEY);
+    return storedToken ? readStoredUser() : null;
+  });
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
+  const isAuthenticated = Boolean(user && token);
 
   // Derived: true when we have a token but no user yet (first login, cleared cache).
   // Avoids calling setState synchronously inside an effect.
@@ -132,19 +136,19 @@ function App() {
       </div>
     );
 
-  if (user) {
+  if (isAuthenticated) {
     return (
       <AppShell
         view={view}
         onViewChange={switchView}
-        userEmail={user.email}
+        userEmail={user!.email}
         onLogout={handleLogout}
       >
         <Suspense fallback={<div className="text-sm text-flint p-4">Loading section…</div>}>
-          {view === "dashboard" && <Dashboard trips={trips} />}
+          {view === "dashboard" && <Dashboard token={token!} trips={trips} onNavigate={switchView} />}
           {view === "explore"   && <ExplorePage token={token!} onPlanTrip={handlePlanTrip} />}
           {view === "matching"  && <MatchingPage token={token!} trips={trips} />}
-          {view === "profile"   && <ProfilePage trips={trips} userEmail={user.email} />}
+          {view === "profile"   && <ProfilePage trips={trips} userEmail={user!.email} />}
 
           {view === "trips" &&
             (showCreateForm ? (

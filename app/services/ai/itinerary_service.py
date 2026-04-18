@@ -1,12 +1,21 @@
 import json
 import logging
 import re
+from copy import deepcopy
 from datetime import timedelta
 from typing import AsyncGenerator, Optional
 from sqlalchemy.orm import Session
 
 from app.models.trip import Trip
-from app.schemas.ai import DayPlan, ItineraryItem, ItineraryResponse
+from app.schemas.ai import (
+    AIDayRefinementResponse,
+    DayPlan,
+    ItineraryItem,
+    ItineraryItemReference,
+    ItineraryResponse,
+    RefinementTimeBlock,
+    RefinementVariant,
+)
 from app.services.llm.ollama_client import LLMUnavailableError, OllamaClient
 from app.services.ai.rule_based_service import generate_rule_based_itinerary
 from app.repositories.trip_repository import TripRepository
@@ -18,6 +27,7 @@ logger = logging.getLogger(__name__)
 # Kept consistent with rule_based_service.MAX_DAYS so both paths
 # produce comparable results for the same trip.
 _LLM_MAX_DAYS = 14
+_TIME_BLOCK_ORDER = {"morning": 0, "afternoon": 1, "evening": 2}
 
 
 def _recover_partial_days(raw: str) -> list[dict]:
@@ -111,6 +121,39 @@ def _parse_activity_line(line: str) -> ItineraryItem | None:
     )
 
 
+def _infer_time_block(item: ItineraryItem, index: int, total_items: int) -> RefinementTimeBlock:
+    label = (item.time or "").strip().lower()
+    if any(token in label for token in ("morning", "breakfast", "sunrise")):
+        return "morning"
+    if any(token in label for token in ("afternoon", "lunch", "midday", "noon")):
+        return "afternoon"
+    if any(token in label for token in ("evening", "night", "dinner", "sunset")):
+        return "evening"
+
+    match = re.search(r"(\d{1,2})(?::(\d{2}))?\s*([ap]m)?", label)
+    if match:
+        hour = int(match.group(1))
+        meridiem = match.group(3)
+        if meridiem == "pm" and hour != 12:
+            hour += 12
+        elif meridiem == "am" and hour == 12:
+            hour = 0
+        if hour < 12:
+            return "morning"
+        if hour < 17:
+            return "afternoon"
+        return "evening"
+
+    if total_items <= 1:
+        return "morning"
+    ratio = index / max(total_items - 1, 1)
+    if ratio < 0.34:
+        return "morning"
+    if ratio < 0.67:
+        return "afternoon"
+    return "evening"
+
+
 class ItineraryService:
     def __init__(self, db: Session):
         self.trip_repo = TripRepository(db)
@@ -161,6 +204,94 @@ class ItineraryService:
             f"Interests: {user_interests}\n"
             f"Generate exactly {num_days} days, 3 activities per day. "
             "Return JSON only."
+        )
+
+    def _build_refinement_system_prompt(self) -> str:
+        return (
+            "You are refining one day inside an existing travel itinerary. "
+            "Output ONLY valid JSON with this structure:\n"
+            '{"day":{"day_number":1,"date":null,"items":[{"time":"09:00AM","title":"...","location":"...",'
+            '"notes":"...","cost_estimate":"$20"}]}}\n'
+            "Preserve locked activities verbatim when they are supplied. "
+            "Return only the refined day object."
+        )
+
+    def _describe_item_references(
+        self,
+        itinerary: ItineraryResponse,
+        references: list[ItineraryItemReference],
+    ) -> list[str]:
+        descriptions: list[str] = []
+        for ref in references:
+            day = next((d for d in itinerary.days if d.day_number == ref.day_number), None)
+            if day is None or ref.item_index >= len(day.items):
+                continue
+            item = day.items[ref.item_index]
+            descriptions.append(
+                f"Day {ref.day_number} item {ref.item_index + 1}: "
+                f"{item.time or 'Any time'} - {item.title}"
+                + (f" in {item.location}" if item.location else "")
+            )
+        return descriptions
+
+    def _build_refinement_user_prompt(
+        self,
+        trip: Trip,
+        itinerary: ItineraryResponse,
+        regenerate_day_number: int,
+        regenerate_time_block: Optional[RefinementTimeBlock],
+        variant: Optional[RefinementVariant],
+        locked_items: list[ItineraryItemReference],
+        favorite_items: list[ItineraryItemReference],
+    ) -> str:
+        day = next((d for d in itinerary.days if d.day_number == regenerate_day_number), None)
+        if day is None:
+            raise ValueError(f"Day {regenerate_day_number} does not exist in the current itinerary.")
+
+        variant_guidance = {
+            "faster_pace": "Make the day feel more energetic with tighter transitions and higher activity density.",
+            "cheaper": "Reduce paid experiences and prioritize free or low-cost options.",
+            "more_local": "Favor neighborhood-specific, local-feeling activities over generic highlights.",
+            "less_walking": "Reduce walking distance, cluster activities tightly, and favor low-mobility transitions.",
+        }
+
+        locked_summary = self._describe_item_references(itinerary, locked_items)
+        favorite_summary = self._describe_item_references(itinerary, favorite_items)
+        scope_label = (
+            f"only the {regenerate_time_block} block of day {regenerate_day_number}"
+            if regenerate_time_block
+            else f"all of day {regenerate_day_number}"
+        )
+
+        return (
+            f"Trip destination: {trip.destination or 'Unknown location'}\n"
+            f"Trip dates: {trip.start_date or 'TBD'} to {trip.end_date or 'TBD'}\n"
+            f"Trip notes: {trip.notes or 'No extra notes provided'}\n"
+            f"Refine {scope_label}.\n"
+            + (f"Variant target: {variant}. {variant_guidance[variant]}\n" if variant else "")
+            + (
+                "Locked activities that must remain in the refined day exactly as written:\n"
+                + "\n".join(f"- {line}" for line in locked_summary)
+                + "\n"
+                if locked_summary
+                else ""
+            )
+            + (
+                "Favorite activities to keep aligned with if possible:\n"
+                + "\n".join(f"- {line}" for line in favorite_summary)
+                + "\n"
+                if favorite_summary
+                else ""
+            )
+            + "Current full itinerary JSON:\n"
+            + itinerary.model_dump_json(indent=2)
+            + "\nReturn a refined JSON object for only the requested day. "
+            + (
+                f"Keep the rest of day {regenerate_day_number} coherent while specifically refreshing the {regenerate_time_block} block.\n"
+                if regenerate_time_block
+                else ""
+            )
+            + f"Set day_number to {regenerate_day_number} and keep the original date."
         )
 
     def _clean_json_string(self, raw_text: str) -> str:
@@ -222,6 +353,50 @@ class ItineraryService:
             logger.error("Partial recovery assembly failed: %s", exc)
             return None
 
+    def _merge_refined_day(
+        self,
+        current_itinerary: ItineraryResponse,
+        refined_day: DayPlan,
+        regenerate_day_number: int,
+        regenerate_time_block: Optional[RefinementTimeBlock],
+    ) -> ItineraryResponse:
+        merged = deepcopy(current_itinerary)
+
+        for index, day in enumerate(merged.days):
+            if day.day_number != regenerate_day_number:
+                continue
+
+            if regenerate_time_block is None:
+                refined_day.day_number = day.day_number
+                refined_day.date = day.date
+                merged.days[index] = refined_day
+                return merged
+
+            existing_groups = {"morning": [], "afternoon": [], "evening": []}
+            for item_index, item in enumerate(day.items):
+                existing_groups[_infer_time_block(item, item_index, len(day.items))].append(item)
+
+            refined_groups = {"morning": [], "afternoon": [], "evening": []}
+            for item_index, item in enumerate(refined_day.items):
+                refined_groups[_infer_time_block(item, item_index, len(refined_day.items))].append(item)
+
+            if not refined_groups[regenerate_time_block]:
+                refined_groups[regenerate_time_block] = refined_day.items
+
+            combined_items: list[ItineraryItem] = []
+            for block in ("morning", "afternoon", "evening"):
+                source_items = refined_groups[block] if block == regenerate_time_block else existing_groups[block]
+                combined_items.extend(source_items)
+
+            merged.days[index] = DayPlan(
+                day_number=day.day_number,
+                date=day.date,
+                items=combined_items,
+            )
+            return merged
+
+        raise ValueError(f"Day {regenerate_day_number} does not exist in the current itinerary.")
+
     # ── Vector DB fallback ────────────────────────────────────────────────────
 
     def _itinerary_from_chunks(
@@ -233,8 +408,12 @@ class ItineraryService:
         budget: str,
     ) -> ItineraryResponse:
         """Assemble an ItineraryResponse from pre-stored itinerary_chunks rows."""
+        requested_days = (
+            (trip.end_date - trip.start_date).days + 1
+            if trip.start_date and trip.end_date else len(day_chunks)
+        )
         days: list[DayPlan] = []
-        for chunk in day_chunks:
+        for chunk in day_chunks[:requested_days]:
             day_number: int = chunk["day_number"]
             date = (
                 str(trip.start_date + timedelta(days=day_number - 1))
@@ -254,11 +433,16 @@ class ItineraryService:
         summary = content_parts[1] if len(content_parts) >= 2 else overview.get("content", "")
 
         interest_label = ", ".join(interests) if interests else "general sightseeing"
+        trim_note = (
+            f" Trimmed a {len(day_chunks)}-day pre-generated itinerary to {requested_days} days."
+            if len(day_chunks) > requested_days
+            else ""
+        )
         return ItineraryResponse(
             title=overview["title"],
             summary=(
                 f"{summary} "
-                f"(Pre-generated itinerary for {interest_label} — Ollama was unavailable.)"
+                f"(Pre-generated itinerary for {interest_label} — Ollama was unavailable.{trim_note})"
             ),
             days=days,
         )
@@ -302,11 +486,20 @@ class ItineraryService:
                 f"'{trip.destination}' has no day data."
             )
 
-        logger.info(
-            "Vector DB fallback: itinerary_id=%s (%d days) for trip_id=%s dest=%r",
-            overview["itinerary_id"], len(day_chunks), trip.id, trip.destination,
+        requested_days = (
+            (trip.end_date - trip.start_date).days + 1
+            if trip.start_date and trip.end_date else 3
         )
-        return self._itinerary_from_chunks(trip, overview, day_chunks, interests, budget)
+        logger.info(
+            "Vector DB fallback: itinerary_id=%s stored_days=%d requested_days=%d trip_id=%s dest=%r",
+            overview["itinerary_id"], len(day_chunks), requested_days, trip.id, trip.destination,
+        )
+        itinerary = self._itinerary_from_chunks(trip, overview, day_chunks, interests, budget)
+        logger.info(
+            "Vector DB fallback result: returned_days=%d trip_id=%s itinerary_id=%s",
+            len(itinerary.days), trip.id, overview["itinerary_id"],
+        )
+        return itinerary
 
     # ── Public methods ────────────────────────────────────────────────────────
 
@@ -354,6 +547,50 @@ class ItineraryService:
         if not trip:
             raise ValueError("Trip not found or access denied.")
         return await generate_rule_based_itinerary(trip, interests_override, budget_override)
+
+    async def refine_itinerary(
+        self,
+        trip_id: int,
+        user_id: int,
+        current_itinerary: ItineraryResponse,
+        regenerate_day_number: int,
+        regenerate_time_block: Optional[RefinementTimeBlock] = None,
+        variant: Optional[RefinementVariant] = None,
+        locked_items: Optional[list[ItineraryItemReference]] = None,
+        favorite_items: Optional[list[ItineraryItemReference]] = None,
+    ) -> ItineraryResponse:
+        trip = self.trip_repo.get_by_id_and_user(trip_id, user_id)
+        if not trip:
+            raise ValueError("Trip not found or access denied.")
+
+        system_prompt = self._build_refinement_system_prompt()
+        user_prompt = self._build_refinement_user_prompt(
+            trip=trip,
+            itinerary=current_itinerary,
+            regenerate_day_number=regenerate_day_number,
+            regenerate_time_block=regenerate_time_block,
+            variant=variant,
+            locked_items=locked_items or [],
+            favorite_items=favorite_items or [],
+        )
+
+        try:
+            raw_response = await self.llm_client.generate_json(system_prompt, user_prompt)
+        except LLMUnavailableError as exc:
+            raise ValueError("Itinerary refinement requires the AI service to be available.") from exc
+
+        try:
+            refined = AIDayRefinementResponse(**json.loads(self._clean_json_string(raw_response)))
+        except Exception as exc:
+            logger.error("Failed to parse refinement response: %s", exc)
+            raise ValueError("AI generated invalid refinement data. Please try again.") from exc
+
+        return self._merge_refined_day(
+            current_itinerary=current_itinerary,
+            refined_day=refined.day,
+            regenerate_day_number=regenerate_day_number,
+            regenerate_time_block=regenerate_time_block,
+        )
 
     async def stream_itinerary(
         self,

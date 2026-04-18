@@ -8,6 +8,11 @@ export interface PackingItem {
   created_at: string;
 }
 
+export interface PackingSuggestion {
+  label: string;
+  reason: string;
+}
+
 const base = (tripId: number) => `${API_URL}/v1/trips/${tripId}/packing`;
 
 const authHeaders = (token: string) => ({
@@ -18,6 +23,12 @@ const authHeaders = (token: string) => ({
 export async function getPackingItems(token: string, tripId: number): Promise<PackingItem[]> {
   const res = await fetch(`${base(tripId)}/`, { headers: authHeaders(token) });
   if (!res.ok) throw new Error(`Failed to load packing list (${res.status})`);
+  return res.json();
+}
+
+export async function getPackingSuggestions(token: string, tripId: number): Promise<PackingSuggestion[]> {
+  const res = await fetch(`${base(tripId)}/suggestions`, { headers: authHeaders(token) });
+  if (!res.ok) throw new Error(`Failed to load packing suggestions (${res.status})`);
   return res.json();
 }
 

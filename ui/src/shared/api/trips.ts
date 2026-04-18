@@ -20,6 +20,11 @@ export interface TripSummary {
     packing_total: number;
     packing_checked: number;
     packing_progress_pct: number;
+    reservation_count: number;
+    reservation_upcoming_count: number;
+    prep_total: number;
+    prep_completed: number;
+    prep_overdue_count: number;
     budget_limit: number | null;
     budget_total_spent: number;
     budget_remaining: number | null;

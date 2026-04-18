@@ -69,6 +69,11 @@ class TripSummaryResponse(BaseModel):
     packing_total: int
     packing_checked: int
     packing_progress_pct: int
+    reservation_count: int
+    reservation_upcoming_count: int
+    prep_total: int
+    prep_completed: int
+    prep_overdue_count: int
     budget_limit: float | None
     budget_total_spent: float
     budget_remaining: float | None

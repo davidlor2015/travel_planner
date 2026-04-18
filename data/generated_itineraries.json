@@ -1,248 +1,8 @@
 [
   {
-    "itinerary_id": "rome-3d-bud-food-hist-walk-rel",
-    "destination": "Rome",
-    "country": "Italy",
-    "days": 3,
-    "budget": "budget",
-    "interests": [
-      "food",
-      "history",
-      "walking"
-    ],
-    "pace": "relaxed",
-    "source_type": "generated",
-    "title": "Rome Relaxed Food and History Tour",
-    "summary": "Experience the heart of Rome with a mix of historical sights and culinary delights over three days in a relaxed pace. Each day offers opportunities to explore ancient ruins, taste authentic Italian cuisine, and stroll through charming neighborhoods.",
-    "day_plans": [
-      {
-        "day_number": 1,
-        "theme": "Historic Center",
-        "activities": [
-          {
-            "time": "Morning, 09:00",
-            "title": "Colosseum Guided Tour",
-            "location": "Via San Giovanni in Laterano, 6, 00184 Roma RM, Italy",
-            "notes": "Book tickets in advance to avoid long queues and consider a guided tour for more insight.",
-            "cost_estimate": "$25-30"
-          },
-          {
-            "time": "Late Morning, 11:30",
-            "title": "Roman Forum Exploration",
-            "location": "Piazza del Colosseo, 00184 Roma RM, Italy",
-            "notes": "Wear comfortable shoes as there's a lot of walking on uneven terrain.",
-            "cost_estimate": "$25-30"
-          },
-          {
-            "time": "Lunch, 13:30",
-            "title": "Trastevere Lunch at Da Enzo al 29",
-            "location": "Via del Governo Vecchio, 87/89, 00186 Roma RM, Italy",
-            "notes": "Reservations are recommended; enjoy traditional Roman dishes.",
-            "cost_estimate": "$35-40"
-          },
-          {
-            "time": "Afternoon, 15:00",
-            "title": "Vatican Museums and Sistine Chapel",
-            "location": "Viale Vaticano, 00165 Città del Vaticano, Italy",
-            "notes": "Arrive early to beat the crowds; book tickets in advance.",
-            "cost_estimate": "$20-25"
-          },
-          {
-            "time": "Evening, 18:30",
-            "title": "Piazza Navona and Pantheon Night Stroll",
-            "location": "Piazza della Rotonda, 00186 Roma RM, Italy",
-            "notes": "Enjoy the lively atmosphere of Piazza Navona in the evening.",
-            "cost_estimate": "Free"
-          }
-        ]
-      },
-      {
-        "day_number": 2,
-        "theme": "Food and Wine Tour",
-        "activities": [
-          {
-            "time": "Morning, 09:30",
-            "title": "Mercato Centrale Food Market Visit",
-            "location": "Piazza Vittorio Emanuele II, 146, 00185 Roma RM, Italy",
-            "notes": "Sample local delicacies and enjoy a casual breakfast.",
-            "cost_estimate": "$20-30"
-          },
-          {
-            "time": "Late Morning, 11:30",
-            "title": "Aventine Hill Visit",
-            "location": "Via Santa Maria in Monticello, 85/97, 00153 Roma RM, Italy",
-            "notes": "Enjoy panoramic views of Rome from the Keyhole on Aventine Hill.",
-            "cost_estimate": "Free"
-          },
-          {
-            "time": "Lunch, 13:30",
-            "title": "Ristorante Roscioli Lunch",
-            "location": "Via Panisperna, 78/82, 00184 Roma RM, Italy",
-            "notes": "Book a table for lunch and enjoy gourmet cuisine.",
-            "cost_estimate": "$50-60"
-          },
-          {
-            "time": "Afternoon, 15:30",
-            "title": "Castel Sant'Angelo Tour",
-            "location": "Piazza Celimontana, 84, 00192 Roma RM, Italy",
-            "notes": "Explore the history and architecture of this fortress.",
-            "cost_estimate": "$15-20"
-          },
-          {
-            "time": "Evening, 19:00",
-            "title": "Appia Antica Park Sunset Walk",
-            "location": "Via Appia Nuova, 647/653, 00178 Roma RM, Italy",
-            "notes": "Take a peaceful walk along the ancient Roman road.",
-            "cost_estimate": "Free"
-          }
-        ]
-      },
-      {
-        "day_number": 3,
-        "theme": "Day at Ostia Antica",
-        "activities": [
-          {
-            "time": "Morning, 09:00",
-            "title": "Train to Ostia Antica",
-            "location": "Rome Termini Station, Piazza dei Cinquecento, 58/62, 00184 Roma RM, Italy",
-            "notes": "Purchase a ticket and catch the train from Rome's central station.",
-            "cost_estimate": "$3-5"
-          },
-          {
-            "time": "Late Morning, 10:30",
-            "title": "Ostia Antica Ruins Exploration",
-            "location": "Via di Ostia 468/528, 00076 Roma RM, Italy",
-            "notes": "Wear comfortable shoes and bring water.",
-            "cost_estimate": "$10-15"
-          },
-          {
-            "time": "Lunch, 13:30",
-            "title": "Ostia Antica Pizza Lunch",
-            "location": "Pizzeria Da Mario, Via Ostiense Km 67, Ostia Antica, Italy",
-            "notes": "Enjoy authentic pizza at a local pizzeria.",
-            "cost_estimate": "$25-30"
-          },
-          {
-            "time": "Afternoon, 14:30",
-            "title": "Beach Day in Lido di Ostia",
-            "location": "Lungomare Roma Ovest, 00076 Ostia (Rm), Italy",
-            "notes": "Relax and swim at the beach.",
-            "cost_estimate": "Free"
-          },
-          {
-            "time": "Evening, 18:30",
-            "title": "Back to Rome by Train",
-            "location": "Ostia Antica Station, Via Ostiense Km 67, 00076 Roma RM, Italy",
-            "notes": "Catch the last train back to central Rome.",
-            "cost_estimate": "$3-5"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "itinerary_id": "rome-3d-bud-food-hist-walk-bal",
-    "destination": "Rome",
-    "country": "Italy",
-    "days": 3,
-    "budget": "budget",
-    "interests": [
-      "food",
-      "history",
-      "walking"
-    ],
-    "pace": "balanced",
-    "source_type": "generated",
-    "title": "Rome Food and History Adventure",
-    "summary": "Explore the historical heart of Rome while indulging in its culinary delights over three days. Walk through ancient ruins and taste traditional Roman cuisine.",
-    "day_plans": [
-      {
-        "day_number": 1,
-        "theme": "Historic Center",
-        "activities": [
-          {
-            "time": "Morning, 09:00",
-            "title": "Colosseum Tour",
-            "location": "Piazza del Colosseo, 1, 00184 Roma RM, Italy",
-            "notes": "Arrive early to avoid crowds and long lines.",
-            "cost_estimate": "$20-30"
-          },
-          {
-            "time": "Afternoon, 13:00",
-            "title": "Roman Forum Visit",
-            "location": "Piazza del Colosseo, 1, 00184 Roma RM, Italy",
-            "notes": "Rent an audio guide for historical context.",
-            "cost_estimate": "$20-30"
-          },
-          {
-            "time": "Evening, 19:00",
-            "title": "Trastevere Dinner",
-            "location": "Via dei Vascellari, Trastevere, Rome, Italy",
-            "notes": "Try authentic Roman pasta dishes.",
-            "cost_estimate": "$25-40"
-          }
-        ]
-      },
-      {
-        "day_number": 2,
-        "theme": "Vatican City and Pantheon",
-        "activities": [
-          {
-            "time": "Morning, 10:00",
-            "title": "St. Peter's Basilica",
-            "location": "Via della Conciliazione, 00120 Città del Vaticano, Vatican City",
-            "notes": "Free admission; dress modestly.",
-            "cost_estimate": "Free"
-          },
-          {
-            "time": "Afternoon, 13:30",
-            "title": "Vatican Museums and Sistine Chapel",
-            "location": "Viale Vaticano, 6, 00165 Città del Vaticano, Vatican City",
-            "notes": "Book tickets in advance to save time.",
-            "cost_estimate": "$25-35"
-          },
-          {
-            "time": "Evening, 18:00",
-            "title": "Pantheon Dinner",
-            "location": "Piazza della Rotonda, 00186 Roma RM, Italy",
-            "notes": "Enjoy Roman pizza al taglio.",
-            "cost_estimate": "$20-30"
-          }
-        ]
-      },
-      {
-        "day_number": 3,
-        "theme": "Trevi Fountain and Local Markets",
-        "activities": [
-          {
-            "time": "Morning, 10:00",
-            "title": "Piazza Navona and Pantheon",
-            "location": "Piazza della Rotonda, 00186 Roma RM, Italy",
-            "notes": "Capture photos of the beautiful fountains.",
-            "cost_estimate": "Free"
-          },
-          {
-            "time": "Afternoon, 13:00",
-            "title": "Campo de' Fiori and Roman Cuisine Cooking Class",
-            "location": "Via dei Giubbonari, 28/36, 00186 Roma RM, Italy",
-            "notes": "Learn to cook traditional Italian dishes.",
-            "cost_estimate": "$50-70"
-          },
-          {
-            "time": "Evening, 19:00",
-            "title": "Testaccio Dinner",
-            "location": "Piazza Testaccio, 62, 00153 Roma RM, Italy",
-            "notes": "Sample hearty Roman food in a local setting.",
-            "cost_estimate": "$25-40"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "itinerary_id": "rome-3d-mod-food-hist-walk-rel",
-    "destination": "Rome",
-    "country": "Italy",
+    "itinerary_id": "new-york-city-3d-mod-food-hist-walk-rel",
+    "destination": "New York City",
+    "country": "USA",
     "days": 3,
     "budget": "moderate",
     "interests": [
@@ -252,8 +12,1800 @@
     ],
     "pace": "relaxed",
     "source_type": "generated",
-    "title": "Rome Food and History",
-    "summary": "Explore the culinary delights of Rome while immersing yourself in its rich historical heritage over three leisurely days.",
+    "title": "New York City Food and History Tour",
+    "summary": "Explore the historical landmarks of New York while indulging in its diverse culinary scene over a relaxed three-day tour.",
+    "day_plans": [
+      {
+        "day_number": 1,
+        "theme": "Historic Lower Manhattan",
+        "activities": [
+          {
+            "time": "Morning, 09:00",
+            "title": "Visit the Statue of Liberty and Ellis Island",
+            "location": "Liberty Island and Ellis Island, New York Harbor",
+            "notes": "Book tickets in advance as they tend to sell out quickly.",
+            "cost_estimate": "$50+"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Dine at Katz's Delicatessen",
+            "location": "205 E Houston St, New York, NY 10002",
+            "notes": "Try the pastrami sandwich and save room for a slice of cheesecake.",
+            "cost_estimate": "$10-20"
+          },
+          {
+            "time": "Evening, 18:30",
+            "title": "Explore Washington Square Park",
+            "location": "Washington Square Park, New York, NY 10011",
+            "notes": "Enjoy the lively atmosphere and street performers.",
+            "cost_estimate": "Free"
+          }
+        ]
+      },
+      {
+        "day_number": 2,
+        "theme": "Brooklyn Food Tour",
+        "activities": [
+          {
+            "time": "Morning, 09:30",
+            "title": "Visit the Brooklyn Museum",
+            "location": "200 Eastern Pkwy, New York, NY 11238",
+            "notes": "Check out the extensive collection including Egyptian and Ancient Near Eastern art.",
+            "cost_estimate": "$5-10"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "Enjoy Lunch at Roberta's Pizza",
+            "location": "235 Moore St, Brooklyn, NY 11206",
+            "notes": "Known for its wood-fired pizzas and cozy ambiance.",
+            "cost_estimate": "$10-20"
+          },
+          {
+            "time": "Evening, 18:00",
+            "title": "Stroll through Prospect Park",
+            "location": "960 Flatbush Ave, Brooklyn, NY 11225",
+            "notes": "Take a leisurely walk and admire the natural beauty.",
+            "cost_estimate": "Free"
+          }
+        ]
+      },
+      {
+        "day_number": 3,
+        "theme": "Upper East Side Delights",
+        "activities": [
+          {
+            "time": "Morning, 09:30",
+            "title": "Tour the Metropolitan Museum of Art",
+            "location": "1000 Fifth Ave, New York, NY 10028",
+            "notes": "Explore ancient and modern masterpieces from around the world.",
+            "cost_estimate": "$5-10"
+          },
+          {
+            "time": "Afternoon, 14:30",
+            "title": "Dine at Russ & Daughters Cafe",
+            "location": "237 E Houston St, New York, NY 10002",
+            "notes": "Experience the famous smoked fish and bagels.",
+            "cost_estimate": "$10-20"
+          },
+          {
+            "time": "Evening, 18:00",
+            "title": "Walk through Central Park",
+            "location": "Central Park West & W 79th St, New York, NY 10024",
+            "notes": "Enjoy the serene beauty of this urban oasis.",
+            "cost_estimate": "Free"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "itinerary_id": "ho-chi-minh-city-3d-mod-food-hist-walk-rel",
+    "destination": "Ho Chi Minh City",
+    "country": "Vietnam",
+    "days": 3,
+    "budget": "moderate",
+    "interests": [
+      "food",
+      "history",
+      "walking"
+    ],
+    "pace": "relaxed",
+    "source_type": "generated",
+    "title": "Ho Chi Minh City Food and History Tour",
+    "summary": "Explore the culinary delights and historical sites of Ho Chi Minh City over three relaxing days. Each day offers a mix of food experiences, visits to cultural landmarks, and leisurely walks.",
+    "day_plans": [
+      {
+        "day_number": 1,
+        "theme": "Historic Center",
+        "activities": [
+          {
+            "time": "Morning, 09:00",
+            "title": "War Remnants Museum",
+            "location": "28 Vo Van Tan Street, Ben Nghe Ward, District 1, Ho Chi Minh City",
+            "notes": "Arrive early to avoid crowds and get a comprehensive understanding of Vietnam's history.",
+            "cost_estimate": "$5-10"
+          },
+          {
+            "time": "Afternoon, 13:30",
+            "title": "Ben Thanh Market",
+            "location": "228 Le Loi Street, Ben Nghe Ward, District 1, Ho Chi Minh City",
+            "notes": "Perfect for a leisurely walk and sampling local street food.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Evening, 17:00",
+            "title": "Binh Tay Market Night Tour",
+            "location": "256 Nguyen Thai Binh Street, Ben Thanh Ward, District 1, Ho Chi Minh City",
+            "notes": "Enjoy the vibrant atmosphere and delicious street food in the evening.",
+            "cost_estimate": "$10-20"
+          }
+        ]
+      },
+      {
+        "day_number": 2,
+        "theme": "Food Exploration",
+        "activities": [
+          {
+            "time": "Morning, 09:30",
+            "title": "Phung Hung Street Food Tour",
+            "location": "167 Phung Hung Street, Ben Nghe Ward, District 1, Ho Chi Minh City",
+            "notes": "Start your day with a variety of Vietnamese breakfast options.",
+            "cost_estimate": "$5-10"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Bánh Mì Huynh Kien",
+            "location": "29 De Tham Street, Ben Thanh Ward, District 1, Ho Chi Minh City",
+            "notes": "Experience the famous bánh mì sandwich from a historic establishment.",
+            "cost_estimate": "$5-10"
+          },
+          {
+            "time": "Evening, 18:30",
+            "title": "Bui Vien Street Food and Drink Night Tour",
+            "location": "Bui Vien Street, Ben Thanh Ward, District 1, Ho Chi Minh City",
+            "notes": "Enjoy a variety of street food options while walking along this lively pedestrian area.",
+            "cost_estimate": "$20-30"
+          }
+        ]
+      },
+      {
+        "day_number": 3,
+        "theme": "Cultural Walks and Markets",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Cholon Walking Tour",
+            "location": "District 5, Ho Chi Minh City",
+            "notes": "Discover the Chinese heritage of Cholon through its temples and markets.",
+            "cost_estimate": "$20-30"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "Nguyen Hue Walking Street Food Tour",
+            "location": "Nguyen Hue Pedestrian Street, Ben Thanh Ward, District 1, Ho Chi Minh City",
+            "notes": "Sample street food from various vendors along this popular walking street.",
+            "cost_estimate": "$5-10"
+          },
+          {
+            "time": "Evening, 17:30",
+            "title": "Ho Chi Minh Museum",
+            "location": "2 Chuyen Thanh Street, Ben Nghe Ward, District 1, Ho Chi Minh City",
+            "notes": "Learn about the life and legacy of Vietnam's former president.",
+            "cost_estimate": "$5-10"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "itinerary_id": "rome-3d-bud-nigh-food-shop-bal",
+    "destination": "Rome",
+    "country": "Italy",
+    "days": 3,
+    "budget": "budget",
+    "interests": [
+      "nightlife",
+      "food",
+      "shopping"
+    ],
+    "pace": "balanced",
+    "source_type": "generated",
+    "title": "Rome Nightlife and Gourmet Delights",
+    "summary": "Explore the vibrant night scene of Rome, savor its gourmet delights, and indulge in some retail therapy at local markets and boutiques.",
+    "day_plans": [
+      {
+        "day_number": 1,
+        "theme": "Historic Center and Nightlife",
+        "activities": [
+          {
+            "time": "Morning, 09:00",
+            "title": "Visit the Pantheon",
+            "location": "Piazza della Rotonda, 00186 Roma RM, Italy",
+            "notes": "Free entry. Open from 9am to 7pm.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "Explore Trastevere Shopping",
+            "location": "Via dei Serpenti, 25, 00186 Roma RM, Italy",
+            "notes": "Find unique boutiques and artisanal shops in this charming neighborhood.",
+            "cost_estimate": "$5-15"
+          },
+          {
+            "time": "Evening, 20:00",
+            "title": "Enjoy Roman Cuisine at Trastevere",
+            "location": "Via della Lungaretta, 6, 00186 Roma RM, Italy",
+            "notes": "Try local favorites like carbonara and cacio e pepe.",
+            "cost_estimate": "$25-35"
+          },
+          {
+            "time": "Night, 22:00",
+            "title": "Experience the Nightlife of Pigneto",
+            "location": "Pigneto District, Rome",
+            "notes": "Discover cozy bars and live music venues in this up-and-coming area.",
+            "cost_estimate": "$10-20"
+          }
+        ]
+      },
+      {
+        "day_number": 2,
+        "theme": "Food Markets and Nighttime Shopping",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Tour Mercato Centrale Roma",
+            "location": "Via Milano 36, 00185 Roma RM, Italy",
+            "notes": "Sample local and international flavors at this indoor market.",
+            "cost_estimate": "$2-4"
+          },
+          {
+            "time": "Afternoon, 15:00",
+            "title": "Visit the Colosseum",
+            "location": "Piazza del Colosseo, 00184 Roma RM, Italy",
+            "notes": "Purchase tickets in advance to skip lines.",
+            "cost_estimate": "$20-30"
+          },
+          {
+            "time": "Evening, 19:00",
+            "title": "Dine at Testaccio Market",
+            "location": "Via Giovanni Branca, 58, 00153 Roma RM, Italy",
+            "notes": "Taste the best of Roman street food.",
+            "cost_estimate": "$20-30"
+          },
+          {
+            "time": "Night, 21:00",
+            "title": "Shop at Piazza Vittorio Emanuele II",
+            "location": "Piazza Vittorio Emanuele II, 00185 Roma RM, Italy",
+            "notes": "Find unique souvenirs and artisanal products.",
+            "cost_estimate": "$2-4"
+          }
+        ]
+      },
+      {
+        "day_number": 3,
+        "theme": "Shopping Spree and Night Out",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Explore Via Condotti Boutiques",
+            "location": "Via dei Condotti, 425, 00187 Roma RM, Italy",
+            "notes": "Discover luxury brands and high-end fashion.",
+            "cost_estimate": "$50-60"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Lunch at Roscioli",
+            "location": "Piazza Pasquino 28, 00186 Roma RM, Italy",
+            "notes": "Enjoy a gourmet lunch with wine pairings.",
+            "cost_estimate": "$40-50"
+          },
+          {
+            "time": "Evening, 19:00",
+            "title": "Dine at Hostaria dell'Angelo",
+            "location": "Via dei Coronari 67/68, 00186 Roma RM, Italy",
+            "notes": "Savor traditional Roman dishes in a historic setting.",
+            "cost_estimate": "$35-45"
+          },
+          {
+            "time": "Night, 22:00",
+            "title": "Bar Hopping in Monti",
+            "location": "Monti District, Rome",
+            "notes": "Experience the lively bars and clubs of this trendy area.",
+            "cost_estimate": "$15-25"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "itinerary_id": "barcelona-3d-bud-cult-food-city-bal",
+    "destination": "Barcelona",
+    "country": "Spain",
+    "days": 3,
+    "budget": "budget",
+    "interests": [
+      "culture",
+      "food",
+      "city exploration"
+    ],
+    "pace": "balanced",
+    "source_type": "generated",
+    "title": "Barcelona Budget Adventure",
+    "summary": "Explore the cultural and culinary delights of Barcelona over three days with a mix of historic sites, local markets, and delicious meals.",
+    "day_plans": [
+      {
+        "day_number": 1,
+        "theme": "Historic Center",
+        "activities": [
+          {
+            "time": "Morning, 09:00",
+            "title": "Visit Gothic Quarter",
+            "location": "Barri Gòtic, Barcelona",
+            "notes": "Wear comfortable shoes for walking through narrow streets.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "Picasso Museum",
+            "location": "Montcada Street, 15-23, Barcelona",
+            "notes": "Consider buying tickets online to skip the line.",
+            "cost_estimate": "$10-20"
+          },
+          {
+            "time": "Evening, 18:00",
+            "title": "La Boqueria Market Dinner",
+            "location": "La Rambla, Barcelona",
+            "notes": "Try a variety of tapas for an authentic experience.",
+            "cost_estimate": "$20-30"
+          }
+        ]
+      },
+      {
+        "day_number": 2,
+        "theme": "Cultural and Artistic Exploration",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Park Güell",
+            "location": "Carrer d'Olimpica, 14-20, Barcelona",
+            "notes": "Purchase tickets online for a quicker entry.",
+            "cost_estimate": "$5-10"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Casa Batlló and La Pedrera",
+            "location": "Passeig de Gràcia, Barcelona",
+            "notes": "Consider a combined ticket for both sites.",
+            "cost_estimate": "$20-30"
+          },
+          {
+            "time": "Evening, 19:00",
+            "title": "El Celler de Can Roca Dinner",
+            "location": "Passeig del Born, 148, Barcelona",
+            "notes": "Book a table in advance to avoid disappointment.",
+            "cost_estimate": "$50+"
+          }
+        ]
+      },
+      {
+        "day_number": 3,
+        "theme": "Beaches and Nightlife",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Barceloneta Beach",
+            "location": "Passeig Marítim de la Barceloneta, Barcelona",
+            "notes": "Great for a relaxing day at the beach.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "La Ruta del Sabor Food Tour",
+            "location": "Various locations in El Born district",
+            "notes": "Book tickets online for a guided culinary journey.",
+            "cost_estimate": "$20-30"
+          },
+          {
+            "time": "Evening, 19:00",
+            "title": "Jazz Festival at Palau de la Música Catalana",
+            "location": "Carrer de Ribes, 50, Barcelona",
+            "notes": "Check the festival schedule and buy tickets in advance.",
+            "cost_estimate": "$20-30"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "itinerary_id": "ho-chi-minh-city-3d-mod-cult-food-city-rel",
+    "destination": "Ho Chi Minh City",
+    "country": "Vietnam",
+    "days": 3,
+    "budget": "moderate",
+    "interests": [
+      "culture",
+      "food",
+      "city exploration"
+    ],
+    "pace": "relaxed",
+    "source_type": "generated",
+    "title": "Ho Chi Minh City Culture and Cuisine",
+    "summary": "This three-day trip through Ho Chi Minh City offers a blend of cultural discovery and culinary delights. Enjoy exploring historical sites, engaging with local communities, and tasting some of Vietnam's most delicious dishes.",
+    "day_plans": [
+      {
+        "day_number": 1,
+        "theme": "Historical Exploration",
+        "activities": [
+          {
+            "time": "Morning",
+            "title": "War Remnants Museum",
+            "location": "28 Vo Van Tan Street, Ben Nghe Ward, District 1, Ho Chi Minh City",
+            "notes": "Arrive early to avoid crowds and the midday heat.",
+            "cost_estimate": "$5"
+          },
+          {
+            "time": "Late Morning",
+            "title": "Ben Thanh Market Tour",
+            "location": "38 Le Loi Street, Ben Thanh Ward, District 1, Ho Chi Minh City",
+            "notes": "Wear comfortable walking shoes and be prepared to bargain.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Afternoon",
+            "title": "Jade Emperor Pagoda Visit",
+            "location": "73 An Duong Vuong Street, Ben Nghe Ward, District 1, Ho Chi Minh City",
+            "notes": "Dress modestly to show respect for the temple.",
+            "cost_estimate": "$2"
+          },
+          {
+            "time": "Early Evening",
+            "title": "Banh Xeo Phuong Restaurant",
+            "location": "34 Le Thanh Ton Street, Ben Nghe Ward, District 1, Ho Chi Minh City",
+            "notes": "Order the restaurant's specialty: crispy rice pancakes with shrimp and pork.",
+            "cost_estimate": "$5-10"
+          }
+        ]
+      },
+      {
+        "day_number": 2,
+        "theme": "Cholon Discovery",
+        "activities": [
+          {
+            "time": "Morning",
+            "title": "Binh Tay Market",
+            "location": "36 Le Quy Don Street, Ben Thanh Ward, District 1, Ho Chi Minh City",
+            "notes": "Experience the vibrant atmosphere and diverse offerings.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Late Morning",
+            "title": "Chua Ngoc Hoang Temple Tour",
+            "location": "62 Vo Van Tan Street, Ben Nghe Ward, District 1, Ho Chi Minh City",
+            "notes": "Learn about the temple's history and its role in the local community.",
+            "cost_estimate": "$2"
+          },
+          {
+            "time": "Afternoon",
+            "title": "Nguyen Hue Walking Street",
+            "location": "District 1, Ho Chi Minh City",
+            "notes": "Enjoy live music performances and street food vendors.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Early Evening",
+            "title": "Pho Ba Dim Restaurant",
+            "location": "298 Le Loi Street, Ben Thanh Ward, District 1, Ho Chi Minh City",
+            "notes": "Savor authentic Vietnamese pho in a cozy setting.",
+            "cost_estimate": "$5-10"
+          }
+        ]
+      },
+      {
+        "day_number": 3,
+        "theme": "City and Culture Tour",
+        "activities": [
+          {
+            "time": "Morning",
+            "title": "Notre Dame Cathedral Basilica of Saigon",
+            "location": "6 Quoc Hoa Ward, District 1, Ho Chi Minh City",
+            "notes": "Admire the Gothic architecture and take photos.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Late Morning",
+            "title": "Central Post Office",
+            "location": "2Cong Xa Khanh Thien Ward, District 1, Ho Chi Minh City",
+            "notes": "Explore the unique architecture and historic significance.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Afternoon",
+            "title": "Reunification Palace Visit",
+            "location": "Nguyen Dinh Chieu Street, Ben Thanh Ward, District 1, Ho Chi Minh City",
+            "notes": "Discover the palace's history and its role in Vietnamese politics.",
+            "cost_estimate": "$5"
+          },
+          {
+            "time": "Evening",
+            "title": "Night Market Bánh Mì Street Food Tour",
+            "location": "District 1, Ho Chi Minh City",
+            "notes": "Sample various types of bánh mì from street vendors.",
+            "cost_estimate": "$5-10"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "itinerary_id": "rome-3d-bud-cult-food-city-rel",
+    "destination": "Rome",
+    "country": "Italy",
+    "days": 3,
+    "budget": "budget",
+    "interests": [
+      "culture",
+      "food",
+      "city exploration"
+    ],
+    "pace": "relaxed",
+    "source_type": "generated",
+    "title": "Relaxed Roman Adventure",
+    "summary": "Explore the cultural and culinary delights of Rome at a leisurely pace over three days. From ancient ruins to contemporary cuisine, this itinerary offers a balanced mix of sightseeing and indulging in local flavors.",
+    "day_plans": [
+      {
+        "day_number": 1,
+        "theme": "Historic Center",
+        "activities": [
+          {
+            "time": "Morning",
+            "title": "Colosseum Tour",
+            "location": "Piazza del Colosseo, 00184 Roma RM, Italy",
+            "notes": "Book tickets in advance to avoid long lines and consider an audio guide for a more informative experience.",
+            "cost_estimate": "$35-40"
+          },
+          {
+            "time": "Late Morning",
+            "title": "Roman Forum & Palatine Hill",
+            "location": "Piazza di Pietro Cataldi, 2186 Rome, Italy",
+            "notes": "Wear comfortable shoes as there is a lot of walking on uneven terrain.",
+            "cost_estimate": "$25-30"
+          },
+          {
+            "time": "Afternoon",
+            "title": "Trastevere Food Tour",
+            "location": "Various locations in Trastevere, Rome",
+            "notes": "Enjoy a guided food tour that includes tastings of local dishes and drinks.",
+            "cost_estimate": "$50-60"
+          }
+        ]
+      },
+      {
+        "day_number": 2,
+        "theme": "Vatican City & Pantheon",
+        "activities": [
+          {
+            "time": "Morning",
+            "title": "St. Peter's Basilica and Vatican Museums",
+            "location": "Piazza San Pietro, Vaticano, Roma RM, Italy",
+            "notes": "Consider purchasing a combined ticket to skip the lines for both attractions.",
+            "cost_estimate": "$30-45"
+          },
+          {
+            "time": "Late Afternoon",
+            "title": "Visit the Pantheon",
+            "location": "Piazza della Rotonda, 00186 Roma RM, Italy",
+            "notes": "Free admission; open daily from dawn to dusk.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Evening",
+            "title": "Dinner at Osteria del Pegno",
+            "location": "Via dei Pastini 23, Rome, Italy",
+            "notes": "Enjoy authentic Roman cuisine in a cozy setting.",
+            "cost_estimate": "$50-65"
+          }
+        ]
+      },
+      {
+        "day_number": 3,
+        "theme": "Roman Hills and Gardens",
+        "activities": [
+          {
+            "time": "Morning",
+            "title": "Jewish Ghetto and Campo de' Fiori",
+            "location": "Via del Portico d'Ottavia, 17, Rome, Italy",
+            "notes": "Explore the historic Jewish quarter and visit the famous vegetable market.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Afternoon",
+            "title": "Gardens of Villa Borghese",
+            "location": "Piazza di Pietro d'Avolos, 00187 Roma RM, Italy",
+            "notes": "Great for a relaxing walk or cycling around the park.",
+            "cost_estimate": "$5-10"
+          },
+          {
+            "time": "Evening",
+            "title": "Aperitivo at Bar Monti",
+            "location": "Via delle Convertite, 32, Rome, Italy",
+            "notes": "Enjoy drinks and snacks in a lively atmosphere.",
+            "cost_estimate": "$15-20"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "itinerary_id": "new-york-city-7d-bud-land-walk-phot-rel",
+    "destination": "New York City",
+    "country": "USA",
+    "days": 7,
+    "budget": "budget",
+    "interests": [
+      "landmarks",
+      "walking",
+      "photography"
+    ],
+    "pace": "relaxed",
+    "source_type": "generated",
+    "title": "Relaxed NYC Landmarks and Photography",
+    "summary": "This seven-day trip through New York City focuses on exploring iconic landmarks at a leisurely pace, ideal for photography enthusiasts who enjoy walking around the city.",
+    "day_plans": [
+      {
+        "day_number": 1,
+        "theme": "Central Park Walk",
+        "activities": [
+          {
+            "time": "Morning, 09:00",
+            "title": "Central Park South Entrance",
+            "location": "5th Avenue and West 59th Street, New York City",
+            "notes": "Start your day with a visit to the southern end of Central Park for early morning light.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Morning, 10:30",
+            "title": "Central Park Zoo",
+            "location": "5th Avenue and East 64th Street, New York City",
+            "notes": "Enjoy the zoo's unique architecture and wildlife. Bring a camera for close-up animal shots.",
+            "cost_estimate": "$2-4"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Great Lawn in Central Park",
+            "location": "65th Street and Central Park West, New York City",
+            "notes": "Perfect for a relaxed picnic and photography session.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Afternoon, 15:00",
+            "title": "Bethesda Terrace and Fountain",
+            "location": "Central Park South, New York City",
+            "notes": "Capture the iconic Bethesda Fountain in various lighting conditions.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Evening, 18:00",
+            "title": "View from Top of MetLife Building Observation Deck",
+            "location": "234 West 45th Street, New York City",
+            "notes": "Enjoy panoramic views of the city skyline. Visit during golden hour for dramatic shots.",
+            "cost_estimate": "$37-41"
+          }
+        ]
+      },
+      {
+        "day_number": 2,
+        "theme": "Statue of Liberty and Ellis Island",
+        "activities": [
+          {
+            "time": "Morning, 09:00",
+            "title": "Ferry to Statue of Liberty",
+            "location": "Battery Park Ferry Terminal, New York City",
+            "notes": "Board the ferry early for a morning visit. Photography is best during sunrise.",
+            "cost_estimate": "$21-34"
+          },
+          {
+            "time": "Morning, 10:00",
+            "title": "Statue of Liberty Museum and Statue Access",
+            "location": "Liberty Island, New York City",
+            "notes": "Explore the museum before accessing the statue. Capture detailed shots from inside.",
+            "cost_estimate": "$23-45"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Ellis Island Immigration Museum",
+            "location": "Ellis Island, New York City",
+            "notes": "Wander through the museum to understand immigration history. Outdoor areas offer scenic photo ops.",
+            "cost_estimate": "$24-36"
+          },
+          {
+            "time": "Afternoon, 15:00",
+            "title": "New York Harbor Cruise",
+            "location": "Near Statue of Liberty and Ellis Island",
+            "notes": "Take a short harbor cruise to view the landmarks from the water.",
+            "cost_estimate": "$29-38"
+          },
+          {
+            "time": "Evening, 17:00",
+            "title": "Manhattan Skyline Sunset View",
+            "location": "Battery Park Ferry Terminal or Statue of Liberty National Monument",
+            "notes": "End the day with a sunset view over Manhattan from Battery Park.",
+            "cost_estimate": "$16-25"
+          }
+        ]
+      },
+      {
+        "day_number": 3,
+        "theme": "Brooklyn Bridge and Dumbo",
+        "activities": [
+          {
+            "time": "Morning, 09:00",
+            "title": "Walk Across Brooklyn Bridge",
+            "location": "Brooklyn Bridge Park, New York City",
+            "notes": "Start early to avoid crowds. Capture the bridge in various lighting conditions.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Morning, 10:30",
+            "title": "Dumbo Art Walk and Shops",
+            "location": "Brooklyn Heights Promenade and DUMBO Arts Center, New York City",
+            "notes": "Explore the unique shops and galleries along Water Street. Great for candid street photography.",
+            "cost_estimate": "$2-30"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "Brooklyn Bridge Park",
+            "location": "Brooklyn Heights Promenade, New York City",
+            "notes": "Relax in the park with a picnic. Photography opportunities abound.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Afternoon, 16:00",
+            "title": "Cultural District Tours",
+            "location": "Various locations in DUMBO and Brooklyn Heights, New York City",
+            "notes": "Join a guided tour to learn about the area's history. Photography is part of the experience.",
+            "cost_estimate": "$15-20"
+          },
+          {
+            "time": "Evening, 19:30",
+            "title": "Sunset Dinner Cruise",
+            "location": "Brooklyn Bridge Park Ferry Terminal, New York City",
+            "notes": "Enjoy a dinner cruise along the Brooklyn and Manhattan skylines.",
+            "cost_estimate": "$57-68"
+          }
+        ]
+      },
+      {
+        "day_number": 4,
+        "theme": "Midtown Landmarks",
+        "activities": [
+          {
+            "time": "Morning, 09:30",
+            "title": "Rockefeller Center",
+            "location": "50 Rockefeller Plaza, New York City",
+            "notes": "Visit the plaza and iconic Radio City Music Hall. Photography is allowed in most areas.",
+            "cost_estimate": "$24-36"
+          },
+          {
+            "time": "Afternoon, 12:30",
+            "title": "Top of the Rock Observation Deck",
+            "location": "30 Rockefeller Plaza, New York City",
+            "notes": "Enjoy panoramic views of NYC skyline. Best photography during blue hour.",
+            "cost_estimate": "$46-58"
+          },
+          {
+            "time": "Afternoon, 14:30",
+            "title": "St. Patrick's Cathedral",
+            "location": "5th Avenue and East 50th Street, New York City",
+            "notes": "Explore the Gothic architecture. Photography is allowed outside during regular hours.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Evening, 17:30",
+            "title": "Empire State Building Observation Deck",
+            "location": "5th Avenue and West 34th Street, New York City",
+            "notes": "Capture the skyline from one of the best vantage points in NYC.",
+            "cost_estimate": "$62-74"
+          },
+          {
+            "time": "Evening, 19:00",
+            "title": "Midtown Night Walk",
+            "location": "Various locations near Times Square and Broadway, New York City",
+            "notes": "Explore the illuminated streets of Midtown. Perfect for night photography.",
+            "cost_estimate": "$2-3"
+          }
+        ]
+      },
+      {
+        "day_number": 0,
+        "theme": "Greenwich Village Walk",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Washington Square Park",
+            "location": "Waverly Place and 5th Avenue, New York City",
+            "notes": "Start your day in this historic park. Capture the arch and surrounding buildings.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Morning, 11:30",
+            "title": "NYU Campus and Library",
+            "location": "Washington Square South, New York City",
+            "notes": "Explore the university's historic architecture. Photography allowed in public areas.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Greenwich Village Walking Tour",
+            "location": "Various locations near West Broadway and Bleecker Street, New York City",
+            "notes": "Join a guided walking tour to learn about the area's history. Photography is encouraged.",
+            "cost_estimate": "$15-20"
+          },
+          {
+            "time": "Afternoon, 15:30",
+            "title": "West Village Food and Art Walk",
+            "location": "Various locations near Hudson Street and Christopher Street, New York City",
+            "notes": "Explore local restaurants and galleries. Great for street photography.",
+            "cost_estimate": "$2-30"
+          },
+          {
+            "time": "Evening, 18:00",
+            "title": "Sunset at West Village Rooftops",
+            "location": "Various rooftops near Hudson Street and Grove Street, New York City",
+            "notes": "End the day with a rooftop sunset view. Some venues may require reservations.",
+            "cost_estimate": "$25-30"
+          }
+        ]
+      },
+      {
+        "day_number": 6,
+        "theme": "Chinatown and Little Italy Food Walk",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Chinatown Walking Tour",
+            "location": "Various locations near Canal Street and Mulberry Street, New York City",
+            "notes": "Join a guided tour to explore the neighborhood's history. Photography is encouraged.",
+            "cost_estimate": "$15-20"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Little Italy Food and Drink Tour",
+            "location": "Various locations near Mulberry Street and Grand Street, New York City",
+            "notes": "Taste local cuisine while learning about the area's history. Photography is encouraged.",
+            "cost_estimate": "$50-70"
+          },
+          {
+            "time": "Evening, 16:00",
+            "title": "Soho Art Walk",
+            "location": "Various locations near Prince Street and West Broadway, New York City",
+            "notes": "Visit galleries and street art installations. Photography is encouraged.",
+            "cost_estimate": "$2-30"
+          },
+          {
+            "time": "Evening, 18:00",
+            "title": "West Village Rooftops Sunset View",
+            "location": "Various rooftops near Hudson Street and Grove Street, New York City",
+            "notes": "End the day with a rooftop sunset view. Some venues may require reservations.",
+            "cost_estimate": "$25-30"
+          }
+        ]
+      },
+      {
+        "day_number": 7,
+        "theme": "Final Day in NYC",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Central Park North Walk",
+            "location": "5th Avenue and West 110th Street, New York City",
+            "notes": "Take a leisurely walk through Central Park's northern end. Photography is encouraged.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Museum Mile Tour",
+            "location": "5th Avenue between East 82nd and 96th Streets, New York City",
+            "notes": "Visit several museums along Museum Mile. Photography is allowed in public areas.",
+            "cost_estimate": "$24-36"
+          },
+          {
+            "time": "Evening, 17:00",
+            "title": "Sunset at Top of the Rock Observation Deck",
+            "location": "30 Rockefeller Plaza, New York City",
+            "notes": "Capture one last view of the skyline from an iconic vantage point.",
+            "cost_estimate": "$46-58"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "itinerary_id": "tokyo-7d-bud-land-walk-phot-bal",
+    "destination": "Tokyo",
+    "country": "Japan",
+    "days": 7,
+    "budget": "budget",
+    "interests": [
+      "landmarks",
+      "walking",
+      "photography"
+    ],
+    "pace": "balanced",
+    "source_type": "generated",
+    "title": "Tokyo Landmark Tour",
+    "summary": "Explore the best of Tokyo's iconic landmarks and scenic spots over a week-long journey that balances sightseeing with leisurely strolls and photo opportunities.",
+    "day_plans": [
+      {
+        "day_number": 1,
+        "theme": "Shibuya to Akihabara",
+        "activities": [
+          {
+            "time": "Morning, 09:00",
+            "title": "Shibuya Crossing",
+            "location": "Higashi-Shibuya 2-chome, Shibuya, Tokyo",
+            "notes": "Arrive early for the best chance to catch a busy intersection.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "10:30 AM",
+            "title": "Takeshita Street",
+            "location": "Harajuku, Shibuya, Tokyo",
+            "notes": "Perfect for shopping and people-watching with a unique atmosphere.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "12:30 PM",
+            "title": "Robot Restaurant",
+            "location": "1-15-7 Ebisu, Shibuya, Tokyo",
+            "notes": "Book tickets in advance for this bizarre and colorful performance.",
+            "cost_estimate": "$40-60"
+          },
+          {
+            "time": "Early Evening, 05:30 PM",
+            "title": "Akihabara Electric Town",
+            "location": "Akihabara, Chiyoda, Tokyo",
+            "notes": "Explore the world of electronics and anime with plenty to see before closing time.",
+            "cost_estimate": "Free"
+          }
+        ]
+      },
+      {
+        "day_number": 2,
+        "theme": "Imperial Palace & Asakusa",
+        "activities": [
+          {
+            "time": "Morning, 09:30 AM",
+            "title": "Imperial Palace East Garden",
+            "location": "Kita-Asakusa, Taito, Tokyo",
+            "notes": "Check opening hours as they vary by season and day.",
+            "cost_estimate": "$15-25"
+          },
+          {
+            "time": "10:45 AM",
+            "title": "Sensō-ji Temple",
+            "location": "Asakusa, Taito, Tokyo",
+            "notes": "Take a moment to appreciate the detailed architecture and serene atmosphere.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "12:45 PM",
+            "title": "Kappabashi Street (Kitchen Knife District)",
+            "location": "Asakusa, Taito, Tokyo",
+            "notes": "Browse the culinary shops and utensils.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Early Evening, 05:45 PM",
+            "title": "Skytree Observation Deck",
+            "location": "Tokyo Skytree Town, Asakusa, Taito, Tokyo",
+            "notes": "Reserve tickets online to avoid long lines.",
+            "cost_estimate": "$30-40"
+          }
+        ]
+      },
+      {
+        "day_number": 3,
+        "theme": "Harmony of Nature & Architecture in Shinjuku and Shibuya",
+        "activities": [
+          {
+            "time": "Morning, 09:15 AM",
+            "title": "Shinjuku Gyoen National Garden",
+            "location": "Nishiguchi, Shinjuku, Tokyo",
+            "notes": "Admire the blend of Japanese and Western garden styles.",
+            "cost_estimate": "$8-12"
+          },
+          {
+            "time": "10:45 AM",
+            "title": "Shinjuku Imperial Garden Tower (Tokyo Metropolitan Government Building)",
+            "location": "Nishi-shinjuku, Shinjuku, Tokyo",
+            "notes": "Enjoy free access to the observation deck with stunning city views.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "12:45 PM",
+            "title": "Shibuya 109",
+            "location": "1-23-7 Jingu-mae, Shibuya, Tokyo",
+            "notes": "Shop for the latest fashion trends and enjoy the bustling environment.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Early Evening, 05:45 PM",
+            "title": "Hachiko Statue",
+            "location": "Shinjuku, Tokyo",
+            "notes": "Take a moment to remember the loyal dog and its touching story.",
+            "cost_estimate": "Free"
+          }
+        ]
+      },
+      {
+        "day_number": 4,
+        "theme": "Odaiba & Rainbow Bridge",
+        "activities": [
+          {
+            "time": "Morning, 09:15 AM",
+            "title": "Rainbow Bridge Walkway",
+            "location": "Tokyo Bay, Shinagawa, Tokyo",
+            "notes": "Enjoy the view of Tokyo Tower and Odaiba from this pedestrian walkway.",
+            "cost_estimate": "$3-5"
+          },
+          {
+            "time": "10:45 AM",
+            "title": "TeamLab Borderless",
+            "location": "Odaiba, Minato, Tokyo",
+            "notes": "Experience interactive art and digital installations in a unique setting.",
+            "cost_estimate": "$30-40"
+          },
+          {
+            "time": "12:45 PM",
+            "title": "Daikanyama T-Site",
+            "location": "Takanawa, Minato, Tokyo",
+            "notes": "Explore the bookstore and cafe known for its unique architecture.",
+            "cost_estimate": "$8-10"
+          },
+          {
+            "time": "Early Evening, 05:45 PM",
+            "title": "Miraikan (National Museum of Emerging Science and Innovation)",
+            "location": "Odaiba, Minato, Tokyo",
+            "notes": "Discover the latest in science and technology with engaging exhibits.",
+            "cost_estimate": "$12-18"
+          }
+        ]
+      },
+      {
+        "day_number": 5,
+        "theme": "Meiji Shrine & Yoyogi Park",
+        "activities": [
+          {
+            "time": "Morning, 09:30 AM",
+            "title": "Meiji Jingu Shrine",
+            "location": "Yoyogimachi, Shibuya, Tokyo",
+            "notes": "Enter through the grand torii gate and explore the peaceful forested area.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "10:45 AM",
+            "title": "Yoyogi Park",
+            "location": "Yoyogikamizono, Shibuya, Tokyo",
+            "notes": "Ideal for relaxing or watching performances and cultural events.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "12:45 PM",
+            "title": "Harajuku Omotesando Street",
+            "location": "Shibuya, Tokyo",
+            "notes": "Explore the mix of high fashion boutiques and traditional Japanese shops.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Early Evening, 05:45 PM",
+            "title": "The National Art Center, Tokyo",
+            "location": "Roppongi, Minato, Tokyo",
+            "notes": "Check for current exhibitions and admission fees.",
+            "cost_estimate": "$12-30"
+          }
+        ]
+      },
+      {
+        "day_number": 6,
+        "theme": "Tsukiji Outer Market & Ueno Park",
+        "activities": [
+          {
+            "time": "Morning, 09:00 AM",
+            "title": "Tsukiji Fish Market (Outer Market)",
+            "location": "Tsukishima, Chuo, Tokyo",
+            "notes": "Experience the vibrant and bustling atmosphere of this food market.",
+            "cost_estimate": "$15-30"
+          },
+          {
+            "time": "10:45 AM",
+            "title": "Ueno Park",
+            "location": "Taito, Tokyo",
+            "notes": "Enjoy a peaceful stroll through the park's many attractions and seasonal flowers.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "12:45 PM",
+            "title": "Ameyoko Shopping Street",
+            "location": "Ueno, Taito, Tokyo",
+            "notes": "Browse the variety of goods including fresh seafood and traditional snacks.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Early Evening, 05:45 PM",
+            "title": "Ueno Zoo",
+            "location": "Ueno, Taito, Tokyo",
+            "notes": "Visit the zoo's panda exhibit or explore other animal exhibits.",
+            "cost_estimate": "$15-20"
+          }
+        ]
+      },
+      {
+        "day_number": 7,
+        "theme": "Last Day in Tokyo - Sumida River Cruise and Scenic Stroll",
+        "activities": [
+          {
+            "time": "Morning, 09:00 AM",
+            "title": "Sumida River Cruise",
+            "location": "Asakusa Pier, Asakusa, Taito, Tokyo",
+            "notes": "Enjoy a relaxing boat ride with views of Tokyo's landmarks.",
+            "cost_estimate": "$25-35"
+          },
+          {
+            "time": "10:45 AM",
+            "title": "Sumida Park",
+            "location": "Asakusa, Taito, Tokyo",
+            "notes": "Take a leisurely stroll along the river with scenic views and local culture.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "12:45 PM",
+            "title": "Kappabashi Street (Kitchen Knife District)",
+            "location": "Asakusa, Taito, Tokyo",
+            "notes": "Browse the culinary shops and utensils.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Early Evening, 05:45 PM",
+            "title": "Skytree Observation Deck (Final Visit)",
+            "location": "Tokyo Skytree Town, Asakusa, Taito, Tokyo",
+            "notes": "Reserve tickets online to avoid long lines.",
+            "cost_estimate": "$30-40"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "itinerary_id": "paris-7d-bud-nigh-food-shop-bal",
+    "destination": "Paris",
+    "country": "France",
+    "days": 7,
+    "budget": "budget",
+    "interests": [
+      "nightlife",
+      "food",
+      "shopping"
+    ],
+    "pace": "balanced",
+    "source_type": "generated",
+    "title": "Paris Nightlife and Foodie Adventure",
+    "summary": "Explore the vibrant nightlife of Paris along with its culinary delights and chic boutiques over seven days.",
+    "day_plans": [
+      {
+        "day_number": 1,
+        "theme": "Historic Center",
+        "activities": [
+          {
+            "time": "Morning, 09:00",
+            "title": "Visit Notre-Dame Cathedral",
+            "location": "6 Parvis Notre-Dame - Pl. Jean-Paul II, 75004 Paris",
+            "notes": "Buy tickets in advance to skip the queue.",
+            "cost_estimate": "$10-20"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Explore Montmartre",
+            "location": "Basilique du Sacré-Cœur, 8 Place du Colonel-Raynal, 75018 Paris",
+            "notes": "Enjoy the views and street art.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Evening, 19:30",
+            "title": "Lunch at Le Cinq",
+            "location": "Hotel Plaza Athénée, 25 Avenue Montaigne, 75008 Paris",
+            "notes": "Make a reservation in advance.",
+            "cost_estimate": "$200+"
+          }
+        ]
+      },
+      {
+        "day_number": 2,
+        "theme": "Foodie and Nightlife",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Visit Marché aux Puces de Saint-Ouen",
+            "location": "45 Rue des Rosiers, 93400 Saint-Ouen",
+            "notes": "A great place for vintage and antiques shopping.",
+            "cost_estimate": "$10-20"
+          },
+          {
+            "time": "Lunch, 13:00",
+            "title": "Dine at Chez L'Ami Jean",
+            "location": "59 Rue des Martyrs, 75009 Paris",
+            "notes": "Experience a traditional French bistro.",
+            "cost_estimate": "$30-50"
+          },
+          {
+            "time": "Night, 21:00",
+            "title": "Barcrawl in Le Marais",
+            "location": "Various bars and clubs around Rue des Rosiers",
+            "notes": "Enjoy the vibrant nightlife of Paris.",
+            "cost_estimate": "$30-50"
+          }
+        ]
+      },
+      {
+        "day_number": 3,
+        "theme": "Luxury Shopping and Wine Tasting",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Shop at Galeries Lafayette",
+            "location": "40 Boulevard Haussmann, 75009 Paris",
+            "notes": "Marvel at the stunning dome and enjoy shopping.",
+            "cost_estimate": "$200+"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Visit Château de Versailles",
+            "location": "Chateau De Versailles, Avenue de Sceaux, 78000 Versailles",
+            "notes": "Take a guided tour for deeper insights.",
+            "cost_estimate": "$20-50"
+          },
+          {
+            "time": "Evening, 19:30",
+            "title": "Wine Tasting at Cave des Papas",
+            "location": "4 Rue Chapon, 75003 Paris",
+            "notes": "Enjoy a selection of wines from various regions.",
+            "cost_estimate": "$20-50"
+          }
+        ]
+      },
+      {
+        "day_number": 4,
+        "theme": "Art and Culture",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Visit Musée d'Orsay",
+            "location": "Rue de la Légion-d'Honneur, 75007 Paris",
+            "notes": "Home to Impressionist masterpieces.",
+            "cost_estimate": "$20-50"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Shop at Le Bon Marché",
+            "location": "24 Rue de Bourg-Tibourg, 75007 Paris",
+            "notes": "Explore high-end fashion and gourmet foods.",
+            "cost_estimate": "$20+"
+          },
+          {
+            "time": "Evening, 19:30",
+            "title": "Dinner at Septime",
+            "location": "4 Rue Monge, 75005 Paris",
+            "notes": "Savor contemporary French cuisine.",
+            "cost_estimate": "$80+"
+          }
+        ]
+      },
+      {
+        "day_number": 1,
+        "theme": "Historic Center",
+        "activities": [
+          {
+            "time": "Morning, 09:00",
+            "title": "Visit Notre-Dame Cathedral",
+            "location": "6 Parvis Notre-Dame - Pl. Jean-Paul II, 75004 Paris",
+            "notes": "Buy tickets in advance to skip the queue.",
+            "cost_estimate": "$10-20"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Explore Montmartre",
+            "location": "Basilique du Sacré-Cœur, 8 Place du Colonel-Raynal, 75018 Paris",
+            "notes": "Enjoy the views and street art.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Evening, 19:30",
+            "title": "Lunch at Le Cinq",
+            "location": "Hotel Plaza Athénée, 25 Avenue Montaigne, 75008 Paris",
+            "notes": "Make a reservation in advance.",
+            "cost_estimate": "$200+"
+          }
+        ]
+      },
+      {
+        "day_number": 6,
+        "theme": "Foodie and Nightlife",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Visit Marché aux Puces de Saint-Ouen",
+            "location": "45 Rue des Rosiers, 93400 Saint-Ouen",
+            "notes": "A great place for vintage and antiques shopping.",
+            "cost_estimate": "$10-20"
+          },
+          {
+            "time": "Lunch, 13:00",
+            "title": "Dine at Chez L'Ami Jean",
+            "location": "59 Rue des Martyrs, 75009 Paris",
+            "notes": "Experience a traditional French bistro.",
+            "cost_estimate": "$30-50"
+          },
+          {
+            "time": "Night, 21:00",
+            "title": "Barcrawl in Le Marais",
+            "location": "Various bars and clubs around Rue des Rosiers",
+            "notes": "Enjoy the vibrant nightlife of Paris.",
+            "cost_estimate": "$30-50"
+          }
+        ]
+      },
+      {
+        "day_number": 7,
+        "theme": "Luxury Shopping and Wine Tasting",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Shop at Galeries Lafayette",
+            "location": "40 Boulevard Haussmann, 75009 Paris",
+            "notes": "Marvel at the stunning dome and enjoy shopping.",
+            "cost_estimate": "$200+"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Visit Château de Versailles",
+            "location": "Chateau De Versailles, Avenue de Sceaux, 78000 Versailles",
+            "notes": "Take a guided tour for deeper insights.",
+            "cost_estimate": "$20-50"
+          },
+          {
+            "time": "Evening, 19:30",
+            "title": "Wine Tasting at Cave des Papas",
+            "location": "4 Rue Chapon, 75003 Paris",
+            "notes": "Enjoy a selection of wines from various regions.",
+            "cost_estimate": "$20-50"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "itinerary_id": "rome-5d-bud-food-hist-walk-bal",
+    "destination": "Rome",
+    "country": "Italy",
+    "days": 5,
+    "budget": "budget",
+    "interests": [
+      "food",
+      "history",
+      "walking"
+    ],
+    "pace": "balanced",
+    "source_type": "generated",
+    "title": "Rome in Balance",
+    "summary": "This five-day trip through Rome offers a blend of historical exploration and culinary delights, perfect for those who enjoy both the past and present flavors of Italy.",
+    "day_plans": [
+      {
+        "day_number": 1,
+        "theme": "Historic Center",
+        "activities": [
+          {
+            "time": "Morning, 09:00",
+            "title": "Visit Colosseum",
+            "location": "Piazza del Colosseo, 1, 00184 Roma RM, Italy",
+            "notes": "Buy tickets in advance to avoid long lines.",
+            "cost_estimate": "$25-30"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "Explore Roman Forum and Palatine Hill",
+            "location": "Piazza del Colosseo, 1, 00184 Roma RM, Italy",
+            "notes": "Consider a guided tour for deeper insights.",
+            "cost_estimate": "$25-30"
+          },
+          {
+            "time": "Evening, 19:00",
+            "title": "Dinner at Trastevere",
+            "location": "Trastevere District, Rome",
+            "notes": "Enjoy local cuisine in a vibrant setting.",
+            "cost_estimate": "$30-50"
+          }
+        ]
+      },
+      {
+        "day_number": 2,
+        "theme": "Vatican City and Pantheon",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Visit Vatican Museums",
+            "location": "Viale Vaticano, 00165 Città del Vaticano, Italy",
+            "notes": "Consider booking a skip-the-line ticket.",
+            "cost_estimate": "$30-40"
+          },
+          {
+            "time": "Afternoon, 14:30",
+            "title": "St. Peter's Basilica and Square",
+            "location": "Piazza San Pietro, 00193 Città del Vaticano, Italy",
+            "notes": "Free entry but dress code applies.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Evening, 18:30",
+            "title": "Dinner at Pantheon's Osteria dell'Angelo",
+            "location": "Via degli Attoni, 47, 00186 Roma RM, Italy",
+            "notes": "Traditional Roman dishes in a historic setting.",
+            "cost_estimate": "$35-50"
+          }
+        ]
+      },
+      {
+        "day_number": 3,
+        "theme": "Trevi Fountain and Spanish Steps",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Visit Trevi Fountain",
+            "location": "Piazza di Trevi, 00187 Roma RM, Italy",
+            "notes": "Make a wish and throw in some coins.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Walk along Spanish Steps to Piazza Navona",
+            "location": "Piazza di Spagna, 00187 Roma RM, Italy",
+            "notes": "Admire the architecture and people-watch.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Evening, 19:30",
+            "title": "Dinner at Roscioli",
+            "location": "Via Pantheon, 87, 00186 Roma RM, Italy",
+            "notes": "Experience a true taste of Rome.",
+            "cost_estimate": "$45-60"
+          }
+        ]
+      },
+      {
+        "day_number": 4,
+        "theme": "Rome's Hidden Gems",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Visit San Clemente",
+            "location": "Via Labicana, 72, 00185 Roma RM, Italy",
+            "notes": "Discover layers of history in this church.",
+            "cost_estimate": "$3-5"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "Explore Coppedè Quarter",
+            "location": "Via Giovanni Bovio, Rome",
+            "notes": "Admire the unique architecture of this neighborhood.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Evening, 19:00",
+            "title": "Dinner at La Montecarlo",
+            "location": "Via Trionfale, 325/8, 00167 Roma RM, Italy",
+            "notes": "Enjoy a panoramic view while dining.",
+            "cost_estimate": "$40-60"
+          }
+        ]
+      },
+      {
+        "day_number": 5,
+        "theme": "Day Trip to Tivoli and Castel Gandolfo",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Visit Villa d'Este",
+            "location": "Piazza Trento e Trieste, 13, 00012 Tivoli RM, Italy",
+            "notes": "Book tickets in advance for the gardens.",
+            "cost_estimate": "$20-25"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "Explore Gardens and Palace of Castel Gandolfo",
+            "location": "Via Roma, 37, 00062 Castel Gandolfo RM, Italy",
+            "notes": "Free entry but limited opening hours.",
+            "cost_estimate": "$5-10"
+          },
+          {
+            "time": "Evening, 18:30",
+            "title": "Dinner at Da Cesare al Casaletto",
+            "location": "Via della Mura, 279/6, 00040 Grottaferrata (Rm) RM, Italy",
+            "notes": "Savor traditional Roman dishes.",
+            "cost_estimate": "$35-50"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "itinerary_id": "new-york-city-7d-mod-food-hist-walk-rel",
+    "destination": "New York City",
+    "country": "USA",
+    "days": 7,
+    "budget": "moderate",
+    "interests": [
+      "food",
+      "history",
+      "walking"
+    ],
+    "pace": "relaxed",
+    "source_type": "generated",
+    "title": "New York City Food and History Adventure",
+    "summary": "Explore the rich history of New York City through its iconic landmarks while enjoying a variety of delicious local cuisines at a relaxed pace.",
+    "day_plans": [
+      {
+        "day_number": 1,
+        "theme": "Historic Center Walks",
+        "activities": [
+          {
+            "time": "Morning, 09:00",
+            "title": "Visit Wall Street and the Charging Bull Statue",
+            "location": "Wall Street, New York, NY",
+            "notes": "Arrive early to avoid crowds and take a self-guided tour.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Afternoon, 12:30",
+            "title": "Lunch at Katz's Delicatessen",
+            "location": "127 Orchard St, New York, NY",
+            "notes": "Try the classic pastrami sandwich and save room for dessert.",
+            "cost_estimate": "$15-25"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "Explore Trinity Church Cemetery",
+            "location": "Trinity Place & Broadway, New York, NY",
+            "notes": "Walk around and look for historical figures buried here.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Evening, 18:00",
+            "title": "Dinner at Shake Shack in Madison Square Park",
+            "location": "235 P弓P",
+            "notes": "Enjoy the classic ShackBurger and a custard shake.",
+            "cost_estimate": "$10-20"
+          }
+        ]
+      },
+      {
+        "day_number": 2,
+        "theme": "Broadway and Beyond",
+        "activities": [
+          {
+            "time": "Morning, 09:30",
+            "title": "Visit the New York Public Library Main Branch",
+            "location": "476 Fifth Ave, New York, NY",
+            "notes": "Explore the iconic lion statues and take a tour of the building.",
+            "cost_estimate": "$5-10"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Lunch at Russ & Daughters Cafe",
+            "location": "102 Houston St, New York, NY",
+            "notes": "Try a bagel with lox and a side of chopped liver.",
+            "cost_estimate": "$15-25"
+          },
+          {
+            "time": "Afternoon, 16:30",
+            "title": "Tour the Tenement Museum on Orchard Street",
+            "location": "108 Orchard St, New York, NY",
+            "notes": "Learn about the history of immigration in NYC through interactive tours.",
+            "cost_estimate": "$25-35"
+          },
+          {
+            "time": "Evening, 19:00",
+            "title": "Dinner at Carbone",
+            "location": "26 E 58th St, New York, NY",
+            "notes": "Enjoy classic American cuisine in an elegant setting.",
+            "cost_estimate": "$50+"
+          }
+        ]
+      },
+      {
+        "day_number": 3,
+        "theme": "Food and Culture Walks",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Visit the Metropolitan Museum of Art",
+            "location": "1000 Fifth Ave, New York, NY",
+            "notes": "Explore ancient to modern art collections; consider a guided tour.",
+            "cost_estimate": "$25-35"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "Lunch at The Halal Guys in Manhattan",
+            "location": "68 5th Ave, New York, NY",
+            "notes": "Don't forget to ask for 'The Special' with extra sauce.",
+            "cost_estimate": "$8-12"
+          },
+          {
+            "time": "Afternoon, 15:30",
+            "title": "Explore Washington Square Park",
+            "location": "Washington Square Park, New York, NY",
+            "notes": "Take a leisurely walk and enjoy the park's historical significance.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Evening, 18:00",
+            "title": "Dinner at Di Fara Pizza",
+            "location": "1424 Avenue U, Brooklyn, NY",
+            "notes": "Order the classic cheese pizza and a side salad.",
+            "cost_estimate": "$15-25"
+          }
+        ]
+      },
+      {
+        "day_number": 4,
+        "theme": "Greenwich Village History Tour",
+        "activities": [
+          {
+            "time": "Morning, 09:30",
+            "title": "Visit the Stonewall National Monument",
+            "location": "51 Christopher St, New York, NY",
+            "notes": "Learn about LGBTQ+ rights movement history and its impact.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Lunch at The Wollman Rink Café",
+            "location": "Central Park South & Fifth Ave, New York, NY",
+            "notes": "Enjoy a casual bite near the skating rink.",
+            "cost_estimate": "$10-20"
+          },
+          {
+            "time": "Afternoon, 15:30",
+            "title": "Explore the West Village Historic District",
+            "location": "West Village, New York, NY",
+            "notes": "Stroll through narrow streets and historic brownstones.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Evening, 18:00",
+            "title": "Dinner at Buvette",
+            "location": "4 Barrow St, New York, NY",
+            "notes": "Savor small plates and a glass of wine in a cozy setting.",
+            "cost_estimate": "$30-50"
+          }
+        ]
+      },
+      {
+        "day_number": 5,
+        "theme": "Exploring Brooklyn",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Visit the Brooklyn Museum",
+            "location": "200 Eastern P弓P",
+            "notes": "Explore diverse art collections including the Egyptian antiquities.",
+            "cost_estimate": "$15-25"
+          },
+          {
+            "time": "Afternoon, 13:30",
+            "title": "Lunch at Peter Luger Steak House",
+            "location": "178 Broadway, Brooklyn, NY",
+            "notes": "Savor a high-end steak and traditional sides.",
+            "cost_estimate": "$50+"
+          },
+          {
+            "time": "Afternoon, 16:00",
+            "title": "Tour the Brooklyn Botanic Garden",
+            "location": "900 Washington Ave, Brooklyn, NY",
+            "notes": "Stroll through beautiful gardens and learn about plant life.",
+            "cost_estimate": "$25-35"
+          },
+          {
+            "time": "Evening, 18:30",
+            "title": "Dinner at The Bell Book and Candle",
+            "location": "144 W 15th St, New York, NY",
+            "notes": "Enjoy a romantic dinner in an intimate setting.",
+            "cost_estimate": "$40-60"
+          }
+        ]
+      },
+      {
+        "day_number": 6,
+        "theme": "Financial District History Tour",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Visit Fraunces Tavern Museum",
+            "location": "54 Pearl St, New York, NY",
+            "notes": "Explore the history of this historic tavern.",
+            "cost_estimate": "$10-20"
+          },
+          {
+            "time": "Afternoon, 13:30",
+            "title": "Lunch at Katz's Delicatessen (Brooklyn location)",
+            "location": "57 E Broadway, Brooklyn, NY",
+            "notes": "Try the classic pastrami sandwich and a side of potato salad.",
+            "cost_estimate": "$15-25"
+          },
+          {
+            "time": "Afternoon, 16:00",
+            "title": "Explore Battery Park City",
+            "location": "Battery Park City, New York, NY",
+            "notes": "Enjoy the waterfront views and walking paths.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Evening, 18:30",
+            "title": "Dinner at Le Bernardin",
+            "location": "155 W 51st St, New York, NY",
+            "notes": "Experience fine dining and a seasonal menu.",
+            "cost_estimate": "$200+"
+          }
+        ]
+      },
+      {
+        "day_number": 7,
+        "theme": "Final Day of Delights",
+        "activities": [
+          {
+            "time": "Morning, 10:30",
+            "title": "Visit the 9/11 Memorial & Museum",
+            "location": "18 Vedder St, New York, NY",
+            "notes": "Reflect on the historical event and its impact.",
+            "cost_estimate": "$25-35"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "Lunch at Di Fara Pizza (Queens location)",
+            "location": "8917 Queens Blvd, Elmhurst, NY",
+            "notes": "Enjoy a slice of the famous cheese pizza.",
+            "cost_estimate": "$15-25"
+          },
+          {
+            "time": "Afternoon, 16:00",
+            "title": "Explore Flushing Meadows Corona Park",
+            "location": "Corona Ave & 138 St, Queens, NY",
+            "notes": "Visit the Unisphere and enjoy a peaceful stroll.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Evening, 19:00",
+            "title": "Dinner at Carbone (Queens location)",
+            "location": "72-64 Roosevelt Ave, Jackson Heights, NY",
+            "notes": "Experience classic American cuisine in a different setting.",
+            "cost_estimate": "$50+"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "itinerary_id": "rome-3d-mod-cult-food-city-rel",
+    "destination": "Rome",
+    "country": "Italy",
+    "days": 3,
+    "budget": "moderate",
+    "interests": [
+      "culture",
+      "food",
+      "city exploration"
+    ],
+    "pace": "relaxed",
+    "source_type": "generated",
+    "title": "Rome in Depth",
+    "summary": "Explore the cultural and culinary delights of Rome over three relaxed days. Visit iconic landmarks and savor authentic Italian cuisine at local favorites.",
     "day_plans": [
       {
         "day_number": 1,
@@ -263,76 +1815,1243 @@
             "time": "Morning, 09:00",
             "title": "Colosseum and Roman Forum",
             "location": "Piazza del Colosseo, Rome",
-            "notes": "Wear comfortable shoes as there's a lot of walking.",
-            "cost_estimate": "$20-30"
+            "notes": "Consider buying a skip-the-line ticket for faster entry.",
+            "cost_estimate": "$35"
           },
           {
             "time": "Afternoon, 14:00",
-            "title": "Trastevere Food Tour",
-            "location": "Piazza Santa Maria in Trastevere, Rome",
-            "notes": "Reserve tickets in advance to skip the line.",
-            "cost_estimate": "$50+"
+            "title": "Vatican Museums and Sistine Chapel",
+            "location": "Viale Vaticano, Rome",
+            "notes": "It's best to book tickets in advance.",
+            "cost_estimate": "$25"
           },
           {
-            "time": "Evening, 19:00",
-            "title": "Osteria del Pegno Dinner",
-            "location": "Via dei Chiavari, 23, Rome",
-            "notes": "Try the Roman classics like carbonara and amatriciana.",
+            "time": "Evening, 19:30",
+            "title": "Aperitivo at Trastevere",
+            "location": "Via dei Vascellari, Rome",
+            "notes": "Enjoy a wide selection of drinks and small bites.",
+            "cost_estimate": "$20-30"
+          }
+        ]
+      },
+      {
+        "day_number": 2,
+        "theme": "Pantheon to Piazza Navona",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Visit the Pantheon",
+            "location": "Piazza della Rotonda, Rome",
+            "notes": "Admire its architectural beauty and free admission.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Afternoon, 13:30",
+            "title": "Stroll through Piazza Navona",
+            "location": "Piazza di Pietra, Rome",
+            "notes": "Enjoy street performances and artisan shops.",
+            "cost_estimate": "$5 for gelato"
+          },
+          {
+            "time": "Evening, 18:00",
+            "title": "Dinner at Testaccio Market",
+            "location": "Mercato di Testaccio, Rome",
+            "notes": "Taste local dishes and fresh produce.",
+            "cost_estimate": "$25-35"
+          }
+        ]
+      },
+      {
+        "day_number": 3,
+        "theme": "Trastevere and Beyond",
+        "activities": [
+          {
+            "time": "Morning, 10:30",
+            "title": "Explore Trastevere's narrow streets",
+            "location": "Piazza Santa Maria in Trastevere, Rome",
+            "notes": "Discover charming shops and historic churches.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "Trevi Fountain and the Spanish Steps",
+            "location": "Piazza di Spagna, Rome",
+            "notes": "Don't forget to toss a coin in the fountain!",
+            "cost_estimate": "$5 for snacks"
+          },
+          {
+            "time": "Evening, 18:30",
+            "title": "Authentic Roman pizza at Pizzeria La Montecarlo",
+            "location": "Via della Scrofa 97, Rome",
+            "notes": "Enjoy a slice of history with your dinner.",
+            "cost_estimate": "$25-40"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "itinerary_id": "rome-3d-bud-nigh-food-shop-rel",
+    "destination": "Rome",
+    "country": "Italy",
+    "days": 3,
+    "budget": "budget",
+    "interests": [
+      "nightlife",
+      "food",
+      "shopping"
+    ],
+    "pace": "relaxed",
+    "source_type": "generated",
+    "title": "Relaxed Nightlife and Food in Rome",
+    "summary": "Explore the best of Roman nightlife, cuisine, and shopping at a leisurely pace over three days. Discover local eateries, enjoy live music venues, and shop for souvenirs.",
+    "day_plans": [
+      {
+        "day_number": 1,
+        "theme": "Historic Center and Food",
+        "activities": [
+          {
+            "time": "Morning, 09:30",
+            "title": "Breakfast at Pasticceria Regoli",
+            "location": "Via dei Pastini, 78 - Roma",
+            "notes": "Try their delicious cornetti (filled pastries) and cappuccino.",
+            "cost_estimate": "$5-10"
+          },
+          {
+            "time": "Afternoon, 14:30",
+            "title": "Shopping at Mercato Centrale Roma",
+            "location": "Via Arenula, 28 - Roma",
+            "notes": "Explore this food hall with local products and gourmet items.",
+            "cost_estimate": "$5-10"
+          },
+          {
+            "time": "Evening, 19:30",
+            "title": "Dinner at Hostaria dell'Angelo",
+            "location": "Via delle Carrozze, 47 - Roma",
+            "notes": "Enjoy traditional Roman cuisine in a cozy setting.",
+            "cost_estimate": "$20-30"
+          }
+        ]
+      },
+      {
+        "day_number": 2,
+        "theme": "Trastevere Nightlife and Food",
+        "activities": [
+          {
+            "time": "Evening, 18:30",
+            "title": "Aperitivo at Trattoria La Rosetta",
+            "location": "Via della Lungara, 74 - Roma",
+            "notes": "Enjoy the lively aperitif scene with friends or solo.",
+            "cost_estimate": "$5-10"
+          },
+          {
+            "time": "Evening, 20:30",
+            "title": "Dinner at Osteria del Pegno",
+            "location": "Via dei Vascellari, 6 - Roma",
+            "notes": "Experience authentic Roman cuisine in a charming setting.",
+            "cost_estimate": "$25-35"
+          },
+          {
+            "time": "Night, 22:00",
+            "title": "Live Music at Bar Trastevere",
+            "location": "Via del Governo Vecchio, 186 - Roma",
+            "notes": "Catch a live music show in the heart of Trastevere.",
+            "cost_estimate": "$5-10"
+          }
+        ]
+      },
+      {
+        "day_number": 3,
+        "theme": "Shopping and Food Tour",
+        "activities": [
+          {
+            "time": "Morning, 09:00",
+            "title": "Coffee at Caffè Sant'Eustachio",
+            "location": "Piazza Sant'Eustachio - Roma",
+            "notes": "Start your day with a classic Roman espresso.",
+            "cost_estimate": "$2-5"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "Shopping at Via del Corso",
+            "location": "Via del Corso - Roma",
+            "notes": "Browse high-end fashion boutiques and street shops.",
+            "cost_estimate": "$20-50"
+          },
+          {
+            "time": "Evening, 18:30",
+            "title": "Dinner at La Pergola al Gianicolo",
+            "location": "Piazza Garibaldi, 47 - Roma",
+            "notes": "Enjoy panoramic views while dining on Roman cuisine.",
+            "cost_estimate": "$50+"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "itinerary_id": "tokyo-7d-mod-food-hist-walk-bal",
+    "destination": "Tokyo",
+    "country": "Japan",
+    "days": 7,
+    "budget": "moderate",
+    "interests": [
+      "food",
+      "history",
+      "walking"
+    ],
+    "pace": "balanced",
+    "source_type": "generated",
+    "title": "Tokyo Food and History Adventure",
+    "summary": "Explore the vibrant culinary scene and historical treasures of Tokyo over seven days. From sushi to ramen, and ancient temples to modern skyscrapers, this itinerary offers a balanced mix for food enthusiasts and history buffs.",
+    "day_plans": [
+      {
+        "day_number": 1,
+        "theme": "Shibuya and Harajuku",
+        "activities": [
+          {
+            "time": "Morning",
+            "title": "Visit Shibuya Crossing",
+            "location": "Shibuya, Tokyo",
+            "notes": "Arrive early to avoid crowds.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Late Morning",
+            "title": "Explore Harajuku Street Fashion",
+            "location": "Harajuku, Tokyo",
+            "notes": "Wander around Takeshita Dori and Omotesando for unique fashion trends.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Afternoon",
+            "title": "Jingū Shrine",
+            "location": "Meiji Jingu 1-1, Minami Aoyama, Shibuya City, Tokyo Prefecture",
+            "notes": "Enter through the torii gate and enjoy a peaceful walk.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Evening",
+            "title": "Dinner at Sushi Dai",
+            "location": "Tsukiji Outer Market, 4 Chome-6 Tsukishima, Koto City, Tokyo Prefecture",
+            "notes": "Book a seat early for fresh sushi experience.",
             "cost_estimate": "$50+"
           }
         ]
       },
       {
         "day_number": 2,
-        "theme": "Vatican City",
+        "theme": "Asakusa and Skytree",
         "activities": [
           {
-            "time": "Morning, 09:30",
-            "title": "St. Peter's Basilica and Square",
-            "location": "Piazza San Pietro, Vatican City",
-            "notes": "Check the schedule for the Pope's audience if you're lucky.",
+            "time": "Morning",
+            "title": "Tokyo Skytree",
+            "location": "3-18-1 Oshiage, Sumida City, Tokyo Prefecture",
+            "notes": "Buy tickets in advance to skip lines.",
+            "cost_estimate": "$40+"
+          },
+          {
+            "time": "Late Morning",
+            "title": "Kaminarimon and Sensoji Temple",
+            "location": "Asakusa 3-6, Taito City, Tokyo Prefecture",
+            "notes": "Explore the temple and its historic surroundings.",
             "cost_estimate": "Free"
           },
           {
-            "time": "Afternoon, 14:00",
-            "title": "Vatican Museums and Sistine Chapel",
-            "location": "Viale Vaticano, Vatican City",
-            "notes": "Arrive early to avoid long lines.",
-            "cost_estimate": "$20-30"
+            "time": "Afternoon",
+            "title": "Nikkō Tamura Shrine",
+            "location": "Yanesen, Bunkyo Ward, Tokyo",
+            "notes": "This shrine is dedicated to the founder of Japanese literature and a must for culture enthusiasts.",
+            "cost_estimate": "Free"
           },
           {
-            "time": "Evening, 18:30",
-            "title": "Aroma di Gusti Italian Cuisine Dinner",
-            "location": "Via dei Pettinari, 95/97, Rome",
-            "notes": "Enjoy authentic Roman dishes.",
-            "cost_estimate": "$40-60"
+            "time": "Evening",
+            "title": "Ippudo Ramen",
+            "location": "Shibuya or Asakusa, Tokyo",
+            "notes": "Try their famous spicy miso ramen.",
+            "cost_estimate": "$10-20"
           }
         ]
       },
       {
         "day_number": 3,
-        "theme": "Trevi Fountain and Pantheon",
+        "theme": "Yokohama and Kamakura",
+        "activities": [
+          {
+            "time": "Morning",
+            "title": "Yokohama Chinatown",
+            "location": "Isanogawa-cho, Naka Ward, Yokohama City",
+            "notes": "Sample a variety of Chinese food.",
+            "cost_estimate": "$10-20"
+          },
+          {
+            "time": "Late Morning",
+            "title": "Kamakura Great Buddha (Daibutsu)",
+            "location": "598 Kita Kamakura, Kamakura City, Kanagawa Prefecture",
+            "notes": "Take time to admire this historic bronze statue.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Afternoon",
+            "title": "Hase-dera Temple",
+            "location": "413 Hase, Kamakura City, Kanagawa Prefecture",
+            "notes": "Enjoy the temple's scenic beauty and gardens.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Evening",
+            "title": "Dinner at Tsuta Ramen",
+            "location": "Kanda Surugadai, Chiyoda City, Tokyo Prefecture",
+            "notes": "Specialize in soy-based ramen.",
+            "cost_estimate": "$10-20"
+          }
+        ]
+      },
+      {
+        "day_number": 7,
+        "theme": "Odaiba and Roppongi Hills",
+        "activities": [
+          {
+            "time": "Morning",
+            "title": "Venus Fort Shopping Mall",
+            "location": "4-15-1 Aomi, Koto City, Tokyo Prefecture",
+            "notes": "Enjoy a day of shopping in this themed mall.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Late Morning",
+            "title": "Tokyo Big Sight Convention Center",
+            "location": "3-11-6 Ariake, Koto City, Tokyo Prefecture",
+            "notes": "Check out ongoing events or exhibitions.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Afternoon",
+            "title": "Tokyo Tower",
+            "location": "4 Chome-2-8 Shibakouen, Minato City, Tokyo Prefecture",
+            "notes": "Take the elevator to the observation deck.",
+            "cost_estimate": "$30+"
+          },
+          {
+            "time": "Evening",
+            "title": "Roppongi Hills",
+            "location": "6 Chome-10-1 Roppongi, Minato City, Tokyo Prefecture",
+            "notes": "Visit the Mori Art Museum and enjoy evening views.",
+            "cost_estimate": "$20+"
+          }
+        ]
+      },
+      {
+        "day_number": 4,
+        "theme": "Imperial Palace and Ueno Park",
+        "activities": [
+          {
+            "time": "Morning",
+            "title": "Tokyo Imperial Palace",
+            "location": "1 Chome-1 Chiyoda, Chiyoda City, Tokyo Prefecture",
+            "notes": "Explore the East Gardens or attend a morning ceremony.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Late Morning",
+            "title": "Ueno Zoo and Park",
+            "location": "1-8 Uenokoen, Taito City, Tokyo Prefecture",
+            "notes": "Visit the zoo or simply enjoy the park's tranquility.",
+            "cost_estimate": "$5"
+          },
+          {
+            "time": "Afternoon",
+            "title": "Ameya Yokocho Market",
+            "location": "Nihonbashi 1-chome, Chuo Ward, Tokyo Prefecture",
+            "notes": "Discover a variety of local foods and souvenirs.",
+            "cost_estimate": "$20-30"
+          },
+          {
+            "time": "Evening",
+            "title": "Sushi Saito",
+            "location": "1 Chome-8-4 Ginza, Chuo Ward, Tokyo Prefecture",
+            "notes": "Experience a Michelin-starred sushi restaurant.",
+            "cost_estimate": "$200+"
+          }
+        ]
+      },
+      {
+        "day_number": 5,
+        "theme": "Akihabara and Odaiba",
+        "activities": [
+          {
+            "time": "Morning",
+            "title": "Akihabara Shopping District",
+            "location": "Chuo Ward, Tokyo Prefecture",
+            "notes": "Explore electronics stores and anime shops.",
+            "cost_estimate": "$50+"
+          },
+          {
+            "time": "Late Morning",
+            "title": "Yurikamome Line",
+            "location": "From Aoi Station to Odaiba Koen",
+            "notes": "Enjoy the scenic ride above Tokyo Bay.",
+            "cost_estimate": "$10-20"
+          },
+          {
+            "time": "Afternoon",
+            "title": "Team Lab Planets Museum",
+            "location": "5 Chome-7-36 Aomi, Koto City, Tokyo Prefecture",
+            "notes": "Experience interactive digital art installations.",
+            "cost_estimate": "$20+"
+          },
+          {
+            "time": "Evening",
+            "title": "Dinner at Ippudo Ramen Odaiba",
+            "location": "Odaiba Minato City, Tokyo Prefecture",
+            "notes": "Enjoy a meal at this popular ramen chain.",
+            "cost_estimate": "$10-20"
+          }
+        ]
+      },
+      {
+        "day_number": 6,
+        "theme": "Shinjuku and Nakano",
+        "activities": [
+          {
+            "time": "Morning",
+            "title": "Tokyo Metropolitan Government Building",
+            "location": "2 Chome-8-1 Nishi Shinjuku, Shinjuku City, Tokyo Prefecture",
+            "notes": "Visit the observation deck for panoramic views.",
+            "cost_estimate": "$5"
+          },
+          {
+            "time": "Late Morning",
+            "title": "Shinjuku Gyoen National Garden",
+            "location": "1 Chome-7 Naito, Shinjuku City, Tokyo Prefecture",
+            "notes": "Walk through this beautiful park with various gardens.",
+            "cost_estimate": "$5"
+          },
+          {
+            "time": "Afternoon",
+            "title": "Nakano Broadway",
+            "location": "3 Chome-17-20 Nakano, Nakano City, Tokyo Prefecture",
+            "notes": "Explore this shopping district with a focus on anime and manga.",
+            "cost_estimate": "$50+"
+          },
+          {
+            "time": "Evening",
+            "title": "Dinner at Sushi Dai Odaiba",
+            "location": "Odaiba Minato City, Tokyo Prefecture",
+            "notes": "Enjoy fresh sushi in a modern setting.",
+            "cost_estimate": "$50+"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "itinerary_id": "new-york-city-5d-mod-cult-food-city-bal",
+    "destination": "New York City",
+    "country": "USA",
+    "days": 5,
+    "budget": "moderate",
+    "interests": [
+      "culture",
+      "food",
+      "city exploration"
+    ],
+    "pace": "balanced",
+    "source_type": "generated",
+    "title": "New York City Culture and Cuisine",
+    "summary": "Experience the rich cultural heritage and diverse culinary scene of New York City over five days. From iconic museums to hidden street art, and from famous restaurants to local eateries, this itinerary offers a balanced mix of exploration and relaxation.",
+    "day_plans": [
+      {
+        "day_number": 1,
+        "theme": "Historic Center",
+        "activities": [
+          {
+            "time": "Morning, 09:00",
+            "title": "Statue of Liberty Tour",
+            "location": "Liberty Island, New York City",
+            "notes": "Book tickets in advance to avoid long lines.",
+            "cost_estimate": "$25-35"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "9/11 Memorial & Museum",
+            "location": "18th Street and Liberty Street, New York City",
+            "notes": "Plan to spend at least three hours here.",
+            "cost_estimate": "$25-35"
+          },
+          {
+            "time": "Evening, 19:00",
+            "title": "Dinner at Katz's Delicatessen",
+            "location": "205 E Houston St, New York City",
+            "notes": "Order the pastrami on rye and don't forget a pickle.",
+            "cost_estimate": "$20-30"
+          }
+        ]
+      },
+      {
+        "day_number": 2,
+        "theme": "Art and Architecture",
         "activities": [
           {
             "time": "Morning, 10:00",
-            "title": "Piazza Navona and Bernini's Fountains",
-            "location": "Piazza Navona, Rome",
-            "notes": "Perfect for people watching.",
+            "title": "MoMA (Museum of Modern Art)",
+            "location": "11 W 53rd St, New York City",
+            "notes": "Buy a combination ticket for both MoMA and The Met.",
+            "cost_estimate": "$25-35"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "Central Park Tour",
+            "location": "59th St & 5th Ave, New York City",
+            "notes": "Enjoy a guided walking tour to explore the park's hidden gems.",
+            "cost_estimate": "$15-25"
+          },
+          {
+            "time": "Evening, 18:00",
+            "title": "Dinner at Carbone",
+            "location": "75 W 56th St, New York City",
+            "notes": "Reservations recommended due to high demand.",
+            "cost_estimate": "$60-80"
+          }
+        ]
+      },
+      {
+        "day_number": 3,
+        "theme": "Brooklyn Exploration",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Borough Hall and City Hall Park",
+            "location": "209 Joralemon St, Brooklyn NY 11201",
+            "notes": "Discover the historic architecture of this area.",
             "cost_estimate": "Free"
           },
           {
             "time": "Afternoon, 13:00",
-            "title": "Trevi Fountain and Shopping",
-            "location": "Via del Corso, Rome",
-            "notes": "Don't forget to toss a coin into the fountain.",
+            "title": "Brooklyn Botanic Garden",
+            "location": "900 Washington Ave, Brooklyn NY 11238",
+            "notes": "Check the website for special events or exhibitions.",
+            "cost_estimate": "$25-30"
+          },
+          {
+            "time": "Evening, 18:00",
+            "title": "Dinner at The Butcher's Daughter",
+            "location": "76 Prince St, New York City",
+            "notes": "Popular for vegan and vegetarian options.",
+            "cost_estimate": "$25-40"
+          }
+        ]
+      },
+      {
+        "day_number": 4,
+        "theme": "Neighborhood Cuisine",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Chelsea Market Food Tour",
+            "location": "75 9th Ave, New York City",
+            "notes": "Sample a variety of treats from different vendors.",
+            "cost_estimate": "$30-40"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "The High Line",
+            "location": "Gansevoort St & Washington Pl, New York City",
+            "notes": "Perfect for a leisurely stroll and people watching.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Evening, 18:00",
+            "title": "Dinner at Red Farm",
+            "location": "249 Lafayette St, New York City",
+            "notes": "Enjoy a seasonal menu with Asian influences.",
+            "cost_estimate": "$60-80"
+          }
+        ]
+      },
+      {
+        "day_number": 1,
+        "theme": "Broadway Show Night",
+        "activities": [
+          {
+            "time": "Evening, 19:30",
+            "title": "Hamilton Broadway Musical",
+            "location": "Richard Rodgers Theatre, New York City",
+            "notes": "Book tickets well in advance as they sell out quickly.",
+            "cost_estimate": "$150-250"
+          },
+          {
+            "time": "Late Night, 23:00",
+            "title": "Brunch at The Smith Hotel",
+            "location": "27 E 21st St, New York City",
+            "notes": "A great spot for a late-night meal after the show.",
+            "cost_estimate": "$40-60"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "itinerary_id": "barcelona-5d-mod-cult-food-city-bal",
+    "destination": "Barcelona",
+    "country": "Spain",
+    "days": 5,
+    "budget": "moderate",
+    "interests": [
+      "culture",
+      "food",
+      "city exploration"
+    ],
+    "pace": "balanced",
+    "source_type": "generated",
+    "title": "Balanced Barcelona",
+    "summary": "This 5-day trip through Barcelona offers a mix of cultural exploration and culinary adventures, ensuring you experience both the historical heart and vibrant soul of this captivating city.",
+    "day_plans": [
+      {
+        "day_number": 1,
+        "theme": "Historic Center",
+        "activities": [
+          {
+            "time": "Morning, 09:00",
+            "title": "La Sagrada Familia Tour",
+            "location": "Carrer de Sagnadut Familia, Barcelona",
+            "notes": "Book your tickets in advance to skip the long lines.",
+            "cost_estimate": "$25-35"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "Park Guell and Gaudi Museum",
+            "location": "Carrer d'Omnias, Barcelona",
+            "notes": "Arrive early to avoid the crowds.",
+            "cost_estimate": "$25-35"
+          },
+          {
+            "time": "Evening, 19:00",
+            "title": "Tapas Tour in El Born",
+            "location": "El Born District, Barcelona",
+            "notes": "Reserve your spot for a guided evening stroll and taste.",
+            "cost_estimate": "$35-45"
+          }
+        ]
+      },
+      {
+        "day_number": 2,
+        "theme": "Art and Architecture",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Picasso Museum",
+            "location": "Carrer Montcada, Barcelona",
+            "notes": "Explore the extensive collection of Picasso's early works.",
+            "cost_estimate": "$20"
+          },
+          {
+            "time": "Afternoon, 14:30",
+            "title": "Barcelona Cathedral and Gothic Quarter",
+            "location": "Plaça de la Seu, Barcelona",
+            "notes": "Wander through the narrow streets of the old town.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Evening, 19:30",
+            "title": "Fideua Dinner at Casa Mono",
+            "location": "Carrer de la Diputació, Barcelona",
+            "notes": "Savor traditional Valencian cuisine in a cozy setting.",
+            "cost_estimate": "$45-60"
+          }
+        ]
+      },
+      {
+        "day_number": 3,
+        "theme": "Beaches and Leisure",
+        "activities": [
+          {
+            "time": "Morning, 10:30",
+            "title": "Barceloneta Beach",
+            "location": "Plaça de la Barceloneta, Barcelona",
+            "notes": "Enjoy the Mediterranean sun and sand.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Montjuic Castle and Museum",
+            "location": "Avinguda Reina Maria Cristina, Barcelona",
+            "notes": "Take the funicular up to the castle for panoramic views.",
+            "cost_estimate": "$5-7"
+          },
+          {
+            "time": "Evening, 18:30",
+            "title": "Gaudí's Casa Batlló and La Pedrera",
+            "location": "Passeig de Gràcia, Barcelona",
+            "notes": "Marvel at Gaudi’s unique architectural style.",
+            "cost_estimate": "$25-35"
+          }
+        ]
+      },
+      {
+        "day_number": 4,
+        "theme": "Food and Wine Tour",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Mercat de la Boqueria Market Tour",
+            "location": "La Rambla, Barcelona",
+            "notes": "Discover local flavors and ingredients at the market.",
+            "cost_estimate": "$35-45"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Wine Tasting in Poble Sec",
+            "location": "Carrer de la Bonanova, Barcelona",
+            "notes": "Sample local wines and cava at a small bodega.",
+            "cost_estimate": "$25-45"
+          },
+          {
+            "time": "Evening, 19:00",
+            "title": "Paella Cooking Class",
+            "location": "Various Locations in Barcelona",
+            "notes": "Learn how to make authentic paella with a local chef.",
+            "cost_estimate": "$65-80"
+          }
+        ]
+      },
+      {
+        "day_number": 5,
+        "theme": "Nature and Outdoors",
+        "activities": [
+          {
+            "time": "Morning, 10:30",
+            "title": "Cable Car to Tibidabo Mountain",
+            "location": "Avinguda de l'Estació de Funicular de Tibidabo, Barcelona",
+            "notes": "Ride the historic cable car for stunning city views.",
+            "cost_estimate": "$5-7"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Fundació Joan Miró Museum",
+            "location": "Passeig de Sant Gaudí, Barcelona",
+            "notes": "Explore the works of Catalan painter Joan Miró.",
+            "cost_estimate": "$25-35"
+          },
+          {
+            "time": "Evening, 18:00",
+            "title": "Funicular to Montjuïc Hill",
+            "location": "Avinguda Reina Maria Cristina, Barcelona",
+            "notes": "End your trip with a walk around the hill and evening light.",
+            "cost_estimate": "$5-7"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "itinerary_id": "tokyo-7d-bud-food-hist-walk-bal",
+    "destination": "Tokyo",
+    "country": "Japan",
+    "days": 7,
+    "budget": "budget",
+    "interests": [
+      "food",
+      "history",
+      "walking"
+    ],
+    "pace": "balanced",
+    "source_type": "generated",
+    "title": "Tokyo Taste and Tradition",
+    "summary": "Explore the vibrant flavors of Tokyo's culinary scene while immersing yourself in its rich historical sites through a series of guided walks.",
+    "day_plans": [
+      {
+        "day_number": 1,
+        "theme": "Historic Center Walk",
+        "activities": [
+          {
+            "time": "Morning, 09:00",
+            "title": "Asakusa Temple Visit",
+            "location": "Senso-ji Temple, Asakusa, Tokyo",
+            "notes": "Arrive early to avoid crowds. Wear comfortable shoes.",
+            "cost_estimate": "$5"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Tokyo Tower Observation Deck",
+            "location": "Tokyo Tower, Shiba Koen, Minato City, Tokyo",
+            "notes": "Great for photos and city views. Entrance fee applies.",
+            "cost_estimate": "$25"
+          },
+          {
+            "time": "Evening, 19:00",
+            "title": "Tsukiji Outer Market Dinner",
+            "location": "Tsukiji Fish Market (Outer Market), Chuo City, Tokyo",
+            "notes": "Try sushi and other seafood dishes. Reservations recommended.",
+            "cost_estimate": "$35"
+          }
+        ]
+      },
+      {
+        "day_number": 2,
+        "theme": "Imperial Palace and Gardens Walk",
+        "activities": [
+          {
+            "time": "Morning, 09:00",
+            "title": "Imperial Palace Grounds Tour",
+            "location": "Nijubashi Bridge, Chiyoda City, Tokyo",
+            "notes": "Check opening hours. Some areas require advance booking.",
+            "cost_estimate": "$15"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "Kanda Myojin Shrine Visit",
+            "location": "Kanda Myojin Shrine, Chiyoda City, Tokyo",
+            "notes": "Part of the Meiji Period Shinto shrine architecture.",
+            "cost_estimate": "$5"
+          },
+          {
+            "time": "Evening, 18:00",
+            "title": "Roppongi Art District Tour",
+            "location": "Minato City, Tokyo",
+            "notes": "Visit contemporary art galleries and museums. Check opening times.",
+            "cost_estimate": "$25"
+          }
+        ]
+      },
+      {
+        "day_number": 3,
+        "theme": "Shibuya & Harajuku Walk",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Takeshita Street Shopping",
+            "location": "Harajuku, Shibuya City, Tokyo",
+            "notes": "Explore unique boutiques and street food stalls.",
+            "cost_estimate": "$25"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "Shibuya Crossing Experience",
+            "location": "Shibuya, Shibuya City, Tokyo",
+            "notes": "Witness the famous pedestrian crossing at peak hours.",
+            "cost_estimate": "$5"
+          },
+          {
+            "time": "Evening, 19:00",
+            "title": "Izakaya Dinner in Shinjuku",
+            "location": "Shinjuku, Tokyo",
+            "notes": "Enjoy traditional Japanese small plates and drinks.",
+            "cost_estimate": "$35"
+          }
+        ]
+      },
+      {
+        "day_number": 4,
+        "theme": "Tokyo Tower & Ueno Park Walk",
+        "activities": [
+          {
+            "time": "Morning, 09:00",
+            "title": "Ueno Zoo Visit",
+            "location": "Ueno Zoo, Taito City, Tokyo",
+            "notes": "Home to pandas and many other species. Check opening times.",
+            "cost_estimate": "$25"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "Ameyoko Shopping Street Tour",
+            "location": "Nippori, Taito City, Tokyo",
+            "notes": "Discover a variety of street vendors and markets.",
+            "cost_estimate": "$5"
+          },
+          {
+            "time": "Evening, 18:00",
+            "title": "Top of the Rock Observation Deck Dinner",
+            "location": "Tokyo Metropolitan Government Building, Shinjuku, Tokyo",
+            "notes": "Enjoy panoramic views with your meal.",
+            "cost_estimate": "$50"
+          }
+        ]
+      },
+      {
+        "day_number": 0,
+        "theme": "Akihabara & Odaiba Walk",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Akihabara Electronics City Tour",
+            "location": "Akihabara, Chiyoda City, Tokyo",
+            "notes": "Explore the latest gadgets and retro electronics.",
+            "cost_estimate": "$5"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "Odaiba Statue of Liberty Visit",
+            "location": "Odaiba, Minato City, Tokyo",
+            "notes": "Take photos and enjoy the ocean views.",
+            "cost_estimate": "$5"
+          },
+          {
+            "time": "Evening, 18:00",
+            "title": "Yanaka Ginza Dinner",
+            "location": "Yanaka, Taito City, Tokyo",
+            "notes": "Enjoy a variety of local dishes and drinks.",
+            "cost_estimate": "$35"
+          }
+        ]
+      },
+      {
+        "day_number": 6,
+        "theme": "Meiji Shrine & Yoyogi Park Walk",
+        "activities": [
+          {
+            "time": "Morning, 09:00",
+            "title": "Meiji Shrine Visit",
+            "location": "Yoyogi Park, Shibuya City, Tokyo",
+            "notes": "Offerings and purification rituals available.",
+            "cost_estimate": "$5"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "Harmony Rose Garden Visit",
+            "location": "Yoyogi Park, Shibuya City, Tokyo",
+            "notes": "A tranquil space for reflection and relaxation.",
+            "cost_estimate": "$5"
+          },
+          {
+            "time": "Evening, 18:00",
+            "title": "Robot Restaurant Show",
+            "location": "Shibuya, Shibuya City, Tokyo",
+            "notes": "An extravagant entertainment experience. Book tickets in advance.",
+            "cost_estimate": "$75"
+          }
+        ]
+      },
+      {
+        "day_number": 7,
+        "theme": "Kamakura Day Trip",
+        "activities": [
+          {
+            "time": "Morning, 08:00",
+            "title": "Tsurugaoka Hachimangu Shrine Visit",
+            "location": "Kamakura City, Kanagawa Prefecture",
+            "notes": "A historic shrine with beautiful gardens and architecture.",
+            "cost_estimate": "$5"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Great Buddha of Kamakura Visit",
+            "location": "Kamakura City, Kanagawa Prefecture",
+            "notes": "Visit the famous bronze statue inside Kotoku-in Temple.",
+            "cost_estimate": "$5"
+          },
+          {
+            "time": "Evening, 17:00",
+            "title": "Jogashima Island Tour",
+            "location": "Kamakura City, Kanagawa Prefecture",
+            "notes": "Take a boat to explore this unique island.",
+            "cost_estimate": "$50"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "itinerary_id": "paris-3d-mod-land-walk-phot-bal",
+    "destination": "Paris",
+    "country": "France",
+    "days": 3,
+    "budget": "moderate",
+    "interests": [
+      "landmarks",
+      "walking",
+      "photography"
+    ],
+    "pace": "balanced",
+    "source_type": "generated",
+    "title": "Paris Landmarks and Photography",
+    "summary": "Explore the historic heart of Paris with a mix of iconic landmarks and hidden gems, perfect for photography enthusiasts looking to capture the essence of the city.",
+    "day_plans": [
+      {
+        "day_number": 1,
+        "theme": "Historic Center",
+        "activities": [
+          {
+            "time": "Morning, 09:00",
+            "title": "Visit Notre-Dame Cathedral",
+            "location": "6 Parvis Notre-Dame - Pl. Jean-Paul II, 75004 Paris, France",
+            "notes": "Arrive early to avoid crowds and ensure entry.",
+            "cost_estimate": "$10-20"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Explore Île de la Cité",
+            "location": "Île de la Cité, Paris",
+            "notes": "Walk along the Seine and capture reflections of Notre-Dame in the water.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Evening, 18:00",
+            "title": "Stroll through Latin Quarter",
+            "location": "Latin Quarter, Paris",
+            "notes": "Enjoy vibrant street life and café culture. Great for nighttime photography.",
+            "cost_estimate": "$20-30"
+          }
+        ]
+      },
+      {
+        "day_number": 2,
+        "theme": "Montmartre and Sacré-Cœur",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Ascend to the top of Montmartre",
+            "location": "Place du Tertre, 75018 Paris, France",
+            "notes": "Capture panoramic views and street art.",
+            "cost_estimate": "$20-30"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "Visit the Basilica of Sacré-Cœur",
+            "location": "4 Place du Calvaire, 75018 Paris, France",
+            "notes": "Admire its architecture and enjoy a peaceful moment here.",
+            "cost_estimate": "$20-30"
+          },
+          {
+            "time": "Evening, 19:00",
+            "title": "Explore Rue des Abbesses",
+            "location": "Rue des Abbesses, Montmartre, Paris",
+            "notes": "Discover charming boutiques and eateries.",
+            "cost_estimate": "$20-30"
+          }
+        ]
+      },
+      {
+        "day_number": 3,
+        "theme": "Champs-Elysées to Eiffel Tower",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Walk along Champs-Élysées",
+            "location": "Avenue des Champs-Élysées, Paris",
+            "notes": "Enjoy the grandeur of this famous avenue.",
+            "cost_estimate": "$20-30"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "Visit Eiffel Tower",
+            "location": "Champ de Mars, 75007 Paris, France",
+            "notes": "Buy tickets in advance to avoid long queues.",
+            "cost_estimate": "$50+"
+          },
+          {
+            "time": "Evening, 19:00",
+            "title": "Night view from Eiffel Tower",
+            "location": "Champ de Mars, 75007 Paris, France",
+            "notes": "Experience the city lights and take stunning night photos.",
+            "cost_estimate": "$50+"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "itinerary_id": "paris-7d-bud-land-walk-phot-bal",
+    "destination": "Paris",
+    "country": "France",
+    "days": 7,
+    "budget": "budget",
+    "interests": [
+      "landmarks",
+      "walking",
+      "photography"
+    ],
+    "pace": "balanced",
+    "source_type": "generated",
+    "title": "Paris Landmarks and Photography",
+    "summary": "Explore the historic center of Paris with a focus on iconic landmarks, perfect for those interested in photography and leisurely walks. This itinerary balances sightseeing with downtime to capture the essence of the city.",
+    "day_plans": [
+      {
+        "day_number": 1,
+        "theme": "Historic Center",
+        "activities": [
+          {
+            "time": "Morning, 09:00",
+            "title": "Visit Notre-Dame Cathedral",
+            "location": "6 Parvis Notre-Dame - Pl. Jean-Paul II, 75004 Paris, France",
+            "notes": "Arrive early to avoid crowds and capture the morning light for photography.",
+            "cost_estimate": "$10-20"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Stroll Along Seine River",
+            "location": "Quai de la Tournelle, Paris, France",
+            "notes": "Photograph the river and its bridges from various vantage points.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Evening, 18:00",
+            "title": "Eiffel Tower Sunset",
+            "location": "Champ de Mars, 5 Avenue Anatole France, 75007 Paris, France",
+            "notes": "Bring a picnic and watch the sunset from Trocadéro gardens.",
+            "cost_estimate": "$20-30"
+          }
+        ]
+      },
+      {
+        "day_number": 2,
+        "theme": "Luxembourg Gardens",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Explore Luxembourg Gardens",
+            "location": "Rue de Medicis, 75006 Paris, France",
+            "notes": "Capture the beauty of flowers and statues in a peaceful setting.",
+            "cost_estimate": "Free"
+          },
+          {
+            "time": "Afternoon, 14:30",
+            "title": "Palais du Luxembourg",
+            "location": "Place du Luxembourg, 75006 Paris, France",
+            "notes": "Admire the palace and its gardens. Free entry for photography.",
+            "cost_estimate": "$20-30"
+          },
+          {
+            "time": "Evening, 19:00",
+            "title": "Montparnasse Tower View",
+            "location": "33 Avenue du Maine, 75015 Paris, France",
+            "notes": "Catch a panoramic view of the city at sunset.",
+            "cost_estimate": "$20-30"
+          }
+        ]
+      },
+      {
+        "day_number": 3,
+        "theme": "Sainte-Chapelle and Louvre Museum",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Visit Sainte-Chapelle",
+            "location": "Place du Palais de Justice, 75001 Paris, France",
+            "notes": "Early morning to avoid lines and capture the light through stained glass.",
+            "cost_estimate": "$20-30"
+          },
+          {
+            "time": "Afternoon, 14:00",
+            "title": "Louvre Museum",
+            "location": "Rue de Rivoli, 75001 Paris, France",
+            "notes": "Explore the museum's vast collection and iconic works.",
+            "cost_estimate": "$20-30"
+          },
+          {
+            "time": "Evening, 19:00",
+            "title": "Champs-Elysées Walk",
+            "location": "Avenue des Champs-Elysées, Paris, France",
+            "notes": "Enjoy the famous avenue with its cafes and shops.",
+            "cost_estimate": "$10-20"
+          }
+        ]
+      },
+      {
+        "day_number": 4,
+        "theme": "Montmartre Village",
+        "activities": [
+          {
+            "time": "Morning, 09:30",
+            "title": "Basilica of the Sacré-Cœur",
+            "location": "Place du Calvaire, Montmartre, Paris, France",
+            "notes": "Climb to the top for sweeping views and photos.",
+            "cost_estimate": "$10-20"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Montmartre Cemetery",
+            "location": "Bd Cremieux, 75018 Paris, France",
+            "notes": "Visit the graves of famous artists and thinkers.",
+            "cost_estimate": "$10-20"
+          },
+          {
+            "time": "Evening, 19:30",
+            "title": "Montmartre Night Walk",
+            "location": "Rue Lepic, Montmartre, Paris, France",
+            "notes": "Explore the charming streets and local shops in the evening.",
+            "cost_estimate": "$5-10"
+          }
+        ]
+      },
+      {
+        "day_number": 5,
+        "theme": "Île de la Cité",
+        "activities": [
+          {
+            "time": "Morning, 09:00",
+            "title": "Visit the Conciergerie",
+            "location": "Boulevard du Palais, Île de la Cité, Paris, France",
+            "notes": "Learn about its history and significance during the French Revolution.",
+            "cost_estimate": "$20-30"
+          },
+          {
+            "time": "Afternoon, 15:00",
+            "title": "Sainte-Chapelle Reflections",
+            "location": "Place du Palais de Justice, Île de la Cité, Paris, France",
+            "notes": "Return to Sainte-Chapelle for a different light and atmosphere.",
             "cost_estimate": "$20-30"
           },
           {
             "time": "Evening, 18:00",
-            "title": "La Pergola Dinner",
-            "location": "Piazza dell'Accursio, 75, Rome",
-            "notes": "Enjoy exquisite views and cuisine.",
-            "cost_estimate": "$60+"
+            "title": "Pont des Arts Walk",
+            "location": "Pont des Arts, Île de la Cité, Paris, France",
+            "notes": "Enjoy the views of the Seine and surrounding landmarks.",
+            "cost_estimate": "$5-10"
+          }
+        ]
+      },
+      {
+        "day_number": 6,
+        "theme": "Marais District",
+        "activities": [
+          {
+            "time": "Morning, 10:00",
+            "title": "Visit Place des Vosges",
+            "location": "Place des Vosges, Paris, France",
+            "notes": "Admire the square's architectural beauty and vibrant atmosphere.",
+            "cost_estimate": "$5-10"
+          },
+          {
+            "time": "Afternoon, 13:00",
+            "title": "Musée Carnavalet",
+            "location": "2 Impasse Berthelot, Paris, France",
+            "notes": "Explore the history of Paris through its exhibits.",
+            "cost_estimate": "$5-10"
+          },
+          {
+            "time": "Evening, 19:30",
+            "title": "Jardin des Plantes Night Walk",
+            "location": "4 Place Valhubert, Paris, France",
+            "notes": "Enjoy the botanical gardens in a peaceful evening setting.",
+            "cost_estimate": "$5-10"
+          }
+        ]
+      },
+      {
+        "day_number": 7,
+        "theme": "Last Day Exploration",
+        "activities": [
+          {
+            "time": "Morning, 10:30",
+            "title": "Visit Musée Rodin",
+            "location": "Hôtel Biron, 75007 Paris, France",
+            "notes": "Admire sculptures in the garden setting.",
+            "cost_estimate": "$20-30"
+          },
+          {
+            "time": "Afternoon, 14:30",
+            "title": "Château de Vincennes Tour",
+            "location": "Boulevard Diderot, Paris, France",
+            "notes": "Explore the castle and its surroundings.",
+            "cost_estimate": "$20-30"
+          },
+          {
+            "time": "Evening, 17:30",
+            "title": "Final Evening in Montmartre",
+            "location": "Place du Tertre, Paris, France",
+            "notes": "Capture the essence of this artistic neighborhood before departure.",
+            "cost_estimate": "$5-10"
           }
         ]
       }

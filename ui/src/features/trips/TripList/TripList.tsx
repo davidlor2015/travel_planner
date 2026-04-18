@@ -4,15 +4,29 @@ import { getTrips, getTripSummaries, deleteTrip, type Trip, type TripSummary } f
 import {
   planItinerarySmart,
   applyItinerary,
+  refineItinerary,
   AI_REQUEST_TIMEOUT_MS,
   type Itinerary,
 } from '../../../shared/api/ai';
 import { ItineraryPanel } from '../ItineraryPanel';
+import { EditableItineraryPanel } from '../EditableItineraryPanel/EditableItineraryPanel';
 import { EditTripModal } from '../EditTripModal';
 import { useStreamingItinerary } from '../../../shared/hooks/useStreamingItinerary';
 import { PackingList } from '../PackingList';
 import { BudgetTracker } from '../BudgetTracker';
 import { ItineraryMap } from '../ItineraryMap';
+import { ReservationsPanel } from '../ReservationsPanel';
+import { PrepPanel } from '../PrepPanel';
+import {
+  buildItemReferences,
+  moveEditableItineraryItem,
+  preserveSelectionIds,
+  toApiItinerary,
+  toEditableItinerary,
+  type EditableItinerary,
+  type RefinementTimeBlock,
+  type RefinementVariant,
+} from '../itineraryDraft';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -53,7 +67,7 @@ function parseItinerary(description: string): Itinerary | null {
 }
 
 type TripStatus = 'upcoming' | 'active' | 'past';
-type TripWorkspaceTab = 'overview' | 'itinerary' | 'packing' | 'budget' | 'map';
+type TripWorkspaceTab = 'overview' | 'itinerary' | 'reservations' | 'prep' | 'packing' | 'budget' | 'map';
 
 interface PackingSummary {
   total: number;
@@ -69,6 +83,31 @@ interface BudgetSummary {
   isOverBudget: boolean;
   expenseCount: number;
   loading: boolean;
+}
+
+interface ReservationSummary {
+  total: number;
+  upcoming: number;
+  loading: boolean;
+}
+
+interface PrepSummary {
+  total: number;
+  completed: number;
+  overdue: number;
+  loading: boolean;
+}
+
+interface NextActionSummary {
+  tab: TripWorkspaceTab;
+  label: string;
+  hint: string;
+}
+
+interface RegenerationControlState {
+  dayNumber: number;
+  timeBlock: RefinementTimeBlock;
+  variant: RefinementVariant;
 }
 
 const STATUS_CONFIG: Record<TripStatus, { label: string; cls: string }> = {
@@ -101,33 +140,101 @@ function getTripTimelineLabel(startIso: string, endIso: string): string {
   return `Completed ${Math.abs(daysUntilEnd)} days ago`;
 }
 
-function itinerarySnapshotLabel(hasSavedItinerary: boolean, hasPendingItinerary: boolean, isGenerating: boolean): string {
-  if (isGenerating) return 'Generating itinerary';
-  if (hasPendingItinerary) return 'Draft ready to review';
-  if (hasSavedItinerary) return 'Saved itinerary';
-  return 'No itinerary yet';
-}
-
 function packingSnapshotLabel(summary: PackingSummary | undefined): string {
   if (!summary || summary.loading) return 'Loading packing';
   if (summary.total === 0) return 'No packing items yet';
   return `${summary.checked}/${summary.total} packed`;
 }
 
-function budgetSnapshotLabel(summary: BudgetSummary | undefined): string {
-  if (!summary || summary.loading) return 'Loading budget';
-  if (summary.limit === null) return summary.expenseCount > 0 ? 'Expenses added, no limit set' : 'No budget set';
-  if (summary.isOverBudget) return `Over budget by $${Math.abs(summary.remaining ?? 0).toFixed(0)}`;
-  return `$${Math.max(summary.remaining ?? 0, 0).toFixed(0)} remaining`;
+function prepSnapshotLabel(summary: PrepSummary | undefined): string {
+  if (!summary || summary.loading) return 'Loading prep';
+  if (summary.total === 0) return 'Nothing added';
+  if (summary.overdue > 0) return `${summary.overdue} overdue`;
+  if (summary.completed === summary.total) return 'All covered';
+  return `${summary.total - summary.completed} to handle`;
 }
 
-const TAB_LABELS: Array<{ id: TripWorkspaceTab; label: string }> = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'itinerary', label: 'Itinerary' },
-  { id: 'packing', label: 'Packing' },
-  { id: 'budget', label: 'Budget' },
-  { id: 'map', label: 'Map' },
+function getNextActionSummary(args: {
+  hasSavedItinerary: boolean;
+  hasPendingItinerary: boolean;
+  tripStatus: TripStatus;
+  reservationSummary?: ReservationSummary;
+  prepSummary?: PrepSummary;
+  packingSummary?: PackingSummary;
+}): NextActionSummary {
+  const {
+    hasSavedItinerary,
+    hasPendingItinerary,
+    tripStatus,
+    reservationSummary,
+    prepSummary,
+    packingSummary,
+  } = args;
+
+  if (!hasSavedItinerary && !hasPendingItinerary) {
+    return {
+      tab: 'itinerary',
+      label: 'Start with the itinerary',
+      hint: 'Generate the trip plan first so the rest of the details have something to anchor to.',
+    };
+  }
+
+  if ((prepSummary?.overdue ?? 0) > 0) {
+    return {
+      tab: 'prep',
+      label: `${prepSummary?.overdue} prep item${prepSummary?.overdue === 1 ? '' : 's'} need attention`,
+      hint: 'Take care of overdue travel prep before departure.',
+    };
+  }
+
+  if ((reservationSummary?.total ?? 0) === 0 && tripStatus !== 'past') {
+    return {
+      tab: 'reservations',
+      label: 'Save your bookings',
+      hint: 'Keep flights, stays, and trains together so the trip stays easy to manage.',
+    };
+  }
+
+  if ((packingSummary?.total ?? 0) === 0 && tripStatus !== 'past') {
+    return {
+      tab: 'packing',
+      label: 'Start the packing list',
+      hint: 'Capture the essentials now so you are not scrambling at the end.',
+    };
+  }
+
+  if ((packingSummary?.total ?? 0) > 0 && (packingSummary?.checked ?? 0) < (packingSummary?.total ?? 0) && tripStatus === 'active') {
+    return {
+      tab: 'packing',
+      label: 'Finish the last packing details',
+      hint: 'A few items are still unchecked for this trip.',
+    };
+  }
+
+  return {
+    tab: 'overview',
+    label: 'Everything is in a good place',
+    hint: 'You can review the trip details or keep refining the plan.',
+  };
+}
+
+const TAB_LABELS: Array<{ id: TripWorkspaceTab; label: string; helper: string }> = [
+  { id: 'overview', label: 'Overview', helper: 'See the trip at a glance and pick up where you left off.' },
+  { id: 'itinerary', label: 'Plan', helper: 'Shape the day-by-day plan for this trip.' },
+  { id: 'reservations', label: 'Bookings', helper: 'What have I already booked?' },
+  { id: 'prep', label: 'Ready', helper: 'What still needs handling before I go?' },
+  { id: 'packing', label: 'Pack', helper: 'What should I bring?' },
+  { id: 'budget', label: 'Money', helper: 'What have I committed to spend?' },
+  { id: 'map', label: 'Map', helper: 'See how the saved itinerary fits together geographically.' },
 ];
+
+function getDefaultRegenerationControls(itinerary: EditableItinerary): RegenerationControlState {
+  return {
+    dayNumber: itinerary.days[0]?.day_number ?? 1,
+    timeBlock: 'full_day',
+    variant: 'more_local',
+  };
+}
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -239,15 +346,22 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
   const [error, setError]             = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const [pendingItineraries, setPendingItineraries] = useState<Record<number, Itinerary>>({});
+  const [pendingItineraries, setPendingItineraries] = useState<Record<number, EditableItinerary>>({});
   const [generatingSmartIds, setGeneratingSmartIds] = useState<Set<number>>(new Set());
+  const [regeneratingIds, setRegeneratingIds]       = useState<Set<number>>(new Set());
   const [applyingIds, setApplyingIds]               = useState<Set<number>>(new Set());
   const [viewingIds, setViewingIds]                 = useState<Set<number>>(new Set());
   const [editingTrip, setEditingTrip]               = useState<Trip | null>(null);
   const [confirmDeleteId, setConfirmDeleteId]       = useState<number | null>(null);
+  const [openMenuId, setOpenMenuId]                 = useState<number | null>(null);
   const [activeTabs, setActiveTabs]                 = useState<Record<number, TripWorkspaceTab>>({});
   const [packingSummaries, setPackingSummaries]     = useState<Record<number, PackingSummary>>({});
-  const [budgetSummaries, setBudgetSummaries]       = useState<Record<number, BudgetSummary>>({});
+  const [, setBudgetSummaries]                      = useState<Record<number, BudgetSummary>>({});
+  const [reservationSummaries, setReservationSummaries] = useState<Record<number, ReservationSummary>>({});
+  const [prepSummaries, setPrepSummaries]           = useState<Record<number, PrepSummary>>({});
+  const [lockedItemIds, setLockedItemIds]           = useState<Record<number, string[]>>({});
+  const [favoriteItemIds, setFavoriteItemIds]       = useState<Record<number, string[]>>({});
+  const [regenerationControls, setRegenerationControls] = useState<Record<number, RegenerationControlState>>({});
 
   const { streams, start: startStream, reset: resetStream } = useStreamingItinerary(token);
 
@@ -263,6 +377,40 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
 
   const setActiveTab = (tripId: number, tab: TripWorkspaceTab) => {
     setActiveTabs((prev) => ({ ...prev, [tripId]: tab }));
+    setOpenMenuId((current) => (current === tripId ? null : current));
+  };
+
+  const upsertDraftItinerary = (tripId: number, itinerary: Itinerary, previous?: EditableItinerary) => {
+    const editable = toEditableItinerary(itinerary, previous);
+    setPendingItineraries((prev) => ({ ...prev, [tripId]: editable }));
+    setRegenerationControls((prev) => ({
+      ...prev,
+      [tripId]: prev[tripId] ?? getDefaultRegenerationControls(editable),
+    }));
+
+    if (previous) {
+      setLockedItemIds((prev) => ({ ...prev, [tripId]: preserveSelectionIds(previous, editable, prev[tripId] ?? []) }));
+      setFavoriteItemIds((prev) => ({ ...prev, [tripId]: preserveSelectionIds(previous, editable, prev[tripId] ?? []) }));
+    } else {
+      setLockedItemIds((prev) => ({ ...prev, [tripId]: prev[tripId] ?? [] }));
+      setFavoriteItemIds((prev) => ({ ...prev, [tripId]: prev[tripId] ?? [] }));
+    }
+  };
+
+  const toggleDraftSelection = (
+    tripId: number,
+    itemId: string,
+    setter: (updater: (prev: Record<number, string[]>) => Record<number, string[]>) => void,
+  ) => {
+    setter((prev) => {
+      const current = new Set(prev[tripId] ?? []);
+      if (current.has(itemId)) {
+        current.delete(itemId);
+      } else {
+        current.add(itemId);
+      }
+      return { ...prev, [tripId]: Array.from(current) };
+    });
   };
 
   // ── Initial fetch ──────────────────────────────────────────────────────────
@@ -302,6 +450,31 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
             ]),
           ),
         );
+        setReservationSummaries(
+          Object.fromEntries(
+            summaries.map((summary: TripSummary) => [
+              summary.trip_id,
+              {
+                total: summary.reservation_count,
+                upcoming: summary.reservation_upcoming_count,
+                loading: false,
+              },
+            ]),
+          ),
+        );
+        setPrepSummaries(
+          Object.fromEntries(
+            summaries.map((summary: TripSummary) => [
+              summary.trip_id,
+              {
+                total: summary.prep_total,
+                completed: summary.prep_completed,
+                overdue: summary.prep_overdue_count,
+                loading: false,
+              },
+            ]),
+          ),
+        );
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred');
       } finally {
@@ -311,6 +484,26 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
     fetchData();
   }, [token]);
 
+  useEffect(() => {
+    for (const [tripIdKey, streamState] of Object.entries(streams)) {
+      const tripId = Number(tripIdKey);
+      const completedItinerary = streamState?.itinerary;
+      if (completedItinerary) {
+        setPendingItineraries((prev) => {
+          if (prev[tripId]) {
+            return prev;
+          }
+          const editable = toEditableItinerary(completedItinerary);
+          setRegenerationControls((controls) => ({
+            ...controls,
+            [tripId]: controls[tripId] ?? getDefaultRegenerationControls(editable),
+          }));
+          return { ...prev, [tripId]: editable };
+        });
+      }
+    }
+  }, [streams]);
+
   // ── Actions ────────────────────────────────────────────────────────────────
 
   const handleDelete = async (id: number) => {
@@ -319,6 +512,7 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
       await deleteTrip(token, id);
       setTrips((prev) => prev.filter((t) => t.id !== id));
       setConfirmDeleteId(null);
+      setOpenMenuId((current) => (current === id ? null : current));
     } catch {
       setActionError('Failed to delete trip. Please try again.');
       setConfirmDeleteId(null);
@@ -340,7 +534,8 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
         { interests_override: trip?.notes ?? undefined },
         controller.signal,
       );
-      setPendingItineraries((prev) => ({ ...prev, [tripId]: itinerary }));
+      upsertDraftItinerary(tripId, itinerary, pendingItineraries[tripId]);
+      setActiveTab(tripId, 'itinerary');
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
         setActionError('The AI took too long. Try again — shorter trips generate faster.');
@@ -358,13 +553,13 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
   };
 
   const handleApply = async (tripId: number) => {
-    const itinerary = streams[tripId]?.itinerary ?? pendingItineraries[tripId];
+    const itinerary = pendingItineraries[tripId] ?? (streams[tripId]?.itinerary ? toEditableItinerary(streams[tripId].itinerary) : null);
     if (!itinerary) return;
 
     setActionError(null);
     setApplyingIds((prev) => new Set(prev).add(tripId));
     try {
-      await applyItinerary(token, tripId, itinerary);
+      await applyItinerary(token, tripId, toApiItinerary(itinerary));
       const freshTrips = await getTrips(token);
       setTrips(freshTrips);
       resetStream(tripId);
@@ -373,10 +568,70 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
         delete next[tripId];
         return next;
       });
+      setLockedItemIds((prev) => {
+        const next = { ...prev };
+        delete next[tripId];
+        return next;
+      });
+      setFavoriteItemIds((prev) => {
+        const next = { ...prev };
+        delete next[tripId];
+        return next;
+      });
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Failed to apply itinerary.');
     } finally {
       setApplyingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(tripId);
+        return next;
+      });
+    }
+  };
+
+  const handleLoadSavedAsDraft = (tripId: number, itinerary: Itinerary) => {
+    upsertDraftItinerary(tripId, itinerary, pendingItineraries[tripId]);
+    setActiveTab(tripId, 'itinerary');
+  };
+
+  const handleMoveDraftItem = (
+    tripId: number,
+    sourceDayNumber: number,
+    sourceIndex: number,
+    targetDayNumber: number,
+    targetIndex: number,
+  ) => {
+    setPendingItineraries((prev) => {
+      const current = prev[tripId];
+      if (!current) return prev;
+      return {
+        ...prev,
+        [tripId]: moveEditableItineraryItem(current, sourceDayNumber, sourceIndex, targetDayNumber, targetIndex),
+      };
+    });
+  };
+
+  const handleRegenerateDraft = async (tripId: number) => {
+    const current = pendingItineraries[tripId];
+    const controls = regenerationControls[tripId];
+    if (!current || !controls) return;
+
+    setActionError(null);
+    setRegeneratingIds((prev) => new Set(prev).add(tripId));
+    try {
+      const refined = await refineItinerary(token, tripId, {
+        current_itinerary: toApiItinerary(current),
+        locked_items: buildItemReferences(current, lockedItemIds[tripId] ?? []),
+        favorite_items: buildItemReferences(current, favoriteItemIds[tripId] ?? []),
+        regenerate_day_number: controls.dayNumber,
+        regenerate_time_block: controls.timeBlock === 'full_day' ? undefined : controls.timeBlock,
+        variant: controls.variant,
+      });
+      upsertDraftItinerary(tripId, refined, current);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to refine itinerary.');
+    } finally {
+      setRegeneratingIds((prev) => {
         const next = new Set(prev);
         next.delete(tripId);
         return next;
@@ -466,20 +721,31 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
             const isStreaming     = streamState?.streaming ?? false;
             const streamText     = streamState?.text ?? '';
             const streamError    = streamState?.error ?? null;
-            const streamItinerary = streamState?.itinerary ?? null;
 
             const isGeneratingSmart = generatingSmartIds.has(trip.id);
+            const isRegenerating    = regeneratingIds.has(trip.id);
             const isAnyGenerating   = isStreaming || isGeneratingSmart;
             const isApplying        = applyingIds.has(trip.id);
             const isViewing         = viewingIds.has(trip.id);
 
-            const pendingItinerary  = streamItinerary ?? pendingItineraries[trip.id] ?? null;
+            const pendingItinerary  = pendingItineraries[trip.id] ?? null;
             const savedItinerary    = trip.description ? parseItinerary(trip.description) : null;
             const hasSavedItinerary = savedItinerary !== null;
             const tripStatus        = getTripStatus(trip.start_date, trip.end_date);
             const activeTab         = activeTabs[trip.id] ?? 'overview';
             const packingSummary    = packingSummaries[trip.id];
-            const budgetSummary     = budgetSummaries[trip.id];
+            const reservationSummary = reservationSummaries[trip.id];
+            const prepSummary = prepSummaries[trip.id];
+            const controls          = regenerationControls[trip.id] ?? (pendingItinerary ? getDefaultRegenerationControls(pendingItinerary) : null);
+            const nextAction = getNextActionSummary({
+              hasSavedItinerary,
+              hasPendingItinerary: !!pendingItinerary,
+              tripStatus,
+              reservationSummary,
+              prepSummary,
+              packingSummary,
+            });
+            const activeTabMeta = TAB_LABELS.find((tab) => tab.id === activeTab) ?? TAB_LABELS[0];
 
             const startDate = new Date(trip.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
             const endDate   = new Date(trip.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -488,97 +754,133 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
               <motion.li
                 key={trip.id}
                 variants={cardVariants}
-                layout
-                className="bg-white rounded-2xl border border-smoke/60 shadow-sm hover:shadow-md transition-shadow duration-200 p-6 space-y-4"
+                layout="position"
+                className="bg-white rounded-2xl border border-smoke/60 shadow-sm hover:shadow-md transition-shadow duration-200 p-6 space-y-5"
               >
-                {/* Title row */}
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <h3 className="text-lg font-bold text-espresso leading-tight">{trip.title}</h3>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full border text-xs font-bold ${STATUS_CONFIG[tripStatus].cls}`}>
-                      {STATUS_CONFIG[tripStatus].label}
-                    </span>
-                    {hasSavedItinerary && (
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-amber/20 text-amber text-xs font-bold">
-                        Itinerary saved
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-2 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full border text-xs font-bold ${STATUS_CONFIG[tripStatus].cls}`}>
+                        {STATUS_CONFIG[tripStatus].label}
                       </span>
-                    )}
+                      {hasSavedItinerary && (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-amber/15 text-amber text-xs font-bold">
+                          Planned
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-espresso leading-tight">{trip.title}</h3>
+                      <p className="text-base font-semibold text-espresso/90 mt-1">{trip.destination}</p>
+                    </div>
+                    <div className="space-y-0.5 text-sm text-flint">
+                      <p>{startDate} - {endDate}</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-flint/70">{getTripTimelineLabel(trip.start_date, trip.end_date)}</p>
+                    </div>
+                  </div>
+
+                  <div className="relative flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setConfirmDeleteId(null);
+                        setOpenMenuId((current) => (current === trip.id ? null : trip.id));
+                      }}
+                      className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-smoke bg-parchment/60 text-flint hover:text-espresso hover:bg-parchment transition-colors cursor-pointer"
+                      aria-expanded={openMenuId === trip.id}
+                      aria-label={`Trip actions for ${trip.title}`}
+                    >
+                      <span className="text-lg leading-none">...</span>
+                    </button>
+
+                    <AnimatePresence>
+                      {openMenuId === trip.id && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                          transition={{ duration: 0.16 }}
+                          className="absolute right-0 top-12 z-10 min-w-[180px] rounded-2xl border border-smoke bg-white shadow-lg p-2"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingTrip(trip);
+                              setOpenMenuId(null);
+                            }}
+                            className="w-full text-left px-3 py-2 rounded-xl text-sm font-semibold text-espresso hover:bg-parchment transition-colors cursor-pointer"
+                          >
+                            Edit trip
+                          </button>
+                          {confirmDeleteId === trip.id ? (
+                            <div className="px-3 py-2 space-y-2">
+                              <p className="text-xs font-semibold text-danger">Delete this trip?</p>
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDelete(trip.id)}
+                                  className="px-3 py-1.5 rounded-full bg-danger/10 border border-danger/25 text-xs font-semibold text-danger hover:bg-danger/15 transition-colors cursor-pointer"
+                                >
+                                  Delete
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setConfirmDeleteId(null)}
+                                  className="px-3 py-1.5 rounded-full bg-parchment text-xs font-semibold text-flint hover:bg-smoke transition-colors cursor-pointer"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteId(trip.id)}
+                              className="w-full text-left px-3 py-2 rounded-xl text-sm font-semibold text-danger hover:bg-danger/5 transition-colors cursor-pointer"
+                            >
+                              Delete trip
+                            </button>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </div>
 
-                {/* Meta */}
-                <div className="flex flex-col gap-1 text-sm text-flint">
-                  <span className="font-medium text-espresso">{trip.destination}</span>
-                  <span>{startDate} – {endDate}</span>
-                  <span className="text-xs font-semibold text-flint/80">{getTripTimelineLabel(trip.start_date, trip.end_date)}</span>
+                <div className="rounded-2xl border border-smoke bg-parchment/50 px-4 py-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-flint/75">Next thing to handle</p>
+                  <p className="text-base font-bold text-espresso mt-1">{nextAction.label}</p>
+                  <p className="text-sm text-flint mt-1 max-w-3xl">{nextAction.hint}</p>
                   {trip.notes && (
-                    <span className="text-xs text-flint/70 italic mt-0.5">{trip.notes}</span>
+                    <p className="text-xs text-flint/70 italic mt-3">{trip.notes}</p>
                   )}
-                </div>
-
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                  <div className="rounded-2xl border border-smoke bg-parchment/70 px-4 py-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-flint">Timeline</p>
-                    <p className="text-sm font-bold text-espresso mt-1">{getTripTimelineLabel(trip.start_date, trip.end_date)}</p>
-                  </div>
-                  <div className="rounded-2xl border border-smoke bg-parchment/70 px-4 py-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-flint">Itinerary</p>
-                    <p className="text-sm font-bold text-espresso mt-1">
-                      {itinerarySnapshotLabel(hasSavedItinerary, !!pendingItinerary, isAnyGenerating)}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border border-smoke bg-parchment/70 px-4 py-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-flint">Packing</p>
-                    <p className="text-sm font-bold text-espresso mt-1">{packingSnapshotLabel(packingSummary)}</p>
-                  </div>
-                  <div className="rounded-2xl border border-smoke bg-parchment/70 px-4 py-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-flint">Budget</p>
-                    <p className="text-sm font-bold text-espresso mt-1">{budgetSnapshotLabel(budgetSummary)}</p>
-                  </div>
                 </div>
 
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div className="flex gap-2 flex-wrap">
-                    <PillButton variant="ocean" onClick={() => setActiveTab(trip.id, 'itinerary')}>
+                    <PillButton variant="ocean" onClick={() => setActiveTab(trip.id, nextAction.tab)}>
                       Continue Planning
-                    </PillButton>
-                    <PillButton variant="ghost" onClick={() => setEditingTrip(trip)}>
-                      Edit
                     </PillButton>
                   </div>
 
-                  <AnimatePresence mode="wait" initial={false}>
-                    {confirmDeleteId === trip.id ? (
-                      <motion.div
-                        key="confirm"
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ duration: 0.15 }}
-                        className="flex items-center gap-2"
-                      >
-                        <span className="text-sm font-semibold text-danger">Delete trip?</span>
-                        <PillButton variant="danger" onClick={() => handleDelete(trip.id)}>
-                          Yes, delete
-                        </PillButton>
-                        <PillButton variant="ghost" onClick={() => setConfirmDeleteId(null)}>
-                          Cancel
-                        </PillButton>
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="idle"
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ duration: 0.15 }}
-                      >
-                        <PillButton variant="danger" onClick={() => setConfirmDeleteId(trip.id)}>
-                          Delete
-                        </PillButton>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full border border-sky-200 bg-sky-50 text-xs font-semibold text-sky-800">
+                      {reservationSummary?.total ?? 0} booking{(reservationSummary?.total ?? 0) === 1 ? '' : 's'}
+                    </span>
+                    <span
+                      className={[
+                        'inline-flex items-center px-2.5 py-1 rounded-full border text-xs font-semibold',
+                        prepSummary?.overdue
+                          ? 'border-danger/25 bg-danger/10 text-danger'
+                          : 'border-olive/20 bg-olive/10 text-olive',
+                      ].join(' ')}
+                    >
+                      {prepSnapshotLabel(prepSummary)}
+                    </span>
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full border border-smoke bg-parchment/70 text-xs font-semibold text-flint">
+                      {packingSnapshotLabel(packingSummary)}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="flex gap-1 bg-parchment rounded-full p-1 w-fit flex-wrap">
@@ -602,6 +904,11 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
                       </button>
                     );
                   })}
+                </div>
+
+                <div className="px-1">
+                  <p className="text-sm font-semibold text-espresso">{activeTabMeta.label}</p>
+                  <p className="text-sm text-flint mt-1">{activeTabMeta.helper}</p>
                 </div>
 
                 {/* Per-card stream error */}
@@ -667,14 +974,49 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
                             {isViewing ? 'Hide Saved Itinerary' : 'View Saved Itinerary'}
                           </PillButton>
                         )}
+                        {savedItinerary && (
+                          <PillButton variant="ghost" onClick={() => handleLoadSavedAsDraft(trip.id, savedItinerary)}>
+                            Edit Saved as Draft
+                          </PillButton>
+                        )}
                       </div>
                     )}
 
-                    {!isStreaming && pendingItinerary ? (
-                      <ItineraryPanel
+                    {!isStreaming && pendingItinerary && controls ? (
+                      <EditableItineraryPanel
                         itinerary={pendingItinerary}
                         onApply={() => handleApply(trip.id)}
                         applying={isApplying}
+                        regenerating={isRegenerating}
+                        lockedItemIds={lockedItemIds[trip.id] ?? []}
+                        favoriteItemIds={favoriteItemIds[trip.id] ?? []}
+                        regenerateDayNumber={controls.dayNumber}
+                        regenerateTimeBlock={controls.timeBlock}
+                        regenerateVariant={controls.variant}
+                        onMoveItem={(sourceDayNumber, sourceIndex, targetDayNumber, targetIndex) =>
+                          handleMoveDraftItem(trip.id, sourceDayNumber, sourceIndex, targetDayNumber, targetIndex)
+                        }
+                        onToggleLock={(itemId) => toggleDraftSelection(trip.id, itemId, setLockedItemIds)}
+                        onToggleFavorite={(itemId) => toggleDraftSelection(trip.id, itemId, setFavoriteItemIds)}
+                        onRegenerateDayChange={(dayNumber) =>
+                          setRegenerationControls((prev) => ({
+                            ...prev,
+                            [trip.id]: { ...(prev[trip.id] ?? controls), dayNumber },
+                          }))
+                        }
+                        onRegenerateTimeBlockChange={(timeBlock) =>
+                          setRegenerationControls((prev) => ({
+                            ...prev,
+                            [trip.id]: { ...(prev[trip.id] ?? controls), timeBlock },
+                          }))
+                        }
+                        onRegenerateVariantChange={(variant) =>
+                          setRegenerationControls((prev) => ({
+                            ...prev,
+                            [trip.id]: { ...(prev[trip.id] ?? controls), variant },
+                          }))
+                        }
+                        onRegenerate={() => handleRegenerateDraft(trip.id)}
                       />
                     ) : (
                       isViewing && savedItinerary && <ItineraryPanel itinerary={savedItinerary} />
@@ -696,6 +1038,20 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
                     onSummaryChange={(summary) =>
                       setPackingSummaries((prev) => ({ ...prev, [trip.id]: summary }))
                     }
+                  />
+                )}
+                {activeTab === 'reservations' && (
+                  <ReservationsPanel
+                    token={token}
+                    tripId={trip.id}
+                  />
+                )}
+                {activeTab === 'prep' && (
+                  <PrepPanel
+                    token={token}
+                    tripId={trip.id}
+                    destination={trip.destination}
+                    startDate={trip.start_date}
                   />
                 )}
                 {activeTab === 'budget' && (

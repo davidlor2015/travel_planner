@@ -22,3 +22,8 @@ class PackingItemResponse(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PackingSuggestionResponse(BaseModel):
+    label: str
+    reason: str

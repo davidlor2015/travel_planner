@@ -31,6 +31,7 @@ type BudgetAction =
   | { type: 'fetch/error'; message: string }
   | { type: 'limit/set'; limit: number | null; expenses: BudgetExpense[] }
   | { type: 'expense/add'; expense: BudgetExpense }
+  | { type: 'expense/replace'; previousId: number; expense: BudgetExpense }
   | { type: 'expense/remove'; id: number };
 
 function budgetReducer(state: BudgetState, action: BudgetAction): BudgetState {
@@ -40,6 +41,10 @@ function budgetReducer(state: BudgetState, action: BudgetAction): BudgetState {
     case 'fetch/error':    return { ...state, loading: false, error: action.message };
     case 'limit/set':      return { ...state, limit: action.limit, expenses: action.expenses };
     case 'expense/add':    return { ...state, expenses: [...state.expenses, action.expense] };
+    case 'expense/replace': return {
+      ...state,
+      expenses: state.expenses.map((expense) => (expense.id === action.previousId ? action.expense : expense)),
+    };
     case 'expense/remove': return { ...state, expenses: state.expenses.filter((e) => e.id !== action.id) };
   }
 }
@@ -67,21 +72,49 @@ export function useBudgetTracker(token: string, tripId: number): UseBudgetTracke
   const isOverBudget = remaining !== null && remaining < 0;
 
   const setLimit = useCallback(async (amount: number | null) => {
-    const data = await updateBudgetLimit(token, tripId, amount);
-    dispatch({ type: 'limit/set', limit: data.limit, expenses: data.expenses });
-  }, [token, tripId]);
+    const previous = { limit, expenses };
+    dispatch({ type: 'limit/set', limit: amount, expenses });
+    try {
+      const data = await updateBudgetLimit(token, tripId, amount);
+      dispatch({ type: 'limit/set', limit: data.limit, expenses: data.expenses });
+    } catch (error) {
+      dispatch({ type: 'limit/set', limit: previous.limit, expenses: previous.expenses });
+      throw error;
+    }
+  }, [token, tripId, limit, expenses]);
 
   const addExpense = useCallback(async (label: string, amount: number, category: ExpenseCategory) => {
     const trimmed = label.trim();
     if (!trimmed || amount <= 0) return;
-    const expense = await createExpense(token, tripId, { label: trimmed, amount, category });
-    dispatch({ type: 'expense/add', expense });
+    const tempId = -Date.now();
+    const optimistic: BudgetExpense = {
+      id: tempId,
+      trip_id: tripId,
+      label: trimmed,
+      amount,
+      category,
+      created_at: new Date().toISOString(),
+    };
+    dispatch({ type: 'expense/add', expense: optimistic });
+    try {
+      const expense = await createExpense(token, tripId, { label: trimmed, amount, category });
+      dispatch({ type: 'expense/replace', previousId: tempId, expense });
+    } catch (error) {
+      dispatch({ type: 'expense/remove', id: tempId });
+      throw error;
+    }
   }, [token, tripId]);
 
   const removeExpense = useCallback(async (id: number) => {
-    await deleteExpense(token, tripId, id);
+    const removed = expenses.find((expense) => expense.id === id);
     dispatch({ type: 'expense/remove', id });
-  }, [token, tripId]);
+    try {
+      await deleteExpense(token, tripId, id);
+    } catch (error) {
+      if (removed) dispatch({ type: 'expense/add', expense: removed });
+      throw error;
+    }
+  }, [expenses, token, tripId]);
 
   return { limit, expenses, totalSpent, remaining, isOverBudget, loading, error, setLimit, addExpense, removeExpense };
 }
