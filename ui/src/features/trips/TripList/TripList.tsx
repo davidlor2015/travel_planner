@@ -4,15 +4,27 @@ import { getTrips, getTripSummaries, deleteTrip, type Trip, type TripSummary } f
 import {
   planItinerarySmart,
   applyItinerary,
+  refineItinerary,
   AI_REQUEST_TIMEOUT_MS,
   type Itinerary,
 } from '../../../shared/api/ai';
 import { ItineraryPanel } from '../ItineraryPanel';
+import { EditableItineraryPanel } from '../EditableItineraryPanel/EditableItineraryPanel';
 import { EditTripModal } from '../EditTripModal';
 import { useStreamingItinerary } from '../../../shared/hooks/useStreamingItinerary';
 import { PackingList } from '../PackingList';
 import { BudgetTracker } from '../BudgetTracker';
 import { ItineraryMap } from '../ItineraryMap';
+import {
+  buildItemReferences,
+  moveEditableItineraryItem,
+  preserveSelectionIds,
+  toApiItinerary,
+  toEditableItinerary,
+  type EditableItinerary,
+  type RefinementTimeBlock,
+  type RefinementVariant,
+} from '../itineraryDraft';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -69,6 +81,12 @@ interface BudgetSummary {
   isOverBudget: boolean;
   expenseCount: number;
   loading: boolean;
+}
+
+interface RegenerationControlState {
+  dayNumber: number;
+  timeBlock: RefinementTimeBlock;
+  variant: RefinementVariant;
 }
 
 const STATUS_CONFIG: Record<TripStatus, { label: string; cls: string }> = {
@@ -128,6 +146,14 @@ const TAB_LABELS: Array<{ id: TripWorkspaceTab; label: string }> = [
   { id: 'budget', label: 'Budget' },
   { id: 'map', label: 'Map' },
 ];
+
+function getDefaultRegenerationControls(itinerary: EditableItinerary): RegenerationControlState {
+  return {
+    dayNumber: itinerary.days[0]?.day_number ?? 1,
+    timeBlock: 'full_day',
+    variant: 'more_local',
+  };
+}
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -239,8 +265,9 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
   const [error, setError]             = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const [pendingItineraries, setPendingItineraries] = useState<Record<number, Itinerary>>({});
+  const [pendingItineraries, setPendingItineraries] = useState<Record<number, EditableItinerary>>({});
   const [generatingSmartIds, setGeneratingSmartIds] = useState<Set<number>>(new Set());
+  const [regeneratingIds, setRegeneratingIds]       = useState<Set<number>>(new Set());
   const [applyingIds, setApplyingIds]               = useState<Set<number>>(new Set());
   const [viewingIds, setViewingIds]                 = useState<Set<number>>(new Set());
   const [editingTrip, setEditingTrip]               = useState<Trip | null>(null);
@@ -248,6 +275,9 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
   const [activeTabs, setActiveTabs]                 = useState<Record<number, TripWorkspaceTab>>({});
   const [packingSummaries, setPackingSummaries]     = useState<Record<number, PackingSummary>>({});
   const [budgetSummaries, setBudgetSummaries]       = useState<Record<number, BudgetSummary>>({});
+  const [lockedItemIds, setLockedItemIds]           = useState<Record<number, string[]>>({});
+  const [favoriteItemIds, setFavoriteItemIds]       = useState<Record<number, string[]>>({});
+  const [regenerationControls, setRegenerationControls] = useState<Record<number, RegenerationControlState>>({});
 
   const { streams, start: startStream, reset: resetStream } = useStreamingItinerary(token);
 
@@ -263,6 +293,39 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
 
   const setActiveTab = (tripId: number, tab: TripWorkspaceTab) => {
     setActiveTabs((prev) => ({ ...prev, [tripId]: tab }));
+  };
+
+  const upsertDraftItinerary = (tripId: number, itinerary: Itinerary, previous?: EditableItinerary) => {
+    const editable = toEditableItinerary(itinerary, previous);
+    setPendingItineraries((prev) => ({ ...prev, [tripId]: editable }));
+    setRegenerationControls((prev) => ({
+      ...prev,
+      [tripId]: prev[tripId] ?? getDefaultRegenerationControls(editable),
+    }));
+
+    if (previous) {
+      setLockedItemIds((prev) => ({ ...prev, [tripId]: preserveSelectionIds(previous, editable, prev[tripId] ?? []) }));
+      setFavoriteItemIds((prev) => ({ ...prev, [tripId]: preserveSelectionIds(previous, editable, prev[tripId] ?? []) }));
+    } else {
+      setLockedItemIds((prev) => ({ ...prev, [tripId]: prev[tripId] ?? [] }));
+      setFavoriteItemIds((prev) => ({ ...prev, [tripId]: prev[tripId] ?? [] }));
+    }
+  };
+
+  const toggleDraftSelection = (
+    tripId: number,
+    itemId: string,
+    setter: (updater: (prev: Record<number, string[]>) => Record<number, string[]>) => void,
+  ) => {
+    setter((prev) => {
+      const current = new Set(prev[tripId] ?? []);
+      if (current.has(itemId)) {
+        current.delete(itemId);
+      } else {
+        current.add(itemId);
+      }
+      return { ...prev, [tripId]: Array.from(current) };
+    });
   };
 
   // ── Initial fetch ──────────────────────────────────────────────────────────
@@ -311,6 +374,26 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
     fetchData();
   }, [token]);
 
+  useEffect(() => {
+    for (const [tripIdKey, streamState] of Object.entries(streams)) {
+      const tripId = Number(tripIdKey);
+      const completedItinerary = streamState?.itinerary;
+      if (completedItinerary) {
+        setPendingItineraries((prev) => {
+          if (prev[tripId]) {
+            return prev;
+          }
+          const editable = toEditableItinerary(completedItinerary);
+          setRegenerationControls((controls) => ({
+            ...controls,
+            [tripId]: controls[tripId] ?? getDefaultRegenerationControls(editable),
+          }));
+          return { ...prev, [tripId]: editable };
+        });
+      }
+    }
+  }, [streams]);
+
   // ── Actions ────────────────────────────────────────────────────────────────
 
   const handleDelete = async (id: number) => {
@@ -340,7 +423,8 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
         { interests_override: trip?.notes ?? undefined },
         controller.signal,
       );
-      setPendingItineraries((prev) => ({ ...prev, [tripId]: itinerary }));
+      upsertDraftItinerary(tripId, itinerary, pendingItineraries[tripId]);
+      setActiveTab(tripId, 'itinerary');
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
         setActionError('The AI took too long. Try again — shorter trips generate faster.');
@@ -358,13 +442,13 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
   };
 
   const handleApply = async (tripId: number) => {
-    const itinerary = streams[tripId]?.itinerary ?? pendingItineraries[tripId];
+    const itinerary = pendingItineraries[tripId] ?? (streams[tripId]?.itinerary ? toEditableItinerary(streams[tripId].itinerary) : null);
     if (!itinerary) return;
 
     setActionError(null);
     setApplyingIds((prev) => new Set(prev).add(tripId));
     try {
-      await applyItinerary(token, tripId, itinerary);
+      await applyItinerary(token, tripId, toApiItinerary(itinerary));
       const freshTrips = await getTrips(token);
       setTrips(freshTrips);
       resetStream(tripId);
@@ -373,10 +457,70 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
         delete next[tripId];
         return next;
       });
+      setLockedItemIds((prev) => {
+        const next = { ...prev };
+        delete next[tripId];
+        return next;
+      });
+      setFavoriteItemIds((prev) => {
+        const next = { ...prev };
+        delete next[tripId];
+        return next;
+      });
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Failed to apply itinerary.');
     } finally {
       setApplyingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(tripId);
+        return next;
+      });
+    }
+  };
+
+  const handleLoadSavedAsDraft = (tripId: number, itinerary: Itinerary) => {
+    upsertDraftItinerary(tripId, itinerary, pendingItineraries[tripId]);
+    setActiveTab(tripId, 'itinerary');
+  };
+
+  const handleMoveDraftItem = (
+    tripId: number,
+    sourceDayNumber: number,
+    sourceIndex: number,
+    targetDayNumber: number,
+    targetIndex: number,
+  ) => {
+    setPendingItineraries((prev) => {
+      const current = prev[tripId];
+      if (!current) return prev;
+      return {
+        ...prev,
+        [tripId]: moveEditableItineraryItem(current, sourceDayNumber, sourceIndex, targetDayNumber, targetIndex),
+      };
+    });
+  };
+
+  const handleRegenerateDraft = async (tripId: number) => {
+    const current = pendingItineraries[tripId];
+    const controls = regenerationControls[tripId];
+    if (!current || !controls) return;
+
+    setActionError(null);
+    setRegeneratingIds((prev) => new Set(prev).add(tripId));
+    try {
+      const refined = await refineItinerary(token, tripId, {
+        current_itinerary: toApiItinerary(current),
+        locked_items: buildItemReferences(current, lockedItemIds[tripId] ?? []),
+        favorite_items: buildItemReferences(current, favoriteItemIds[tripId] ?? []),
+        regenerate_day_number: controls.dayNumber,
+        regenerate_time_block: controls.timeBlock === 'full_day' ? undefined : controls.timeBlock,
+        variant: controls.variant,
+      });
+      upsertDraftItinerary(tripId, refined, current);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to refine itinerary.');
+    } finally {
+      setRegeneratingIds((prev) => {
         const next = new Set(prev);
         next.delete(tripId);
         return next;
@@ -466,20 +610,21 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
             const isStreaming     = streamState?.streaming ?? false;
             const streamText     = streamState?.text ?? '';
             const streamError    = streamState?.error ?? null;
-            const streamItinerary = streamState?.itinerary ?? null;
 
             const isGeneratingSmart = generatingSmartIds.has(trip.id);
+            const isRegenerating    = regeneratingIds.has(trip.id);
             const isAnyGenerating   = isStreaming || isGeneratingSmart;
             const isApplying        = applyingIds.has(trip.id);
             const isViewing         = viewingIds.has(trip.id);
 
-            const pendingItinerary  = streamItinerary ?? pendingItineraries[trip.id] ?? null;
+            const pendingItinerary  = pendingItineraries[trip.id] ?? null;
             const savedItinerary    = trip.description ? parseItinerary(trip.description) : null;
             const hasSavedItinerary = savedItinerary !== null;
             const tripStatus        = getTripStatus(trip.start_date, trip.end_date);
             const activeTab         = activeTabs[trip.id] ?? 'overview';
             const packingSummary    = packingSummaries[trip.id];
             const budgetSummary     = budgetSummaries[trip.id];
+            const controls          = regenerationControls[trip.id] ?? (pendingItinerary ? getDefaultRegenerationControls(pendingItinerary) : null);
 
             const startDate = new Date(trip.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
             const endDate   = new Date(trip.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -667,14 +812,49 @@ export const TripList = ({ token, onCreateClick }: TripListProps) => {
                             {isViewing ? 'Hide Saved Itinerary' : 'View Saved Itinerary'}
                           </PillButton>
                         )}
+                        {savedItinerary && (
+                          <PillButton variant="ghost" onClick={() => handleLoadSavedAsDraft(trip.id, savedItinerary)}>
+                            Edit Saved as Draft
+                          </PillButton>
+                        )}
                       </div>
                     )}
 
-                    {!isStreaming && pendingItinerary ? (
-                      <ItineraryPanel
+                    {!isStreaming && pendingItinerary && controls ? (
+                      <EditableItineraryPanel
                         itinerary={pendingItinerary}
                         onApply={() => handleApply(trip.id)}
                         applying={isApplying}
+                        regenerating={isRegenerating}
+                        lockedItemIds={lockedItemIds[trip.id] ?? []}
+                        favoriteItemIds={favoriteItemIds[trip.id] ?? []}
+                        regenerateDayNumber={controls.dayNumber}
+                        regenerateTimeBlock={controls.timeBlock}
+                        regenerateVariant={controls.variant}
+                        onMoveItem={(sourceDayNumber, sourceIndex, targetDayNumber, targetIndex) =>
+                          handleMoveDraftItem(trip.id, sourceDayNumber, sourceIndex, targetDayNumber, targetIndex)
+                        }
+                        onToggleLock={(itemId) => toggleDraftSelection(trip.id, itemId, setLockedItemIds)}
+                        onToggleFavorite={(itemId) => toggleDraftSelection(trip.id, itemId, setFavoriteItemIds)}
+                        onRegenerateDayChange={(dayNumber) =>
+                          setRegenerationControls((prev) => ({
+                            ...prev,
+                            [trip.id]: { ...(prev[trip.id] ?? controls), dayNumber },
+                          }))
+                        }
+                        onRegenerateTimeBlockChange={(timeBlock) =>
+                          setRegenerationControls((prev) => ({
+                            ...prev,
+                            [trip.id]: { ...(prev[trip.id] ?? controls), timeBlock },
+                          }))
+                        }
+                        onRegenerateVariantChange={(variant) =>
+                          setRegenerationControls((prev) => ({
+                            ...prev,
+                            [trip.id]: { ...(prev[trip.id] ?? controls), variant },
+                          }))
+                        }
+                        onRegenerate={() => handleRegenerateDraft(trip.id)}
                       />
                     ) : (
                       isViewing && savedItinerary && <ItineraryPanel itinerary={savedItinerary} />

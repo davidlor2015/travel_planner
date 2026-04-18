@@ -1,6 +1,6 @@
 
 from pydantic import BaseModel, Field, ConfigDict, field_validator
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Literal
 
 class ItineraryItem(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -77,5 +77,28 @@ class AIApplyRequest(BaseModel):
     trip_id: int
 
     itinerary: ItineraryResponse
+
+
+RefinementVariant = Literal["faster_pace", "cheaper", "more_local", "less_walking"]
+RefinementTimeBlock = Literal["morning", "afternoon", "evening"]
+
+
+class ItineraryItemReference(BaseModel):
+    day_number: int
+    item_index: int = Field(..., ge=0)
+
+
+class AIRefineRequest(BaseModel):
+    trip_id: int
+    current_itinerary: ItineraryResponse
+    locked_items: List[ItineraryItemReference] = []
+    favorite_items: List[ItineraryItemReference] = []
+    regenerate_day_number: Optional[int] = Field(None, ge=1)
+    regenerate_time_block: Optional[RefinementTimeBlock] = None
+    variant: Optional[RefinementVariant] = None
+
+
+class AIDayRefinementResponse(BaseModel):
+    day: DayPlan
 
 

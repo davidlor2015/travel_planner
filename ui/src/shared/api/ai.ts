@@ -26,6 +26,14 @@ export interface Itinerary {
     tips: string[] | null;
 }
 
+export type RefinementVariant = 'faster_pace' | 'cheaper' | 'more_local' | 'less_walking';
+export type RefinementTimeBlock = 'morning' | 'afternoon' | 'evening';
+
+export interface ItineraryItemReference {
+    day_number: number;
+    item_index: number;
+}
+
 /**
  * How long (ms) to wait for an AI generation response before aborting.
  *
@@ -107,4 +115,35 @@ export const applyItinerary = async (
         const text = await response.text();
         throw new Error(`Failed to apply itinerary (${response.status}): ${text}`);
     }
+};
+
+export const refineItinerary = async (
+    token: string,
+    tripId: number,
+    payload: {
+        current_itinerary: Itinerary;
+        locked_items: ItineraryItemReference[];
+        favorite_items: ItineraryItemReference[];
+        regenerate_day_number: number;
+        regenerate_time_block?: RefinementTimeBlock;
+        variant?: RefinementVariant;
+    },
+    signal?: AbortSignal,
+): Promise<Itinerary> => {
+    const response = await fetch(`${API_URL}/v1/ai/refine`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ trip_id: tripId, ...payload }),
+        signal,
+    });
+
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Failed to refine itinerary (${response.status}): ${text}`);
+    }
+
+    return response.json();
 };

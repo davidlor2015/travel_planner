@@ -1,277 +1,476 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, Cell,
-} from 'recharts';
-import type { Trip } from '../../shared/api/trips';
-import { DestinationsMap } from './DestinationsMap';
-
-
+import type { AppView } from '../../app/AppShell';
+import { getRequests, type MatchRequest } from '../../shared/api/matching';
+import { getTripSummaries, type Trip, type TripSummary } from '../../shared/api/trips';
 
 interface DashboardProps {
+  token: string;
   trips: Trip[];
+  onNavigate: (view: AppView) => void;
 }
 
-interface StatConfig {
-  icon: React.ReactNode;
-  value: number;
-  label: string;
-  valueColor: string;
-  bgColor: string;
-  borderColor: string;
-}
+type TripStatus = 'upcoming' | 'active' | 'past';
 
-
-
-const GlobeIcon = () => (
-  <svg viewBox="0 0 20 20" className="w-5 h-5" fill="currentColor" aria-hidden="true">
-    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clipRule="evenodd" />
-  </svg>
-);
-
-const CalendarIcon = () => (
-  <svg viewBox="0 0 20 20" className="w-5 h-5" fill="currentColor" aria-hidden="true">
-    <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-  </svg>
-);
-
-const MapPinIcon = () => (
-  <svg viewBox="0 0 20 20" className="w-5 h-5" fill="currentColor" aria-hidden="true">
-    <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-  </svg>
-);
-
-const CheckIcon = () => (
-  <svg viewBox="0 0 20 20" className="w-5 h-5" fill="currentColor" aria-hidden="true">
-    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-  </svg>
-);
-
-const ChartIcon = () => (
-  <svg viewBox="0 0 20 20" className="w-8 h-8 text-smoke" fill="currentColor" aria-hidden="true">
-    <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
-  </svg>
-);
-
-const MapIcon = () => (
-  <svg viewBox="0 0 20 20" className="w-10 h-10 text-smoke" fill="currentColor" aria-hidden="true">
-    <path fillRule="evenodd" d="M12 1.586l-4 4V17l4-4V1.586zM3.707 3.293A1 1 0 002 4v10a1 1 0 00.293.707L6 18.414V5.586L3.707 3.293zM17.707 4.293L14 .586V13.414l2.293 2.293A1 1 0 0018 15V5a1 1 0 00-.293-.707z" clipRule="evenodd" />
-  </svg>
-);
-
-
-
-const CHART_COLORS = ['#B45309', '#8B5A3E', '#3F6212', '#881337', '#92400E'];
-
-const TOOLTIP_STYLE: React.CSSProperties = {
-  borderRadius: '12px',
-  border: '1px solid #E7E5E4',
-  boxShadow: '0 4px 16px rgba(28,25,23,0.08)',
-  fontSize: '0.8125rem',
-  fontFamily: 'Manrope, sans-serif',
-};
-
-
-
-const tripDuration = (start: string, end: string): number =>
-  Math.max(1, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86_400_000));
-
-const parseBudgetValue = (val: string): number => {
-  const n = parseFloat(String(val).replace(/[^0-9.]/g, ''));
-  return isNaN(n) ? 0 : n;
-};
-
-
-
-const statsListVariants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.07 } },
-};
-
-const statCardVariants = {
-  hidden: { opacity: 0, y: 18 },
-  show: { opacity: 1, y: 0, transition: { type: 'spring' as const, bounce: 0.3, duration: 0.5 } },
-};
-
-const chartVariants = {
-  hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0, transition: { type: 'spring' as const, bounce: 0.2, duration: 0.5 } },
-};
-
-
-
-const StatCard = ({ icon, value, label, valueColor, bgColor, borderColor }: StatConfig) => (
-  <motion.div
-    variants={statCardVariants}
-    className={`flex flex-col items-center justify-center gap-1 rounded-2xl border p-6 text-center ${bgColor} ${borderColor}`}
-  >
-    <span className={`${valueColor} opacity-70`}>{icon}</span>
-    <span className={`text-2xl sm:text-3xl font-extrabold tabular-nums leading-none mt-2 ${valueColor}`}>
-      {value}
-    </span>
-    <span className="text-sm text-flint font-medium mt-0.5">{label}</span>
-  </motion.div>
-);
-
-interface ChartCardProps {
+interface ActionItem {
+  id: string;
   title: string;
-  empty: boolean;
-  emptyMessage: string;
-  children: React.ReactNode;
+  description: string;
+  ctaLabel: string;
+  targetView: AppView;
+  tone: 'amber' | 'clay' | 'olive' | 'espresso';
 }
 
-const ChartCard = ({ title, empty, emptyMessage, children }: ChartCardProps) => (
-  <motion.div
-    variants={chartVariants}
-    className="bg-white rounded-2xl border border-smoke/60 shadow-sm p-6"
-  >
-    <h3 className="text-sm font-bold text-espresso mb-4">{title}</h3>
-    {empty ? (
-      <div className="flex flex-col items-center justify-center h-48 text-flint text-sm gap-2">
-        <ChartIcon />
-        {emptyMessage}
-      </div>
-    ) : (
-      children
-    )}
-  </motion.div>
+interface DashboardCardProps {
+  title: string;
+  value: string;
+  detail: string;
+  tone: 'amber' | 'clay' | 'olive' | 'espresso';
+}
+
+const TONE_STYLES: Record<DashboardCardProps['tone'], string> = {
+  amber: 'border-amber/20 bg-amber/5 text-amber',
+  clay: 'border-clay/20 bg-clay/5 text-clay',
+  olive: 'border-olive/20 bg-olive/5 text-olive',
+  espresso: 'border-smoke bg-parchment text-espresso',
+};
+
+function parseSavedItinerary(description: string | null): { days?: unknown[] } | null {
+  if (!description) return null;
+  try {
+    return JSON.parse(description);
+  } catch {
+    const marker = 'DETAILS (JSON): ';
+    const idx = description.indexOf(marker);
+    if (idx !== -1) {
+      try {
+        return JSON.parse(description.slice(idx + marker.length));
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+}
+
+function getTripStatus(startIso: string, endIso: string): TripStatus {
+  const now = Date.now();
+  const start = new Date(startIso).getTime();
+  const end = new Date(endIso).getTime();
+  if (now < start) return 'upcoming';
+  if (now > end) return 'past';
+  return 'active';
+}
+
+function getTimelineLabel(startIso: string, endIso: string): string {
+  const now = Date.now();
+  const start = new Date(startIso).getTime();
+  const end = new Date(endIso).getTime();
+  const daysUntilStart = Math.ceil((start - now) / 86_400_000);
+  const daysUntilEnd = Math.ceil((end - now) / 86_400_000);
+
+  if (daysUntilStart > 1) return `${daysUntilStart} days until departure`;
+  if (daysUntilStart === 1) return 'Departs tomorrow';
+  if (daysUntilStart === 0) return 'Departs today';
+  if (daysUntilEnd >= 0) return 'Currently traveling';
+  if (daysUntilEnd === -1) return 'Returned yesterday';
+  return `Completed ${Math.abs(daysUntilEnd)} days ago`;
+}
+
+function formatDateRange(startIso: string, endIso: string): string {
+  const start = new Date(startIso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const end = new Date(endIso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return `${start} - ${end}`;
+}
+
+function pickPriorityTrip(trips: Trip[]): Trip | null {
+  if (trips.length === 0) return null;
+
+  const activeTrips = trips.filter((trip) => getTripStatus(trip.start_date, trip.end_date) === 'active');
+  if (activeTrips.length > 0) {
+    return activeTrips.sort((a, b) => new Date(a.end_date).getTime() - new Date(b.end_date).getTime())[0];
+  }
+
+  const upcomingTrips = trips.filter((trip) => getTripStatus(trip.start_date, trip.end_date) === 'upcoming');
+  if (upcomingTrips.length > 0) {
+    return upcomingTrips.sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())[0];
+  }
+
+  return [...trips].sort((a, b) => new Date(b.end_date).getTime() - new Date(a.end_date).getTime())[0];
+}
+
+const DashboardCard = ({ title, value, detail, tone }: DashboardCardProps) => (
+  <div className={`rounded-2xl border px-5 py-4 ${TONE_STYLES[tone]}`}>
+    <p className="text-[11px] font-semibold uppercase tracking-wide text-flint">{title}</p>
+    <p className="mt-1 text-2xl font-bold leading-none">{value}</p>
+    <p className="mt-2 text-sm text-flint">{detail}</p>
+  </div>
 );
 
+export function Dashboard({ token, trips, onNavigate }: DashboardProps) {
+  const [summaries, setSummaries] = useState<Record<number, TripSummary>>({});
+  const [requests, setRequests] = useState<MatchRequest[]>([]);
+  const [loadingMeta, setLoadingMeta] = useState(true);
 
+  useEffect(() => {
+    let cancelled = false;
 
-export function Dashboard({ trips }: DashboardProps) {
-  const stats = useMemo(() => ({
-    totalDays:     trips.reduce((s, t) => s + tripDuration(t.start_date, t.end_date), 0),
-    destinations:  new Set(trips.map((t) => t.destination.toLowerCase())).size,
-    withItinerary: trips.filter((t) => t.description).length,
-  }), [trips]);
+    const loadDashboardMeta = async () => {
+      setLoadingMeta(true);
+      try {
+        const [summaryRows, requestRows] = await Promise.all([
+          getTripSummaries(token),
+          getRequests(token),
+        ]);
 
-  const durationData = useMemo(
-    () => trips.map((t) => ({
-      name: t.title.length > 14 ? `${t.title.slice(0, 14)}…` : t.title,
-      days: tripDuration(t.start_date, t.end_date),
-    })),
+        if (cancelled) return;
+
+        setSummaries(Object.fromEntries(summaryRows.map((summary) => [summary.trip_id, summary])));
+        setRequests(requestRows);
+      } catch {
+        if (!cancelled) {
+          setSummaries({});
+          setRequests([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingMeta(false);
+        }
+      }
+    };
+
+    void loadDashboardMeta();
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
+  const priorityTrip = useMemo(() => pickPriorityTrip(trips), [trips]);
+
+  const dashboardStats = useMemo(() => {
+    const savedTrips = trips.filter((trip) => parseSavedItinerary(trip.description) !== null);
+    const totalPackingProgress = Object.values(summaries).reduce((sum, summary) => sum + summary.packing_progress_pct, 0);
+    const summaryCount = Object.keys(summaries).length;
+    const openRequests = requests.filter((request) => request.status === 'open');
+    const overBudgetTrips = Object.values(summaries).filter((summary) => summary.budget_is_over).length;
+
+    return {
+      itineraryCoverage: trips.length > 0 ? Math.round((savedTrips.length / trips.length) * 100) : 0,
+      averagePackingProgress: summaryCount > 0 ? Math.round(totalPackingProgress / summaryCount) : 0,
+      openCompanionRequests: openRequests.length,
+      overBudgetTrips,
+    };
+  }, [requests, summaries, trips]);
+
+  const nextActions = useMemo<ActionItem[]>(() => {
+    const actions: ActionItem[] = [];
+
+    if (priorityTrip) {
+      const prioritySummary = summaries[priorityTrip.id];
+      const savedItinerary = parseSavedItinerary(priorityTrip.description);
+
+      if (!savedItinerary) {
+        actions.push({
+          id: `itinerary-${priorityTrip.id}`,
+          title: `Build the itinerary for ${priorityTrip.destination}`,
+          description: 'Your next trip still needs a saved itinerary before map, packing, and budget planning become useful.',
+          ctaLabel: 'Open My Trips',
+          targetView: 'trips',
+          tone: 'amber',
+        });
+      }
+
+      if (prioritySummary && prioritySummary.packing_total === 0) {
+        actions.push({
+          id: `packing-${priorityTrip.id}`,
+          title: `Start the packing list for ${priorityTrip.destination}`,
+          description: 'Add the first essential items now so the trip is not missing pre-departure prep.',
+          ctaLabel: 'Review Packing',
+          targetView: 'trips',
+          tone: 'clay',
+        });
+      }
+
+      if (prioritySummary && prioritySummary.budget_limit === null) {
+        actions.push({
+          id: `budget-${priorityTrip.id}`,
+          title: `Set a budget guardrail for ${priorityTrip.destination}`,
+          description: 'A trip budget makes the itinerary and spending summaries much more actionable.',
+          ctaLabel: 'Open Budget',
+          targetView: 'trips',
+          tone: 'olive',
+        });
+      }
+    }
+
+    if (requests.filter((request) => request.status === 'open').length === 0 && trips.length > 0) {
+      actions.push({
+        id: 'companions',
+        title: 'Open a companion request for an upcoming trip',
+        description: 'You have no active companion requests right now, so the matching workflow is idle.',
+        ctaLabel: 'Go to Companions',
+        targetView: 'matching',
+        tone: 'espresso',
+      });
+    }
+
+    if (actions.length === 0) {
+      actions.push({
+        id: 'explore',
+        title: 'Explore a new destination idea',
+        description: 'Your main planning basics are in place. The best next move is building future demand in Explore.',
+        ctaLabel: 'Open Explore',
+        targetView: 'explore',
+        tone: 'espresso',
+      });
+    }
+
+    return actions.slice(0, 4);
+  }, [priorityTrip, requests, summaries, trips.length]);
+
+  const recentTrips = useMemo(
+    () =>
+      [...trips]
+        .sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime())
+        .slice(0, 4),
     [trips],
   );
 
-  const budgetData = useMemo(() => {
-    const totals: Record<string, number> = {};
-    for (const trip of trips) {
-      if (!trip.description) continue;
-      try {
-        const itinerary = JSON.parse(trip.description);
-        const bd = itinerary?.budget_breakdown;
-        if (bd && typeof bd === 'object') {
-          for (const [key, val] of Object.entries(bd)) {
-            totals[key] = (totals[key] ?? 0) + parseBudgetValue(String(val));
-          }
-        }
-      } catch { /* skip invalid JSON */ }
-    }
-    return Object.entries(totals).map(([name, value]) => ({ name, value }));
-  }, [trips]);
-
-  const statCards: StatConfig[] = [
-    { icon: <GlobeIcon />,    value: trips.length,        label: 'Total Trips',       valueColor: 'text-amber',    bgColor: 'bg-amber/5',    borderColor: 'border-amber/20'    },
-    { icon: <CalendarIcon />, value: stats.totalDays,     label: 'Days Traveling',    valueColor: 'text-clay',     bgColor: 'bg-clay/5',     borderColor: 'border-clay/15'     },
-    { icon: <MapPinIcon />,   value: stats.destinations,  label: 'Destinations',      valueColor: 'text-espresso', bgColor: 'bg-parchment',  borderColor: 'border-smoke'       },
-    { icon: <CheckIcon />,    value: stats.withItinerary, label: 'Saved Itineraries', valueColor: 'text-olive',    bgColor: 'bg-olive/5',    borderColor: 'border-olive/20'    },
-  ];
-
-  // Empty state — no trips at all
   if (trips.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
-        <MapIcon />
-        <div>
-          <h3 className="text-lg font-bold text-espresso">No data yet</h3>
-          <p className="text-sm text-flint mt-1">Create and plan trips to see your dashboard stats.</p>
-        </div>
+      <div className="rounded-2xl border border-dashed border-smoke bg-white px-8 py-16 text-center">
+        <h2 className="text-xl sm:text-2xl font-bold text-espresso">Dashboard</h2>
+        <p className="mt-2 text-sm text-flint">Create your first trip to unlock planning health, active trip tracking, and next-step recommendations.</p>
+        <button
+          type="button"
+          onClick={() => onNavigate('trips')}
+          className="mt-6 inline-flex items-center rounded-full bg-amber px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-amber/25 hover:bg-amber-dark transition-colors cursor-pointer"
+        >
+          Open My Trips
+        </button>
       </div>
     );
   }
 
+  const prioritySummary = priorityTrip ? summaries[priorityTrip.id] : undefined;
+  const hasSavedItinerary = priorityTrip ? parseSavedItinerary(priorityTrip.description) !== null : false;
+  const tripStatus = priorityTrip ? getTripStatus(priorityTrip.start_date, priorityTrip.end_date) : null;
+
   return (
     <div className="space-y-6">
-
-      {/* ── Page title ── */}
       <div>
         <h2 className="text-xl sm:text-2xl font-bold text-espresso">Dashboard</h2>
-        <p className="text-sm text-flint mt-0.5">An overview of all your adventures.</p>
+        <p className="text-sm text-flint mt-0.5">A travel planning workspace centered on what matters right now.</p>
       </div>
 
-      {/* ── Stat cards ── */}
-      <motion.div
-        className="grid grid-cols-4 gap-4 max-lg:grid-cols-2 max-sm:grid-cols-1"
-        variants={statsListVariants}
-        initial="hidden"
-        animate="show"
-      >
-        {statCards.map((card) => (
-          <StatCard key={card.label} {...card} />
-        ))}
-      </motion.div>
-
-      {/* ── Charts ── */}
-      <motion.div
-        className="grid grid-cols-2 gap-4 max-md:grid-cols-1"
-        variants={statsListVariants}
-        initial="hidden"
-        animate="show"
-      >
-        <ChartCard
-          title="Trip Duration (days)"
-          empty={durationData.length === 0}
-          emptyMessage="No trips yet."
+      {priorityTrip && (
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl border border-smoke/70 bg-white shadow-sm overflow-hidden"
         >
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={durationData} margin={{ top: 4, right: 8, left: -16, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E7E5E4" />
-              <XAxis dataKey="name" tick={{ fontSize: 11, fontFamily: 'Manrope, sans-serif', fill: '#78716C' }} axisLine={false} tickLine={false} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 11, fontFamily: 'Manrope, sans-serif', fill: '#78716C' }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: '#F5F5F4' }} />
-              <Bar dataKey="days" radius={[6, 6, 0, 0]}>
-                {durationData.map((_, i) => (
-                  <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
+          <div className="grid gap-0 lg:grid-cols-[1.4fr,0.9fr]">
+            <div className="px-6 py-6 bg-parchment/50">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${
+                  tripStatus === 'active'
+                    ? 'bg-olive/10 text-olive'
+                    : tripStatus === 'upcoming'
+                      ? 'bg-amber/15 text-amber'
+                      : 'bg-smoke text-flint'
+                }`}>
+                  {tripStatus === 'active' ? 'Current trip' : tripStatus === 'upcoming' ? 'Next trip' : 'Most recent trip'}
+                </span>
+                <span className="text-xs font-semibold text-flint">{getTimelineLabel(priorityTrip.start_date, priorityTrip.end_date)}</span>
+              </div>
+              <h3 className="mt-3 text-2xl sm:text-3xl font-bold text-espresso leading-tight">{priorityTrip.title}</h3>
+              <p className="mt-1 text-base font-medium text-clay">{priorityTrip.destination}</p>
+              <p className="mt-2 text-sm text-flint">{formatDateRange(priorityTrip.start_date, priorityTrip.end_date)}</p>
+              {priorityTrip.notes && (
+                <p className="mt-4 max-w-2xl text-sm text-flint leading-relaxed">{priorityTrip.notes}</p>
+              )}
+              <div className="mt-6 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => onNavigate('trips')}
+                  className="inline-flex items-center rounded-full bg-amber px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-amber/25 hover:bg-amber-dark transition-colors cursor-pointer"
+                >
+                  Continue Planning
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onNavigate(hasSavedItinerary ? 'trips' : 'explore')}
+                  className="inline-flex items-center rounded-full border border-smoke bg-white px-4 py-2 text-sm font-semibold text-espresso hover:bg-parchment transition-colors cursor-pointer"
+                >
+                  {hasSavedItinerary ? 'Review Itinerary' : 'Find Inspiration'}
+                </button>
+              </div>
+            </div>
 
-        <ChartCard
-          title="Budget Breakdown ($)"
-          empty={budgetData.length === 0}
-          emptyMessage="Apply an itinerary to see budget data."
-        >
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={budgetData} margin={{ top: 4, right: 8, left: -16, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E7E5E4" />
-              <XAxis dataKey="name" tick={{ fontSize: 11, fontFamily: 'Manrope, sans-serif', fill: '#78716C' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fontFamily: 'Manrope, sans-serif', fill: '#78716C' }} axisLine={false} tickLine={false} />
-              <Tooltip formatter={(v) => `$${v}`} contentStyle={TOOLTIP_STYLE} cursor={{ fill: '#F5F5F4' }} />
-              <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                {budgetData.map((_, i) => (
-                  <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </motion.div>
+            <div className="px-6 py-6 border-t border-smoke/70 lg:border-t-0 lg:border-l bg-white">
+              <p className="text-sm font-semibold text-espresso">Planning snapshot</p>
+              <div className="mt-4 space-y-3">
+                <div className="rounded-xl border border-smoke bg-parchment/40 px-4 py-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-flint">Itinerary</p>
+                  <p className="mt-1 text-sm font-bold text-espresso">{hasSavedItinerary ? 'Saved and ready to use' : 'Still needs a saved plan'}</p>
+                </div>
+                <div className="rounded-xl border border-smoke bg-parchment/40 px-4 py-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-flint">Packing</p>
+                  <p className="mt-1 text-sm font-bold text-espresso">
+                    {prioritySummary ? `${prioritySummary.packing_checked}/${prioritySummary.packing_total} items packed` : loadingMeta ? 'Loading packing status' : 'No packing data yet'}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-smoke bg-parchment/40 px-4 py-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-flint">Budget</p>
+                  <p className="mt-1 text-sm font-bold text-espresso">
+                    {prioritySummary
+                      ? prioritySummary.budget_limit === null
+                        ? 'No budget limit set'
+                        : prioritySummary.budget_is_over
+                          ? `Over budget by $${Math.abs(prioritySummary.budget_remaining ?? 0).toFixed(0)}`
+                          : `$${Math.max(prioritySummary.budget_remaining ?? 0, 0).toFixed(0)} remaining`
+                      : loadingMeta
+                        ? 'Loading budget status'
+                        : 'No budget data yet'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.section>
+      )}
 
-      {/* ── Destinations map ── */}
-      <motion.div
-        variants={chartVariants}
-        initial="hidden"
-        animate="show"
-        className="bg-white rounded-2xl border border-smoke/60 shadow-sm p-6"
-      >
-        <h3 className="text-sm font-bold text-espresso mb-4">Destinations</h3>
-        <DestinationsMap trips={trips} />
-      </motion.div>
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <DashboardCard
+          title="Itinerary Coverage"
+          value={`${dashboardStats.itineraryCoverage}%`}
+          detail={`${trips.filter((trip) => parseSavedItinerary(trip.description) !== null).length} of ${trips.length} trips have saved itineraries`}
+          tone="amber"
+        />
+        <DashboardCard
+          title="Packing Progress"
+          value={`${dashboardStats.averagePackingProgress}%`}
+          detail={loadingMeta ? 'Loading trip packing snapshots' : 'Average progress across trips with planning data'}
+          tone="clay"
+        />
+        <DashboardCard
+          title="Companion Requests"
+          value={String(dashboardStats.openCompanionRequests)}
+          detail={dashboardStats.openCompanionRequests > 0 ? 'Active requests are open in Companions' : 'No active requests at the moment'}
+          tone="olive"
+        />
+        <DashboardCard
+          title="Budget Watch"
+          value={String(dashboardStats.overBudgetTrips)}
+          detail={dashboardStats.overBudgetTrips > 0 ? 'Trips are currently running over budget' : 'No trips are flagged as over budget'}
+          tone="espresso"
+        />
+      </section>
 
+      <section className="grid gap-4 lg:grid-cols-[1.15fr,0.85fr]">
+        <div className="rounded-2xl border border-smoke/60 bg-white shadow-sm p-6">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-base font-bold text-espresso">Next Actions</h3>
+              <p className="mt-1 text-sm text-flint">The highest-leverage planning steps based on your current trips and workflow state.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => onNavigate('trips')}
+              className="text-sm font-semibold text-amber hover:text-amber-dark transition-colors cursor-pointer"
+            >
+              Open My Trips
+            </button>
+          </div>
+
+          <div className="mt-5 space-y-3">
+            {nextActions.map((action) => (
+              <div key={action.id} className="rounded-2xl border border-smoke bg-parchment/35 px-4 py-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-bold text-espresso">{action.title}</p>
+                    <p className="mt-1 text-sm text-flint leading-relaxed">{action.description}</p>
+                  </div>
+                  <span className={`mt-0.5 inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold ${TONE_STYLES[action.tone]}`}>
+                    Recommended
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onNavigate(action.targetView)}
+                  className="mt-4 inline-flex items-center rounded-full border border-smoke bg-white px-3.5 py-2 text-sm font-semibold text-espresso hover:bg-parchment transition-colors cursor-pointer"
+                >
+                  {action.ctaLabel}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-smoke/60 bg-white shadow-sm p-6">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-base font-bold text-espresso">Recent Trips</h3>
+              <p className="mt-1 text-sm text-flint">A quick read on the trips already in your workspace.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => onNavigate('trips')}
+              className="text-sm font-semibold text-amber hover:text-amber-dark transition-colors cursor-pointer"
+            >
+              View all
+            </button>
+          </div>
+
+          <div className="mt-5 space-y-3">
+            {recentTrips.map((trip) => {
+              const summary = summaries[trip.id];
+              const status = getTripStatus(trip.start_date, trip.end_date);
+              const savedItinerary = parseSavedItinerary(trip.description) !== null;
+
+              return (
+                <div key={trip.id} className="rounded-2xl border border-smoke bg-parchment/30 px-4 py-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-bold text-espresso">{trip.title}</p>
+                      <p className="mt-1 text-sm text-clay">{trip.destination}</p>
+                      <p className="mt-1 text-xs text-flint">{formatDateRange(trip.start_date, trip.end_date)}</p>
+                    </div>
+                    <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                      status === 'active'
+                        ? 'bg-olive/10 text-olive'
+                        : status === 'upcoming'
+                          ? 'bg-amber/15 text-amber'
+                          : 'bg-smoke text-flint'
+                    }`}>
+                      {status === 'active' ? 'Active' : status === 'upcoming' ? 'Upcoming' : 'Past'}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-3 gap-2">
+                    <div className="rounded-xl bg-white px-3 py-2 border border-smoke/70">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-flint">Itinerary</p>
+                      <p className="mt-1 text-xs font-bold text-espresso">{savedItinerary ? 'Saved' : 'Missing'}</p>
+                    </div>
+                    <div className="rounded-xl bg-white px-3 py-2 border border-smoke/70">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-flint">Packing</p>
+                      <p className="mt-1 text-xs font-bold text-espresso">
+                        {summary ? `${summary.packing_progress_pct}%` : 'Pending'}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-white px-3 py-2 border border-smoke/70">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-flint">Budget</p>
+                      <p className="mt-1 text-xs font-bold text-espresso">
+                        {summary ? (summary.budget_limit === null ? 'Unset' : summary.budget_is_over ? 'Over' : 'On track') : 'Pending'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

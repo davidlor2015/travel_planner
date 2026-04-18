@@ -141,7 +141,7 @@ function App() {
         onLogout={handleLogout}
       >
         <Suspense fallback={<div className="text-sm text-flint p-4">Loading section…</div>}>
-          {view === "dashboard" && <Dashboard trips={trips} />}
+          {view === "dashboard" && <Dashboard token={token!} trips={trips} onNavigate={switchView} />}
           {view === "explore"   && <ExplorePage token={token!} onPlanTrip={handlePlanTrip} />}
           {view === "matching"  && <MatchingPage token={token!} trips={trips} />}
           {view === "profile"   && <ProfilePage trips={trips} userEmail={user.email} />}
