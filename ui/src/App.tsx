@@ -47,6 +47,7 @@ function App() {
   const [prefillDestination, setPrefillDestination] = useState<string | null>(null);
   const [authMode, setAuthMode]   = useState<"login" | "register" | null>(null);
   const [trips, setTrips]         = useState<Trip[]>([]);
+  const [focusTripId, setFocusTripId] = useState<number | null>(null);
 
   // Restored synchronously from localStorage — no loading flash for returning users.
   const [user,  setUser]  = useState<UserProfile | null>(() => readStoredUser());
@@ -59,12 +60,6 @@ function App() {
 
 
   useEffect(() => {
-    if (!token && user) {
-      localStorage.removeItem(USER_KEY);
-      setUser(null);
-      return;
-    }
-
     if (!token) return;
 
     if (user) {
@@ -117,11 +112,12 @@ function App() {
     setUser(null);
   };
 
-  const switchView = (v: View) => {
+  const switchView = (v: View, tripId?: number) => {
     track({ name: "view_changed", props: { from: view, to: v } });
     setView(v);
     setShowCreateForm(false);
     setPrefillDestination(null);
+    setFocusTripId(tripId ?? null);
   };
 
   const handlePlanTrip = (destination: string) => {
@@ -172,6 +168,7 @@ function App() {
               <TripList
                 token={token!}
                 onCreateClick={() => setShowCreateForm(true)}
+                initialTripId={focusTripId ?? undefined}
               />
             ))}
         </Suspense>
