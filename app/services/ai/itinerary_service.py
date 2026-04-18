@@ -408,8 +408,12 @@ class ItineraryService:
         budget: str,
     ) -> ItineraryResponse:
         """Assemble an ItineraryResponse from pre-stored itinerary_chunks rows."""
+        requested_days = (
+            (trip.end_date - trip.start_date).days + 1
+            if trip.start_date and trip.end_date else len(day_chunks)
+        )
         days: list[DayPlan] = []
-        for chunk in day_chunks:
+        for chunk in day_chunks[:requested_days]:
             day_number: int = chunk["day_number"]
             date = (
                 str(trip.start_date + timedelta(days=day_number - 1))
@@ -429,11 +433,16 @@ class ItineraryService:
         summary = content_parts[1] if len(content_parts) >= 2 else overview.get("content", "")
 
         interest_label = ", ".join(interests) if interests else "general sightseeing"
+        trim_note = (
+            f" Trimmed a {len(day_chunks)}-day pre-generated itinerary to {requested_days} days."
+            if len(day_chunks) > requested_days
+            else ""
+        )
         return ItineraryResponse(
             title=overview["title"],
             summary=(
                 f"{summary} "
-                f"(Pre-generated itinerary for {interest_label} — Ollama was unavailable.)"
+                f"(Pre-generated itinerary for {interest_label} — Ollama was unavailable.{trim_note})"
             ),
             days=days,
         )
@@ -477,11 +486,20 @@ class ItineraryService:
                 f"'{trip.destination}' has no day data."
             )
 
-        logger.info(
-            "Vector DB fallback: itinerary_id=%s (%d days) for trip_id=%s dest=%r",
-            overview["itinerary_id"], len(day_chunks), trip.id, trip.destination,
+        requested_days = (
+            (trip.end_date - trip.start_date).days + 1
+            if trip.start_date and trip.end_date else 3
         )
-        return self._itinerary_from_chunks(trip, overview, day_chunks, interests, budget)
+        logger.info(
+            "Vector DB fallback: itinerary_id=%s stored_days=%d requested_days=%d trip_id=%s dest=%r",
+            overview["itinerary_id"], len(day_chunks), requested_days, trip.id, trip.destination,
+        )
+        itinerary = self._itinerary_from_chunks(trip, overview, day_chunks, interests, budget)
+        logger.info(
+            "Vector DB fallback result: returned_days=%d trip_id=%s itinerary_id=%s",
+            len(itinerary.days), trip.id, overview["itinerary_id"],
+        )
+        return itinerary
 
     # ── Public methods ────────────────────────────────────────────────────────
 

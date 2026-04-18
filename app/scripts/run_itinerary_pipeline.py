@@ -82,6 +82,10 @@ def _parse_args() -> argparse.Namespace:
         help=f"Embedding/upsert batch size (default: {DEFAULT_BATCH_SIZE})",
     )
     parser.add_argument(
+        "--shuffle", action="store_true",
+        help="Shuffle combinations before slicing so --max-records picks diverse locations",
+    )
+    parser.add_argument(
         "--skip-generate", action="store_true",
         help="Skip generation; use the existing file at --output-path",
     )
@@ -146,6 +150,7 @@ def main() -> None:
             output_path=output_path,
             max_records=args.max_records if args.max_records > 0 else None,
             model=args.gen_model,
+            shuffle=args.shuffle,
         )
         if gen_stats["succeeded"] == 0:
             logger.error("No records were generated successfully. Aborting.")

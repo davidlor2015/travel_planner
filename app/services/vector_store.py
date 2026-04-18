@@ -38,6 +38,31 @@ INSERT INTO itinerary_chunks (
 """
 
 _DELETE_SQL = "DELETE FROM itinerary_chunks WHERE itinerary_id = %(itinerary_id)s"
+_FIND_BEST_SQL = """
+    SELECT itinerary_id, title, content, budget, days, interests, pace
+    FROM   itinerary_chunks
+    WHERE  chunk_type = 'overview'
+      AND  LOWER(destination) {dest_clause}
+    ORDER BY
+        (budget = %(budget)s)::int DESC,
+        ABS(days - %(days)s) ASC
+    LIMIT 1
+"""
+
+
+def _destination_candidates(destination: str) -> list[str]:
+    """Return normalized destination variants in priority order."""
+    raw = (destination or "").strip()
+    if not raw:
+        return []
+
+    candidates: list[str] = [raw]
+
+    city_only = raw.split(",", 1)[0].strip()
+    if city_only and city_only.lower() != raw.lower():
+        candidates.append(city_only)
+
+    return candidates
 
 
 @contextmanager
@@ -109,35 +134,30 @@ def find_best_itinerary(
     interests, pace — or None if the table is empty or no destination match
     is found.
     """
-    _SELECT = """
-        SELECT itinerary_id, title, content, budget, days, interests, pace
-        FROM   itinerary_chunks
-        WHERE  chunk_type = 'overview'
-          AND  LOWER(destination) {dest_clause}
-        ORDER BY
-            (budget = %(budget)s)::int DESC,
-            ABS(days - %(days)s) ASC
-        LIMIT 1
-    """
-
     params: dict = {"budget": budget, "days": days}
+    candidates = _destination_candidates(destination)
+
+    search_clauses = [
+        ("exact", "= LOWER(%(destination)s)"),
+        ("stored_prefix", "LIKE LOWER(%(destination)s) || '%%'"),
+        # Handles trips stored as "Tokyo, Japan" when embedded records use "Tokyo".
+        ("query_prefix", "LOWER(%(destination)s) LIKE LOWER(destination) || '%%'"),
+    ]
 
     with _conn() as connection:
         with connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            # Try exact match first.
-            cur.execute(
-                _SELECT.format(dest_clause="= LOWER(%(destination)s)"),
-                {**params, "destination": destination},
-            )
-            row = cur.fetchone()
-
-            if row is None:
-                # Fall back to prefix match (e.g. "Rome" matches "Rome, Italy").
-                cur.execute(
-                    _SELECT.format(dest_clause="LIKE LOWER(%(destination)s) || '%'"),
-                    {**params, "destination": destination},
-                )
-                row = cur.fetchone()
+            row = None
+            for _, clause in search_clauses:
+                if row is not None:
+                    break
+                for candidate in candidates:
+                    cur.execute(
+                        _FIND_BEST_SQL.format(dest_clause=clause),
+                        {**params, "destination": candidate},
+                    )
+                    row = cur.fetchone()
+                    if row is not None:
+                        break
 
     if row is None:
         logger.warning("find_best_itinerary: no match for destination=%r", destination)

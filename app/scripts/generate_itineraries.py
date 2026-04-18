@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import random
 import sys
 import time
 from itertools import product
@@ -98,12 +99,15 @@ def run(
     output_path: Path = OUTPUT_PATH,
     max_records: int | None = DEFAULT_MAX_RECORDS,
     model: str = DEFAULT_MODEL,
+    shuffle: bool = False,
 ) -> dict:
     """Generate itineraries and write them to *output_path*.
 
     Returns a summary dict: succeeded, failed, output_path.
     """
     plan = _build_plan()
+    if shuffle:
+        random.shuffle(plan)
     if max_records is not None:
         plan = plan[:max_records]
     total = len(plan)
@@ -187,12 +191,17 @@ def main() -> None:
         "--model", default=DEFAULT_MODEL, metavar="MODEL",
         help=f"Ollama model for generation (default: {DEFAULT_MODEL})",
     )
+    parser.add_argument(
+        "--shuffle", action="store_true",
+        help="Shuffle combinations before slicing so --max-records picks diverse locations",
+    )
     args = parser.parse_args()
 
     stats = run(
         output_path=Path(args.output_path),
         max_records=args.max_records if args.max_records > 0 else None,
         model=args.model,
+        shuffle=args.shuffle,
     )
     if stats["failed"] and stats["succeeded"] == 0:
         sys.exit(1)

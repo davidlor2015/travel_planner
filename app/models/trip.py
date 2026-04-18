@@ -49,3 +49,15 @@ class Trip(Base):
         cascade="all, delete-orphan",
         order_by="BudgetExpense.created_at",
     )
+    reservations: Mapped[list["Reservation"]] = relationship(
+        "Reservation",
+        back_populates="trip",
+        cascade="all, delete-orphan",
+        order_by="Reservation.start_at",
+    )
+    prep_items: Mapped[list["PrepItem"]] = relationship(
+        "PrepItem",
+        back_populates="trip",
+        cascade="all, delete-orphan",
+        order_by="PrepItem.created_at",
+    )

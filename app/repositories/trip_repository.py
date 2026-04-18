@@ -29,6 +29,8 @@ class TripRepository(BaseRepository[Trip]):
                 .options(
                     selectinload(Trip.packing_items),
                     selectinload(Trip.budget_expenses),
+                    selectinload(Trip.reservations),
+                    selectinload(Trip.prep_items),
                 )
                 .where(Trip.user_id == user_id)
                 .offset(skip)

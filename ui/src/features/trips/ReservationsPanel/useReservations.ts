@@ -1,0 +1,115 @@
+import { useCallback, useEffect, useReducer } from 'react';
+import {
+  createReservation,
+  deleteReservation,
+  getReservations,
+  type Reservation,
+  type ReservationPayload,
+} from '../../../shared/api/reservations';
+
+interface ReservationState {
+  items: Reservation[];
+  loading: boolean;
+  error: string | null;
+}
+
+type ReservationAction =
+  | { type: 'fetch/start' }
+  | { type: 'fetch/done'; items: Reservation[] }
+  | { type: 'fetch/error'; message: string }
+  | { type: 'item/add'; item: Reservation }
+  | { type: 'item/replace'; previousId: number; item: Reservation }
+  | { type: 'item/remove'; id: number };
+
+function sortReservations(items: Reservation[]): Reservation[] {
+  return [...items].sort((a, b) => {
+    const aTime = a.start_at ? new Date(a.start_at).getTime() : Number.MAX_SAFE_INTEGER;
+    const bTime = b.start_at ? new Date(b.start_at).getTime() : Number.MAX_SAFE_INTEGER;
+    return aTime - bTime;
+  });
+}
+
+function reservationReducer(state: ReservationState, action: ReservationAction): ReservationState {
+  switch (action.type) {
+    case 'fetch/start':
+      return { ...state, loading: true, error: null };
+    case 'fetch/done':
+      return { items: action.items, loading: false, error: null };
+    case 'fetch/error':
+      return { ...state, loading: false, error: action.message };
+    case 'item/add':
+      return { ...state, items: sortReservations([...state.items, action.item]) };
+    case 'item/replace':
+      return {
+        ...state,
+        items: sortReservations(state.items.map((item) => (item.id === action.previousId ? action.item : item))),
+      };
+    case 'item/remove':
+      return { ...state, items: state.items.filter((item) => item.id !== action.id) };
+  }
+}
+
+export function useReservations(token: string, tripId: number) {
+  const [{ items, loading, error }, dispatch] = useReducer(reservationReducer, {
+    items: [],
+    loading: true,
+    error: null,
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    dispatch({ type: 'fetch/start' });
+    getReservations(token, tripId)
+      .then((data) => {
+        if (!cancelled) dispatch({ type: 'fetch/done', items: data });
+      })
+      .catch((err) => {
+        if (!cancelled) dispatch({ type: 'fetch/error', message: err instanceof Error ? err.message : 'Failed to load reservations' });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [token, tripId]);
+
+  const addReservation = useCallback(async (payload: ReservationPayload) => {
+    const tempId = -Date.now();
+    const optimistic: Reservation = {
+      id: tempId,
+      trip_id: tripId,
+      title: payload.title,
+      reservation_type: payload.reservation_type,
+      provider: payload.provider ?? null,
+      confirmation_code: payload.confirmation_code ?? null,
+      start_at: payload.start_at ?? null,
+      end_at: payload.end_at ?? null,
+      location: payload.location ?? null,
+      notes: payload.notes ?? null,
+      amount: payload.amount ?? null,
+      currency: payload.currency ?? null,
+      budget_expense_id: null,
+      created_at: new Date().toISOString(),
+    };
+    dispatch({ type: 'item/add', item: optimistic });
+    try {
+      const created = await createReservation(token, tripId, payload);
+      dispatch({ type: 'item/replace', previousId: tempId, item: created });
+      return created;
+    } catch (error) {
+      dispatch({ type: 'item/remove', id: tempId });
+      throw error;
+    }
+  }, [token, tripId]);
+
+  const removeReservation = useCallback(async (reservationId: number) => {
+    dispatch({ type: 'item/remove', id: reservationId });
+    try {
+      await deleteReservation(token, tripId, reservationId);
+    } catch (error) {
+      const fresh = await getReservations(token, tripId);
+      dispatch({ type: 'fetch/done', items: fresh });
+      throw error;
+    }
+  }, [token, tripId]);
+
+  return { items, loading, error, addReservation, removeReservation };
+}

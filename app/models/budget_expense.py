@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Optional
 from sqlalchemy import DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
@@ -15,6 +16,9 @@ class BudgetExpense(Base):
     trip_id: Mapped[int] = mapped_column(
         ForeignKey("trips.id", ondelete="CASCADE"), nullable=False, index=True
     )
+    reservation_id: Mapped[int | None] = mapped_column(
+        ForeignKey("reservations.id", ondelete="SET NULL"), nullable=True, unique=True, index=True
+    )
     label: Mapped[str] = mapped_column(String(255), nullable=False)
     amount: Mapped[float] = mapped_column(Float, nullable=False)
     category: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -23,3 +27,4 @@ class BudgetExpense(Base):
     )
 
     trip: Mapped["Trip"] = relationship("Trip", back_populates="budget_expenses")
+    reservation: Mapped[Optional["Reservation"]] = relationship("Reservation", back_populates="budget_expense")

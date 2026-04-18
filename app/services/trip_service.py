@@ -1,3 +1,5 @@
+from datetime import date
+
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 
@@ -29,10 +31,24 @@ class TripService:
     def get_summaries(self, user_id: int, skip: int = 0, limit: int = 100) -> list[dict[str, object]]:
         trips = self.repo.get_all_by_user_with_planning(user_id, skip, limit)
         summaries: list[dict[str, object]] = []
+        today = date.today()
         for trip in trips:
             packing_total = len(trip.packing_items)
             packing_checked = sum(1 for item in trip.packing_items if item.checked)
             packing_progress_pct = 0 if packing_total == 0 else round((packing_checked / packing_total) * 100)
+            reservation_count = len(trip.reservations)
+            reservation_upcoming_count = sum(
+                1
+                for reservation in trip.reservations
+                if reservation.start_at is not None and reservation.start_at.date() >= today
+            )
+            prep_total = len(trip.prep_items)
+            prep_completed = sum(1 for item in trip.prep_items if item.completed)
+            prep_overdue_count = sum(
+                1
+                for item in trip.prep_items
+                if not item.completed and item.due_date is not None and item.due_date < today
+            )
 
             budget_total_spent = float(sum(expense.amount for expense in trip.budget_expenses))
             budget_remaining = (
@@ -45,6 +61,11 @@ class TripService:
                 "packing_total": packing_total,
                 "packing_checked": packing_checked,
                 "packing_progress_pct": packing_progress_pct,
+                "reservation_count": reservation_count,
+                "reservation_upcoming_count": reservation_upcoming_count,
+                "prep_total": prep_total,
+                "prep_completed": prep_completed,
+                "prep_overdue_count": prep_overdue_count,
                 "budget_limit": float(trip.budget_limit) if trip.budget_limit is not None else None,
                 "budget_total_spent": budget_total_spent,
                 "budget_remaining": budget_remaining,
