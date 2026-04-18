@@ -49,7 +49,10 @@ function App() {
   const [trips, setTrips]         = useState<Trip[]>([]);
 
   // Restored synchronously from localStorage — no loading flash for returning users.
-  const [user,  setUser]  = useState<UserProfile | null>(() => readStoredUser());
+  const [user,  setUser]  = useState<UserProfile | null>(() => {
+    const storedToken = localStorage.getItem(TOKEN_KEY);
+    return storedToken ? readStoredUser() : null;
+  });
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
   const isAuthenticated = Boolean(user && token);
 
@@ -59,12 +62,6 @@ function App() {
 
 
   useEffect(() => {
-    if (!token && user) {
-      localStorage.removeItem(USER_KEY);
-      setUser(null);
-      return;
-    }
-
     if (!token) return;
 
     if (user) {
