@@ -7,6 +7,14 @@ class Settings(BaseSettings):
     JWT_SECRET: str = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
     JWT_ALG: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 14
+    PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 60
+    TRIP_INVITE_EXPIRE_DAYS: int = 14
+    APP_BASE_URL: str = "http://localhost:5173"
+    EXPOSE_DEBUG_LINKS: bool = False
+    SENTRY_DSN: str = ""
+    SENTRY_ENVIRONMENT: str = "development"
+    SENTRY_TRACES_SAMPLE_RATE: float = 0.0
 
     CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
 

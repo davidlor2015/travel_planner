@@ -60,12 +60,48 @@ class TripMemberResponse(BaseModel):
     email: EmailStr
     role: str
     joined_at: datetime
+    status: str = "active"
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class TripMemberAddRequest(BaseModel):
     email: EmailStr
+
+
+class TripInviteCreateRequest(BaseModel):
+    email: EmailStr
+
+
+class TripInviteResponse(BaseModel):
+    id: int
+    email: EmailStr
+    status: str
+    created_at: datetime
+    expires_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TripInviteCreateResponse(TripInviteResponse):
+    invite_url: str
+
+
+class TripInviteAcceptResponse(BaseModel):
+    trip_id: int
+    trip_title: str
+    status: str
+
+
+class TripInviteDetailResponse(BaseModel):
+    trip_id: int
+    trip_title: str
+    destination: str
+    start_date: date
+    end_date: date
+    email: EmailStr
+    status: str
+    expires_at: datetime
 
 
 class TripResponse(TripBase):
@@ -75,6 +111,7 @@ class TripResponse(TripBase):
     created_at: datetime
     member_count: int
     members: list[TripMemberResponse]
+    pending_invites: list[TripInviteResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
 

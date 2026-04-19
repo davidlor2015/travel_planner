@@ -64,6 +64,9 @@ class ItineraryResponse(BaseModel):
         if isinstance(v, dict):
             return {k: str(val) for k, val in v.items()}
         return v
+    source: str = Field("unknown", description="How this itinerary was generated")
+    source_label: str = Field("Unknown source", description="Human-friendly itinerary source label")
+    fallback_used: bool = False
 
 class AIPlanRequest(BaseModel):
 

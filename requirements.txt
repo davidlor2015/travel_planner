@@ -42,3 +42,4 @@ slowapi==0.1.9
 cachetools==7.0.5
 amadeus>=9.0.0
 requests==2.32.3
+sentry-sdk==2.58.0

@@ -64,17 +64,20 @@ export const EditableItineraryPanel = ({
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <h4 className="text-base font-bold text-espresso leading-tight">{itinerary.title}</h4>
             <span className="inline-flex items-center rounded-full bg-white border border-smoke px-3 py-1 text-xs font-semibold text-flint">
-              Draft itinerary
+              Shared draft itinerary
             </span>
           </div>
           <p className="text-sm text-flint mt-1 leading-relaxed">{itinerary.summary}</p>
+          <p className="mt-2 text-xs font-medium text-flint">
+            Applying this draft replaces the shared plan for the trip. Other members will see the updated version.
+          </p>
         </div>
 
         <div className="rounded-2xl border border-smoke/80 bg-white px-4 py-4 space-y-3">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
               <p className="text-sm font-semibold text-espresso">Regenerate part of this draft</p>
-              <p className="text-xs text-flint mt-1">Locked items stay in view while the selected day or time block is rewritten by the AI.</p>
+              <p className="text-xs text-flint mt-1">Locked items stay in view while the selected shared day or time block is rewritten by the AI.</p>
             </div>
             <motion.button
               type="button"
@@ -236,7 +239,7 @@ export const EditableItineraryPanel = ({
               })}
 
               <div className="rounded-xl border border-dashed border-smoke bg-parchment/30 px-4 py-3 text-xs text-flint">
-                Drag items here to reorder within the day or move them from another day.
+                Drag items here to reorder within the shared day plan or move them from another day.
               </div>
             </div>
           </div>

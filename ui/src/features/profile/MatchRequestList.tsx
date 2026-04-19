@@ -84,11 +84,12 @@ export const MatchRequestList = ({ token, trips, requests }: MatchRequestListPro
           <select
             value={selectedTripId}
             onChange={(e) => setSelectedTripId(e.target.value ? Number(e.target.value) : '')}
+            disabled={trips.length === 0}
             className="flex-1 px-4 py-3 rounded-full border border-smoke bg-white text-sm text-espresso
                        focus:outline-none focus:ring-2 focus:ring-amber/40 focus:border-amber
-                       transition-all duration-150"
+                       transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            <option value="">Select a trip</option>
+            <option value="">{trips.length === 0 ? 'Create a trip first' : 'Select a trip'}</option>
             {selectableTrips.map((trip) => (
               <option key={trip.id} value={trip.id}>
                 {trip.title} · {trip.destination}
@@ -116,6 +117,12 @@ export const MatchRequestList = ({ token, trips, requests }: MatchRequestListPro
             className="px-4 py-3 rounded-xl bg-danger/10 border border-danger/25 text-danger text-sm font-medium"
           >
             {error}
+          </div>
+        ) : null}
+
+        {trips.length === 0 ? (
+          <div className="px-4 py-4 rounded-xl bg-parchment border border-smoke text-sm text-flint">
+            Create a trip before opening a companion request. Requests work best when the destination and dates are already locked in.
           </div>
         ) : null}
 
@@ -163,7 +170,9 @@ export const MatchRequestList = ({ token, trips, requests }: MatchRequestListPro
           <div className="px-5 py-10 rounded-2xl border-2 border-dashed border-smoke bg-parchment/40 text-center">
             <p className="text-sm font-semibold text-espresso">No match requests yet</p>
             <p className="text-sm text-flint mt-1">
-              Open a trip request to start seeing compatible travellers.
+              {trips.length === 0
+                ? 'Create a trip first, then open a request when you want to find compatible travellers.'
+                : 'Open a trip request to start seeing compatible travellers.'}
             </p>
           </div>
         )}

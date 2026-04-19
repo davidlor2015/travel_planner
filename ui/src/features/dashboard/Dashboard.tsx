@@ -112,12 +112,14 @@ export function Dashboard({ token, trips, onNavigate }: DashboardProps) {
   const [summaries, setSummaries] = useState<Record<number, TripSummary>>({});
   const [requests, setRequests] = useState<MatchRequest[]>([]);
   const [loadingMeta, setLoadingMeta] = useState(true);
+  const [metaError, setMetaError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     const loadDashboardMeta = async () => {
       setLoadingMeta(true);
+      setMetaError(null);
       try {
         const [summaryRows, requestRows] = await Promise.all([
           getTripSummaries(token),
@@ -132,6 +134,7 @@ export function Dashboard({ token, trips, onNavigate }: DashboardProps) {
         if (!cancelled) {
           setSummaries({});
           setRequests([]);
+          setMetaError('Dashboard details could not load right now. Your trips are still safe, and planning tools remain available in My Trips.');
         }
       } finally {
         if (!cancelled) {
@@ -266,6 +269,13 @@ export function Dashboard({ token, trips, onNavigate }: DashboardProps) {
         <h2 className="text-xl sm:text-2xl font-bold text-espresso">Dashboard</h2>
         <p className="text-sm text-flint mt-0.5">A travel planning workspace centered on what matters right now.</p>
       </div>
+
+      {metaError ? (
+        <div className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-4" role="alert">
+          <p className="text-sm font-semibold text-danger">Dashboard snapshot unavailable</p>
+          <p className="mt-1 text-sm text-flint">{metaError}</p>
+        </div>
+      ) : null}
 
       {priorityTrip && (
         <motion.section

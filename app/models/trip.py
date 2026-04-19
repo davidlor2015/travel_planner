@@ -32,6 +32,12 @@ class Trip(Base):
         cascade="all, delete-orphan",
         order_by="TripMembership.created_at",
     )
+    pending_invites: Mapped[list["TripInvite"]] = relationship(
+        "TripInvite",
+        back_populates="trip",
+        cascade="all, delete-orphan",
+        order_by="TripInvite.created_at",
+    )
     match_requests: Mapped[list["MatchRequest"]] = relationship(
         "MatchRequest",
         back_populates="trip",

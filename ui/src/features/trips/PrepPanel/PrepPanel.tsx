@@ -128,7 +128,7 @@ export const PrepPanel = ({ token, tripId, destination, startDate }: PrepPanelPr
             <p className="text-xs text-flint mt-0.5">
               Keep the pre-trip loose ends visible without turning this into homework.
             </p>
-            <p className="text-xs text-flint mt-1">These reminders are personal to you.</p>
+            <p className="text-xs text-flint mt-1">These reminders are personal to you and do not show up for other trip members.</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-semibold px-2.5 py-1 rounded-full border border-olive/20 bg-olive/10 text-olive">
@@ -224,8 +224,25 @@ export const PrepPanel = ({ token, tripId, destination, startDate }: PrepPanelPr
       </div>
 
       <div className="divide-y divide-olive/10">
-        {loading && <div className="px-5 py-4 text-sm text-flint">Loading prep items...</div>}
-        {!loading && error && <div className="px-5 py-4 text-sm text-danger">{error}</div>}
+        {loading && (
+          <div className="px-5 py-4 space-y-3">
+            {[1, 2, 3].map((row) => (
+              <div key={row} className="rounded-2xl border border-olive/10 bg-olive/5 px-4 py-4 animate-pulse">
+                <div className="h-4 w-20 rounded-full bg-parchment" />
+                <div className="mt-3 h-3.5 w-1/2 rounded-full bg-smoke/70" />
+                <div className="mt-2 h-3 w-2/3 rounded-full bg-parchment" />
+              </div>
+            ))}
+          </div>
+        )}
+        {!loading && error && (
+          <div className="px-5 py-8">
+            <div className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-4 text-sm" role="alert">
+              <p className="font-semibold text-danger">Prep reminders unavailable</p>
+              <p className="mt-1 text-flint">{error}</p>
+            </div>
+          </div>
+        )}
         {!loading && !error && items.length === 0 && (
           <div className="px-5 py-8 text-center">
             <p className="text-sm font-semibold text-espresso">No prep reminders yet</p>

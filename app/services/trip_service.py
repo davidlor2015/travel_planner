@@ -1,15 +1,28 @@
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 
+from app.core import security
+from app.core.config import settings
+from app.models.trip_invite import TripInvite
 from app.repositories.trip_repository import TripRepository
+from app.repositories.trip_invite_repository import TripInviteRepository
 from app.repositories.trip_membership_repository import TripMembershipRepository
 from app.repositories.travel_profile_repository import TravelProfileRepository
 from app.repositories.user_repository import UserRepository
 from app.models.trip import Trip
 from app.models.trip_membership import TripMembership, TripMemberState
-from app.schemas.trip import TripCreate, TripMemberAddRequest, TripMemberResponse, TripUpdate
+from app.schemas.trip import (
+    TripCreate,
+    TripInviteAcceptResponse,
+    TripInviteCreateRequest,
+    TripInviteDetailResponse,
+    TripInviteResponse,
+    TripMemberAddRequest,
+    TripMemberResponse,
+    TripUpdate,
+)
 from app.services.matching_service import MatchingService
 from app.services.trip_access_service import TripAccessService
 
@@ -18,6 +31,7 @@ class TripService:
     def __init__(self, db: Session):
         self.db = db
         self.repo = TripRepository(db)
+        self.invite_repo = TripInviteRepository(db)
         self.membership_repo = TripMembershipRepository(db)
         self.user_repo = UserRepository(db)
         self.profile_repo = TravelProfileRepository(db)
@@ -122,7 +136,16 @@ class TripService:
     def list_members(self, trip_id: int, user_id: int) -> list[TripMemberResponse]:
         self.access_service.require_membership(trip_id, user_id)
         memberships = self.membership_repo.list_by_trip(trip_id)
-        return [TripMemberResponse.model_validate(membership) for membership in memberships]
+        return [
+            TripMemberResponse.model_validate({
+                "user_id": membership.user_id,
+                "email": membership.email,
+                "role": membership.role,
+                "joined_at": membership.joined_at,
+                "status": "active",
+            })
+            for membership in memberships
+        ]
 
     def add_member(
         self,
@@ -152,3 +175,123 @@ class TripService:
         self.db.refresh(membership)
         self.db.refresh(context.trip)
         return TripMemberResponse.model_validate(membership)
+
+    def create_invite(
+        self,
+        trip_id: int,
+        actor_user_id: int,
+        invite_in: TripInviteCreateRequest,
+    ) -> tuple[TripInviteResponse, str]:
+        context = self.access_service.require_membership(trip_id, actor_user_id, owner_only=True)
+        normalized_email = invite_in.email.lower()
+
+        existing_user = self.user_repo.get_by_email(normalized_email)
+        if existing_user is not None:
+            existing_membership = self.membership_repo.get_by_trip_and_user(trip_id, existing_user.id)
+            if existing_membership is not None:
+                raise HTTPException(status_code=409, detail="User is already a trip member")
+
+        existing_invite = self.invite_repo.get_pending_by_trip_and_email(trip_id, normalized_email)
+        if existing_invite is not None:
+            self.invite_repo.expire_stale_invite(existing_invite)
+            if existing_invite.resolved_status == "pending":
+                raise HTTPException(status_code=409, detail="A pending invite already exists for this email")
+
+        raw_token = security.generate_opaque_token()
+        invite = TripInvite(
+            trip_id=trip_id,
+            email=normalized_email,
+            invited_by_user_id=actor_user_id,
+            token_hash=security.hash_token(raw_token),
+            status="pending",
+            expires_at=datetime.now(timezone.utc) + timedelta(days=settings.TRIP_INVITE_EXPIRE_DAYS),
+        )
+        self.db.add(invite)
+        self.db.commit()
+        self.db.refresh(invite)
+        self.db.refresh(context.trip)
+
+        return self._invite_response(invite), self._invite_url(raw_token)
+
+    def get_invite_detail(self, token: str) -> TripInviteDetailResponse:
+        invite = self.invite_repo.get_by_token_hash(security.hash_token(token))
+        if invite is None:
+            raise HTTPException(status_code=404, detail="Invite not found")
+        self.invite_repo.expire_stale_invite(invite)
+        self.db.commit()
+        trip = invite.trip
+        return TripInviteDetailResponse(
+            trip_id=trip.id,
+            trip_title=trip.title,
+            destination=trip.destination,
+            start_date=trip.start_date,
+            end_date=trip.end_date,
+            email=invite.email,
+            status=invite.resolved_status,
+            expires_at=invite.expires_at,
+        )
+
+    def accept_invite(self, token: str, actor_user_id: int) -> TripInviteAcceptResponse:
+        invite = self._require_invite(token)
+        user = self.user_repo.get_by_id(actor_user_id)
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found")
+        if user.email.lower() != invite.email.lower():
+            raise HTTPException(status_code=403, detail="This invite is for a different email address")
+
+        existing_membership = self.membership_repo.get_by_trip_and_user(invite.trip_id, actor_user_id)
+        if existing_membership is not None:
+            invite.status = "accepted"
+            invite.accepted_by_user_id = actor_user_id
+            invite.responded_at = invite.responded_at or datetime.now(timezone.utc)
+            self.db.commit()
+            return TripInviteAcceptResponse(
+                trip_id=invite.trip_id,
+                trip_title=invite.trip.title,
+                status="accepted",
+            )
+
+        membership = TripMembership(
+            trip_id=invite.trip_id,
+            user_id=actor_user_id,
+            role="member",
+            added_by_user_id=invite.invited_by_user_id,
+        )
+        self.db.add(membership)
+        self.db.flush()
+        self.db.add(TripMemberState(membership_id=membership.id))
+
+        invite.status = "accepted"
+        invite.accepted_by_user_id = actor_user_id
+        invite.responded_at = datetime.now(timezone.utc)
+        self.db.commit()
+        return TripInviteAcceptResponse(
+            trip_id=invite.trip_id,
+            trip_title=invite.trip.title,
+            status="accepted",
+        )
+
+    def _invite_url(self, raw_token: str) -> str:
+        return f"{settings.APP_BASE_URL.rstrip('/')}/invites/{raw_token}"
+
+    def _invite_response(self, invite: TripInvite) -> TripInviteResponse:
+        return TripInviteResponse(
+            id=invite.id,
+            email=invite.email,
+            status=invite.resolved_status,
+            created_at=invite.created_at,
+            expires_at=invite.expires_at,
+        )
+
+    def _require_invite(self, token: str) -> TripInvite:
+        invite = self.invite_repo.get_by_token_hash(security.hash_token(token))
+        if invite is None:
+            raise HTTPException(status_code=404, detail="Invite not found")
+
+        self.invite_repo.expire_stale_invite(invite)
+        if invite.resolved_status == "expired":
+            self.db.commit()
+            raise HTTPException(status_code=410, detail="Invite has expired")
+        if invite.status != "pending":
+            raise HTTPException(status_code=409, detail="Invite has already been accepted")
+        return invite

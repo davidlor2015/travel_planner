@@ -4,6 +4,8 @@ from fastapi import APIRouter, Response
 from app.api.deps import CurrentUser, SessionDep
 from app.schemas.trip import (
     TripCreate,
+    TripInviteCreateResponse,
+    TripInviteCreateRequest,
     TripMemberAddRequest,
     TripMemberResponse,
     TripResponse,
@@ -48,6 +50,20 @@ def add_trip_member(
     current_user: CurrentUser,
 ):
     return TripService(db).add_member(trip_id, current_user.id, member_in)
+
+
+@router.post("/{trip_id}/invites", response_model=TripInviteCreateResponse, status_code=201)
+def create_trip_invite(
+    trip_id: int,
+    invite_in: TripInviteCreateRequest,
+    db: SessionDep,
+    current_user: CurrentUser,
+):
+    invite, invite_url = TripService(db).create_invite(trip_id, current_user.id, invite_in)
+    return {
+        **invite.model_dump(),
+        "invite_url": invite_url,
+    }
 
 
 @router.patch("/{trip_id}", response_model=TripResponse)

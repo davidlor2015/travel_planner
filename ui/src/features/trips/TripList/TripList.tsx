@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import {
-  addTripMember,
+  createTripInvite,
   deleteTrip,
   getTrips,
   getTripSummaries,
@@ -34,6 +34,7 @@ import {
   type RefinementTimeBlock,
   type RefinementVariant,
 } from '../itineraryDraft';
+import { track } from '../../../shared/analytics';
 import { useStreamingItinerary } from '../../../shared/hooks/useStreamingItinerary';
 
 type IconProps = React.SVGProps<SVGSVGElement> & {
@@ -165,6 +166,8 @@ interface TripListProps {
   currentUserEmail: string;
   onCreateClick: () => void;
   initialTripId?: number;
+  onTripSelect?: (tripId: number | null) => void;
+  onTripsChange?: React.Dispatch<React.SetStateAction<Trip[]>>;
 }
 
 type TripStatus = 'upcoming' | 'active' | 'past';
@@ -185,6 +188,12 @@ interface BudgetSummary {
   isOverBudget: boolean;
   expenseCount: number;
   loading: boolean;
+}
+
+interface DraftPlanMeta {
+  source: string;
+  sourceLabel: string;
+  fallbackUsed: boolean;
 }
 
 interface ReservationSummary {
@@ -216,25 +225,25 @@ const SHARED_TABS: TabMeta[] = [
   {
     id: 'plan',
     label: 'Plan',
-    helper: 'Shared destination, dates, itinerary, and collaboration context.',
+    helper: 'Shared destination, dates, itinerary, and planning context for everyone on the trip.',
     icon: <BookOpenIcon size={15} strokeWidth={1.9} />,
   },
   {
     id: 'map',
     label: 'Map',
-    helper: 'Shared trip map based on the saved itinerary.',
+    helper: 'Shared trip map built from the saved itinerary that all members can review.',
     icon: <MapIcon size={15} strokeWidth={1.9} />,
   },
   {
     id: 'members',
     label: 'Members',
-    helper: 'Group members, roles, and invitations for this trip.',
+    helper: 'Group members, roles, and invitations for the shared side of this trip.',
     icon: <UsersIcon size={15} strokeWidth={1.9} />,
   },
   {
     id: 'bookings',
     label: 'Bookings',
-    helper: 'Shared travel reservations and booking details for the group.',
+    helper: 'Shared travel reservations and booking details the whole trip can rely on.',
     icon: <CalendarIcon size={15} strokeWidth={1.9} />,
   },
 ];
@@ -243,19 +252,19 @@ const PERSONAL_TABS: TabMeta[] = [
   {
     id: 'budget',
     label: 'My Budget',
-    helper: 'Only your personal budget for this shared trip.',
+    helper: 'Only your personal budget for this trip. Other members do not see or edit it.',
     icon: <WalletIcon size={15} strokeWidth={1.9} />,
   },
   {
     id: 'packing',
     label: 'My Pack List',
-    helper: 'Only your personal packing list.',
+    helper: 'Only your personal packing list. It stays private to your account.',
     icon: <PackageIcon size={15} strokeWidth={1.9} />,
   },
   {
     id: 'prep',
     label: 'My Ready',
-    helper: 'Only your reminders, checklist items, and readiness state.',
+    helper: 'Only your reminders, checklist items, and readiness state for this trip.',
     icon: <CheckSquareIcon size={15} strokeWidth={1.9} />,
   },
 ];
@@ -507,7 +516,14 @@ const StreamingDisplay = ({ text, onCancel }: StreamingDisplayProps) => (
   </div>
 );
 
-export const TripList = ({ token, currentUserEmail, onCreateClick, initialTripId }: TripListProps) => {
+export const TripList = ({
+  token,
+  currentUserEmail,
+  onCreateClick,
+  initialTripId,
+  onTripSelect,
+  onTripsChange,
+}: TripListProps) => {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -519,6 +535,7 @@ export const TripList = ({ token, currentUserEmail, onCreateClick, initialTripId
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const [pendingItineraries, setPendingItineraries] = useState<Record<number, EditableItinerary>>({});
+  const [draftPlanMeta, setDraftPlanMeta] = useState<Record<number, DraftPlanMeta>>({});
   const [generatingSmartIds, setGeneratingSmartIds] = useState<Set<number>>(new Set());
   const [regeneratingIds, setRegeneratingIds] = useState<Set<number>>(new Set());
   const [applyingIds, setApplyingIds] = useState<Set<number>>(new Set());
@@ -538,6 +555,10 @@ export const TripList = ({ token, currentUserEmail, onCreateClick, initialTripId
   const [addingMemberIds, setAddingMemberIds] = useState<Set<number>>(new Set());
 
   const { streams, start: startStream, reset: resetStream } = useStreamingItinerary(token);
+
+  useEffect(() => {
+    onTripsChange?.(trips);
+  }, [onTripsChange, trips]);
 
   useEffect(() => {
     const loadTripWorkspaceMeta = async () => {
@@ -623,6 +644,14 @@ export const TripList = ({ token, currentUserEmail, onCreateClick, initialTripId
       setPendingItineraries((prev) => {
         if (prev[tripId]) return prev;
         const editable = toEditableItinerary(completedItinerary);
+        setDraftPlanMeta((prevMeta) => ({
+          ...prevMeta,
+          [tripId]: {
+            source: completedItinerary.source,
+            sourceLabel: completedItinerary.source_label,
+            fallbackUsed: completedItinerary.fallback_used,
+          },
+        }));
         setRegenerationControls((controls) => ({
           ...controls,
           [tripId]: controls[tripId] ?? getDefaultRegenerationControls(editable),
@@ -643,6 +672,7 @@ export const TripList = ({ token, currentUserEmail, onCreateClick, initialTripId
   const selectedReservationSummary = selectedTrip ? reservationSummaries[selectedTrip.id] : undefined;
   const selectedSavedItinerary = selectedTrip?.description ? parseItinerary(selectedTrip.description) : null;
   const selectedPendingItinerary = selectedTrip ? pendingItineraries[selectedTrip.id] ?? null : null;
+  const selectedDraftPlanMeta = selectedTrip ? draftPlanMeta[selectedTrip.id] ?? null : null;
   const selectedControls = selectedTrip
     ? regenerationControls[selectedTrip.id] ?? (selectedPendingItinerary ? getDefaultRegenerationControls(selectedPendingItinerary) : null)
     : null;
@@ -660,6 +690,7 @@ export const TripList = ({ token, currentUserEmail, onCreateClick, initialTripId
 
   const selectTrip = (tripId: number) => {
     setSelectedTripId(tripId);
+    onTripSelect?.(tripId);
     setConfirmDelete(false);
   };
 
@@ -675,6 +706,14 @@ export const TripList = ({ token, currentUserEmail, onCreateClick, initialTripId
   const upsertDraftItinerary = (tripId: number, itinerary: Itinerary, previous?: EditableItinerary) => {
     const editable = toEditableItinerary(itinerary, previous);
     setPendingItineraries((prev) => ({ ...prev, [tripId]: editable }));
+    setDraftPlanMeta((prev) => ({
+      ...prev,
+      [tripId]: {
+        source: itinerary.source,
+        sourceLabel: itinerary.source_label,
+        fallbackUsed: itinerary.fallback_used,
+      },
+    }));
     setRegenerationControls((prev) => ({
       ...prev,
       [tripId]: prev[tripId] ?? getDefaultRegenerationControls(editable),
@@ -717,20 +756,26 @@ export const TripList = ({ token, currentUserEmail, onCreateClick, initialTripId
     setAddingMemberIds((prev) => new Set(prev).add(tripId));
 
     try {
-      const member = await addTripMember(token, tripId, email);
+      const invite = await createTripInvite(token, tripId, email);
       setTrips((prev) =>
         prev.map((trip) =>
           trip.id === tripId
             ? {
                 ...trip,
-                members: [...trip.members, member],
-                member_count: trip.member_count + 1,
+                pending_invites: [...trip.pending_invites, invite],
               }
             : trip,
         ),
       );
       setMemberDrafts((prev) => ({ ...prev, [tripId]: '' }));
-      setMemberFeedback((prev) => ({ ...prev, [tripId]: 'Trip member added.' }));
+      setMemberFeedback((prev) => ({ ...prev, [tripId]: `Invite ready: ${invite.invite_url}` }));
+      track({
+        name: 'trip_invite_created',
+        props: {
+          trip_id: tripId,
+          pending_invite_id: invite.id,
+        },
+      });
     } catch (err) {
       setMemberErrors((prev) => ({
         ...prev,
@@ -753,7 +798,9 @@ export const TripList = ({ token, currentUserEmail, onCreateClick, initialTripId
       setTrips(remaining);
       setConfirmDelete(false);
       if (selectedTripId === trip.id) {
-        setSelectedTripId(remaining[0]?.id ?? null);
+        const nextTripId = remaining[0]?.id ?? null;
+        setSelectedTripId(nextTripId);
+        onTripSelect?.(nextTripId);
       }
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Failed to delete trip.');
@@ -775,10 +822,20 @@ export const TripList = ({ token, currentUserEmail, onCreateClick, initialTripId
         controller.signal,
       );
       upsertDraftItinerary(trip.id, itinerary, pendingItineraries[trip.id]);
+      track({
+        name: 'itinerary_generated',
+        props: {
+          trip_id: trip.id,
+          source: itinerary.source,
+          source_label: itinerary.source_label,
+          fallback_used: itinerary.fallback_used,
+          day_count: itinerary.days.length,
+        },
+      });
       setActiveTab('plan');
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
-        setActionError('The AI took too long. Try again. Shorter trips tend to generate faster.');
+        setActionError('Trip planning took too long. Try again. Shorter trips and more specific destinations tend to finish faster.');
       } else {
         setActionError(err instanceof Error ? err.message : 'Failed to generate itinerary.');
       }
@@ -804,8 +861,23 @@ export const TripList = ({ token, currentUserEmail, onCreateClick, initialTripId
       await applyItinerary(token, tripId, toApiItinerary(itinerary));
       const freshTrips = await getTrips(token);
       setTrips(freshTrips);
+      const meta = draftPlanMeta[tripId];
+      track({
+        name: 'itinerary_applied',
+        props: {
+          trip_id: tripId,
+          source: meta?.source ?? 'unknown',
+          source_label: meta?.sourceLabel ?? 'Unknown',
+          fallback_used: meta?.fallbackUsed ?? false,
+        },
+      });
       resetStream(tripId);
       setPendingItineraries((prev) => {
+        const next = { ...prev };
+        delete next[tripId];
+        return next;
+      });
+      setDraftPlanMeta((prev) => {
         const next = { ...prev };
         delete next[tripId];
         return next;
@@ -973,7 +1045,7 @@ export const TripList = ({ token, currentUserEmail, onCreateClick, initialTripId
       id: 'bookings',
       label: 'Bookings',
       value: String(selectedReservationSummary?.total ?? 0),
-      sub: `${selectedReservationSummary?.upcoming ?? 0} upcoming reservations`,
+      sub: `${selectedReservationSummary?.upcoming ?? 0} upcoming shared reservations`,
       icon: <CalendarIcon size={16} strokeWidth={1.8} />,
       tone: 'text-espresso bg-espresso/10',
       progress: null as number | null,
@@ -982,7 +1054,7 @@ export const TripList = ({ token, currentUserEmail, onCreateClick, initialTripId
       id: 'packing',
       label: 'Packed',
       value: `${selectedPackingSummary?.progressPct ?? 0}%`,
-      sub: packingSnapshotLabel(selectedPackingSummary),
+      sub: `${packingSnapshotLabel(selectedPackingSummary)} · personal`,
       icon: <PackageIcon size={16} strokeWidth={1.8} />,
       tone: 'text-clay bg-clay/10',
       progress: selectedPackingSummary?.progressPct ?? 0,
@@ -1306,7 +1378,7 @@ export const TripList = ({ token, currentUserEmail, onCreateClick, initialTripId
                       <p className="text-sm font-semibold text-white">
                         {selectedTrip.member_count} traveller{selectedTrip.member_count === 1 ? '' : 's'}
                       </p>
-                      <p className="text-xs text-white/60">Shared destination, itinerary, and map.</p>
+                      <p className="text-xs text-white/60">Shared itinerary, bookings, and map for everyone on this trip.</p>
                     </div>
                   </div>
 
@@ -1377,6 +1449,11 @@ export const TripList = ({ token, currentUserEmail, onCreateClick, initialTripId
                     </p>
                     <h4 className="mt-2 font-display text-3xl text-espresso">{selectedTabMeta.label}</h4>
                     <p className="mt-1 text-sm text-flint">{selectedTabMeta.helper}</p>
+                    <p className="mt-3 inline-flex rounded-full border border-smoke bg-parchment/70 px-3 py-1.5 text-xs font-semibold text-flint">
+                      {activeGroup === 'shared'
+                        ? 'Visible to trip members with access'
+                        : 'Visible only to you'}
+                    </p>
                   </div>
 
                   <div className="rounded-2xl border border-smoke bg-parchment/70 p-1">
@@ -1481,13 +1558,14 @@ export const TripList = ({ token, currentUserEmail, onCreateClick, initialTripId
                 {activeTab === 'plan' && selectedTrip && (
                   <div className="space-y-4">
                     {!selectedIsStreaming && (
-                      <div className="flex flex-wrap gap-2">
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap gap-2">
                         <PillButton
                           variant="ocean"
                           onClick={() => startStream(selectedTrip.id, selectedTrip.notes ?? undefined)}
                           disabled={selectedIsAnyGenerating}
                         >
-                          AI Plan
+                          AI Enhancement
                         </PillButton>
                         <PillButton
                           variant="coral"
@@ -1495,7 +1573,7 @@ export const TripList = ({ token, currentUserEmail, onCreateClick, initialTripId
                           disabled={selectedIsAnyGenerating}
                           busy={selectedIsGeneratingSmart}
                         >
-                          {selectedIsGeneratingSmart ? 'Working...' : 'Smart Plan'}
+                          {selectedIsGeneratingSmart ? 'Working...' : 'Generate Plan'}
                         </PillButton>
                         {selectedSavedItinerary && (
                           <>
@@ -1510,58 +1588,79 @@ export const TripList = ({ token, currentUserEmail, onCreateClick, initialTripId
                             </PillButton>
                           </>
                         )}
+                        </div>
+                        <div className="rounded-2xl border border-smoke bg-parchment/50 px-4 py-3 text-sm text-flint">
+                          Default production planning uses the live rule-based planner first. AI enhancement is optional and clearly labeled when used.
+                        </div>
+                        <div className="rounded-2xl border border-clay/20 bg-clay/5 px-4 py-3 text-sm text-flint">
+                          When you apply a draft here, it becomes the shared itinerary for this trip and updates what other members see.
+                        </div>
                       </div>
                     )}
 
                     {!selectedIsStreaming && selectedPendingItinerary && selectedControls ? (
-                      <EditableItineraryPanel
-                        itinerary={selectedPendingItinerary}
-                        onApply={() => handleApply(selectedTrip.id)}
-                        applying={selectedIsApplying}
-                        regenerating={selectedIsRegenerating}
-                        lockedItemIds={lockedItemIds[selectedTrip.id] ?? []}
-                        favoriteItemIds={favoriteItemIds[selectedTrip.id] ?? []}
-                        regenerateDayNumber={selectedControls.dayNumber}
-                        regenerateTimeBlock={selectedControls.timeBlock}
-                        regenerateVariant={selectedControls.variant}
-                        onMoveItem={(sourceDayNumber, sourceIndex, targetDayNumber, targetIndex) =>
-                          handleMoveDraftItem(
-                            selectedTrip.id,
-                            sourceDayNumber,
-                            sourceIndex,
-                            targetDayNumber,
-                            targetIndex,
-                          )
-                        }
-                        onToggleLock={(itemId) => toggleDraftSelection(selectedTrip.id, itemId, setLockedItemIds)}
-                        onToggleFavorite={(itemId) => toggleDraftSelection(selectedTrip.id, itemId, setFavoriteItemIds)}
-                        onRegenerateDayChange={(dayNumber) =>
-                          setRegenerationControls((prev) => ({
-                            ...prev,
-                            [selectedTrip.id]: { ...(prev[selectedTrip.id] ?? selectedControls), dayNumber },
-                          }))
-                        }
-                        onRegenerateTimeBlockChange={(timeBlock) =>
-                          setRegenerationControls((prev) => ({
-                            ...prev,
-                            [selectedTrip.id]: { ...(prev[selectedTrip.id] ?? selectedControls), timeBlock },
-                          }))
-                        }
-                        onRegenerateVariantChange={(variant) =>
-                          setRegenerationControls((prev) => ({
-                            ...prev,
-                            [selectedTrip.id]: { ...(prev[selectedTrip.id] ?? selectedControls), variant },
-                          }))
-                        }
-                        onRegenerate={() => handleRegenerateDraft(selectedTrip.id)}
-                      />
+                      <div className="space-y-3">
+                        {selectedDraftPlanMeta ? (
+                          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-smoke bg-parchment/50 px-4 py-3 text-sm text-flint">
+                            <span className="rounded-full border border-smoke bg-white px-2.5 py-1 text-xs font-semibold text-espresso">
+                              Source: {selectedDraftPlanMeta.sourceLabel}
+                            </span>
+                            {selectedDraftPlanMeta.fallbackUsed ? (
+                              <span className="rounded-full border border-amber/30 bg-amber/10 px-2.5 py-1 text-xs font-semibold text-amber">
+                                Fallback used
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : null}
+                        <EditableItineraryPanel
+                          itinerary={selectedPendingItinerary}
+                          onApply={() => handleApply(selectedTrip.id)}
+                          applying={selectedIsApplying}
+                          regenerating={selectedIsRegenerating}
+                          lockedItemIds={lockedItemIds[selectedTrip.id] ?? []}
+                          favoriteItemIds={favoriteItemIds[selectedTrip.id] ?? []}
+                          regenerateDayNumber={selectedControls.dayNumber}
+                          regenerateTimeBlock={selectedControls.timeBlock}
+                          regenerateVariant={selectedControls.variant}
+                          onMoveItem={(sourceDayNumber, sourceIndex, targetDayNumber, targetIndex) =>
+                            handleMoveDraftItem(
+                              selectedTrip.id,
+                              sourceDayNumber,
+                              sourceIndex,
+                              targetDayNumber,
+                              targetIndex,
+                            )
+                          }
+                          onToggleLock={(itemId) => toggleDraftSelection(selectedTrip.id, itemId, setLockedItemIds)}
+                          onToggleFavorite={(itemId) => toggleDraftSelection(selectedTrip.id, itemId, setFavoriteItemIds)}
+                          onRegenerateDayChange={(dayNumber) =>
+                            setRegenerationControls((prev) => ({
+                              ...prev,
+                              [selectedTrip.id]: { ...(prev[selectedTrip.id] ?? selectedControls), dayNumber },
+                            }))
+                          }
+                          onRegenerateTimeBlockChange={(timeBlock) =>
+                            setRegenerationControls((prev) => ({
+                              ...prev,
+                              [selectedTrip.id]: { ...(prev[selectedTrip.id] ?? selectedControls), timeBlock },
+                            }))
+                          }
+                          onRegenerateVariantChange={(variant) =>
+                            setRegenerationControls((prev) => ({
+                              ...prev,
+                              [selectedTrip.id]: { ...(prev[selectedTrip.id] ?? selectedControls), variant },
+                            }))
+                          }
+                          onRegenerate={() => handleRegenerateDraft(selectedTrip.id)}
+                        />
+                      </div>
                     ) : selectedIsViewingSaved && selectedSavedItinerary ? (
                       <ItineraryPanel itinerary={selectedSavedItinerary} />
                     ) : !selectedSavedItinerary && !selectedPendingItinerary && !selectedIsStreaming ? (
                       <div className="rounded-3xl border border-dashed border-smoke bg-parchment/40 px-6 py-10 text-center">
                         <p className="text-sm font-semibold text-espresso">No shared itinerary yet</p>
                         <p className="mt-1 text-sm text-flint">
-                          Start the shared plan first, then the rest of the workspace becomes much easier to use.
+                          Start the shared plan first so the group can align on one itinerary before personal prep branches off.
                         </p>
                       </div>
                     ) : null}
@@ -1574,7 +1673,7 @@ export const TripList = ({ token, currentUserEmail, onCreateClick, initialTripId
                   ) : (
                     <div className="rounded-3xl border border-dashed border-smoke bg-parchment/40 px-6 py-10 text-center">
                       <p className="text-sm font-semibold text-espresso">Map unavailable</p>
-                      <p className="mt-1 text-sm text-flint">Save a shared itinerary first to unlock the trip map.</p>
+                      <p className="mt-1 text-sm text-flint">Save a shared itinerary first to unlock the trip map for everyone on this trip.</p>
                     </div>
                   )
                 )}
@@ -1611,6 +1710,22 @@ export const TripList = ({ token, currentUserEmail, onCreateClick, initialTripId
                               </span>
                             </div>
                           ))}
+                          {selectedTrip.pending_invites.map((invite) => (
+                            <div
+                              key={`${selectedTrip.id}-invite-${invite.id}`}
+                              className="flex items-center justify-between gap-3 rounded-2xl border border-amber/20 bg-amber/5 px-4 py-4"
+                            >
+                              <div>
+                                <p className="text-sm font-semibold text-espresso">{invite.email}</p>
+                                <p className="mt-1 text-xs text-flint">
+                                  Pending invite · expires {new Date(invite.expires_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                </p>
+                              </div>
+                              <span className="rounded-full border border-amber/30 bg-white px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-amber">
+                                {invite.status}
+                              </span>
+                            </div>
+                          ))}
                         </div>
                       </div>
 
@@ -1619,6 +1734,7 @@ export const TripList = ({ token, currentUserEmail, onCreateClick, initialTripId
                         <div className="mt-3 space-y-3 text-sm text-flint">
                           <p>Shared: destination, dates, itinerary, map, and bookings.</p>
                           <p>Personal: budget, packing, and ready items.</p>
+                          <p>Each traveller keeps their own personal prep, even after joining the same trip.</p>
                           <p>{selectedTripIsOwner ? 'You can invite more members into this workspace.' : 'The owner manages invitations for this workspace.'}</p>
                         </div>
 
@@ -1627,6 +1743,9 @@ export const TripList = ({ token, currentUserEmail, onCreateClick, initialTripId
                             <label className="block text-xs font-semibold uppercase tracking-wide text-flint">
                               Invite by email
                             </label>
+                            <p className="mt-2 text-sm text-flint">
+                              Invited members join the shared trip workspace. Their budget, packing, and ready lists stay personal to them.
+                            </p>
                             <div className="mt-2 flex gap-2">
                               <input
                                 type="email"
@@ -1652,11 +1771,15 @@ export const TripList = ({ token, currentUserEmail, onCreateClick, initialTripId
                                 disabled={!selectedMemberDraft.trim() || selectedIsAddingMember}
                                 className="rounded-full bg-amber px-4 py-2.5 text-sm font-bold text-white shadow-sm shadow-amber/25 disabled:opacity-40 disabled:cursor-not-allowed"
                               >
-                                {selectedIsAddingMember ? 'Adding...' : 'Add'}
+                                {selectedIsAddingMember ? 'Creating…' : 'Invite'}
                               </button>
                             </div>
                             {selectedMemberError && <p className="mt-2 text-sm text-danger">{selectedMemberError}</p>}
-                            {selectedMemberFeedback && <p className="mt-2 text-sm text-olive">{selectedMemberFeedback}</p>}
+                            {selectedMemberFeedback && (
+                              <div className="mt-2 rounded-2xl border border-olive/20 bg-olive/10 px-3 py-3 text-sm text-olive break-all">
+                                {selectedMemberFeedback}
+                              </div>
+                            )}
                           </div>
                         ) : null}
                       </div>

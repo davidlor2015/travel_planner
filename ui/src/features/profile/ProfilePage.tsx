@@ -165,6 +165,41 @@ export const ProfilePage = ({ trips, userEmail }: ProfilePageProps) => {
 
   const initial = userEmail[0].toUpperCase();
 
+  if (trips.length === 0) {
+    return (
+      <div className="space-y-8">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+          className="flex flex-col sm:flex-row items-center sm:items-end gap-5"
+        >
+          <motion.div
+            variants={itemVariants}
+            className="w-20 h-20 rounded-full bg-espresso flex items-center justify-center shadow-lg shadow-espresso/20 flex-shrink-0"
+          >
+            <span className="text-2xl sm:text-3xl font-extrabold text-ivory select-none">{initial}</span>
+          </motion.div>
+
+          <motion.div variants={itemVariants} className="text-center sm:text-left">
+            <h2 className="text-xl sm:text-2xl font-bold text-espresso leading-tight">{userEmail}</h2>
+            <p className="text-sm font-semibold text-amber mt-0.5">{title}</p>
+            <p className="text-xs text-flint mt-1">
+              Your travel stats and badges will start filling in after your first trip.
+            </p>
+          </motion.div>
+        </motion.div>
+
+        <div className="flex flex-col items-center justify-center gap-3 py-16 border-2 border-dashed border-smoke rounded-2xl text-center bg-white">
+          <h3 className="text-lg font-bold text-espresso">No adventures yet</h3>
+          <p className="max-w-xl text-sm text-flint">
+            Create your first trip to start building a journey log, earning badges, and seeing stats that actually reflect your travel plans.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
 
@@ -323,15 +358,6 @@ export const ProfilePage = ({ trips, userEmail }: ProfilePageProps) => {
           </motion.div>
         </section>
       )}
-
-      {/* ── Empty state ── */}
-      {trips.length === 0 && (
-        <div className="flex flex-col items-center justify-center gap-3 py-16 border-2 border-dashed border-smoke rounded-2xl text-center">
-          <h3 className="text-lg font-bold text-espresso">No adventures yet</h3>
-          <p className="text-sm text-flint">Create your first trip to start earning badges and stats.</p>
-        </div>
-      )}
-
     </div>
   );
 };

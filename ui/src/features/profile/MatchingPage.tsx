@@ -16,13 +16,30 @@ interface MatchingPageProps {
 
 export const MatchingPage = ({ token, trips }: MatchingPageProps) => {
   const { profile, loading, error, upsert } = useMatchingProfile(token);
-  const { requests, loading: requestsLoading } = useMatchRequests(token);
+  const { requests, loading: requestsLoading, error: requestsError } = useMatchRequests(token);
   const [editing, setEditing] = useState(false);
 
   if (loading) {
     return (
-      <div className="min-h-[320px] flex items-center justify-center rounded-2xl border border-smoke/60 bg-white text-sm font-medium text-flint">
-        Loading matching profile…
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold text-espresso">Matching</h2>
+          <p className="text-sm text-flint mt-1">
+            Loading your traveller profile and request workspace.
+          </p>
+        </div>
+        <div className="bg-white rounded-2xl border border-smoke/60 shadow-sm p-6 space-y-4 animate-pulse">
+          <div className="h-6 w-40 rounded-full bg-parchment" />
+          <div className="h-4 w-2/3 rounded-full bg-smoke/70" />
+          <div className="grid gap-3 sm:grid-cols-2">
+            {[1, 2, 3, 4].map((item) => (
+              <div key={item} className="rounded-2xl border border-smoke bg-parchment/50 px-4 py-5">
+                <div className="h-3 w-20 rounded-full bg-smoke/60" />
+                <div className="mt-3 h-5 w-28 rounded-full bg-parchment" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -193,12 +210,33 @@ export const MatchingPage = ({ token, trips }: MatchingPageProps) => {
       )}
 
       {!editing && !requestsLoading && (
-        <MatchRequestList token={token} trips={trips} requests={requests} />
+        <div className="space-y-4">
+          {requestsError ? (
+            <div
+              role="alert"
+              className="px-4 py-4 rounded-2xl bg-danger/10 border border-danger/25 text-sm"
+            >
+              <p className="font-semibold text-danger">Match requests unavailable</p>
+              <p className="mt-1 text-flint">
+                {requestsError}
+              </p>
+            </div>
+          ) : null}
+
+          <MatchRequestList token={token} trips={trips} requests={requests} />
+        </div>
       )}
 
       {!editing && requestsLoading && (
-        <div className="min-h-[80px] flex items-center justify-center text-sm font-medium text-flint">
-          Loading match requests…
+        <div className="rounded-2xl border border-smoke/60 bg-white p-5 space-y-3 animate-pulse">
+          <div className="h-5 w-32 rounded-full bg-parchment" />
+          {[1, 2].map((item) => (
+            <div key={item} className="rounded-2xl border border-smoke bg-parchment/40 px-4 py-4">
+              <div className="h-4 w-28 rounded-full bg-smoke/70" />
+              <div className="mt-3 h-3 w-2/3 rounded-full bg-parchment" />
+              <div className="mt-3 h-10 rounded-full bg-smoke/50" />
+            </div>
+          ))}
         </div>
       )}
     </div>

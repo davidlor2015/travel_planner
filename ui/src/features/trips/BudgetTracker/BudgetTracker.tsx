@@ -47,7 +47,7 @@ function progressBarCls(pct: number): string {
 
 export const BudgetTracker = ({ token, tripId, onSummaryChange }: BudgetTrackerProps) => {
   const {
-    limit, expenses, totalSpent, remaining, isOverBudget, loading,
+    limit, expenses, totalSpent, remaining, isOverBudget, loading, error,
     setLimit, addExpense, removeExpense,
   } = useBudgetTracker(token, tripId);
 
@@ -58,6 +58,7 @@ export const BudgetTracker = ({ token, tripId, onSummaryChange }: BudgetTrackerP
   const [editingLimit,  setEditingLimit]  = useState(false);
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
 
   const spentPct   = limit ? Math.min((totalSpent / limit) * 100, 100) : 0;
@@ -78,11 +79,13 @@ export const BudgetTracker = ({ token, tripId, onSummaryChange }: BudgetTrackerP
     const parsed = parseFloat(draftLimit);
     if (!isNaN(parsed) && parsed > 0) {
       setFeedback(null);
+      setActionError(null);
       try {
         await setLimit(parsed);
         setEditingLimit(false);
         setFeedback('Budget updated.');
-      } catch {
+      } catch (err) {
+        setActionError(err instanceof Error ? err.message : 'Failed to update budget.');
         return;
       }
     }
@@ -96,13 +99,15 @@ export const BudgetTracker = ({ token, tripId, onSummaryChange }: BudgetTrackerP
   const handleAddExpense = useCallback(async () => {
     const amount = parseFloat(draftAmount);
     setFeedback(null);
+    setActionError(null);
     try {
       await addExpense(draftLabel, amount, draftCategory);
       setDraftLabel('');
       setDraftAmount('');
       setShowExpenseForm(false);
       setFeedback('Expense added.');
-    } catch {
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to add expense.');
       return;
     }
   }, [addExpense, draftLabel, draftAmount, draftCategory]);
@@ -137,6 +142,7 @@ export const BudgetTracker = ({ token, tripId, onSummaryChange }: BudgetTrackerP
               </p>
             )}
             {!loading && <p className="text-xs text-flint mt-1">Personal to you for this trip.</p>}
+            {!loading && <p className="text-xs text-flint mt-1">Other trip members cannot see or edit this budget.</p>}
           </div>
 
           {/* Budget limit control */}
@@ -232,10 +238,43 @@ export const BudgetTracker = ({ token, tripId, onSummaryChange }: BudgetTrackerP
         )}
 
         <Toast message={feedback} onDismiss={() => setFeedback(null)} />
+        {actionError ? (
+          <div className="mt-3 rounded-xl border border-danger/25 bg-danger/10 px-4 py-3 text-sm text-danger" role="alert">
+            {actionError}
+          </div>
+        ) : null}
       </div>
 
       {/* ── Expense list ── */}
-      {expenses.length > 0 && (
+      {loading && expenses.length === 0 ? (
+        <div className="divide-y divide-amber/10">
+          {[72, 54, 64].map((width, index) => (
+            <div key={index} className="flex items-center gap-3 px-5 py-3 animate-pulse">
+              <div className="h-5 w-16 rounded-full bg-parchment" />
+              <div className="h-3.5 flex-1 rounded-full bg-smoke/70" style={{ maxWidth: `${width}%` }} />
+              <div className="h-3.5 w-16 rounded-full bg-parchment" />
+            </div>
+          ))}
+        </div>
+      ) : error ? (
+        <div className="px-5 py-8">
+          <div className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-4 text-sm" role="alert">
+            <p className="font-semibold text-danger">Budget details unavailable</p>
+            <p className="mt-1 text-flint">{error}</p>
+          </div>
+        </div>
+      ) : expenses.length === 0 ? (
+        <div className="px-5 py-8 text-center">
+          <p className="text-sm font-semibold text-espresso">
+            {limit === null ? 'No budget guardrail yet' : 'No expenses recorded yet'}
+          </p>
+          <p className="mt-1 text-sm text-flint">
+            {limit === null
+              ? 'Set a budget or add the first expense so this trip has a clear spending baseline.'
+              : 'Your limit is in place. Add the first expense when bookings or purchases start coming in.'}
+          </p>
+        </div>
+      ) : (
         <ul className="divide-y divide-amber/10 list-none p-0 m-0">
           <AnimatePresence initial={false}>
             {[...expenses].reverse().map((expense) => {
@@ -269,10 +308,12 @@ export const BudgetTracker = ({ token, tripId, onSummaryChange }: BudgetTrackerP
                   <motion.button
                     onClick={async () => {
                       setFeedback(null);
+                      setActionError(null);
                       try {
                         await removeExpense(expense.id);
                         setFeedback('Expense removed.');
-                      } catch {
+                      } catch (err) {
+                        setActionError(err instanceof Error ? err.message : 'Failed to remove expense.');
                         return;
                       }
                     }}

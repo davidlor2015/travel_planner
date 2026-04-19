@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { API_URL } from '../../app/config';
 import type { Itinerary } from '../api/ai';
+import { apiFetch } from '../api/client';
 
 
 
@@ -86,8 +87,8 @@ export function useStreamingItinerary(token: string): {
           if (interestsOverride) params.set('interests_override', interestsOverride);
           const query = params.size > 0 ? `?${params.toString()}` : '';
 
-          const response = await fetch(`${API_URL}/v1/ai/stream/${tripId}${query}`, {
-            headers: { Authorization: `Bearer ${token}` },
+          const response = await apiFetch(`${API_URL}/v1/ai/stream/${tripId}${query}`, {
+            token,
             signal: controller.signal,
           });
 

@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { WaypointLogo } from '../../../shared/ui/WaypointLogo';
 import { motion, AnimatePresence } from 'framer-motion';
-import { login, register } from '../../../shared/api/auth';
+import { login, register, type LoginResponse } from '../../../shared/api/auth';
+import { track } from '../../../shared/analytics';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface LoginPageProps {
-  onLoginSuccess: (token: string) => void;
+  onLoginSuccess: (session: LoginResponse) => Promise<void> | void;
   initialMode?: 'login' | 'register';
   onBack?: () => void;
+  forgotPasswordHref?: string;
 }
 
 type Mode = 'login' | 'register';
@@ -46,7 +48,12 @@ const Field = ({ id, label, type, value, onChange, placeholder, autoComplete }: 
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
-export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, initialMode = 'login', onBack }) => {
+export const LoginPage: React.FC<LoginPageProps> = ({
+  onLoginSuccess,
+  initialMode = 'login',
+  onBack,
+  forgotPasswordHref,
+}) => {
   const [mode, setMode]                     = useState<Mode>(initialMode);
   const [email, setEmail]                   = useState('');
   const [password, setPassword]             = useState('');
@@ -74,10 +81,19 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, initialMod
 
     setIsLoading(true);
     try {
-      if (mode === 'register') await register(email, password);
+      if (mode === 'register') {
+        await register(email, password);
+        track({ name: 'auth_signup_completed', props: { method: 'password' } });
+      }
       const data = await login(email, password);
-      localStorage.setItem('access_token', data.access_token);
-      onLoginSuccess(data.access_token);
+      await onLoginSuccess(data);
+      track({
+        name: 'auth_login_completed',
+        props: {
+          method: 'password',
+          mode,
+        },
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
     } finally {
@@ -147,6 +163,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, initialMod
             placeholder="Enter your password"
             autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
           />
+
+          {mode === 'login' && forgotPasswordHref ? (
+            <div className="-mt-1 text-right">
+              <a
+                href={forgotPasswordHref}
+                className="text-xs font-semibold text-amber hover:underline"
+              >
+                Forgot password?
+              </a>
+            </div>
+          ) : null}
 
           {/* Confirm password — animates in/out on mode switch */}
           <AnimatePresence initial={false}>

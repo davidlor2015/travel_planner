@@ -71,6 +71,9 @@ export const ItineraryPanel = ({ itinerary, onApply, applying }: ItineraryPanelP
         <div className="min-w-0">
           <h4 className="text-base font-bold text-espresso leading-tight">{itinerary.title}</h4>
           <p className="text-sm text-flint mt-1 leading-relaxed">{itinerary.summary}</p>
+          <p className="mt-2 text-xs font-medium text-flint">
+            This is the saved shared itinerary for the trip.
+          </p>
         </div>
         <button
           type="button"
@@ -176,7 +179,7 @@ export const ItineraryPanel = ({ itinerary, onApply, applying }: ItineraryPanelP
                        shadow-sm shadow-amber/25 hover:bg-amber-dark transition-colors duration-150
                        disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
-            {applying ? 'Saving…' : 'Apply Itinerary to Trip'}
+            {applying ? 'Saving…' : 'Apply to Shared Trip'}
           </motion.button>
         </div>
       )}

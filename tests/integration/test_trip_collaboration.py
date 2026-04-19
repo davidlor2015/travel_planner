@@ -101,3 +101,61 @@ def test_shared_reservations_are_visible_to_all_members_but_budget_sync_stays_pe
     assert member_budget.status_code == 200, member_budget.text
     assert len(member_budget.json()["expenses"]) == 1
     assert member_budget.json()["expenses"][0]["label"] == "Shared hotel"
+
+
+def test_trip_invite_can_be_accepted_after_login(
+    client,
+    auth_headers_user_a,
+):
+    register_res = client.post(
+        "/v1/auth/register",
+        json={"email": "invitee@example.com", "password": "password789"},
+    )
+    assert register_res.status_code == 200, register_res.text
+
+    create_res = client.post(
+        "/v1/trips/",
+        json={
+            "title": "Invite Flow",
+            "destination": "Lisbon",
+            "description": None,
+            "start_date": "2026-10-02",
+            "end_date": "2026-10-07",
+            "notes": "Shared city break",
+        },
+        headers=auth_headers_user_a,
+    )
+    assert create_res.status_code == 201, create_res.text
+    trip_id = create_res.json()["id"]
+
+    invite_res = client.post(
+        f"/v1/trips/{trip_id}/invites",
+        json={"email": "invitee@example.com"},
+        headers=auth_headers_user_a,
+    )
+    assert invite_res.status_code == 201, invite_res.text
+    invite_url = invite_res.json()["invite_url"]
+    token = invite_url.rsplit("/", 1)[1]
+
+    detail_res = client.get(f"/v1/trip-invites/{token}")
+    assert detail_res.status_code == 200, detail_res.text
+    assert detail_res.json()["status"] == "pending"
+
+    login_res = client.post(
+        "/v1/auth/login",
+        data={"username": "invitee@example.com", "password": "password789"},
+    )
+    assert login_res.status_code == 200, login_res.text
+    invitee_headers = {"Authorization": f"Bearer {login_res.json()['access_token']}"}
+
+    accept_res = client.post(
+        f"/v1/trip-invites/{token}/accept",
+        headers=invitee_headers,
+    )
+    assert accept_res.status_code == 200, accept_res.text
+    assert accept_res.json()["trip_id"] == trip_id
+    assert accept_res.json()["status"] == "accepted"
+
+    trips_res = client.get("/v1/trips/", headers=invitee_headers)
+    assert trips_res.status_code == 200, trips_res.text
+    assert [trip["id"] for trip in trips_res.json()] == [trip_id]

@@ -167,7 +167,7 @@ export const ReservationsPanel = ({ token, tripId }: ReservationsPanelProps) => 
             <p className="text-xs text-flint mt-0.5">
               Keep confirmed travel details with the trip, without turning this into a giant form.
             </p>
-            <p className="text-xs text-flint mt-1">These bookings are shared across trip members.</p>
+            <p className="text-xs text-flint mt-1">These bookings are shared across trip members, so updates here change the trip for everyone.</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-end">
             <span className="text-xs font-semibold px-2.5 py-1 rounded-full border border-sky-200 bg-sky-50 text-sky-800">
@@ -393,15 +393,28 @@ export const ReservationsPanel = ({ token, tripId }: ReservationsPanelProps) => 
 
       <div className="divide-y divide-sky-100">
         {loading && (
-          <div className="px-5 py-4 text-sm text-flint">Loading reservations...</div>
+          <div className="px-5 py-4 space-y-3">
+            {[1, 2, 3].map((row) => (
+              <div key={row} className="rounded-2xl border border-sky-100 bg-sky-50/40 px-4 py-4 animate-pulse">
+                <div className="h-4 w-24 rounded-full bg-parchment" />
+                <div className="mt-3 h-3.5 w-1/2 rounded-full bg-smoke/70" />
+                <div className="mt-2 h-3 w-2/3 rounded-full bg-parchment" />
+              </div>
+            ))}
+          </div>
         )}
         {!loading && error && (
-          <div className="px-5 py-4 text-sm text-danger">{error}</div>
+          <div className="px-5 py-8">
+            <div className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-4 text-sm" role="alert">
+              <p className="font-semibold text-danger">Bookings unavailable</p>
+              <p className="mt-1 text-flint">{error}</p>
+            </div>
+          </div>
         )}
         {!loading && !error && items.length === 0 && (
           <div className="px-5 py-8 text-center">
             <p className="text-sm font-semibold text-espresso">No bookings saved yet</p>
-            <p className="text-sm text-flint mt-1">Open the booking form when you want to save a flight, stay, train, or confirmation note.</p>
+            <p className="text-sm text-flint mt-1">Save flights, stays, train rides, and confirmations here so everyone on the trip can rely on the same details.</p>
           </div>
         )}
         <AnimatePresence initial={false}>

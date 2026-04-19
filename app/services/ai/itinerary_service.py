@@ -330,6 +330,19 @@ class ItineraryService:
         if not recovered_days:
             return None
 
+    def _annotate_source(
+        self,
+        itinerary: ItineraryResponse,
+        *,
+        source: str,
+        source_label: str,
+        fallback_used: bool = False,
+    ) -> ItineraryResponse:
+        itinerary.source = source
+        itinerary.source_label = source_label
+        itinerary.fallback_used = fallback_used
+        return itinerary
+
         title_m = re.search(r'"title"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"', clean)
         summary_m = re.search(r'"summary"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"', clean)
         title = title_m.group(1) if title_m else "Trip Itinerary"
@@ -526,7 +539,12 @@ class ItineraryService:
             logger.warning(
                 "Ollama unavailable for trip_id=%s — attempting vector DB fallback", trip_id
             )
-            return self._generate_from_vector_db(trip, interests_override, budget_override)
+            return self._annotate_source(
+                self._generate_from_vector_db(trip, interests_override, budget_override),
+                source="knowledge_base_fallback",
+                source_label="Fallback saved itinerary knowledge",
+                fallback_used=True,
+            )
 
         logger.info("LLM raw response length: %d chars", len(raw_response))
 
@@ -536,7 +554,11 @@ class ItineraryService:
                 "Failed to parse or recover LLM response. Tail: %r", raw_response[-300:]
             )
             raise ValueError("AI generated invalid data. Please try again.")
-        return itinerary
+        return self._annotate_source(
+            itinerary,
+            source="llm_optional",
+            source_label="AI enhancement",
+        )
 
     async def generate_itinerary_rule_based(
         self,
@@ -550,7 +572,26 @@ class ItineraryService:
             trip = self.access_service.require_membership(trip_id, user_id).trip
         except Exception as exc:
             raise ValueError("Trip not found or access denied.") from exc
-        return await generate_rule_based_itinerary(trip, interests_override, budget_override)
+        try:
+            itinerary = await generate_rule_based_itinerary(trip, interests_override, budget_override)
+            return self._annotate_source(
+                itinerary,
+                source="rule_based",
+                source_label="Live trip planner",
+            )
+        except Exception as exc:
+            logger.warning(
+                "Rule-based itinerary failed for trip_id=%s — attempting knowledge fallback: %s",
+                trip_id,
+                exc,
+            )
+            fallback = self._generate_from_vector_db(trip, interests_override, budget_override)
+            return self._annotate_source(
+                fallback,
+                source="knowledge_base_fallback",
+                source_label="Fallback saved itinerary knowledge",
+                fallback_used=True,
+            )
 
     async def refine_itinerary(
         self,
@@ -629,7 +670,12 @@ class ItineraryService:
                 trip_id,
             )
             try:
-                fallback = self._generate_from_vector_db(trip, interests_override, budget_override)
+                fallback = self._annotate_source(
+                    self._generate_from_vector_db(trip, interests_override, budget_override),
+                    source="knowledge_base_fallback",
+                    source_label="Fallback saved itinerary knowledge",
+                    fallback_used=True,
+                )
                 yield f"event: complete\ndata: {fallback.model_dump_json()}\n\n"
             except Exception as fallback_err:
                 logger.error("Vector DB fallback failed for trip_id=%s: %s", trip_id, fallback_err)
@@ -644,6 +690,11 @@ class ItineraryService:
 
         itinerary = self._parse_or_recover(full_text)
         if itinerary is not None:
+            itinerary = self._annotate_source(
+                itinerary,
+                source="llm_optional",
+                source_label="AI enhancement",
+            )
             yield f"event: complete\ndata: {itinerary.model_dump_json()}\n\n"
         else:
             logger.error(

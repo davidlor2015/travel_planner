@@ -1,4 +1,5 @@
 import { API_URL } from '../../app/config';
+import { apiFetch } from './client';
 
 
 export interface Segment {
@@ -70,8 +71,8 @@ export async function searchFlights(
     date,
     adults: String(adults),
   });
-  const res = await fetch(`${API_URL}/v1/search/flights?${params}`, {
-    headers: { Authorization: `Bearer ${token}` },
+  const res = await apiFetch(`${API_URL}/v1/search/flights?${params}`, {
+    token,
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
@@ -87,8 +88,8 @@ export async function getInspirations(
 ): Promise<InspirationResult> {
   const params = new URLSearchParams({ origin });
   if (maxPrice) params.set('max_price', String(maxPrice));
-  const res = await fetch(`${API_URL}/v1/search/inspirations?${params}`, {
-    headers: { Authorization: `Bearer ${token}` },
+  const res = await apiFetch(`${API_URL}/v1/search/inspirations?${params}`, {
+    token,
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
@@ -98,8 +99,8 @@ export async function getInspirations(
 }
 
 export async function getExploreDestinations(token: string): Promise<ExploreDestinationsResult> {
-  const res = await fetch(`${API_URL}/v1/search/explore-destinations`, {
-    headers: { Authorization: `Bearer ${token}` },
+  const res = await apiFetch(`${API_URL}/v1/search/explore-destinations`, {
+    token,
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));

@@ -211,6 +211,7 @@ export const FlightSearch = ({ token, onPlanTrip }: FlightSearchProps) => {
   const [inspirations,   setInspirations]   = useState<FlightInspiration[] | null>(null);
   const [loading,        setLoading]        = useState(false);
   const [error,          setError]          = useState<string | null>(null);
+  const [hasSearched,    setHasSearched]    = useState(false);
 
   const reset = () => {
     setFlightOffers(null);
@@ -227,6 +228,7 @@ export const FlightSearch = ({ token, onPlanTrip }: FlightSearchProps) => {
       return;
     }
     reset();
+    setHasSearched(true);
     setLoading(true);
     try {
       const res = await searchFlights(token, parsedOrigin, parsedDestination, date, adults);
@@ -248,6 +250,7 @@ export const FlightSearch = ({ token, onPlanTrip }: FlightSearchProps) => {
       return;
     }
     reset();
+    setHasSearched(true);
     setLoading(true);
     try {
       const res = await getInspirations(token, parsedOrigin, maxPrice ? Number(maxPrice) : undefined);
@@ -282,10 +285,10 @@ export const FlightSearch = ({ token, onPlanTrip }: FlightSearchProps) => {
 
       {/* ── Tab switcher ── */}
       <div className="flex gap-1 bg-parchment rounded-full p-1 w-fit">
-        <button onClick={() => { setTab('search'); reset(); }} className={tabCls('search')}>
+        <button onClick={() => { setTab('search'); reset(); setHasSearched(false); }} className={tabCls('search')}>
           Search Flights
         </button>
-        <button onClick={() => { setTab('inspire'); reset(); }} className={tabCls('inspire')}>
+        <button onClick={() => { setTab('inspire'); reset(); setHasSearched(false); }} className={tabCls('inspire')}>
           Get Inspired
         </button>
       </div>
@@ -389,19 +392,46 @@ export const FlightSearch = ({ token, onPlanTrip }: FlightSearchProps) => {
 
       {/* ── Results / States ── */}
       {error && (
-        <div className="rounded-xl bg-danger/10 border border-danger/20 px-4 py-3 text-sm text-danger font-medium">
-          {error}
+        <div className="rounded-xl bg-danger/10 border border-danger/20 px-4 py-3 text-sm" role="alert">
+          <p className="font-semibold text-danger">Flight search unavailable</p>
+          <p className="mt-1 text-flint">{error}</p>
         </div>
       )}
 
       {loading && (
-        <div className="flex justify-center py-6">
-          <div className="w-8 h-8 rounded-full border-2 border-amber border-t-transparent animate-spin" />
+        <div className="space-y-3 py-1">
+          {[1, 2, 3].map((item) => (
+            <div key={item} className="rounded-xl border border-smoke/60 bg-parchment/40 px-4 py-4 animate-pulse">
+              <div className="h-4 w-24 rounded-full bg-smoke/70" />
+              <div className="mt-3 h-5 w-1/2 rounded-full bg-parchment" />
+              <div className="mt-2 h-4 w-2/3 rounded-full bg-parchment" />
+            </div>
+          ))}
         </div>
       )}
 
-      {isEmpty && !loading && (
-        <p className="text-sm text-flint text-center py-4">No results found. Try different search parameters.</p>
+      {!loading && !error && !hasSearched && (
+        <div className="rounded-2xl border border-smoke bg-parchment/40 px-5 py-5 text-sm text-flint">
+          <p className="font-semibold text-espresso">
+            {tab === 'search' ? 'Search sandbox flight offers' : 'Browse sandbox destination ideas'}
+          </p>
+          <p className="mt-1">
+            {tab === 'search'
+              ? 'Enter an origin, destination, and date to preview test flight offers. Results are for planning inspiration only, not real booking availability.'
+              : 'Choose a departure airport to explore sample destination ideas from the Amadeus test environment.'}
+          </p>
+        </div>
+      )}
+
+      {isEmpty && !loading && hasSearched && (
+        <div className="rounded-2xl border border-smoke bg-parchment/40 px-5 py-5 text-sm text-flint text-center">
+          <p className="font-semibold text-espresso">No results found</p>
+          <p className="mt-1">
+            {tab === 'search'
+              ? 'Try a different route, date, or airport code. Sandbox inventory can be sparse.'
+              : 'Try a higher budget or a different departure airport. Test inspiration data can be limited.'}
+          </p>
+        </div>
       )}
 
       {hasResults && !loading && (

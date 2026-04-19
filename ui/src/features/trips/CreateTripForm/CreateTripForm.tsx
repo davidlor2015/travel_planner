@@ -3,6 +3,7 @@ import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createTrip, type Trip } from '../../../shared/api/trips';
+import { track } from '../../../shared/analytics';
 import {
   tripSchema,
   serializePreferences,
@@ -57,6 +58,14 @@ export const CreateTripForm = ({ token, onSuccess, onCancel, defaultDestination 
         start_date:  data.start_date,
         end_date:    data.end_date,
         notes:       notes || undefined,
+      });
+      track({
+        name: 'trip_created',
+        props: {
+          trip_id: newTrip.id,
+          destination: newTrip.destination,
+          has_preferences: Boolean(notes),
+        },
       });
       onSuccess(newTrip);
     } catch (err) {

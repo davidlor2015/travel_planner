@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import patch, AsyncMock
 from datetime import date
 from fastapi.testclient import TestClient
+
 from app.models.trip import Trip
 from app.services.llm.ollama_client import LLMUnavailableError
 
@@ -33,6 +34,7 @@ def test_generate_plan_success(client: TestClient, auth_headers_user_a, user_a, 
     db.add(new_trip)
     db.commit()
     db.refresh(new_trip)
+    attach_trip_membership(new_trip, user_a.id)
 
     with patch(
         "app.services.llm.ollama_client.OllamaClient.generate_json",
@@ -53,6 +55,8 @@ def test_generate_plan_success(client: TestClient, auth_headers_user_a, user_a, 
     data = response.json()
     assert data["title"] == "Paris Adventure"
     assert len(data["days"]) == 1
+    assert data["source"] == "llm_optional"
+    assert data["fallback_used"] is False
 
 
 def test_generate_plan_not_found(client: TestClient, auth_headers_user_a):
@@ -85,7 +89,6 @@ def test_generate_plan_vector_fallback_trims_to_trip_days(
     db.add(new_trip)
     db.commit()
     db.refresh(new_trip)
-    attach_trip_membership(new_trip, user_a.id)
     attach_trip_membership(new_trip, user_a.id)
 
     overview = {
@@ -133,3 +136,5 @@ def test_generate_plan_vector_fallback_trims_to_trip_days(
     assert len(data["days"]) == 3
     assert [day["day_number"] for day in data["days"]] == [1, 2, 3]
     assert "Trimmed a 7-day pre-generated itinerary to 3 days." in data["summary"]
+    assert data["source"] == "knowledge_base_fallback"
+    assert data["fallback_used"] is True
