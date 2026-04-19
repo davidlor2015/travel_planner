@@ -128,6 +128,7 @@ export const PrepPanel = ({ token, tripId, destination, startDate }: PrepPanelPr
             <p className="text-xs text-flint mt-0.5">
               Keep the pre-trip loose ends visible without turning this into homework.
             </p>
+            <p className="text-xs text-flint mt-1">These reminders are personal to you.</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-semibold px-2.5 py-1 rounded-full border border-olive/20 bg-olive/10 text-olive">

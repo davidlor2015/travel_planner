@@ -17,6 +17,12 @@ class User(Base):
         back_populates="owner",
         cascade="all, delete-orphan",
     )
+    trip_memberships: Mapped[list["TripMembership"]] = relationship(
+        "TripMembership",
+        foreign_keys="TripMembership.user_id",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
     sent_match_requests: Mapped[list["MatchRequest"]] = relationship(
         "MatchRequest",
         back_populates="sender",

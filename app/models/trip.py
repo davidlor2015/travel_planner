@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from sqlalchemy.sql import func
-from sqlalchemy import Float, String, Date, ForeignKey, Text, Integer, DateTime, Boolean
+from sqlalchemy import String, Date, ForeignKey, Text, Integer, DateTime, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base_class import Base
 
@@ -22,11 +22,16 @@ class Trip(Base):
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
     is_discoverable: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    budget_limit: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     
     owner: Mapped["User"] = relationship("User", back_populates="trips")
+    memberships: Mapped[list["TripMembership"]] = relationship(
+        "TripMembership",
+        back_populates="trip",
+        cascade="all, delete-orphan",
+        order_by="TripMembership.created_at",
+    )
     match_requests: Mapped[list["MatchRequest"]] = relationship(
         "MatchRequest",
         back_populates="trip",
@@ -37,27 +42,17 @@ class Trip(Base):
         cascade="all, delete-orphan",
         order_by="ItineraryDay.day_number",
     )
-    packing_items: Mapped[list["PackingItem"]] = relationship(
-        "PackingItem",
-        back_populates="trip",
-        cascade="all, delete-orphan",
-        order_by="PackingItem.created_at",
-    )
-    budget_expenses: Mapped[list["BudgetExpense"]] = relationship(
-        "BudgetExpense",
-        back_populates="trip",
-        cascade="all, delete-orphan",
-        order_by="BudgetExpense.created_at",
-    )
     reservations: Mapped[list["Reservation"]] = relationship(
         "Reservation",
         back_populates="trip",
         cascade="all, delete-orphan",
         order_by="Reservation.start_at",
     )
-    prep_items: Mapped[list["PrepItem"]] = relationship(
-        "PrepItem",
-        back_populates="trip",
-        cascade="all, delete-orphan",
-        order_by="PrepItem.created_at",
-    )
+
+    @property
+    def members(self) -> list["TripMembership"]:
+        return self.memberships
+
+    @property
+    def member_count(self) -> int:
+        return len(self.memberships)

@@ -3,7 +3,7 @@ from datetime import date
 from app.models.trip import Trip
 
 
-def _create_trip(db, user_id: int) -> Trip:
+def _create_trip(db, user_id: int, attach_trip_membership) -> Trip:
     trip = Trip(
         user_id=user_id,
         title="Tokyo Spring",
@@ -16,11 +16,12 @@ def _create_trip(db, user_id: int) -> Trip:
     db.add(trip)
     db.commit()
     db.refresh(trip)
+    attach_trip_membership(trip, user_id)
     return trip
 
 
-def test_create_and_list_reservations(client, db, user_a, auth_headers_user_a):
-    trip = _create_trip(db, user_a.id)
+def test_create_and_list_reservations(client, db, user_a, auth_headers_user_a, attach_trip_membership):
+    trip = _create_trip(db, user_a.id, attach_trip_membership)
 
     create_res = client.post(
         f"/v1/trips/{trip.id}/reservations/",
@@ -61,8 +62,8 @@ def test_create_and_list_reservations(client, db, user_a, auth_headers_user_a):
     assert items[0]["confirmation_code"] == "ZX81PQ"
 
 
-def test_update_and_delete_reservation(client, db, user_a, auth_headers_user_a):
-    trip = _create_trip(db, user_a.id)
+def test_update_and_delete_reservation(client, db, user_a, auth_headers_user_a, attach_trip_membership):
+    trip = _create_trip(db, user_a.id, attach_trip_membership)
 
     create_res = client.post(
         f"/v1/trips/{trip.id}/reservations/",
@@ -106,8 +107,8 @@ def test_update_and_delete_reservation(client, db, user_a, auth_headers_user_a):
     assert budget_res.json()["expenses"] == []
 
 
-def test_create_reservation_can_skip_budget_sync(client, db, user_a, auth_headers_user_a):
-    trip = _create_trip(db, user_a.id)
+def test_create_reservation_can_skip_budget_sync(client, db, user_a, auth_headers_user_a, attach_trip_membership):
+    trip = _create_trip(db, user_a.id, attach_trip_membership)
 
     create_res = client.post(
         f"/v1/trips/{trip.id}/reservations/",
@@ -129,8 +130,8 @@ def test_create_reservation_can_skip_budget_sync(client, db, user_a, auth_header
     assert budget_res.json()["expenses"] == []
 
 
-def test_reservations_respect_trip_ownership(client, db, user_a, user_b, auth_headers_user_a):
-    trip = _create_trip(db, user_b.id)
+def test_reservations_respect_trip_ownership(client, db, user_a, user_b, auth_headers_user_a, attach_trip_membership):
+    trip = _create_trip(db, user_b.id, attach_trip_membership)
 
     res = client.get(f"/v1/trips/{trip.id}/reservations/", headers=auth_headers_user_a)
     assert res.status_code == 404

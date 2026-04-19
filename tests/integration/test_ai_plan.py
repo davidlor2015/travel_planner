@@ -22,7 +22,7 @@ MOCK_JSON_RESPONSE = """
 """
 
 
-def test_generate_plan_success(client: TestClient, auth_headers_user_a, user_a, db):
+def test_generate_plan_success(client: TestClient, auth_headers_user_a, user_a, db, attach_trip_membership):
     new_trip = Trip(
         title="My Paris Trip",
         destination="Paris",
@@ -73,6 +73,7 @@ def test_generate_plan_vector_fallback_trims_to_trip_days(
     auth_headers_user_a,
     user_a,
     db,
+    attach_trip_membership,
 ):
     new_trip = Trip(
         title="Tokyo Long Weekend",
@@ -84,6 +85,8 @@ def test_generate_plan_vector_fallback_trims_to_trip_days(
     db.add(new_trip)
     db.commit()
     db.refresh(new_trip)
+    attach_trip_membership(new_trip, user_a.id)
+    attach_trip_membership(new_trip, user_a.id)
 
     overview = {
         "itinerary_id": "tokyo-7d-mod-food-hist-walk-bal",

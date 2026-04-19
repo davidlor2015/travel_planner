@@ -3,7 +3,7 @@ from datetime import date
 from app.models.trip import Trip
 
 
-def _create_trip(db, user_id: int) -> Trip:
+def _create_trip(db, user_id: int, attach_trip_membership) -> Trip:
     trip = Trip(
         user_id=user_id,
         title="Tokyo Spring",
@@ -16,11 +16,12 @@ def _create_trip(db, user_id: int) -> Trip:
     db.add(trip)
     db.commit()
     db.refresh(trip)
+    attach_trip_membership(trip, user_id)
     return trip
 
 
-def test_create_list_update_and_delete_prep_items(client, db, user_a, auth_headers_user_a):
-    trip = _create_trip(db, user_a.id)
+def test_create_list_update_and_delete_prep_items(client, db, user_a, auth_headers_user_a, attach_trip_membership):
+    trip = _create_trip(db, user_a.id, attach_trip_membership)
 
     create_res = client.post(
         f"/v1/trips/{trip.id}/prep/",
@@ -60,7 +61,7 @@ def test_create_list_update_and_delete_prep_items(client, db, user_a, auth_heade
     assert list_after.json() == []
 
 
-def test_prep_items_respect_trip_ownership(client, db, user_a, user_b, auth_headers_user_a):
-    trip = _create_trip(db, user_b.id)
+def test_prep_items_respect_trip_ownership(client, db, user_a, user_b, auth_headers_user_a, attach_trip_membership):
+    trip = _create_trip(db, user_b.id, attach_trip_membership)
     res = client.get(f"/v1/trips/{trip.id}/prep/", headers=auth_headers_user_a)
     assert res.status_code == 404

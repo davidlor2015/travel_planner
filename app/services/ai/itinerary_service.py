@@ -20,6 +20,7 @@ from app.services.llm.ollama_client import LLMUnavailableError, OllamaClient
 from app.services.ai.rule_based_service import generate_rule_based_itinerary
 from app.repositories.trip_repository import TripRepository
 from app.repositories.itinerary_repository import ItineraryRepository
+from app.services.trip_access_service import TripAccessService
 
 logger = logging.getLogger(__name__)
 
@@ -159,6 +160,7 @@ class ItineraryService:
         self.trip_repo = TripRepository(db)
         self.itinerary_repo = ItineraryRepository(db)
         self.llm_client = OllamaClient()
+        self.access_service = TripAccessService(db)
 
     def _build_system_prompt(self) -> str:
         return (
@@ -510,9 +512,10 @@ class ItineraryService:
         interests_override: Optional[str] = None,
         budget_override: Optional[str] = None,
     ) -> ItineraryResponse:
-        trip = self.trip_repo.get_by_id_and_user(trip_id, user_id)
-        if not trip:
-            raise ValueError("Trip not found or access denied.")
+        try:
+            trip = self.access_service.require_membership(trip_id, user_id).trip
+        except Exception as exc:
+            raise ValueError("Trip not found or access denied.") from exc
 
         sys_prompt = self._build_system_prompt()
         user_prompt = self._build_user_prompt(trip, interests_override, budget_override)
@@ -543,9 +546,10 @@ class ItineraryService:
         budget_override: Optional[str] = None,
     ) -> ItineraryResponse:
         """Generates an itinerary using real POI data (OpenTripMap) — no LLM required."""
-        trip = self.trip_repo.get_by_id_and_user(trip_id, user_id)
-        if not trip:
-            raise ValueError("Trip not found or access denied.")
+        try:
+            trip = self.access_service.require_membership(trip_id, user_id).trip
+        except Exception as exc:
+            raise ValueError("Trip not found or access denied.") from exc
         return await generate_rule_based_itinerary(trip, interests_override, budget_override)
 
     async def refine_itinerary(
@@ -559,9 +563,10 @@ class ItineraryService:
         locked_items: Optional[list[ItineraryItemReference]] = None,
         favorite_items: Optional[list[ItineraryItemReference]] = None,
     ) -> ItineraryResponse:
-        trip = self.trip_repo.get_by_id_and_user(trip_id, user_id)
-        if not trip:
-            raise ValueError("Trip not found or access denied.")
+        try:
+            trip = self.access_service.require_membership(trip_id, user_id).trip
+        except Exception as exc:
+            raise ValueError("Trip not found or access denied.") from exc
 
         system_prompt = self._build_refinement_system_prompt()
         user_prompt = self._build_refinement_user_prompt(
@@ -655,9 +660,10 @@ class ItineraryService:
         1. Relational tables (itinerary_days / itinerary_events)
         2. trip.description — JSON fallback for the existing frontend parser
         """
-        trip = self.trip_repo.get_by_id_and_user(trip_id, user_id)
-        if not trip:
-            raise ValueError("Trip not found.")
+        try:
+            trip = self.access_service.require_membership(trip_id, user_id).trip
+        except Exception as exc:
+            raise ValueError("Trip not found.") from exc
 
         self.itinerary_repo.save_itinerary(trip_id, itinerary)
 

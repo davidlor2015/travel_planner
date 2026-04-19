@@ -167,6 +167,7 @@ function App() {
             ) : (
               <TripList
                 token={token!}
+                currentUserEmail={user!.email}
                 onCreateClick={() => setShowCreateForm(true)}
                 initialTripId={focusTripId ?? undefined}
               />

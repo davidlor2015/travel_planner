@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, model_validator
 
 
 class TripBase(BaseModel):
@@ -55,11 +55,26 @@ class TripUpdate(BaseModel):
         return self
 
 
+class TripMemberResponse(BaseModel):
+    user_id: int
+    email: EmailStr
+    role: str
+    joined_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TripMemberAddRequest(BaseModel):
+    email: EmailStr
+
+
 class TripResponse(TripBase):
     """Schema returned to client."""
     id: int
     user_id: int
     created_at: datetime
+    member_count: int
+    members: list[TripMemberResponse]
 
     model_config = ConfigDict(from_attributes=True)
 

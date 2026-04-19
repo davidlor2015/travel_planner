@@ -46,6 +46,7 @@ def _create_profile(
 def _create_trip(
     db,
     user_id: int,
+    attach_trip_membership,
     *,
     title: str,
     destination: str,
@@ -66,13 +67,15 @@ def _create_trip(
     db.add(trip)
     db.commit()
     db.refresh(trip)
+    attach_trip_membership(trip, user_id)
     return trip
 
 
-def test_missing_profile_returns_422(client, db, user_a, auth_headers_user_a):
+def test_missing_profile_returns_422(client, db, user_a, auth_headers_user_a, attach_trip_membership):
     trip = _create_trip(
         db,
         user_a.id,
+        attach_trip_membership,
         title="Solo Trip",
         destination="Paris",
         start_date=date(2026, 6, 1),
@@ -89,11 +92,12 @@ def test_missing_profile_returns_422(client, db, user_a, auth_headers_user_a):
     assert res.json()["detail"] == "Travel profile required"
 
 
-def test_duplicate_request_returns_409(client, db, user_a, auth_headers_user_a):
+def test_duplicate_request_returns_409(client, db, user_a, auth_headers_user_a, attach_trip_membership):
     _create_profile(db, user_a.id)
     trip = _create_trip(
         db,
         user_a.id,
+        attach_trip_membership,
         title="Paris Trip",
         destination="Paris",
         start_date=date(2026, 6, 1),
@@ -116,13 +120,14 @@ def test_duplicate_request_returns_409(client, db, user_a, auth_headers_user_a):
     assert second_res.json()["detail"] == "Open match request already exists for trip"
 
 
-def test_overlapping_trips_create_match(client, db, user_a, user_b, auth_headers_user_a):
+def test_overlapping_trips_create_match(client, db, user_a, user_b, auth_headers_user_a, attach_trip_membership):
     _create_profile(db, user_a.id, interests=["food", "art"], group_size_min=2, group_size_max=4)
     _create_profile(db, user_b.id, interests=["food", "art"], group_size_min=2, group_size_max=5)
 
     trip_a = _create_trip(
         db,
         user_a.id,
+        attach_trip_membership,
         title="Paris A",
         destination="Paris",
         start_date=date(2026, 6, 1),
@@ -131,6 +136,7 @@ def test_overlapping_trips_create_match(client, db, user_a, user_b, auth_headers
     _create_trip(
         db,
         user_b.id,
+        attach_trip_membership,
         title="Paris B",
         destination="paris",
         start_date=date(2026, 6, 3),
@@ -149,13 +155,14 @@ def test_overlapping_trips_create_match(client, db, user_a, user_b, auth_headers
     assert data["results"][0]["score"] >= 0.20
 
 
-def test_non_overlapping_trips_create_no_match(client, db, user_a, user_b, auth_headers_user_a):
+def test_non_overlapping_trips_create_no_match(client, db, user_a, user_b, auth_headers_user_a, attach_trip_membership):
     _create_profile(db, user_a.id)
     _create_profile(db, user_b.id)
 
     trip_a = _create_trip(
         db,
         user_a.id,
+        attach_trip_membership,
         title="Paris A",
         destination="Paris",
         start_date=date(2026, 6, 1),
@@ -164,6 +171,7 @@ def test_non_overlapping_trips_create_no_match(client, db, user_a, user_b, auth_
     _create_trip(
         db,
         user_b.id,
+        attach_trip_membership,
         title="Paris B",
         destination="Paris",
         start_date=date(2026, 6, 10),
@@ -180,13 +188,14 @@ def test_non_overlapping_trips_create_no_match(client, db, user_a, user_b, auth_
     assert res.json()["results"] == []
 
 
-def test_is_discoverable_false_excludes_candidate(client, db, user_a, user_b, auth_headers_user_a):
+def test_is_discoverable_false_excludes_candidate(client, db, user_a, user_b, auth_headers_user_a, attach_trip_membership):
     _create_profile(db, user_a.id)
     _create_profile(db, user_b.id)
 
     trip_a = _create_trip(
         db,
         user_a.id,
+        attach_trip_membership,
         title="Rome A",
         destination="Rome",
         start_date=date(2026, 7, 1),
@@ -195,6 +204,7 @@ def test_is_discoverable_false_excludes_candidate(client, db, user_a, user_b, au
     _create_trip(
         db,
         user_b.id,
+        attach_trip_membership,
         title="Rome B",
         destination="Rome",
         start_date=date(2026, 7, 2),
@@ -212,13 +222,14 @@ def test_is_discoverable_false_excludes_candidate(client, db, user_a, user_b, au
     assert res.json()["results"] == []
 
 
-def test_deleted_request_is_not_reused_for_future_match(client, db, user_a, user_b, auth_headers_user_a, auth_headers_user_b):
+def test_deleted_request_is_not_reused_for_future_match(client, db, user_a, user_b, auth_headers_user_a, auth_headers_user_b, attach_trip_membership):
     _create_profile(db, user_a.id)
     _create_profile(db, user_b.id)
 
     first_trip_a = _create_trip(
         db,
         user_a.id,
+        attach_trip_membership,
         title="Paris A1",
         destination="Paris",
         start_date=date(2026, 8, 1),
@@ -227,6 +238,7 @@ def test_deleted_request_is_not_reused_for_future_match(client, db, user_a, user
     second_trip_a = _create_trip(
         db,
         user_a.id,
+        attach_trip_membership,
         title="Paris A2",
         destination="Paris",
         start_date=date(2026, 8, 2),
@@ -235,6 +247,7 @@ def test_deleted_request_is_not_reused_for_future_match(client, db, user_a, user
     _create_trip(
         db,
         user_b.id,
+        attach_trip_membership,
         title="Paris B",
         destination="Paris",
         start_date=date(2026, 8, 3),
@@ -284,13 +297,14 @@ def test_deleted_request_is_not_reused_for_future_match(client, db, user_a, user
     assert remaining_old == []
 
 
-def test_match_interaction_is_persisted_and_returned(client, db, user_a, user_b, auth_headers_user_a):
+def test_match_interaction_is_persisted_and_returned(client, db, user_a, user_b, auth_headers_user_a, attach_trip_membership):
     _create_profile(db, user_a.id, interests=["food", "art"], group_size_min=2, group_size_max=4)
     _create_profile(db, user_b.id, interests=["food", "art"], group_size_min=2, group_size_max=5)
 
     trip_a = _create_trip(
         db,
         user_a.id,
+        attach_trip_membership,
         title="Rome A",
         destination="Rome",
         start_date=date(2026, 9, 1),
@@ -299,6 +313,7 @@ def test_match_interaction_is_persisted_and_returned(client, db, user_a, user_b,
     _create_trip(
         db,
         user_b.id,
+        attach_trip_membership,
         title="Rome B",
         destination="Rome",
         start_date=date(2026, 9, 2),

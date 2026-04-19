@@ -35,6 +35,7 @@ import app.db.base  # noqa: F401
 from app.db.session import get_db
 from app.core import security
 from app.models.user import User
+from app.models.trip_membership import TripMembership, TripMemberState
 
 
 # ---------------------------
@@ -165,3 +166,29 @@ def auth_headers_user_a(user_a):
 def auth_headers_user_b(user_b):
     token = security.create_access_token(data={"sub": user_b.email})
     return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture(scope="function")
+def attach_trip_membership(db):
+    def _attach(trip, user_id: int, *, role: str = "owner", added_by_user_id: int | None = None, budget_limit: float | None = None):
+        membership = TripMembership(
+            trip_id=trip.id,
+            user_id=user_id,
+            role=role,
+            added_by_user_id=added_by_user_id if added_by_user_id is not None else user_id,
+        )
+        db.add(membership)
+        db.flush()
+
+        state = TripMemberState(
+            membership_id=membership.id,
+            budget_limit=budget_limit,
+        )
+        db.add(state)
+        db.commit()
+        db.refresh(trip)
+        db.refresh(membership)
+        db.refresh(state)
+        return membership
+
+    return _attach

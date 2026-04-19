@@ -91,6 +91,7 @@ export const PackingList = ({ token, tripId, onSummaryChange }: PackingListProps
             <p className="text-xs text-flint mt-0.5">
               {loading ? 'Loading…' : total === 0 ? 'Nothing added yet.' : `${checkedCount} of ${total} packed`}
             </p>
+            <p className="text-xs text-flint mt-1">This list is personal to you.</p>
           </div>
 
           {checkedCount > 0 && (

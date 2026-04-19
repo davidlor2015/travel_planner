@@ -167,6 +167,7 @@ export const ReservationsPanel = ({ token, tripId }: ReservationsPanelProps) => 
             <p className="text-xs text-flint mt-0.5">
               Keep confirmed travel details with the trip, without turning this into a giant form.
             </p>
+            <p className="text-xs text-flint mt-1">These bookings are shared across trip members.</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-end">
             <span className="text-xs font-semibold px-2.5 py-1 rounded-full border border-sky-200 bg-sky-50 text-sky-800">

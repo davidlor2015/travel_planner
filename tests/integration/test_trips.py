@@ -38,7 +38,7 @@ def test_create_trip(client, auth_headers_user_a):
     assert "created_at" in data
 
 
-def test_read_trips_only_returns_current_users_trips(client, db, user_a, user_b, auth_headers_user_a):
+def test_read_trips_only_returns_current_users_trips(client, db, user_a, user_b, auth_headers_user_a, attach_trip_membership):
     t1 = Trip(
         user_id=user_a.id,
         title="A Trip",
@@ -60,6 +60,8 @@ def test_read_trips_only_returns_current_users_trips(client, db, user_a, user_b,
 
     db.add_all([t1, t2])
     db.commit()
+    attach_trip_membership(t1, user_a.id)
+    attach_trip_membership(t2, user_b.id)
 
     res = client.get("/v1/trips/", headers=auth_headers_user_a)
     assert res.status_code == 200, res.text
@@ -70,7 +72,7 @@ def test_read_trips_only_returns_current_users_trips(client, db, user_a, user_b,
     assert trips[0]["destination"] == "Paris"
 
 
-def test_read_trip_returns_404_if_not_owned(client, db, user_b, auth_headers_user_a):
+def test_read_trip_returns_404_if_not_owned(client, db, user_b, auth_headers_user_a, attach_trip_membership):
     t = Trip(
         user_id=user_b.id,
         title="Secret Trip",
@@ -83,6 +85,7 @@ def test_read_trip_returns_404_if_not_owned(client, db, user_b, auth_headers_use
     db.add(t)
     db.commit()
     db.refresh(t)
+    attach_trip_membership(t, user_b.id)
 
     res = client.get(f"/v1/trips/{t.id}", headers=auth_headers_user_a)
     assert res.status_code == 404
@@ -140,3 +143,66 @@ def test_delete_trip_204(client, auth_headers_user_a):
 
     get_res = client.get(f"/v1/trips/{trip_id}", headers=auth_headers_user_a)
     assert get_res.status_code == 404
+
+
+def test_owner_can_add_member_by_email(
+    client,
+    auth_headers_user_a,
+    user_b,
+):
+    create_res = client.post(
+        "/v1/trips/",
+        json={
+            "title": "Shared Trip",
+            "destination": "Lisbon",
+            "description": None,
+            "start_date": "2026-08-10",
+            "end_date": "2026-08-15",
+            "notes": None,
+        },
+        headers=auth_headers_user_a,
+    )
+    trip_id = create_res.json()["id"]
+
+    add_member_res = client.post(
+        f"/v1/trips/{trip_id}/members",
+        json={"email": user_b.email},
+        headers=auth_headers_user_a,
+    )
+
+    assert add_member_res.status_code == 201, add_member_res.text
+    assert add_member_res.json()["email"] == user_b.email
+
+    trip_res = client.get(f"/v1/trips/{trip_id}", headers=auth_headers_user_a)
+    assert trip_res.status_code == 200
+    assert {member["email"] for member in trip_res.json()["members"]} == {
+        "usera@example.com",
+        "userb@example.com",
+    }
+
+
+def test_added_member_can_read_shared_trip(client, user_b, auth_headers_user_a, auth_headers_user_b):
+    create_res = client.post(
+        "/v1/trips/",
+        json={
+            "title": "Shared Rome",
+            "destination": "Rome",
+            "description": None,
+            "start_date": "2026-09-01",
+            "end_date": "2026-09-04",
+            "notes": None,
+        },
+        headers=auth_headers_user_a,
+    )
+    trip_id = create_res.json()["id"]
+
+    add_member_res = client.post(
+        f"/v1/trips/{trip_id}/members",
+        json={"email": user_b.email},
+        headers=auth_headers_user_a,
+    )
+    assert add_member_res.status_code == 201, add_member_res.text
+
+    trip_res = client.get(f"/v1/trips/{trip_id}", headers=auth_headers_user_b)
+    assert trip_res.status_code == 200
+    assert trip_res.json()["destination"] == "Rome"

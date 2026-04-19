@@ -12,7 +12,15 @@ export interface Trip {
     end_date: string;
     user_id: number;
     created_at: string;
+    member_count: number;
+    members: TripMember[];
+}
 
+export interface TripMember {
+  user_id: number;
+  email: string;
+  role: string;
+  joined_at: string;
 }
 
 export interface TripSummary {
@@ -95,7 +103,7 @@ interface TripUpdate {
 
 export const updateTrip = async (token: string, id: number, data: TripUpdate): Promise<Trip> => {
   const response = await fetch(`${API_URL}/v1/trips/${id}`, {
-    method: 'PUT',
+    method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
@@ -137,6 +145,24 @@ export const getTripSummaries = async (token: string): Promise<TripSummary[]> =>
     if (!response.ok) {
         const text = await response.text();
         throw new Error(`Failed to fetch trip summaries (${response.status}): ${text}`);
+    }
+
+    return response.json();
+};
+
+export const addTripMember = async (token: string, tripId: number, email: string): Promise<TripMember> => {
+    const response = await fetch(`${API_URL}/v1/trips/${tripId}/members`, {
+        method: "POST",
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Failed to add trip member (${response.status}): ${text}`);
     }
 
     return response.json();

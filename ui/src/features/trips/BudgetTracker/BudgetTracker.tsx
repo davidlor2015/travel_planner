@@ -136,6 +136,7 @@ export const BudgetTracker = ({ token, tripId, onSummaryChange }: BudgetTrackerP
                   : `${formatCurrency(remaining!)} remaining`}
               </p>
             )}
+            {!loading && <p className="text-xs text-flint mt-1">Personal to you for this trip.</p>}
           </div>
 
           {/* Budget limit control */}

@@ -38,7 +38,7 @@ MOCK_POIS = [
 
 
 @pytest.fixture()
-def paris_trip(db, user_a) -> Trip:
+def paris_trip(db, user_a, attach_trip_membership) -> Trip:
     trip = Trip(
         title="Paris Trip",
         destination="Paris",
@@ -49,6 +49,7 @@ def paris_trip(db, user_a) -> Trip:
     db.add(trip)
     db.commit()
     db.refresh(trip)
+    attach_trip_membership(trip, user_a.id)
     return trip
 
 
