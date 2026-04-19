@@ -68,6 +68,14 @@ def create_password_reset_token(email: str, password_fingerprint: str) -> str:
     )
 
 
+def create_email_verification_token(email: str, password_fingerprint: str) -> str:
+    return _create_signed_token(
+        {"sub": email, "pwh": password_fingerprint},
+        token_type="email_verification",
+        expires_delta=timedelta(hours=settings.EMAIL_VERIFICATION_TOKEN_EXPIRE_HOURS),
+    )
+
+
 def decode_token(token: str, *, expected_type: str | None = None) -> dict[str, Any]:
     payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALG])
     token_type = payload.get("type")

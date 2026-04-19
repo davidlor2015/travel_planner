@@ -43,9 +43,14 @@ def get_current_user(token: TokenDep, db: SessionDep) -> User:
         raise credentials_exception
 
     # 2) Look up the user
-    user = db.scalar(select(User).where(User.email == email))
+    user = db.scalar(select(User).where(User.email == email.lower()))
     if user is None:
         raise credentials_exception
+    if not user.email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Email not verified",
+        )
 
     return user
 

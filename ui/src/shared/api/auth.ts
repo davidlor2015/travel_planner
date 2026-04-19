@@ -16,7 +16,17 @@ export interface PasswordResetRequestResponse {
   reset_url: string | null;
 }
 
+export interface EmailVerificationRequestResponse {
+  ok: boolean;
+  verification_url: string | null;
+}
+
 export interface PasswordResetTokenStatus {
+  valid: boolean;
+  email: string | null;
+}
+
+export interface EmailVerificationTokenStatus {
   valid: boolean;
   email: string | null;
 }
@@ -32,7 +42,8 @@ export const login = async (email: string, password: string): Promise<LoginRespo
   });
 
   if (!response.ok) {
-    throw new Error('Login failed');
+    const body = await response.json().catch(() => ({}));
+    throw new Error((body as { detail?: string }).detail ?? 'Login failed');
   }
 
   return response.json();
@@ -46,7 +57,8 @@ export const refreshSession = async (refreshToken: string): Promise<LoginRespons
   });
 
   if (!response.ok) {
-    throw new Error('Session refresh failed');
+    const body = await response.json().catch(() => ({}));
+    throw new Error((body as { detail?: string }).detail ?? 'Session refresh failed');
   }
 
   return response.json();
@@ -60,7 +72,8 @@ export const register = async (email: string, password: string): Promise<UserPro
   });
 
   if (!response.ok) {
-    throw new Error('Registration failed');
+    const body = await response.json().catch(() => ({}));
+    throw new Error((body as { detail?: string }).detail ?? 'Registration failed');
   }
   return response.json();
 };
@@ -93,10 +106,32 @@ export const requestPasswordReset = async (email: string): Promise<PasswordReset
   return response.json();
 };
 
+export const requestEmailVerification = async (email: string): Promise<EmailVerificationRequestResponse> => {
+  const response = await fetch(`${API_URL}/v1/auth/email-verification/request`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Email verification request failed');
+  }
+
+  return response.json();
+};
+
 export const validatePasswordResetToken = async (token: string): Promise<PasswordResetTokenStatus> => {
   const response = await fetch(`${API_URL}/v1/auth/password-reset/validate?token=${encodeURIComponent(token)}`);
   if (!response.ok) {
     throw new Error('Password reset token validation failed');
+  }
+  return response.json();
+};
+
+export const validateEmailVerificationToken = async (token: string): Promise<EmailVerificationTokenStatus> => {
+  const response = await fetch(`${API_URL}/v1/auth/email-verification/validate?token=${encodeURIComponent(token)}`);
+  if (!response.ok) {
+    throw new Error('Email verification token validation failed');
   }
   return response.json();
 };
@@ -111,5 +146,18 @@ export const confirmPasswordReset = async (token: string, password: string): Pro
   if (!response.ok) {
     const text = await response.text();
     throw new Error(`Password reset failed (${response.status}): ${text}`);
+  }
+};
+
+export const confirmEmailVerification = async (token: string): Promise<void> => {
+  const response = await fetch(`${API_URL}/v1/auth/email-verification/confirm`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Email verification failed (${response.status}): ${text}`);
   }
 };

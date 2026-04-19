@@ -23,6 +23,23 @@ def _create_shared_trip(client, auth_headers_user_a, user_b) -> int:
     return trip_id
 
 
+def _verify_email(client, email: str) -> None:
+    request_res = client.post(
+        "/v1/auth/email-verification/request",
+        json={"email": email},
+    )
+    assert request_res.status_code == 200, request_res.text
+    verification_url = request_res.json()["verification_url"]
+    assert verification_url
+    token = verification_url.split("token=", 1)[1]
+
+    confirm_res = client.post(
+        "/v1/auth/email-verification/confirm",
+        json={"token": token},
+    )
+    assert confirm_res.status_code == 204, confirm_res.text
+
+
 def test_personal_planning_state_is_isolated_between_trip_members(
     client,
     user_b,
@@ -112,6 +129,7 @@ def test_trip_invite_can_be_accepted_after_login(
         json={"email": "invitee@example.com", "password": "password789"},
     )
     assert register_res.status_code == 200, register_res.text
+    _verify_email(client, "invitee@example.com")
 
     create_res = client.post(
         "/v1/trips/",

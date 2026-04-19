@@ -6,6 +6,27 @@ Tests verify the full request path: router → deps → service → DB → respo
 """
 
 
+def _verify_email(client, email: str) -> None:
+    request_res = client.post(
+        "/v1/auth/email-verification/request",
+        json={"email": email},
+    )
+    assert request_res.status_code == 200, request_res.text
+    verification_url = request_res.json()["verification_url"]
+    assert verification_url
+    token = verification_url.split("token=", 1)[1]
+
+    validate_res = client.get("/v1/auth/email-verification/validate", params={"token": token})
+    assert validate_res.status_code == 200, validate_res.text
+    assert validate_res.json()["valid"] is True
+
+    confirm_res = client.post(
+        "/v1/auth/email-verification/confirm",
+        json={"token": token},
+    )
+    assert confirm_res.status_code == 204, confirm_res.text
+
+
 def test_register_user(client):
     response = client.post(
         "/v1/auth/register",
@@ -19,6 +40,22 @@ def test_register_user(client):
     assert "id" in data
     assert "password" not in data
     assert "hashed_password" not in data
+    assert data["email_verified"] is False
+
+
+def test_login_requires_verified_email(client):
+    client.post(
+        "/v1/auth/register",
+        json={"email": "pending@example.com", "password": "password1"},
+    )
+
+    response = client.post(
+        "/v1/auth/login",
+        data={"username": "pending@example.com", "password": "password1"},
+    )
+
+    assert response.status_code == 403, response.text
+    assert response.json()["detail"] == "Email not verified"
 
 
 def test_login_user(client):
@@ -26,6 +63,7 @@ def test_login_user(client):
         "/v1/auth/register",
         json={"email": "login@example.com", "password": "password1"},
     )
+    _verify_email(client, "login@example.com")
 
     response = client.post(
         "/v1/auth/login",
@@ -59,6 +97,7 @@ def test_read_users_me(client):
         "/v1/auth/register",
         json={"email": "me@example.com", "password": "password111"},
     )
+    _verify_email(client, "me@example.com")
 
     login_res = client.post(
         "/v1/auth/login",
@@ -82,6 +121,7 @@ def test_refresh_session_returns_new_token_pair(client):
         "/v1/auth/register",
         json={"email": "refresh@example.com", "password": "password123"},
     )
+    _verify_email(client, "refresh@example.com")
 
     login_res = client.post(
         "/v1/auth/login",
@@ -106,6 +146,7 @@ def test_password_reset_flow_updates_password(client):
         "/v1/auth/register",
         json={"email": "reset@example.com", "password": "oldpassword"},
     )
+    _verify_email(client, "reset@example.com")
 
     request_res = client.post(
         "/v1/auth/password-reset/request",
@@ -137,3 +178,31 @@ def test_password_reset_flow_updates_password(client):
         data={"username": "reset@example.com", "password": "newpassword"},
     )
     assert new_login_res.status_code == 200, new_login_res.text
+
+
+def test_email_verification_link_cannot_be_reused(client):
+    client.post(
+        "/v1/auth/register",
+        json={"email": "twice@example.com", "password": "password456"},
+    )
+
+    request_res = client.post(
+        "/v1/auth/email-verification/request",
+        json={"email": "twice@example.com"},
+    )
+    assert request_res.status_code == 200, request_res.text
+    verification_url = request_res.json()["verification_url"]
+    assert verification_url
+    token = verification_url.split("token=", 1)[1]
+
+    first_confirm_res = client.post(
+        "/v1/auth/email-verification/confirm",
+        json={"token": token},
+    )
+    assert first_confirm_res.status_code == 204, first_confirm_res.text
+
+    second_confirm_res = client.post(
+        "/v1/auth/email-verification/confirm",
+        json={"token": token},
+    )
+    assert second_confirm_res.status_code == 400, second_confirm_res.text

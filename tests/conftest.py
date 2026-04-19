@@ -15,7 +15,7 @@ This keeps API tests realistic but isolated.
 import os
 
 # ---- Ensure settings exist before any app modules are imported ----
-os.environ.setdefault("JWT_SECRET", "test-secret-not-for-production")
+os.environ.setdefault("JWT_SECRET", "test-secret-not-for-production-1234567890")
 os.environ.setdefault("JWT_ALG", "HS256")
 os.environ.setdefault("ACCESS_TOKEN_EXPIRE_MINUTES", "60")
 # Low limit so the rate-limit test only needs a few requests to trigger a 429.
@@ -130,6 +130,7 @@ def user_a(db):
         email="usera@example.com",
         hashed_password=security.get_password_hash("password123"),
         is_active=True,
+        email_verified=True,
     )
     db.add(u)
     db.commit()
@@ -144,6 +145,7 @@ def user_b(db):
         email="userb@example.com",
         hashed_password=security.get_password_hash("password456"),
         is_active=True,
+        email_verified=True,
     )
     db.add(u)
     db.commit()

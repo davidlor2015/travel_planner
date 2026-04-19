@@ -38,6 +38,21 @@ def test_create_trip(client, auth_headers_user_a):
     assert "created_at" in data
 
 
+def test_create_trip_normalizes_destination_spacing(client, auth_headers_user_a):
+    payload = {
+        "title": "City Break",
+        "destination": "  Lisbon   ,   Portugal  ",
+        "description": None,
+        "start_date": "2026-02-25",
+        "end_date": "2026-03-05",
+        "notes": None,
+    }
+
+    res = client.post("/v1/trips/", json=payload, headers=auth_headers_user_a)
+    assert res.status_code == 201, res.text
+    assert res.json()["destination"] == "Lisbon, Portugal"
+
+
 def test_read_trips_only_returns_current_users_trips(client, db, user_a, user_b, auth_headers_user_a, attach_trip_membership):
     t1 = Trip(
         user_id=user_a.id,

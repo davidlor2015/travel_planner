@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { WaypointLogo } from '../../shared/ui/WaypointLogo';
+import { SiteFooterLinks, WaypointLogo } from '../../shared/ui';
 
 
 
@@ -54,7 +54,7 @@ const FEATURES = [
     iconBg:      'bg-clay/10 text-clay',
     accentLine:  'bg-clay',
     title:       'Itinerary Generation',
-    description: 'Stream a day-by-day plan live or use the smart rule-based engine powered by real POI data. Preview before you save anything.',
+    description: 'Stream a day-by-day plan live or use the smart rule-based engine powered by real POI data. Review AI suggestions carefully before you book or spend.',
   },
   {
     icon:        <ClipboardIcon />,
@@ -241,6 +241,9 @@ export const LandingPage = ({ onGetStarted, onSignIn }: LandingPageProps) => (
         <motion.p variants={fadeUp} className="text-xs text-white/42 tracking-wide pt-1">
           Free to use &nbsp;·&nbsp; No credit card required &nbsp;·&nbsp; Your data stays private
         </motion.p>
+        <motion.p variants={fadeUp} className="mx-auto max-w-xl text-xs leading-relaxed text-white/52">
+          AI-assisted itineraries can be wrong or incomplete. Always confirm bookings, schedules, opening hours, and prices with the source you plan to use.
+        </motion.p>
 
       </motion.div>
     </section>
@@ -354,11 +357,19 @@ export const LandingPage = ({ onGetStarted, onSignIn }: LandingPageProps) => (
 
     {/* ── Footer ── */}
     <footer className="px-6 py-8 border-t border-smoke bg-ivory">
-      <div className="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-3">
-        <WaypointLogo variant="full" theme="light" className="select-none" />
-        <p className="text-xs text-muted">
-          Portfolio project &nbsp;·&nbsp; Built with FastAPI, React, and Ollama
-        </p>
+      <div className="max-w-6xl mx-auto space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <WaypointLogo variant="full" theme="light" className="select-none" />
+          <p className="text-xs text-muted">
+            Portfolio project &nbsp;·&nbsp; Built with FastAPI, React, and Ollama
+          </p>
+        </div>
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <p className="text-xs text-muted">
+            Flight search uses Amadeus sandbox test data and does not influence results through affiliate placement.
+          </p>
+          <SiteFooterLinks />
+        </div>
       </div>
     </footer>
 

@@ -11,4 +11,4 @@ class UserRepository(BaseRepository[User]):
         super().__init__(User, db)
 
     def get_by_email(self, email: str) -> Optional[User]:
-        return self.db.scalar(select(User).where(User.email == email))
+        return self.db.scalar(select(User).where(User.email == email.lower()))

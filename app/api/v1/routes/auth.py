@@ -7,6 +7,10 @@ from app.db.session import get_db
 from app.api.deps import CurrentUser
 from app.schemas.user import UserResponse, UserCreate
 from app.schemas.auth import (
+    EmailVerificationConfirmRequest,
+    EmailVerificationRequest,
+    EmailVerificationRequestResponse,
+    EmailVerificationTokenStatus,
     PasswordResetConfirmRequest,
     PasswordResetRequest,
     PasswordResetRequestResponse,
@@ -43,6 +47,12 @@ def request_password_reset(payload: PasswordResetRequest, db: Session = Depends(
     return PasswordResetRequestResponse(reset_url=reset_url)
 
 
+@router.post("/email-verification/request", response_model=EmailVerificationRequestResponse)
+def request_email_verification(payload: EmailVerificationRequest, db: Session = Depends(get_db)):
+    verification_url = AuthService(db).create_email_verification(payload.email)
+    return EmailVerificationRequestResponse(verification_url=verification_url)
+
+
 @router.get("/password-reset/validate", response_model=PasswordResetTokenStatus)
 def validate_password_reset_token(
     token: str = Query(...),
@@ -51,12 +61,28 @@ def validate_password_reset_token(
     return AuthService(db).validate_password_reset_token(token)
 
 
+@router.get("/email-verification/validate", response_model=EmailVerificationTokenStatus)
+def validate_email_verification_token(
+    token: str = Query(...),
+    db: Session = Depends(get_db),
+):
+    return AuthService(db).validate_email_verification_token(token)
+
+
 @router.post("/password-reset/confirm", status_code=204)
 def confirm_password_reset(
     payload: PasswordResetConfirmRequest,
     db: Session = Depends(get_db),
 ):
     AuthService(db).reset_password(payload.token, payload.password)
+
+
+@router.post("/email-verification/confirm", status_code=204)
+def confirm_email_verification(
+    payload: EmailVerificationConfirmRequest,
+    db: Session = Depends(get_db),
+):
+    AuthService(db).verify_email(payload.token)
 
 
 @router.get("/me", response_model=UserResponse)

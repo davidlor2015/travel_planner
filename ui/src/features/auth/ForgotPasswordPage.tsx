@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 
 import { requestPasswordReset } from '../../shared/api/auth';
 import { track } from '../../shared/analytics';
-import { WaypointLogo } from '../../shared/ui/WaypointLogo';
+import { SiteFooterLinks, WaypointLogo } from '../../shared/ui';
 
 export const ForgotPasswordPage = () => {
   const [email, setEmail] = useState('');
@@ -105,6 +105,8 @@ export const ForgotPasswordPage = () => {
             {isSubmitting ? 'Generating link…' : 'Generate reset link'}
           </button>
         </form>
+
+        <SiteFooterLinks className="mt-6 flex flex-wrap items-center justify-center gap-4" />
       </motion.div>
     </div>
   );

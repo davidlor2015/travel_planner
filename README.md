@@ -320,6 +320,8 @@ TravelProfile -> MatchRequest -> Candidate Search -> Compatibility Scoring -> Ma
 - Results below the minimum threshold are discarded, and surviving matches are stored in `match_results`
 - `MatchingService._invalidate()` clears stale results when a profile is updated, a trip is updated, or a trip is deleted
 
+The matching feature is intentionally kept narrow. It is treated as a limited companion workflow rather than a core planning surface, and further expansion should be justified against core trip reliability first.
+
 ### Rate Limiting
 
 AI generation endpoints (`/v1/ai/plan`, `/v1/ai/plan-smart`) are rate-limited per client IP using `slowapi`. The limit is configured via the `AI_RATE_LIMIT` environment variable (default: `10/minute`). The `/v1/ai/apply` endpoint is intentionally not rate-limited because it is a cheap database write. Exceeded limits return `HTTP 429 Too Many Requests`.
@@ -982,9 +984,10 @@ pytest tests/ -v
 | Variable                      | Required | Description                                                         |
 | ----------------------------- | -------- | ------------------------------------------------------------------- |
 | `DATABASE_URL`                | Yes      | PostgreSQL connection string                                        |
-| `JWT_SECRET`                  | Yes      | Secret key for signing JWT tokens                                   |
+| `JWT_SECRET`                  | Yes      | Secret key for signing JWT tokens; must be configured and at least 32 characters |
 | `JWT_ALG`                     | Yes      | JWT algorithm (default: HS256)                                      |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Yes      | Token lifetime in minutes                                           |
+| `EMAIL_VERIFICATION_TOKEN_EXPIRE_HOURS` | No | Verification-link lifetime in hours (default: 48)                  |
 | `CORS_ORIGINS`                | No       | Comma-separated allowed origins (default: http://localhost:5173)    |
 | `OLLAMA_BASE_URL`             | Yes      | Ollama server URL                                                   |
 | `OLLAMA_MODEL`                | Yes      | Model name (default: qwen2.5:14b)                                   |

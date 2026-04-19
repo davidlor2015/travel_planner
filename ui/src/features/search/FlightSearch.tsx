@@ -283,6 +283,13 @@ export const FlightSearch = ({ token, onPlanTrip }: FlightSearchProps) => {
         <TestEnvBadge />
       </div>
 
+      <div className="rounded-2xl border border-amber/20 bg-amber/5 px-4 py-3 text-sm text-flint">
+        <p className="font-semibold text-espresso">Planning disclosure</p>
+        <p className="mt-1">
+          These results come from the Amadeus developer sandbox, so they are test data only. Waypoint does not currently rank or surface these results through affiliate placement.
+        </p>
+      </div>
+
       {/* ── Tab switcher ── */}
       <div className="flex gap-1 bg-parchment rounded-full p-1 w-fit">
         <button onClick={() => { setTab('search'); reset(); setHasSearched(false); }} className={tabCls('search')}>

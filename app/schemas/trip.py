@@ -4,7 +4,9 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, EmailStr, model_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, field_validator, model_validator
+
+from app.core.normalization import normalize_trip_destination
 
 
 class TripBase(BaseModel):
@@ -21,6 +23,13 @@ class TripBase(BaseModel):
     start_date: date
     end_date: date
     notes: Optional[str] = None
+
+    @field_validator("destination", mode="before")
+    @classmethod
+    def normalize_destination(cls, value: str) -> str:
+        if not isinstance(value, str):
+            raise TypeError("destination must be a string")
+        return normalize_trip_destination(value)
 
     @model_validator(mode="after")
     def validate_dates(self):
@@ -46,6 +55,13 @@ class TripUpdate(BaseModel):
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     notes: Optional[str] = None
+
+    @field_validator("destination", mode="before")
+    @classmethod
+    def normalize_destination(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        return normalize_trip_destination(value)
 
     @model_validator(mode="after")
     def validate_dates(self):

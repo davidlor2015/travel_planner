@@ -95,6 +95,13 @@ export const MatchingPage = ({ token, trips }: MatchingPageProps) => {
         </div>
       ) : null}
 
+      <div className="rounded-2xl border border-smoke bg-parchment/50 px-4 py-4 text-sm text-flint">
+        <p className="font-semibold text-espresso">Limited matching scope</p>
+        <p className="mt-1">
+          Companion matching is intentionally narrow right now. It uses destination overlap, date overlap, discoverability, and profile compatibility so the core trip workflow stays reliable while this feature remains stabilized.
+        </p>
+      </div>
+
       {editing ? (
         <TravelProfileForm
           token={token}

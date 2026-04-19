@@ -1592,6 +1592,9 @@ export const TripList = ({
                         <div className="rounded-2xl border border-smoke bg-parchment/50 px-4 py-3 text-sm text-flint">
                           Default production planning uses the live rule-based planner first. AI enhancement is optional and clearly labeled when used.
                         </div>
+                        <div className="rounded-2xl border border-amber/20 bg-amber/5 px-4 py-3 text-sm text-flint">
+                          AI-assisted itineraries and third-party travel data can be incomplete or outdated. Review availability, opening hours, routes, and prices before you book anything.
+                        </div>
                         <div className="rounded-2xl border border-clay/20 bg-clay/5 px-4 py-3 text-sm text-flint">
                           When you apply a draft here, it becomes the shared itinerary for this trip and updates what other members see.
                         </div>

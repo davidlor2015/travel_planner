@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { WaypointLogo } from '../../../shared/ui/WaypointLogo';
 import { motion, AnimatePresence } from 'framer-motion';
-import { login, register, type LoginResponse } from '../../../shared/api/auth';
+import { login, register, requestEmailVerification, type LoginResponse } from '../../../shared/api/auth';
 import { track } from '../../../shared/analytics';
+import { SiteFooterLinks } from '../../../shared/ui';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -60,6 +62,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading]           = useState(false);
   const [error, setError]                   = useState<string | null>(null);
+  const [verificationEmail, setVerificationEmail] = useState<string | null>(null);
+  const [verificationLink, setVerificationLink] = useState<string | null>(null);
 
   const isDisabled =
     isLoading || !email || !password || (mode === 'register' && !confirmPassword);
@@ -68,6 +72,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     setMode(next);
     setError(null);
     setConfirmPassword('');
+    setVerificationEmail(null);
+    setVerificationLink(null);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -83,17 +89,21 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     try {
       if (mode === 'register') {
         await register(email, password);
+        const verification = await requestEmailVerification(email);
+        setVerificationEmail(email);
+        setVerificationLink(verification.verification_url);
         track({ name: 'auth_signup_completed', props: { method: 'password' } });
+      } else {
+        const data = await login(email, password);
+        await onLoginSuccess(data);
+        track({
+          name: 'auth_login_completed',
+          props: {
+            method: 'password',
+            mode,
+          },
+        });
       }
-      const data = await login(email, password);
-      await onLoginSuccess(data);
-      track({
-        name: 'auth_login_completed',
-        props: {
-          method: 'password',
-          mode,
-        },
-      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
     } finally {
@@ -141,7 +151,36 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           </p>
         </div>
 
-        {/* Form */}
+        {verificationEmail ? (
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-olive/20 bg-olive/10 px-4 py-4">
+              <p className="text-sm font-semibold text-olive">Check your email to finish setup</p>
+              <p className="mt-2 text-sm text-flint">
+                We created a verification link for <span className="font-semibold text-espresso">{verificationEmail}</span>. Verify the address before signing in.
+              </p>
+              {verificationLink ? (
+                <div className="mt-3 space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-flint">Verification link</p>
+                  <div className="break-all rounded-xl border border-smoke bg-white px-3 py-2 text-sm text-flint">
+                    {verificationLink}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <Link to={`/verify-email/request?email=${encodeURIComponent(verificationEmail)}`} className="text-sm font-semibold text-amber hover:underline">
+                Send another verification link
+              </Link>
+              <button
+                type="button"
+                onClick={() => switchMode('login')}
+                className="rounded-full border border-smoke px-4 py-2 text-sm font-semibold text-espresso hover:border-clay hover:text-clay transition-colors"
+              >
+                Back to sign in
+              </button>
+            </div>
+          </div>
+        ) : (
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
 
           <Field
@@ -166,12 +205,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
           {mode === 'login' && forgotPasswordHref ? (
             <div className="-mt-1 text-right">
-              <a
-                href={forgotPasswordHref}
+              <Link
+                to={forgotPasswordHref}
                 className="text-xs font-semibold text-amber hover:underline"
               >
                 Forgot password?
-              </a>
+              </Link>
             </div>
           ) : null}
 
@@ -201,7 +240,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
           {/* Error banner */}
           <AnimatePresence>
-            {error && (
+          {error && (
               <motion.div
                 key="error"
                 initial={{ opacity: 0, y: -6 }}
@@ -212,6 +251,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 className="px-4 py-3 rounded-xl bg-danger/10 border border-danger/25 text-danger text-sm font-medium"
               >
                 {error}
+                {error === 'Email not verified' ? (
+                  <span className="mt-2 block">
+                    <Link to={`/verify-email/request?email=${encodeURIComponent(email)}`} className="font-semibold text-amber hover:underline">
+                      Resend verification link
+                    </Link>
+                  </span>
+                ) : null}
               </motion.div>
             )}
           </AnimatePresence>
@@ -259,6 +305,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           </p>
 
         </form>
+        )}
+
+        <SiteFooterLinks className="mt-6 flex flex-wrap items-center justify-center gap-4" />
       </motion.div>
     </div>
   );

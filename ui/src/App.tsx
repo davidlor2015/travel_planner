@@ -25,8 +25,13 @@ import { LandingPage } from './features/landing';
 import { LoginPage } from './features/auth/LoginPage';
 import { ForgotPasswordPage } from './features/auth/ForgotPasswordPage';
 import { ResetPasswordPage } from './features/auth/ResetPasswordPage';
+import { VerifyEmailPage } from './features/auth/VerifyEmailPage';
+import { VerifyEmailRequestPage } from './features/auth/VerifyEmailRequestPage';
 import { TripInvitePage } from './features/trips/TripInvitePage';
 import { AppShell, type AppView } from './app/AppShell';
+import { PrivacyPage } from './features/static/PrivacyPage';
+import { SupportPage } from './features/static/SupportPage';
+import { TermsPage } from './features/static/TermsPage';
 import { getMe, type LoginResponse, type UserProfile } from './shared/api/auth';
 import { getTrips, type Trip } from './shared/api/trips';
 import { identifyAnalyticsUser, resetAnalyticsUser, track } from './shared/analytics';
@@ -470,6 +475,11 @@ function AppRoutes() {
       />
       <Route path="/forgot-password" element={<PublicOnlyRoute><ForgotPasswordPage /></PublicOnlyRoute>} />
       <Route path="/reset-password" element={<PublicOnlyRoute><ResetPasswordPage /></PublicOnlyRoute>} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/verify-email/request" element={<VerifyEmailRequestPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/terms" element={<TermsPage />} />
+      <Route path="/support" element={<SupportPage />} />
       <Route path="/invites/:inviteToken" element={<TripInvitePage token={auth.token} user={auth.user} />} />
 
       <Route element={<RequireAuth />}>

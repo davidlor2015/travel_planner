@@ -1,6 +1,7 @@
 export interface SessionUser {
   email: string;
   id?: number;
+  email_verified?: boolean;
 }
 
 export interface SessionTokens {

@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { WaypointLogo } from '../../shared/ui/WaypointLogo';
+import { Link } from 'react-router-dom';
+import { SiteFooterLinks, WaypointLogo } from '../../shared/ui';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -110,6 +111,9 @@ export const AppShell = ({
 
         {/* User + Sign out */}
         <div className="flex items-center gap-4 flex-shrink-0">
+          <Link to="/support" className="hidden text-sm font-medium text-flint transition-colors duration-200 hover:text-espresso sm:inline">
+            Help
+          </Link>
           <span
             className="hidden sm:block text-sm text-muted font-normal truncate max-w-[180px]"
             title={userEmail}
@@ -134,6 +138,15 @@ export const AppShell = ({
     <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
       {children}
     </main>
+
+    <footer className="border-t border-smoke bg-white/70">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-5 sm:px-6">
+        <p className="text-xs text-muted">
+          Verify AI suggestions, bookings, and schedules before you spend money.
+        </p>
+        <SiteFooterLinks />
+      </div>
+    </footer>
 
   </div>
 );

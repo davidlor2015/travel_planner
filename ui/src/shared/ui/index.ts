@@ -3,5 +3,6 @@ export { Card } from './Card';
 export { ErrorBoundary } from './ErrorBoundary';
 export { FormField } from './FormField';
 export { inputCls } from './inputCls';
+export { SiteFooterLinks } from './SiteFooterLinks';
 export { WishlistButton } from './WishlistButton';
 export { WaypointLogo } from './WaypointLogo';

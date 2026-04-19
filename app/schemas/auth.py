@@ -23,12 +23,30 @@ class PasswordResetConfirmRequest(BaseModel):
     password: str
 
 
+class EmailVerificationRequest(BaseModel):
+    email: EmailStr
+
+
+class EmailVerificationConfirmRequest(BaseModel):
+    token: str
+
+
 class PasswordResetRequestResponse(BaseModel):
     ok: bool = True
     reset_url: str | None = None
 
 
+class EmailVerificationRequestResponse(BaseModel):
+    ok: bool = True
+    verification_url: str | None = None
+
+
 class PasswordResetTokenStatus(BaseModel):
+    valid: bool
+    email: EmailStr | None = None
+
+
+class EmailVerificationTokenStatus(BaseModel):
     valid: bool
     email: EmailStr | None = None
 

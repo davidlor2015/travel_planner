@@ -1,14 +1,26 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+_JWT_SECRET_PLACEHOLDERS = {
+    "change-me",
+    "changeme",
+    "replace-me",
+    "replace_this_in_production",
+    "secret",
+    "your-secret-here",
+}
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Waypoint API"
     DATABASE_URL: str = "postgresql+psycopg2://user:password@localhost:5432/travel_planner"
 
-    JWT_SECRET: str = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
+    JWT_SECRET: str
     JWT_ALG: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 14
     PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 60
+    EMAIL_VERIFICATION_TOKEN_EXPIRE_HOURS: int = 48
     TRIP_INVITE_EXPIRE_DAYS: int = 14
     APP_BASE_URL: str = "http://localhost:5173"
     EXPOSE_DEBUG_LINKS: bool = False
@@ -43,5 +55,15 @@ class Settings(BaseSettings):
         case_sensitive=True,
         extra="ignore",
     )
+
+    @field_validator("JWT_SECRET")
+    @classmethod
+    def validate_jwt_secret(cls, value: str) -> str:
+        secret = value.strip()
+        if len(secret) < 32:
+            raise ValueError("JWT_SECRET must be at least 32 characters long")
+        if secret.lower() in _JWT_SECRET_PLACEHOLDERS:
+            raise ValueError("JWT_SECRET must not use an insecure placeholder value")
+        return secret
 
 settings = Settings()
