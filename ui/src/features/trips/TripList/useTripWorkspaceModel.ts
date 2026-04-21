@@ -1389,6 +1389,7 @@ export function useTripWorkspaceModel({
       selectedIsAnyGenerating,
       selectedOnTripSnapshot,
       selectedIsOnTripCompactMode,
+      selectedOnTripCompactDismissed,
       actionInputs,
       actionItems,
       actionability,
@@ -1449,6 +1450,20 @@ export function useTripWorkspaceModel({
         setOnTripCompactDismissedByTripId((prev) => ({
           ...prev,
           [tripId]: true,
+        }));
+      },
+      restoreOnTripCompactMode: (tripId: number) => {
+        setOnTripCompactDismissedByTripId((prev) => {
+          if (!prev[tripId]) return prev;
+          const next = { ...prev };
+          delete next[tripId];
+          return next;
+        });
+      },
+      updateOnTripSnapshot: (tripId: number, snapshot: TripOnTripSnapshot) => {
+        setOnTripSnapshotByTripId((prev) => ({
+          ...prev,
+          [tripId]: snapshot,
         }));
       },
     },

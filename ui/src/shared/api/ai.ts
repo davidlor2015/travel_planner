@@ -5,6 +5,12 @@ import { apiFetch } from './client';
 export type ItineraryStopStatus = 'planned' | 'confirmed' | 'skipped';
 
 export interface ItineraryItem {
+  /**
+   * Persisted ItineraryEvent primary key. Present on items read from the saved
+   * itinerary, absent on AI-generated draft items. Used as the stable stop_ref
+   * when posting on-trip execution events. Do not forward to /ai/apply.
+   */
+  id?: number | null;
   time: string | null;
   title: string;
   location: string | null;

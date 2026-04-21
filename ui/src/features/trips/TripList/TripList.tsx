@@ -195,6 +195,7 @@ export const TripList = ({
     selectedIsAnyGenerating,
     selectedOnTripSnapshot,
     selectedIsOnTripCompactMode,
+    selectedOnTripCompactDismissed,
   } = model.derived;
 
   const {
@@ -252,6 +253,8 @@ export const TripList = ({
     handleEditSavedAsDraft,
     handleShareTrip,
     dismissOnTripCompactMode,
+    restoreOnTripCompactMode,
+    updateOnTripSnapshot,
   } = model.actions;
 
   const { isMobileLayout, confirmDelete, editingTrip } = model.ui;
@@ -301,14 +304,36 @@ export const TripList = ({
         {showWorkspace && selectedTrip && selectedTripStatus ? (
           selectedIsOnTripCompactMode && selectedOnTripSnapshot ? (
             <OnTripCompactMode
+              token={token}
               trip={selectedTrip}
               snapshot={selectedOnTripSnapshot}
+              onSnapshotRefresh={(snapshot) =>
+                updateOnTripSnapshot(selectedTrip.id, snapshot)
+              }
               onOpenFullWorkspace={() => {
                 dismissOnTripCompactMode(selectedTrip.id);
                 openWorkspaceTab("overview");
               }}
             />
           ) : (
+          <>
+            {selectedOnTripSnapshot?.mode === "active" &&
+            selectedOnTripCompactDismissed ? (
+              <div className="mb-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => restoreOnTripCompactMode(selectedTrip.id)}
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[#1C1108] bg-[#1C1108] px-3.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#2B1B0F]"
+                  aria-label="Return to On-Trip mode"
+                >
+                  <span
+                    aria-hidden
+                    className="h-1.5 w-1.5 rounded-full bg-[#F5C14D]"
+                  />
+                  Return to On-Trip
+                </button>
+              </div>
+            ) : null}
           <TripWorkspaceSection
             trip={selectedTrip}
             packingSummary={selectedPackingSummary}
@@ -623,6 +648,7 @@ export const TripList = ({
                   />
                 )}
           </TripWorkspaceSection>
+          </>
           )
         ) : null}
       </main>

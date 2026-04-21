@@ -16,10 +16,12 @@ from app.repositories.travel_profile_repository import TravelProfileRepository
 from app.repositories.user_repository import UserRepository
 from app.models.trip import Trip
 from app.models.trip_membership import TripMembership, TripMemberState
+from app.repositories.trip_execution_repository import TripExecutionRepository
 from app.schemas.trip import (
     TripOnTripBlockerResponse,
     TripOnTripSnapshotResponse,
     TripOnTripStopSnapshotResponse,
+    TripOnTripUnplannedStopResponse,
     TripCreate,
     TripInviteAcceptResponse,
     TripInviteCreateRequest,
@@ -47,6 +49,7 @@ class TripService:
         self.membership_repo = TripMembershipRepository(db)
         self.user_repo = UserRepository(db)
         self.profile_repo = TravelProfileRepository(db)
+        self.execution_repo = TripExecutionRepository(db)
         self.matching_service = MatchingService(db)
         self.access_service = TripAccessService(db)
 
@@ -267,6 +270,31 @@ class TripService:
             source_label="Saved itinerary",
             fallback_used=False,
         )
+
+        # Execution log is read separately and overlaid onto the plan at response time.
+        # The plan is never mutated here.
+        execution_statuses = self.execution_repo.latest_stop_statuses(trip_id)
+        unplanned_events = (
+            self.execution_repo.unplanned_stops_for_date(trip_id, today) if is_active else []
+        )
+        member_email_by_user_id: dict[int, str] = {
+            membership.user_id: membership.user.email
+            for membership in trip.memberships
+            if membership.user is not None
+        }
+        today_unplanned = [
+            TripOnTripUnplannedStopResponse(
+                event_id=event.id,
+                day_date=event.day_date,
+                time=event.time,
+                title=event.title or "",
+                location=event.location,
+                notes=event.notes,
+                created_by_email=member_email_by_user_id.get(event.created_by_user_id),
+            )
+            for event in unplanned_events
+        ]
+
         if itinerary is None:
             return TripOnTripSnapshotResponse(
                 generated_at=datetime.now(timezone.utc),
@@ -274,6 +302,8 @@ class TripService:
                 read_only=True,
                 today=self._empty_on_trip_stop(),
                 next_stop=self._empty_on_trip_stop(),
+                today_stops=[],
+                today_unplanned=today_unplanned,
                 blockers=self._build_on_trip_blockers(
                     itinerary=None,
                     today_day=None,
@@ -301,6 +331,13 @@ class TripService:
             itinerary=itinerary,
             today_day_index=today_day_resolution.get("day_index"),
         )
+        today_stops = self._build_today_stops(
+            itinerary=itinerary,
+            day_index=today_day_resolution.get("day_index"),
+            source=today_day_resolution["source"],
+            confidence=today_day_resolution["confidence"],
+            execution_statuses=execution_statuses,
+        )
         blockers = self._build_on_trip_blockers(
             itinerary=itinerary,
             today_day=today_day_resolution,
@@ -311,32 +348,77 @@ class TripService:
             is_active=is_active,
         )
 
+        today_single = self._to_stop_response(today_stop_resolution, execution_statuses)
+        next_single = self._to_stop_response(next_stop_resolution, execution_statuses)
+
         return TripOnTripSnapshotResponse(
             generated_at=datetime.now(timezone.utc),
             mode="active" if is_active else "inactive",
             read_only=True,
-            today=TripOnTripStopSnapshotResponse(
-                day_number=today_stop_resolution.get("day_number"),
-                day_date=today_stop_resolution.get("day_date"),
-                title=today_stop_resolution.get("title"),
-                time=today_stop_resolution.get("time"),
-                location=today_stop_resolution.get("location"),
-                status=today_stop_resolution.get("status"),
-                source=today_stop_resolution["source"],
-                confidence=today_stop_resolution["confidence"],
-            ),
-            next_stop=TripOnTripStopSnapshotResponse(
-                day_number=next_stop_resolution.get("day_number"),
-                day_date=next_stop_resolution.get("day_date"),
-                title=next_stop_resolution.get("title"),
-                time=next_stop_resolution.get("time"),
-                location=next_stop_resolution.get("location"),
-                status=next_stop_resolution.get("status"),
-                source=next_stop_resolution["source"],
-                confidence=next_stop_resolution["confidence"],
-            ),
+            today=today_single,
+            next_stop=next_single,
+            today_stops=today_stops,
+            today_unplanned=today_unplanned,
             blockers=blockers,
         )
+
+    def _to_stop_response(
+        self,
+        resolution: dict[str, Any],
+        execution_statuses: dict[str, str],
+    ) -> TripOnTripStopSnapshotResponse:
+        stop_ref = resolution.get("stop_ref")
+        execution_status = execution_statuses.get(stop_ref) if stop_ref else None
+        return TripOnTripStopSnapshotResponse(
+            day_number=resolution.get("day_number"),
+            day_date=resolution.get("day_date"),
+            title=resolution.get("title"),
+            time=resolution.get("time"),
+            location=resolution.get("location"),
+            status=resolution.get("status"),
+            source=resolution["source"],
+            confidence=resolution["confidence"],
+            stop_ref=stop_ref,
+            execution_status=execution_status,
+        )
+
+    def _build_today_stops(
+        self,
+        itinerary: ItineraryResponse,
+        day_index: int | None,
+        source: str,
+        confidence: str,
+        execution_statuses: dict[str, str],
+    ) -> list[TripOnTripStopSnapshotResponse]:
+        if day_index is None or day_index < 0 or day_index >= len(itinerary.days):
+            return []
+        day = itinerary.days[day_index]
+        parsed_day_date = self._parse_itinerary_day_date(day.date)
+        rows: list[TripOnTripStopSnapshotResponse] = []
+        for item in day.items:
+            stop_ref = str(item.id) if item.id is not None else None
+            execution_status = execution_statuses.get(stop_ref) if stop_ref else None
+            rows.append(
+                TripOnTripStopSnapshotResponse(
+                    day_number=day.day_number,
+                    day_date=parsed_day_date,
+                    title=item.title,
+                    time=item.time,
+                    location=item.location,
+                    status=item.status,
+                    source=source,
+                    confidence=confidence,
+                    stop_ref=stop_ref,
+                    execution_status=execution_status,
+                )
+            )
+        rows.sort(
+            key=lambda row: (
+                self._parse_time_minutes(row.time) is None,
+                self._parse_time_minutes(row.time) or 0,
+            )
+        )
+        return rows
 
     def _empty_on_trip_stop(self) -> TripOnTripStopSnapshotResponse:
         return TripOnTripStopSnapshotResponse(
@@ -443,6 +525,7 @@ class TripService:
                 "status": None,
                 "source": source,
                 "confidence": confidence,
+                "stop_ref": None,
             }
 
         day = itinerary.days[day_index]
@@ -462,6 +545,7 @@ class TripService:
                 "status": None,
                 "source": source,
                 "confidence": confidence,
+                "stop_ref": None,
             }
 
         now = datetime.now()
@@ -492,6 +576,7 @@ class TripService:
             "status": selected_item.status,
             "source": source,
             "confidence": confidence,
+            "stop_ref": str(selected_item.id) if selected_item.id is not None else None,
         }
 
     def _pick_next_stop(
@@ -521,6 +606,7 @@ class TripService:
                     "status": item.status,
                     "source": source,
                     "confidence": confidence,
+                    "stop_ref": str(item.id) if item.id is not None else None,
                 }
         return {
             "day_number": None,
@@ -531,6 +617,7 @@ class TripService:
             "status": None,
             "source": "none",
             "confidence": "low",
+            "stop_ref": None,
         }
 
     def _build_on_trip_blockers(

@@ -189,6 +189,9 @@ OnTripResolutionConfidence = Literal["high", "medium", "low"]
 OnTripBlockerSeverity = Literal["blocker", "watch"]
 
 
+ExecutionStatus = Literal["planned", "confirmed", "skipped"]
+
+
 class TripOnTripStopSnapshotResponse(BaseModel):
     day_number: int | None = None
     day_date: date | None = None
@@ -198,6 +201,18 @@ class TripOnTripStopSnapshotResponse(BaseModel):
     status: Literal["planned", "confirmed", "skipped"] | None = None
     source: OnTripResolutionSource
     confidence: OnTripResolutionConfidence
+    stop_ref: str | None = None
+    execution_status: ExecutionStatus | None = None
+
+
+class TripOnTripUnplannedStopResponse(BaseModel):
+    event_id: int
+    day_date: date
+    time: str | None = None
+    title: str
+    location: str | None = None
+    notes: str | None = None
+    created_by_email: EmailStr | None = None
 
 
 class TripOnTripBlockerResponse(BaseModel):
@@ -215,4 +230,43 @@ class TripOnTripSnapshotResponse(BaseModel):
     read_only: bool = True
     today: TripOnTripStopSnapshotResponse
     next_stop: TripOnTripStopSnapshotResponse
+    today_stops: list[TripOnTripStopSnapshotResponse] = []
+    today_unplanned: list[TripOnTripUnplannedStopResponse] = []
     blockers: list[TripOnTripBlockerResponse]
+
+
+class TripStopStatusUpdateRequest(BaseModel):
+    stop_ref: str
+    status: ExecutionStatus
+
+
+class TripUnplannedStopRequest(BaseModel):
+    day_date: date
+    title: str
+    time: str | None = None
+    location: str | None = None
+    notes: str | None = None
+
+    @field_validator("title")
+    @classmethod
+    def title_not_blank(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("title must not be blank")
+        return cleaned
+
+
+class TripExecutionEventResponse(BaseModel):
+    id: int
+    kind: Literal["stop_status", "unplanned_stop"]
+    stop_ref: str | None = None
+    status: ExecutionStatus | None = None
+    day_date: date | None = None
+    time: str | None = None
+    title: str | None = None
+    location: str | None = None
+    notes: str | None = None
+    created_by_user_id: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)

@@ -140,6 +140,7 @@ class ItineraryRepository:
             for event in day.events:
                 items.append(
                     ItineraryItem(
+                        id=event.id,
                         time=event.time,
                         title=event.title,
                         location=event.location,

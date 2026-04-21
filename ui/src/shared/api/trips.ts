@@ -125,6 +125,8 @@ export type TripOnTripResolutionSource =
 
 export type TripOnTripResolutionConfidence = "high" | "medium" | "low";
 
+export type TripExecutionStatus = "planned" | "confirmed" | "skipped";
+
 export interface TripOnTripStopSnapshot {
   day_number: number | null;
   day_date: string | null;
@@ -134,6 +136,18 @@ export interface TripOnTripStopSnapshot {
   status: "planned" | "confirmed" | "skipped" | null;
   source: TripOnTripResolutionSource;
   confidence: TripOnTripResolutionConfidence;
+  stop_ref: string | null;
+  execution_status: TripExecutionStatus | null;
+}
+
+export interface TripOnTripUnplannedStop {
+  event_id: number;
+  day_date: string;
+  time: string | null;
+  title: string;
+  location: string | null;
+  notes: string | null;
+  created_by_email: string | null;
 }
 
 export interface TripOnTripBlocker {
@@ -151,7 +165,31 @@ export interface TripOnTripSnapshot {
   read_only: boolean;
   today: TripOnTripStopSnapshot;
   next_stop: TripOnTripStopSnapshot;
+  today_stops: TripOnTripStopSnapshot[];
+  today_unplanned: TripOnTripUnplannedStop[];
   blockers: TripOnTripBlocker[];
+}
+
+export interface TripExecutionEvent {
+  id: number;
+  kind: "stop_status" | "unplanned_stop";
+  stop_ref: string | null;
+  status: TripExecutionStatus | null;
+  day_date: string | null;
+  time: string | null;
+  title: string | null;
+  location: string | null;
+  notes: string | null;
+  created_by_user_id: number;
+  created_at: string;
+}
+
+export interface UnplannedStopPayload {
+  day_date: string;
+  title: string;
+  time?: string | null;
+  location?: string | null;
+  notes?: string | null;
 }
 
 export const getTrips = async (token?: string): Promise<Trip[]> => {
@@ -319,4 +357,60 @@ export const acceptTripInvite = async (
   }
 
   return response.json();
+};
+
+export const postStopStatus = async (
+  token: string,
+  tripId: number,
+  payload: { stop_ref: string; status: TripExecutionStatus },
+): Promise<TripExecutionEvent> => {
+  const response = await apiFetch(`${API_URL}/v1/trips/${tripId}/execution/stop-status`, {
+    method: 'POST',
+    token,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to update stop status (${response.status}): ${text}`);
+  }
+
+  return response.json();
+};
+
+export const postUnplannedStop = async (
+  token: string,
+  tripId: number,
+  payload: UnplannedStopPayload,
+): Promise<TripExecutionEvent> => {
+  const response = await apiFetch(`${API_URL}/v1/trips/${tripId}/execution/unplanned-stop`, {
+    method: 'POST',
+    token,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to log stop (${response.status}): ${text}`);
+  }
+
+  return response.json();
+};
+
+export const deleteExecutionEvent = async (
+  token: string,
+  tripId: number,
+  eventId: number,
+): Promise<void> => {
+  const response = await apiFetch(
+    `${API_URL}/v1/trips/${tripId}/execution/events/${eventId}`,
+    { method: 'DELETE', token },
+  );
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to delete event (${response.status}): ${text}`);
+  }
 };

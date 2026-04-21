@@ -9,6 +9,14 @@ DayAnchorType = Literal["flight", "hotel_checkin"]
 class ItineraryItem(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
+    id: Optional[int] = Field(
+        None,
+        description=(
+            "Persisted ItineraryEvent primary key. Populated when the item is read "
+            "from the saved itinerary; absent on AI-generated items. Used as the "
+            "stable stop_ref for execution events."
+        ),
+    )
     time: Optional[str] = Field(None, description="Approximate time, e.g., '09:00AM' or 'Morning'")
     title: str = Field(..., description="Name of the activity")
     location: Optional[str] = None
