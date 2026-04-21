@@ -1,17 +1,6 @@
 import type { MatchResult, TravelProfile } from '../../shared/api/matching';
 
-interface CompletenessCheck {
-  done: boolean;
-  label: string;
-}
 
-export interface ProfileCompleteness {
-  score: number;
-  completed: number;
-  total: number;
-  checks: CompletenessCheck[];
-  prompts: string[];
-}
 
 export interface MatchInsight {
   title: string;
@@ -34,37 +23,52 @@ export function formatMatchingLabel(value: string): string {
     .join(' ');
 }
 
-export function getProfileCompleteness(profile: TravelProfile): ProfileCompleteness {
-  const checks: CompletenessCheck[] = [
-    { done: Boolean(profile.travel_style), label: 'Travel style selected' },
-    { done: Boolean(profile.budget_range), label: 'Budget range selected' },
-    { done: profile.interests.length >= 3, label: 'At least 3 interests added' },
-    { done: profile.group_size_min >= 1, label: 'Minimum group size set' },
-    { done: profile.group_size_max >= profile.group_size_min, label: 'Valid group size range' },
-    { done: profile.is_discoverable, label: 'Discoverable for matching' },
+export interface ProfileCompleteness {
+  score: number;
+  completed: number;
+  total: number;
+  checks: { label: string; done: boolean }[];
+  prompts: string[];
+}
+
+export function buildProfileCompleteness(
+  input: Pick<
+    TravelProfile,
+    'travel_style' | 'budget_range' | 'interests' | 'group_size_min' | 'group_size_max' | 'is_discoverable'
+  >,
+): ProfileCompleteness {
+  const groupOk =
+    input.group_size_min >= 1 &&
+    input.group_size_max >= 1 &&
+    input.group_size_min <= input.group_size_max;
+  const interestsOk = input.interests.length >= 2;
+
+  const checks: { label: string; done: boolean }[] = [
+    { label: 'Travel style', done: Boolean(input.travel_style) },
+    { label: 'Budget band', done: Boolean(input.budget_range) },
+    { label: 'Two or more interests', done: interestsOk },
+    { label: 'Group size (min ≤ max)', done: groupOk },
   ];
 
-  const completed = checks.filter((check) => check.done).length;
+  const completed = checks.filter((c) => c.done).length;
+  const total = checks.length;
+  const score = total === 0 ? 0 : Math.round((completed / total) * 100);
+
   const prompts: string[] = [];
+  if (!interestsOk) {
+    prompts.push('Add at least two interests so matches see how you like to spend trip time.');
+  }
+  if (!groupOk) {
+    prompts.push('Set group size so the maximum is at least the minimum.');
+  }
+  if (!input.is_discoverable) {
+    prompts.push('You are hidden from discovery—turn discoverability on when you want inbound matches.');
+  }
 
-  if (profile.interests.length < 3) {
-    prompts.push(`Add ${3 - profile.interests.length} more interest${profile.interests.length === 2 ? '' : 's'} so we can explain overlap more clearly.`);
-  }
-  if (!profile.is_discoverable) {
-    prompts.push('Turn discoverability on so other travellers can actually find your trips.');
-  }
-  if (profile.group_size_max - profile.group_size_min < 1) {
-    prompts.push('Widen your preferred group size a little to surface more compatible travellers.');
-  }
-
-  return {
-    score: Math.round((completed / checks.length) * 100),
-    completed,
-    total: checks.length,
-    checks,
-    prompts,
-  };
+  return { score, completed, total, checks, prompts };
 }
+
+
 
 export function buildMatchNarrative(result: MatchResult): MatchNarrative {
   const strengths: MatchInsight[] = [];

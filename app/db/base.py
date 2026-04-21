@@ -7,8 +7,10 @@ from app.models.match_request import MatchRequest, MatchRequestStatus  # noqa: F
 from app.models.match_result import MatchResult  # noqa: F401
 from app.models.match_interaction import MatchInteraction, MatchInteractionStatus  # noqa: F401
 from app.models.travel_profile import BudgetRange, TravelProfile, TravelStyle  # noqa: F401
+from app.models.trip_membership import TripMemberState, TripMembership  # noqa: F401
 from app.models.packing_item import PackingItem  # noqa: F401
 from app.models.budget_expense import BudgetExpense  # noqa: F401
 from app.models.reservation import Reservation  # noqa: F401
 from app.models.prep_item import PrepItem  # noqa: F401
 from app.models.explore_destination import ExploreDestination  # noqa: F401
+from app.models.trip_invite import TripInvite  # noqa: F401

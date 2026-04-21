@@ -1,4 +1,5 @@
 import { API_URL } from '../../app/config';
+import { apiFetch } from './client';
 
 export interface BudgetExpense {
   id: number;
@@ -16,21 +17,17 @@ export interface BudgetData {
 
 const base = (tripId: number) => `${API_URL}/v1/trips/${tripId}/budget`;
 
-const authHeaders = (token: string) => ({
-  Authorization: `Bearer ${token}`,
-  'Content-Type': 'application/json',
-});
-
 export async function getBudget(token: string, tripId: number): Promise<BudgetData> {
-  const res = await fetch(`${base(tripId)}/`, { headers: authHeaders(token) });
+  const res = await apiFetch(`${base(tripId)}/`, { token, headers: { 'Content-Type': 'application/json' } });
   if (!res.ok) throw new Error(`Failed to load budget (${res.status})`);
   return res.json();
 }
 
 export async function updateBudgetLimit(token: string, tripId: number, limit: number | null): Promise<BudgetData> {
-  const res = await fetch(`${base(tripId)}/limit`, {
+  const res = await apiFetch(`${base(tripId)}/limit`, {
     method: 'PATCH',
-    headers: authHeaders(token),
+    token,
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ limit }),
   });
   if (!res.ok) throw new Error(`Failed to update budget limit (${res.status})`);
@@ -42,34 +39,21 @@ export async function createExpense(
   tripId: number,
   expense: { label: string; amount: number; category: string },
 ): Promise<BudgetExpense> {
-  const res = await fetch(`${base(tripId)}/expenses`, {
+  const res = await apiFetch(`${base(tripId)}/expenses`, {
     method: 'POST',
-    headers: authHeaders(token),
+    token,
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(expense),
   });
   if (!res.ok) throw new Error(`Failed to add expense (${res.status})`);
   return res.json();
 }
 
-export async function updateExpense(
-  token: string,
-  tripId: number,
-  expenseId: number,
-  patch: { label?: string; amount?: number; category?: string },
-): Promise<BudgetExpense> {
-  const res = await fetch(`${base(tripId)}/expenses/${expenseId}`, {
-    method: 'PATCH',
-    headers: authHeaders(token),
-    body: JSON.stringify(patch),
-  });
-  if (!res.ok) throw new Error(`Failed to update expense (${res.status})`);
-  return res.json();
-}
-
 export async function deleteExpense(token: string, tripId: number, expenseId: number): Promise<void> {
-  const res = await fetch(`${base(tripId)}/expenses/${expenseId}`, {
+  const res = await apiFetch(`${base(tripId)}/expenses/${expenseId}`, {
     method: 'DELETE',
-    headers: authHeaders(token),
+    token,
+    headers: { 'Content-Type': 'application/json' },
   });
   if (!res.ok) throw new Error(`Failed to delete expense (${res.status})`);
 }

@@ -12,8 +12,8 @@ class PackingItem(Base):
     __tablename__ = "packing_items"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    trip_id: Mapped[int] = mapped_column(
-        ForeignKey("trips.id", ondelete="CASCADE"), nullable=False, index=True
+    member_state_id: Mapped[int] = mapped_column(
+        ForeignKey("trip_member_states.id", ondelete="CASCADE"), nullable=False, index=True
     )
     label: Mapped[str] = mapped_column(String(255), nullable=False)
     checked: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
@@ -21,4 +21,10 @@ class PackingItem(Base):
         DateTime(timezone=True), server_default=func.now()
     )
 
-    trip: Mapped["Trip"] = relationship("Trip", back_populates="packing_items")
+    member_state: Mapped["TripMemberState"] = relationship(
+        "TripMemberState", back_populates="packing_items"
+    )
+
+    @property
+    def trip_id(self) -> int:
+        return self.member_state.trip_id

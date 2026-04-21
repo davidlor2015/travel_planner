@@ -182,7 +182,7 @@ class MatchingService:
         return result
 
     def open_request(self, user_id: int, trip_id: int) -> dict[str, object]:
-        trip = self.trip_repo.get_by_id_and_user(trip_id, user_id)
+        trip = self.trip_repo.get_by_id_and_owner(trip_id, user_id)
         if not trip:
             raise HTTPException(status_code=404, detail="Trip not found")
 

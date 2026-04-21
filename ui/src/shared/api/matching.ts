@@ -1,4 +1,5 @@
 import { API_URL } from '../../app/config';
+import { apiFetch } from './client';
 
 
 export type TravelStyle = 'adventure' | 'relaxed' | 'cultural' | 'party';
@@ -85,11 +86,9 @@ export const getProfile = async (token: string): Promise<TravelProfile | null> =
         throw new Error("No access token provided");
     }
 
-    const response = await fetch(`${API_URL}/v1/matching/profile`, {
+    const response = await apiFetch(`${API_URL}/v1/matching/profile`, {
         method: 'GET',
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
+        token,
     });
 
     if (response.status === 404) {
@@ -112,11 +111,11 @@ export const upsertProfile = async (
         throw new Error("No access token provided");
     }
 
-    const response = await fetch(`${API_URL}/v1/matching/profile`, {
+    const response = await apiFetch(`${API_URL}/v1/matching/profile`, {
         method: 'POST',
+        token,
         headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(data),
     });
@@ -134,11 +133,9 @@ export const getRequests = async (token: string): Promise<MatchRequest[]> => {
         throw new Error("No access token provided");
     }
 
-    const response = await fetch(`${API_URL}/v1/matching/requests`, {
+    const response = await apiFetch(`${API_URL}/v1/matching/requests`, {
         method: 'GET',
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
+        token,
     });
 
     if (!response.ok) {
@@ -154,11 +151,11 @@ export const openRequest = async (token: string, tripId: number): Promise<OpenRe
         throw new Error("No access token provided");
     }
 
-    const response = await fetch(`${API_URL}/v1/matching/requests`, {
+    const response = await apiFetch(`${API_URL}/v1/matching/requests`, {
         method: 'POST',
+        token,
         headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ trip_id: tripId }),
     });
@@ -176,11 +173,9 @@ export const closeRequest = async (token: string, requestId: number): Promise<vo
         throw new Error("No access token provided");
     }
 
-    const response = await fetch(`${API_URL}/v1/matching/requests/${requestId}`, {
+    const response = await apiFetch(`${API_URL}/v1/matching/requests/${requestId}`, {
         method: 'DELETE',
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
+        token,
     });
 
     if (!response.ok) {
@@ -194,11 +189,9 @@ export const getMatches = async (token: string, requestId: number): Promise<Matc
         throw new Error("No access token provided");
     }
 
-    const response = await fetch(`${API_URL}/v1/matching/requests/${requestId}/matches`, {
+    const response = await apiFetch(`${API_URL}/v1/matching/requests/${requestId}/matches`, {
         method: 'GET',
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
+        token,
     });
 
     if (!response.ok) {
@@ -219,11 +212,11 @@ export const updateMatchInteraction = async (
         throw new Error("No access token provided");
     }
 
-    const response = await fetch(`${API_URL}/v1/matching/requests/${requestId}/matches/${matchResultId}/interaction`, {
+    const response = await apiFetch(`${API_URL}/v1/matching/requests/${requestId}/matches/${matchResultId}/interaction`, {
         method: 'PUT',
+        token,
         headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(data),
     });

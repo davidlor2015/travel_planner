@@ -1,10 +1,14 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vitest/config'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  test: {
+    environment: "node",
+    include: ["src/**/*.test.ts"],
+  },
   build: {
     chunkSizeWarningLimit: 350,
     rollupOptions: {
@@ -13,7 +17,6 @@ export default defineConfig({
           react: ['react', 'react-dom'],
           motion: ['framer-motion'],
           maps: ['leaflet', 'react-leaflet'],
-          charts: ['recharts'],
         },
       },
     },

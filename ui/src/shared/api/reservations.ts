@@ -1,4 +1,5 @@
 import { API_URL } from '../../app/config';
+import { apiFetch } from './client';
 
 export type ReservationType =
   | 'flight'
@@ -50,8 +51,8 @@ async function parseResponse<T>(response: Response, fallback: string): Promise<T
 }
 
 export const getReservations = async (token: string, tripId: number): Promise<Reservation[]> => {
-  const response = await fetch(`${API_URL}/v1/trips/${tripId}/reservations/`, {
-    headers: { Authorization: `Bearer ${token}` },
+  const response = await apiFetch(`${API_URL}/v1/trips/${tripId}/reservations/`, {
+    token,
   });
   return parseResponse<Reservation[]>(response, 'Failed to fetch reservations');
 };
@@ -61,11 +62,11 @@ export const createReservation = async (
   tripId: number,
   payload: ReservationPayload,
 ): Promise<Reservation> => {
-  const response = await fetch(`${API_URL}/v1/trips/${tripId}/reservations/`, {
+  const response = await apiFetch(`${API_URL}/v1/trips/${tripId}/reservations/`, {
     method: 'POST',
+    token,
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(payload),
   });
@@ -78,11 +79,11 @@ export const updateReservation = async (
   reservationId: number,
   payload: Partial<ReservationPayload>,
 ): Promise<Reservation> => {
-  const response = await fetch(`${API_URL}/v1/trips/${tripId}/reservations/${reservationId}`, {
+  const response = await apiFetch(`${API_URL}/v1/trips/${tripId}/reservations/${reservationId}`, {
     method: 'PATCH',
+    token,
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(payload),
   });
@@ -94,9 +95,9 @@ export const deleteReservation = async (
   tripId: number,
   reservationId: number,
 ): Promise<void> => {
-  const response = await fetch(`${API_URL}/v1/trips/${tripId}/reservations/${reservationId}`, {
+  const response = await apiFetch(`${API_URL}/v1/trips/${tripId}/reservations/${reservationId}`, {
     method: 'DELETE',
-    headers: { Authorization: `Bearer ${token}` },
+    token,
   });
   if (!response.ok) {
     const text = await response.text();

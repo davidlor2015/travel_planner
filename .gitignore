@@ -16,3 +16,8 @@ dev.log
 ui/playwright-report/
 ui/test-results/
 data/generated_itineraries.json
+V1_SCOPE.md
+UI_DIRECTION.md
+
+.vscode/*
+=0.8.0

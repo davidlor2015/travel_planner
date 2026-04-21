@@ -3,11 +3,11 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import jwt, JWTError
+from jose import JWTError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
+from app.core import security
 from app.db.session import get_db
 from app.models.user import User
 
@@ -35,7 +35,7 @@ def get_current_user(token: TokenDep, db: SessionDep) -> User:
 
     # 1) Decode the token (this verifies signature and checks 'exp' automatically)
     try:
-        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALG])
+        payload = security.decode_token(token, expected_type="access")
         email: str | None = payload.get("sub") 
         if email is None:
             raise credentials_exception
@@ -43,9 +43,14 @@ def get_current_user(token: TokenDep, db: SessionDep) -> User:
         raise credentials_exception
 
     # 2) Look up the user
-    user = db.scalar(select(User).where(User.email == email))
+    user = db.scalar(select(User).where(User.email == email.lower()))
     if user is None:
         raise credentials_exception
+    if not user.email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Email not verified",
+        )
 
     return user
 

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Integer, Boolean
+from sqlalchemy import String, Integer, Boolean, DateTime
 from app.db.base_class import Base
 
 class User(Base):
@@ -11,11 +13,29 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    email_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     trips: Mapped[list["Trip"]] = relationship(
         "Trip",
         back_populates="owner",
         cascade="all, delete-orphan",
+    )
+    trip_memberships: Mapped[list["TripMembership"]] = relationship(
+        "TripMembership",
+        foreign_keys="TripMembership.user_id",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    trip_invites_sent: Mapped[list["TripInvite"]] = relationship(
+        "TripInvite",
+        foreign_keys="TripInvite.invited_by_user_id",
+        back_populates="invited_by",
+    )
+    trip_invites_accepted: Mapped[list["TripInvite"]] = relationship(
+        "TripInvite",
+        foreign_keys="TripInvite.accepted_by_user_id",
+        back_populates="accepted_by",
     )
     sent_match_requests: Mapped[list["MatchRequest"]] = relationship(
         "MatchRequest",

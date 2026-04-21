@@ -3,9 +3,10 @@ from datetime import date, datetime, timezone
 from app.models.packing_item import PackingItem
 from app.models.reservation import Reservation
 from app.models.trip import Trip
+from app.models.trip_membership import TripMemberState, TripMembership
 
 
-def _create_trip(db, user_id: int, destination: str = "Tokyo, Japan") -> Trip:
+def _create_trip(db, user_id: int, attach_trip_membership, destination: str = "Tokyo, Japan") -> Trip:
     trip = Trip(
         user_id=user_id,
         title="Tokyo Spring",
@@ -18,11 +19,12 @@ def _create_trip(db, user_id: int, destination: str = "Tokyo, Japan") -> Trip:
     db.add(trip)
     db.commit()
     db.refresh(trip)
+    attach_trip_membership(trip, user_id)
     return trip
 
 
-def test_packing_suggestions_use_destination_and_reservations(client, db, user_a, auth_headers_user_a):
-    trip = _create_trip(db, user_a.id)
+def test_packing_suggestions_use_destination_and_reservations(client, db, user_a, auth_headers_user_a, attach_trip_membership):
+    trip = _create_trip(db, user_a.id, attach_trip_membership)
     db.add(
         Reservation(
             trip_id=trip.id,
@@ -40,9 +42,15 @@ def test_packing_suggestions_use_destination_and_reservations(client, db, user_a
     assert "Travel adapter" in labels
 
 
-def test_packing_suggestions_filter_existing_items(client, db, user_a, auth_headers_user_a):
-    trip = _create_trip(db, user_a.id)
-    db.add(PackingItem(trip_id=trip.id, label="Passport"))
+def test_packing_suggestions_filter_existing_items(client, db, user_a, auth_headers_user_a, attach_trip_membership):
+    trip = _create_trip(db, user_a.id, attach_trip_membership)
+    state = (
+        db.query(TripMemberState)
+        .join(TripMembership, TripMembership.id == TripMemberState.membership_id)
+        .filter(TripMembership.trip_id == trip.id, TripMembership.user_id == user_a.id)
+        .one()
+    )
+    db.add(PackingItem(member_state_id=state.id, label="Passport"))
     db.add(
         Reservation(
             trip_id=trip.id,

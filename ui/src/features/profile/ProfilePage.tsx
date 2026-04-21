@@ -1,9 +1,6 @@
 import { motion } from 'framer-motion';
 import type { Trip } from '../../shared/api/trips';
 import { useProfileStats, type JourneyEntry, type TravelStats } from './useProfileStats';
-import { BadgeCollection } from './badges/BadgeCollection';
-
-
 
 interface ProfilePageProps {
   trips: Trip[];
@@ -137,7 +134,7 @@ const JourneyCard = ({ trip }: { trip: JourneyEntry }) => (
         <p className="text-sm font-bold text-espresso truncate">{trip.title}</p>
         <p className="text-xs text-flint mt-0.5">{trip.destination}</p>
       </div>
-      <span className={`px-2.5 py-1 rounded-full border text-[11px] font-semibold whitespace-nowrap ${statusStyles[trip.status]}`}>
+      <span className={`px-2.5 py-1 rounded-full border text-xs font-semibold whitespace-nowrap ${statusStyles[trip.status]}`}>
         {statusLabel[trip.status]}
       </span>
     </div>
@@ -161,9 +158,44 @@ const JourneyCard = ({ trip }: { trip: JourneyEntry }) => (
 
 
 export const ProfilePage = ({ trips, userEmail }: ProfilePageProps) => {
-  const { stats, title, nextBadge, recentTrips } = useProfileStats(trips);
+  const { stats, badges, title, nextBadge, recentTrips } = useProfileStats(trips);
 
   const initial = userEmail[0].toUpperCase();
+
+  if (trips.length === 0) {
+    return (
+      <div className="space-y-8">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+          className="flex flex-col sm:flex-row items-center sm:items-end gap-5"
+        >
+          <motion.div
+            variants={itemVariants}
+            className="w-14 h-14 rounded-full bg-espresso flex items-center justify-center shadow-sm flex-shrink-0"
+          >
+            <span className="text-xl font-extrabold text-ivory select-none">{initial}</span>
+          </motion.div>
+
+          <motion.div variants={itemVariants} className="text-center sm:text-left">
+            <h2 className="text-xl sm:text-2xl font-bold text-espresso leading-tight">{userEmail}</h2>
+            <p className="text-sm font-semibold text-amber mt-0.5">{title}</p>
+            <p className="text-xs text-flint mt-1">
+              Your travel stats and badges will start filling in after your first trip.
+            </p>
+          </motion.div>
+        </motion.div>
+
+        <div className="flex flex-col items-center justify-center gap-3 py-16 border-2 border-dashed border-smoke rounded-2xl text-center bg-white">
+          <h3 className="text-lg font-bold text-espresso">No adventures yet</h3>
+          <p className="max-w-xl text-sm text-flint">
+            Create your first trip to start building a journey log, earning badges, and seeing stats that actually reflect your travel plans.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -178,9 +210,9 @@ export const ProfilePage = ({ trips, userEmail }: ProfilePageProps) => {
         {/* Avatar */}
         <motion.div
           variants={itemVariants}
-          className="w-20 h-20 rounded-full bg-espresso flex items-center justify-center shadow-lg shadow-espresso/20 flex-shrink-0"
+          className="w-14 h-14 rounded-full bg-espresso flex items-center justify-center shadow-sm flex-shrink-0"
         >
-          <span className="text-2xl sm:text-3xl font-extrabold text-ivory select-none">{initial}</span>
+          <span className="text-xl font-extrabold text-ivory select-none">{initial}</span>
         </motion.div>
 
         {/* Identity */}
@@ -188,7 +220,7 @@ export const ProfilePage = ({ trips, userEmail }: ProfilePageProps) => {
           <h2 className="text-xl sm:text-2xl font-bold text-espresso leading-tight">{userEmail}</h2>
           <p className="text-sm font-semibold text-amber mt-0.5">{title}</p>
           <p className="text-xs text-flint mt-1">
-            8 waypoint badges
+            {badges.filter((badge) => badge.earned).length} of {badges.length} badges earned
           </p>
         </motion.div>
       </motion.div>
@@ -209,85 +241,41 @@ export const ProfilePage = ({ trips, userEmail }: ProfilePageProps) => {
       </section>
 
       {/* ── Momentum ── */}
-      <section>
-        <h3 className="text-base font-bold text-espresso mb-3">Momentum</h3>
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="show"
-          className="grid lg:grid-cols-[1.3fr_1fr] gap-4"
-        >
+      {nextBadge && (
+        <section>
+          <h3 className="text-base font-bold text-espresso mb-3">Next badge</h3>
           <motion.div
             variants={itemVariants}
-            className="rounded-2xl border border-smoke/60 bg-parchment/70 p-6 shadow-sm space-y-4"
+            initial="hidden"
+            animate="show"
+            className="rounded-2xl border border-smoke/60 bg-white p-4 shadow-sm"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-amber/10 text-amber flex items-center justify-center">
-                <SparkIcon />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-amber">Next Unlock</p>
-                <h4 className="text-lg font-bold text-espresso leading-tight">{nextBadge?.name ?? 'All badges earned'}</h4>
-              </div>
-            </div>
-
-            <p className="text-sm text-flint">
-              {nextBadge?.description ?? 'You have already unlocked every current badge in the profile.'}
-            </p>
-
-            {nextBadge && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs font-semibold text-flint">
-                  <span>Progress</span>
-                  <span>{nextBadge.progressLabel}</span>
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-amber/10 text-amber flex items-center justify-center flex-shrink-0">
+                  <SparkIcon />
                 </div>
-                <div className="h-2 rounded-full bg-white border border-smoke overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-amber"
-                    style={{ width: `${(nextBadge.progressCurrent / nextBadge.progressTarget) * 100}%` }}
-                  />
+                <div>
+                  <p className="text-sm font-bold text-espresso">{nextBadge.name}</p>
+                  <p className="text-xs text-flint">{nextBadge.description}</p>
                 </div>
               </div>
-            )}
-          </motion.div>
-
-          <motion.div
-            variants={itemVariants}
-            className="rounded-2xl border border-smoke/60 bg-white p-5 shadow-sm"
-          >
-            <h4 className="text-sm font-bold text-espresso">Journey Snapshot</h4>
-            <div className="mt-4 space-y-3 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-flint">Completed trips</span>
-                <span className="font-bold text-espresso">{stats.completedTrips}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-flint">Upcoming trips</span>
-                <span className="font-bold text-espresso">{stats.upcomingTrips}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-flint">Active right now</span>
-                <span className="font-bold text-espresso">{stats.activeTrips}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-flint">Longest trip</span>
-                <span className="font-bold text-espresso">{stats.longestTripDays} days</span>
-              </div>
+              <span className="text-xs font-semibold text-flint flex-shrink-0">{nextBadge.progressLabel}</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-parchment border border-smoke overflow-hidden">
+              <div
+                className="h-full rounded-full bg-amber"
+                style={{ width: `${(nextBadge.progressCurrent / nextBadge.progressTarget) * 100}%` }}
+              />
             </div>
           </motion.div>
-        </motion.div>
-      </section>
-
-      {/* ── Badges ── */}
-      <section>
-        <h3 className="text-base font-bold text-espresso mb-4">Badges</h3>
-        <BadgeCollection />
-      </section>
+        </section>
+      )}
 
       {/* ── Journey Log ── */}
       {recentTrips.length > 0 && (
         <section>
-          <h3 className="text-base font-bold text-espresso mb-3">Recent Journey Log</h3>
+          <h3 className="text-base font-bold text-espresso mb-3">Journey Log</h3>
           <motion.div
             variants={containerVariants}
             initial="hidden"
@@ -315,7 +303,7 @@ export const ProfilePage = ({ trips, userEmail }: ProfilePageProps) => {
               <motion.span
                 key={dest}
                 variants={itemVariants}
-                className="px-3 py-1.5 rounded-full bg-amber/10 border border-amber/20 text-amber text-sm font-semibold"
+                className="px-3 py-1.5 rounded-full bg-parchment border border-smoke text-flint text-sm font-medium"
               >
                 {dest}
               </motion.span>
@@ -324,14 +312,43 @@ export const ProfilePage = ({ trips, userEmail }: ProfilePageProps) => {
         </section>
       )}
 
-      {/* ── Empty state ── */}
-      {trips.length === 0 && (
-        <div className="flex flex-col items-center justify-center gap-3 py-16 border-2 border-dashed border-smoke rounded-2xl text-center">
-          <h3 className="text-lg font-bold text-espresso">No adventures yet</h3>
-          <p className="text-sm text-flint">Create your first trip to start earning badges and stats.</p>
-        </div>
-      )}
-
+      {/* ── Badges ── */}
+      <section>
+        <h3 className="text-sm font-semibold text-flint mb-3">Core badges</h3>
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+          className="grid gap-3 sm:grid-cols-3"
+        >
+          {badges.map((badge) => (
+            <motion.div
+              key={badge.id}
+              variants={itemVariants}
+              className="rounded-2xl border border-smoke/60 bg-white p-4 shadow-sm"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-bold text-espresso">{badge.name}</p>
+                  <p className="mt-1 text-xs text-flint">{badge.description}</p>
+                </div>
+                <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${badge.earned ? badge.earnedCls : badge.unearnedCls}`}>
+                  {badge.earned ? 'Earned' : badge.progressLabel}
+                </span>
+              </div>
+              <div className="mt-4 h-1.5 rounded-full bg-parchment border border-smoke overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-amber"
+                  style={{ width: `${(badge.progressCurrent / badge.progressTarget) * 100}%` }}
+                />
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+        <p className="mt-3 text-xs text-flint">
+          Badge progress now stays focused on the three core launch loops: trips created, itineraries saved, and destinations explored.
+        </p>
+      </section>
     </div>
   );
 };

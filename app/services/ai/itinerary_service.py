@@ -16,10 +16,19 @@ from app.schemas.ai import (
     RefinementTimeBlock,
     RefinementVariant,
 )
+from app.core.config import settings as _settings
 from app.services.llm.ollama_client import LLMUnavailableError, OllamaClient
+from app.services.llm.gemini_client import GeminiClient
+
+
+def _make_llm_client():
+    if _settings.LLM_PROVIDER == "gemini":
+        return GeminiClient()
+    return OllamaClient()
 from app.services.ai.rule_based_service import generate_rule_based_itinerary
 from app.repositories.trip_repository import TripRepository
 from app.repositories.itinerary_repository import ItineraryRepository
+from app.services.trip_access_service import TripAccessService
 
 logger = logging.getLogger(__name__)
 
@@ -158,7 +167,8 @@ class ItineraryService:
     def __init__(self, db: Session):
         self.trip_repo = TripRepository(db)
         self.itinerary_repo = ItineraryRepository(db)
-        self.llm_client = OllamaClient()
+        self.llm_client = _make_llm_client()
+        self.access_service = TripAccessService(db)
 
     def _build_system_prompt(self) -> str:
         return (
@@ -353,6 +363,19 @@ class ItineraryService:
             logger.error("Partial recovery assembly failed: %s", exc)
             return None
 
+    def _annotate_source(
+        self,
+        itinerary: ItineraryResponse,
+        *,
+        source: str,
+        source_label: str,
+        fallback_used: bool = False,
+    ) -> ItineraryResponse:
+        itinerary.source = source
+        itinerary.source_label = source_label
+        itinerary.fallback_used = fallback_used
+        return itinerary
+
     def _merge_refined_day(
         self,
         current_itinerary: ItineraryResponse,
@@ -510,9 +533,10 @@ class ItineraryService:
         interests_override: Optional[str] = None,
         budget_override: Optional[str] = None,
     ) -> ItineraryResponse:
-        trip = self.trip_repo.get_by_id_and_user(trip_id, user_id)
-        if not trip:
-            raise ValueError("Trip not found or access denied.")
+        try:
+            trip = self.access_service.require_membership(trip_id, user_id).trip
+        except Exception as exc:
+            raise ValueError("Trip not found or access denied.") from exc
 
         sys_prompt = self._build_system_prompt()
         user_prompt = self._build_user_prompt(trip, interests_override, budget_override)
@@ -523,7 +547,12 @@ class ItineraryService:
             logger.warning(
                 "Ollama unavailable for trip_id=%s — attempting vector DB fallback", trip_id
             )
-            return self._generate_from_vector_db(trip, interests_override, budget_override)
+            return self._annotate_source(
+                self._generate_from_vector_db(trip, interests_override, budget_override),
+                source="knowledge_base_fallback",
+                source_label="Fallback saved itinerary knowledge",
+                fallback_used=True,
+            )
 
         logger.info("LLM raw response length: %d chars", len(raw_response))
 
@@ -533,7 +562,11 @@ class ItineraryService:
                 "Failed to parse or recover LLM response. Tail: %r", raw_response[-300:]
             )
             raise ValueError("AI generated invalid data. Please try again.")
-        return itinerary
+        return self._annotate_source(
+            itinerary,
+            source="llm_optional",
+            source_label="AI enhancement",
+        )
 
     async def generate_itinerary_rule_based(
         self,
@@ -543,10 +576,30 @@ class ItineraryService:
         budget_override: Optional[str] = None,
     ) -> ItineraryResponse:
         """Generates an itinerary using real POI data (OpenTripMap) — no LLM required."""
-        trip = self.trip_repo.get_by_id_and_user(trip_id, user_id)
-        if not trip:
-            raise ValueError("Trip not found or access denied.")
-        return await generate_rule_based_itinerary(trip, interests_override, budget_override)
+        try:
+            trip = self.access_service.require_membership(trip_id, user_id).trip
+        except Exception as exc:
+            raise ValueError("Trip not found or access denied.") from exc
+        try:
+            itinerary = await generate_rule_based_itinerary(trip, interests_override, budget_override)
+            return self._annotate_source(
+                itinerary,
+                source="rule_based",
+                source_label="Live trip planner",
+            )
+        except Exception as exc:
+            logger.warning(
+                "Rule-based itinerary failed for trip_id=%s — attempting knowledge fallback: %s",
+                trip_id,
+                exc,
+            )
+            fallback = self._generate_from_vector_db(trip, interests_override, budget_override)
+            return self._annotate_source(
+                fallback,
+                source="knowledge_base_fallback",
+                source_label="Fallback saved itinerary knowledge",
+                fallback_used=True,
+            )
 
     async def refine_itinerary(
         self,
@@ -559,9 +612,10 @@ class ItineraryService:
         locked_items: Optional[list[ItineraryItemReference]] = None,
         favorite_items: Optional[list[ItineraryItemReference]] = None,
     ) -> ItineraryResponse:
-        trip = self.trip_repo.get_by_id_and_user(trip_id, user_id)
-        if not trip:
-            raise ValueError("Trip not found or access denied.")
+        try:
+            trip = self.access_service.require_membership(trip_id, user_id).trip
+        except Exception as exc:
+            raise ValueError("Trip not found or access denied.") from exc
 
         system_prompt = self._build_refinement_system_prompt()
         user_prompt = self._build_refinement_user_prompt(
@@ -624,7 +678,12 @@ class ItineraryService:
                 trip_id,
             )
             try:
-                fallback = self._generate_from_vector_db(trip, interests_override, budget_override)
+                fallback = self._annotate_source(
+                    self._generate_from_vector_db(trip, interests_override, budget_override),
+                    source="knowledge_base_fallback",
+                    source_label="Fallback saved itinerary knowledge",
+                    fallback_used=True,
+                )
                 yield f"event: complete\ndata: {fallback.model_dump_json()}\n\n"
             except Exception as fallback_err:
                 logger.error("Vector DB fallback failed for trip_id=%s: %s", trip_id, fallback_err)
@@ -639,6 +698,11 @@ class ItineraryService:
 
         itinerary = self._parse_or_recover(full_text)
         if itinerary is not None:
+            itinerary = self._annotate_source(
+                itinerary,
+                source="llm_optional",
+                source_label="AI enhancement",
+            )
             yield f"event: complete\ndata: {itinerary.model_dump_json()}\n\n"
         else:
             logger.error(
@@ -655,9 +719,10 @@ class ItineraryService:
         1. Relational tables (itinerary_days / itinerary_events)
         2. trip.description — JSON fallback for the existing frontend parser
         """
-        trip = self.trip_repo.get_by_id_and_user(trip_id, user_id)
-        if not trip:
-            raise ValueError("Trip not found.")
+        try:
+            trip = self.access_service.require_membership(trip_id, user_id).trip
+        except Exception as exc:
+            raise ValueError("Trip not found.") from exc
 
         self.itinerary_repo.save_itinerary(trip_id, itinerary)
 

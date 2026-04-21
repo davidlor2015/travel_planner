@@ -3,6 +3,7 @@ import {
   createReservation,
   deleteReservation,
   getReservations,
+  updateReservation,
   type Reservation,
   type ReservationPayload,
 } from '../../../shared/api/reservations';
@@ -111,5 +112,34 @@ export function useReservations(token: string, tripId: number) {
     }
   }, [token, tripId]);
 
-  return { items, loading, error, addReservation, removeReservation };
+  const editReservation = useCallback(async (reservationId: number, payload: Partial<ReservationPayload>) => {
+    const current = items.find((item) => item.id === reservationId);
+    if (!current) {
+      throw new Error('Reservation not found');
+    }
+    const optimistic: Reservation = {
+      ...current,
+      title: payload.title ?? current.title,
+      reservation_type: payload.reservation_type ?? current.reservation_type,
+      provider: payload.provider ?? current.provider,
+      confirmation_code: payload.confirmation_code ?? current.confirmation_code,
+      start_at: payload.start_at ?? current.start_at,
+      end_at: payload.end_at ?? current.end_at,
+      location: payload.location ?? current.location,
+      notes: payload.notes ?? current.notes,
+      amount: payload.amount ?? current.amount,
+      currency: payload.currency ?? current.currency,
+    };
+    dispatch({ type: 'item/replace', previousId: reservationId, item: optimistic });
+    try {
+      const updated = await updateReservation(token, tripId, reservationId, payload);
+      dispatch({ type: 'item/replace', previousId: reservationId, item: updated });
+      return updated;
+    } catch (error) {
+      dispatch({ type: 'item/replace', previousId: reservationId, item: current });
+      throw error;
+    }
+  }, [items, token, tripId]);
+
+  return { items, loading, error, addReservation, editReservation, removeReservation };
 }

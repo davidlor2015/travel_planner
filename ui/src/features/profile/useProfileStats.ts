@@ -59,33 +59,6 @@ function destinationCount(trips: Trip[]): number {
   return new Set(trips.map((t) => t.destination.trim())).size;
 }
 
-function parseStoredObject(key: string): Record<string, unknown> | null {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return null;
-    const parsed: unknown = JSON.parse(raw);
-    return typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, unknown>) : null;
-  } catch {
-    return null;
-  }
-}
-
-function hasStoredBudgetLimit(key: string): boolean {
-  const parsed = parseStoredObject(key);
-  return parsed !== null && parsed.limit !== null && parsed.limit !== undefined;
-}
-
-function parseStoredArrayLength(key: string): number {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return 0;
-    const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.length : 0;
-  } catch {
-    return 0;
-  }
-}
-
 function getTripDurationDays(trip: Trip): number {
   return Math.max(
     0,
@@ -97,21 +70,21 @@ function getTripDurationDays(trip: Trip): number {
 
 const BADGE_CONFIGS: BadgeConfig[] = [
   {
-    id: 'first-adventure',
-    name: 'First Adventure',
-    description: 'Created your first trip',
+    id: 'jet-setter',
+    name: 'Jet Setter',
+    description: 'Create 3 trips',
     unearnedCls: 'bg-parchment text-flint border-smoke',
     earnedCls: 'bg-amber text-white border-amber shadow-sm shadow-amber/25',
-    getProgress: (trips) => ({ current: Math.min(trips.length, 1), target: 1 }),
+    getProgress: (trips) => ({ current: trips.length, target: 3 }),
   },
   {
-    id: 'itinerary-pro',
-    name: 'Itinerary Pro',
-    description: 'Saved an AI-generated itinerary',
+    id: 'planner',
+    name: 'Planner',
+    description: 'Save 1 itinerary',
     unearnedCls: 'bg-parchment text-flint border-smoke',
     earnedCls: 'bg-clay text-white border-clay shadow-sm shadow-clay/20',
     getProgress: (trips) => ({
-      current: trips.some((t) => !!t.description) ? 1 : 0,
+      current: trips.filter((t) => Boolean(t.description)).length,
       target: 1,
     }),
   },
@@ -123,62 +96,13 @@ const BADGE_CONFIGS: BadgeConfig[] = [
     earnedCls: 'bg-amber/20 text-espresso border-amber/40 shadow-sm',
     getProgress: (trips) => ({ current: destinationCount(trips), target: 3 }),
   },
-  {
-    id: 'packing-pro',
-    name: 'Packing Pro',
-    description: 'Built a packing list for a trip',
-    unearnedCls: 'bg-parchment text-flint border-smoke',
-    earnedCls: 'bg-clay text-white border-clay shadow-sm shadow-clay/20',
-    getProgress: (trips) => ({
-      current: trips.some((t) => parseStoredArrayLength(`packing_${t.id}`) > 0) ? 1 : 0,
-      target: 1,
-    }),
-  },
-  {
-    id: 'budget-savvy',
-    name: 'Budget Savvy',
-    description: 'Set a budget for a trip',
-    unearnedCls: 'bg-parchment text-flint border-smoke',
-    earnedCls: 'bg-amber/20 text-espresso border-amber/40 shadow-sm',
-    getProgress: (trips) => ({
-      current: trips.some((t) => hasStoredBudgetLimit(`budget_${t.id}`)) ? 1 : 0,
-      target: 1,
-    }),
-  },
-  {
-    id: 'long-hauler',
-    name: 'Long Hauler',
-    description: 'Planned a trip of 7 or more days',
-    unearnedCls: 'bg-parchment text-flint border-smoke',
-    earnedCls: 'bg-olive text-white border-olive shadow-sm shadow-olive/20',
-    getProgress: (trips) => ({
-      current: trips.reduce((max, trip) => Math.max(max, getTripDurationDays(trip)), 0),
-      target: 7,
-    }),
-  },
-  {
-    id: 'globetrotter',
-    name: 'Globetrotter',
-    description: '5 or more unique destinations',
-    unearnedCls: 'bg-parchment text-flint border-smoke',
-    earnedCls: 'bg-olive text-white border-olive shadow-sm shadow-olive/20',
-    getProgress: (trips) => ({ current: destinationCount(trips), target: 5 }),
-  },
-  {
-    id: 'frequent-flyer',
-    name: 'Frequent Flyer',
-    description: '5 or more trips created',
-    unearnedCls: 'bg-parchment text-flint border-smoke',
-    earnedCls: 'bg-espresso text-white border-espresso shadow-sm',
-    getProgress: (trips) => ({ current: trips.length, target: 5 }),
-  },
 ];
 
 
 function computeTravelTitle(tripCount: number): string {
   if (tripCount === 0) return 'Aspiring Adventurer';
   if (tripCount <= 2)  return 'Rookie Explorer';
-  if (tripCount <= 4)  return 'Seasoned Traveller';
+  if (tripCount <= 4)  return 'Seasoned Traveler';
   if (tripCount <= 9)  return 'Globetrotter';
   return 'World Wanderer';
 }

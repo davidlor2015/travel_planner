@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useForm, useWatch, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,7 +13,8 @@ import {
 } from '../../shared/api/matching';
 import { FormField } from '../../shared/ui/FormField';
 import { inputCls } from '../../shared/ui/inputCls';
-import { getProfileCompleteness } from './matchingInsights';
+import { buildProfileCompleteness } from './matchingInsights';
+
 
 
 const TRAVEL_STYLE_OPTIONS: { value: TravelStyle; label: string }[] = [
@@ -114,19 +116,35 @@ export const TravelProfileForm = ({
   const isDiscoverable    = useWatch({ control, name: 'is_discoverable' });
   const groupSizeMin      = useWatch({ control, name: 'group_size_min' });
   const groupSizeMax      = useWatch({ control, name: 'group_size_max' });
-  const normalizedGroupSizeMin = typeof groupSizeMin === 'number' ? groupSizeMin : Number(groupSizeMin ?? profile?.group_size_min ?? 1);
-  const normalizedGroupSizeMax = typeof groupSizeMax === 'number' ? groupSizeMax : Number(groupSizeMax ?? profile?.group_size_max ?? 4);
+  const normalizedGroupSizeMin =
+    typeof groupSizeMin === "number"
+      ? groupSizeMin
+      : Number(groupSizeMin ?? profile?.group_size_min ?? 1);
+  const normalizedGroupSizeMax =
+    typeof groupSizeMax === "number"
+      ? groupSizeMax
+      : Number(groupSizeMax ?? profile?.group_size_max ?? 4);
 
-  const completeness = getProfileCompleteness({
-    id: profile?.id ?? 0,
-    user_id: profile?.user_id ?? 0,
-    travel_style: selectedStyle,
-    budget_range: selectedBudget,
-    interests: selectedInterests,
-    group_size_min: normalizedGroupSizeMin,
-    group_size_max: normalizedGroupSizeMax,
-    is_discoverable: isDiscoverable,
-  });
+  const completeness = useMemo(
+    () =>
+      buildProfileCompleteness({
+        travel_style: selectedStyle ?? profile?.travel_style ?? "relaxed",
+        budget_range: selectedBudget ?? profile?.budget_range ?? "mid_range",
+        interests: selectedInterests ?? profile?.interests ?? [],
+        group_size_min: normalizedGroupSizeMin,
+        group_size_max: normalizedGroupSizeMax,
+        is_discoverable: isDiscoverable ?? profile?.is_discoverable ?? true,
+      }),
+    [
+      selectedStyle,
+      selectedBudget,
+      selectedInterests,
+      normalizedGroupSizeMin,
+      normalizedGroupSizeMax,
+      isDiscoverable,
+      profile,
+    ],
+  );
 
   const toggleInterest = (interest: string) => {
     const next = selectedInterests.includes(interest)
@@ -271,7 +289,7 @@ export const TravelProfileForm = ({
         <FormField
           id="tpf-discoverable"
           label="Discoverability"
-          hint="Let other travellers find your trips"
+          hint="Let other travelers find your trips"
           error={errors.is_discoverable?.message}
         >
           <button

@@ -14,8 +14,8 @@ class PrepItem(Base):
     __tablename__ = "prep_items"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    trip_id: Mapped[int] = mapped_column(
-        ForeignKey("trips.id", ondelete="CASCADE"), nullable=False, index=True
+    member_state_id: Mapped[int] = mapped_column(
+        ForeignKey("trip_member_states.id", ondelete="CASCADE"), nullable=False, index=True
     )
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     prep_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
@@ -26,4 +26,10 @@ class PrepItem(Base):
         DateTime(timezone=True), server_default=func.now()
     )
 
-    trip: Mapped["Trip"] = relationship("Trip", back_populates="prep_items")
+    member_state: Mapped["TripMemberState"] = relationship(
+        "TripMemberState", back_populates="prep_items"
+    )
+
+    @property
+    def trip_id(self) -> int:
+        return self.member_state.trip_id

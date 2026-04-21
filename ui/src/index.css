@@ -5,49 +5,42 @@
 
   /* ── Text ── */
 
-  /* Primary text / headings — stone-800 (warmer, slightly lifted from near-black) */
-  --color-espresso:       #292524;
-  /* Hover / deepest contrast — stone-900 */
-  --color-espresso-dark:  #1C1917;
+  --color-espresso:       #1C1108;
+  --color-espresso-dark:  #2E2216;
 
   /* Secondary / supporting text — stone-700 (richer, warmer than the old stone-500) */
-  --color-flint:          #44403C;
-  /* Subdued hints, placeholders, timestamps — stone-500 */
-  --color-muted:          #78716C;
+  --color-flint:          #6B5E52;
+  --color-muted:          #8A7E74;
 
 
   /* ── Surfaces ── */
 
   /* Page background — stone-50 warm ivory */
-  --color-ivory:          #FAFAF9;
-  /* Subtle fills, nav pills, ghost button bg — stone-100 */
-  --color-parchment:      #F5F5F4;
-  /* Borders, dividers, rule lines — stone-200 */
-  --color-smoke:          #E7E5E4;
+  --color-ivory:          #FEFCF9;
+  --color-parchment:      #FAF8F5;
+  --color-smoke:          #EAE2D6;
   /* Card surfaces */
   --color-white:          #FFFFFF;
 
 
   /* ── Accent — primary CTA ── */
 
-  /* Muted amber / desert clay — amber-700 */
-  --color-amber:          #B45309;
-  /* Hover depth — amber-800 */
-  --color-amber-dark:     #92400E;
+  --color-amber:          #B86845;
+  --color-amber-dark:     #9A5230;
 
 
   /* ── Accent — secondary / warmth ── */
 
   /* Warm clay — terracotta brown */
-  --color-clay:           #8B5A3E;
-  --color-clay-dark:      #7A4E33;
+  --color-clay:           #6B5E52;
+  --color-clay-dark:      #52473D;
 
 
   /* ── Accent — nature / success ── */
 
   /* Muted olive — lime-800 */
-  --color-olive:          #3F6212;
-  --color-olive-dark:     #365314;
+  --color-olive:          #6A7A43;
+  --color-olive-dark:     #4A6A28;
 
 
   /* ── State ── */
@@ -55,13 +48,14 @@
   /* Danger / errors — rose-900 */
   --color-danger:         #881337;
   /* Deep richness / optional depth accent — orange-900 */
-  --color-depth:          #7C2D12;
+  --color-depth:          #4D6B8A;
 
 
   /* ── Typography ── */
 
-  --font-sans:            'Manrope', ui-sans-serif, system-ui, sans-serif;
-  --font-display:         'Cormorant Garamond', ui-serif, Georgia, serif;
+  --font-sans:            'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display:         'Playfair Display', ui-serif, Georgia, serif;
+  --font-mono:            'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
 
   /* ── Spacing ── */
@@ -83,7 +77,7 @@
 
   body {
     font-family:              var(--font-sans);
-    font-size:                0.9375rem;   /* 15px — clean, readable UI size */
+    font-size:                0.84375rem;
     line-height:              1.6;         /* generous body rhythm */
     color:                    theme(--color-espresso);
     background-color:         theme(--color-ivory);
@@ -99,10 +93,10 @@
    */
   h1, h2, h3, h4, h5, h6 {
     margin:           0;
-    font-family:      var(--font-display);
-    font-weight:      600;               /* SemiBold — intentional, not heavy */
-    letter-spacing:   -0.03em;           /* tighter tracking for editorial feel */
-    line-height:      1.15;              /* compressed — suits large display text */
+      font-family:      var(--font-display);
+      font-weight:      600;
+      letter-spacing:   -0.02em;
+      line-height:      1.1;
     color:            theme(--color-espresso);
   }
 

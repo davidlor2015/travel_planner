@@ -42,7 +42,7 @@ _FIND_BEST_SQL = """
     SELECT itinerary_id, title, content, budget, days, interests, pace
     FROM   itinerary_chunks
     WHERE  chunk_type = 'overview'
-      AND  LOWER(destination) {dest_clause}
+      AND  {dest_predicate}
     ORDER BY
         (budget = %(budget)s)::int DESC,
         ABS(days - %(days)s) ASC
@@ -137,9 +137,9 @@ def find_best_itinerary(
     params: dict = {"budget": budget, "days": days}
     candidates = _destination_candidates(destination)
 
-    search_clauses = [
-        ("exact", "= LOWER(%(destination)s)"),
-        ("stored_prefix", "LIKE LOWER(%(destination)s) || '%%'"),
+    search_predicates = [
+        ("exact", "LOWER(destination) = LOWER(%(destination)s)"),
+        ("stored_prefix", "LOWER(destination) LIKE LOWER(%(destination)s) || '%%'"),
         # Handles trips stored as "Tokyo, Japan" when embedded records use "Tokyo".
         ("query_prefix", "LOWER(%(destination)s) LIKE LOWER(destination) || '%%'"),
     ]
@@ -147,12 +147,12 @@ def find_best_itinerary(
     with _conn() as connection:
         with connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             row = None
-            for _, clause in search_clauses:
+            for _, predicate in search_predicates:
                 if row is not None:
                     break
                 for candidate in candidates:
                     cur.execute(
-                        _FIND_BEST_SQL.format(dest_clause=clause),
+                        _FIND_BEST_SQL.format(dest_predicate=predicate),
                         {**params, "destination": candidate},
                     )
                     row = cur.fetchone()

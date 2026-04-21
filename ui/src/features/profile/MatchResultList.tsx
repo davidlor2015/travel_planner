@@ -15,8 +15,15 @@ export const MatchResultList = ({ requestId, token }: MatchResultListProps) => {
 
   if (loading) {
     return (
-      <div className="px-4 py-4 rounded-2xl bg-parchment border border-smoke text-sm text-flint">
-        Loading matches…
+      <div className="space-y-3">
+        {[1, 2].map((item) => (
+          <div key={item} className="rounded-2xl border border-smoke/60 bg-white p-4 shadow-sm animate-pulse">
+            <div className="h-5 w-32 rounded-full bg-parchment" />
+            <div className="mt-3 h-3 w-24 rounded-full bg-smoke/70" />
+            <div className="mt-4 h-4 w-full rounded-full bg-parchment" />
+            <div className="mt-2 h-4 w-4/5 rounded-full bg-parchment" />
+          </div>
+        ))}
       </div>
     );
   }
@@ -25,17 +32,21 @@ export const MatchResultList = ({ requestId, token }: MatchResultListProps) => {
     return (
       <div
         role="alert"
-        className="px-4 py-4 rounded-2xl bg-danger/10 border border-danger/25 text-danger text-sm font-medium"
+        className="px-4 py-4 rounded-2xl bg-danger/10 border border-danger/25 text-sm"
       >
-        {error}
+        <p className="font-semibold text-danger">Matches unavailable</p>
+        <p className="mt-1 text-flint">{error}</p>
       </div>
     );
   }
 
   if (results.length === 0) {
     return (
-      <div className="px-4 py-4 rounded-2xl bg-parchment border border-smoke text-sm text-flint">
-        No matches yet for this request.
+      <div className="px-4 py-5 rounded-2xl bg-parchment border border-smoke text-sm text-flint">
+        <p className="font-semibold text-espresso">No matches yet</p>
+        <p className="mt-1">
+          We have not found a compatible traveler for this request yet. Leave it open and check back after more people add matching profiles and trips.
+        </p>
       </div>
     );
   }

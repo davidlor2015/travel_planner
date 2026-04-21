@@ -17,6 +17,10 @@ class BudgetExpenseUpdate(BaseModel):
     category: str | None = None
 
 
+class BudgetLimitUpdate(BaseModel):
+    limit: float | None = None
+
+
 class BudgetExpenseResponse(BaseModel):
     id: int
     trip_id: int

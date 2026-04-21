@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 
 import { TravelProfileForm } from './TravelProfileForm';
@@ -6,7 +6,7 @@ import { MatchRequestList } from './MatchRequestList';
 import { useMatchingProfile } from './useMatchingProfile';
 import { useMatchRequests } from './useMatchRequests';
 import type { Trip } from '../../shared/api/trips';
-import { formatMatchingLabel, getProfileCompleteness } from './matchingInsights';
+import { buildProfileCompleteness, formatMatchingLabel } from './matchingInsights';
 
 
 interface MatchingPageProps {
@@ -16,25 +16,83 @@ interface MatchingPageProps {
 
 export const MatchingPage = ({ token, trips }: MatchingPageProps) => {
   const { profile, loading, error, upsert } = useMatchingProfile(token);
-  const { requests, loading: requestsLoading } = useMatchRequests(token);
+  const { requests, loading: requestsLoading, error: requestsError } = useMatchRequests(token);
   const [editing, setEditing] = useState(false);
+
+  const completeness = useMemo(
+    () => (profile ? buildProfileCompleteness(profile) : null),
+    [profile],
+  );
 
   if (loading) {
     return (
-      <div className="min-h-[320px] flex items-center justify-center rounded-2xl border border-smoke/60 bg-white text-sm font-medium text-flint">
-        Loading matching profile…
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold text-espresso">Matching</h2>
+          <p className="text-sm text-flint mt-1">
+            Loading your traveler profile and discovery view.
+          </p>
+        </div>
+        <div className="bg-white rounded-2xl border border-smoke/60 shadow-sm p-6 space-y-4 animate-pulse">
+          <div className="h-6 w-40 rounded-full bg-parchment" />
+          <div className="h-4 w-2/3 rounded-full bg-smoke/70" />
+          <div className="grid gap-3 sm:grid-cols-2">
+            {[1, 2, 3, 4].map((item) => (
+              <div key={item} className="rounded-2xl border border-smoke bg-parchment/50 px-4 py-5">
+                <div className="h-3 w-20 rounded-full bg-smoke/60" />
+                <div className="mt-3 h-5 w-28 rounded-full bg-parchment" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="max-w-3xl mx-auto space-y-6">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-espresso">Find compatible travellers</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-espresso">Find compatible travelers</h2>
           <p className="text-sm text-flint mt-1">
-            Set up your matching profile first so we can compare travel style, budget, interests, and group size.
+            Browse how companion matching works first. Set up your profile only when you want to open a request and start comparing fit.
           </p>
+        </div>
+
+        <div className="rounded-2xl border border-smoke bg-parchment/50 p-5 space-y-4">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border border-smoke bg-white px-4 py-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-flint">1. Choose a trip</p>
+              <p className="mt-2 text-sm text-flint">Matching stays anchored to a real trip with destination and dates already set.</p>
+            </div>
+            <div className="rounded-2xl border border-smoke bg-white px-4 py-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-flint">2. Compare fit</p>
+              <p className="mt-2 text-sm text-flint">We look at travel style, budget, interests, group size, and timing overlap.</p>
+            </div>
+            <div className="rounded-2xl border border-smoke bg-white px-4 py-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-flint">3. Decide later</p>
+              <p className="mt-2 text-sm text-flint">You can browse the workflow first, then save a profile when you are ready to participate.</p>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-smoke bg-white px-4 py-4">
+            <p className="text-sm font-semibold text-espresso">What matching includes in v1</p>
+            <p className="mt-1 text-sm text-flint">
+              Matching is intentionally narrow: discoverability, trip overlap, compatibility signals, and request-based browsing. It is not a full social wall.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex gap-3 max-sm:flex-col">
+          <motion.button
+            type="button"
+            onClick={() => setEditing((value) => !value)}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            className="px-5 py-3 rounded-full bg-amber text-white text-sm font-bold shadow-sm shadow-amber/25 hover:bg-amber-dark transition-colors duration-150 cursor-pointer"
+          >
+            {editing ? 'Hide Profile Setup' : 'Set Up Matching Profile'}
+          </motion.button>
         </div>
 
         {error ? (
@@ -43,12 +101,14 @@ export const MatchingPage = ({ token, trips }: MatchingPageProps) => {
           </div>
         ) : null}
 
-        <TravelProfileForm token={token} onSubmitProfile={upsert} />
+        {editing ? (
+          <TravelProfileForm token={token} onSubmitProfile={upsert} onSuccess={() => setEditing(false)} onCancel={() => setEditing(false)} />
+        ) : null}
       </div>
     );
   }
 
-  const completeness = getProfileCompleteness(profile);
+ 
 
   return (
     <div className="space-y-6">
@@ -56,7 +116,7 @@ export const MatchingPage = ({ token, trips }: MatchingPageProps) => {
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-espresso">Matching</h2>
           <p className="text-sm text-flint mt-1">
-            Your profile is ready. Open a trip request to start seeing compatible travellers.
+            Your profile is ready. Browse requests and open one when you want to start seeing compatible travelers.
           </p>
         </div>
 
@@ -78,6 +138,13 @@ export const MatchingPage = ({ token, trips }: MatchingPageProps) => {
         </div>
       ) : null}
 
+      <div className="rounded-2xl border border-smoke bg-parchment/50 px-4 py-4 text-sm text-flint">
+        <p className="font-semibold text-espresso">Limited matching scope</p>
+        <p className="mt-1">
+          Companion matching is intentionally narrow right now. It stays focused on destination overlap, date overlap, discoverability, and profile compatibility so the core trip workflow remains the product center.
+        </p>
+      </div>
+
       {editing ? (
         <TravelProfileForm
           token={token}
@@ -86,7 +153,7 @@ export const MatchingPage = ({ token, trips }: MatchingPageProps) => {
           onSuccess={() => setEditing(false)}
           onCancel={() => setEditing(false)}
         />
-      ) : (
+      ) : completeness ? (
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -184,21 +251,42 @@ export const MatchingPage = ({ token, trips }: MatchingPageProps) => {
             <div className="rounded-2xl bg-parchment border border-smoke px-4 py-4 sm:col-span-2">
               <p className="text-xs font-semibold uppercase tracking-wide text-flint">Preferred group size</p>
               <p className="text-base font-bold text-espresso mt-1">
-                {profile.group_size_min} to {profile.group_size_max} travellers
+                {profile.group_size_min} to {profile.group_size_max} travelers
               </p>
             </div>
           </div>
 
         </motion.div>
-      )}
+      ) : null}
 
       {!editing && !requestsLoading && (
-        <MatchRequestList token={token} trips={trips} requests={requests} />
+        <div className="space-y-4">
+          {requestsError ? (
+            <div
+              role="alert"
+              className="px-4 py-4 rounded-2xl bg-danger/10 border border-danger/25 text-sm"
+            >
+              <p className="font-semibold text-danger">Match requests unavailable</p>
+              <p className="mt-1 text-flint">
+                {requestsError}
+              </p>
+            </div>
+          ) : null}
+
+          <MatchRequestList token={token} trips={trips} requests={requests} />
+        </div>
       )}
 
       {!editing && requestsLoading && (
-        <div className="min-h-[80px] flex items-center justify-center text-sm font-medium text-flint">
-          Loading match requests…
+        <div className="rounded-2xl border border-smoke/60 bg-white p-5 space-y-3 animate-pulse">
+          <div className="h-5 w-32 rounded-full bg-parchment" />
+          {[1, 2].map((item) => (
+            <div key={item} className="rounded-2xl border border-smoke bg-parchment/40 px-4 py-4">
+              <div className="h-4 w-28 rounded-full bg-smoke/70" />
+              <div className="mt-3 h-3 w-2/3 rounded-full bg-parchment" />
+              <div className="mt-3 h-10 rounded-full bg-smoke/50" />
+            </div>
+          ))}
         </div>
       )}
     </div>

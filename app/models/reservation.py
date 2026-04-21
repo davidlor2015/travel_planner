@@ -32,8 +32,7 @@ class Reservation(Base):
     )
 
     trip: Mapped["Trip"] = relationship("Trip", back_populates="reservations")
-    budget_expense: Mapped[Optional["BudgetExpense"]] = relationship(
+    budget_expenses: Mapped[list["BudgetExpense"]] = relationship(
         "BudgetExpense",
         back_populates="reservation",
-        uselist=False,
     )

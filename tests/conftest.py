@@ -15,11 +15,14 @@ This keeps API tests realistic but isolated.
 import os
 
 # ---- Ensure settings exist before any app modules are imported ----
-os.environ.setdefault("JWT_SECRET", "test-secret-not-for-production")
+os.environ.setdefault("JWT_SECRET", "test-secret-not-for-production-1234567890")
 os.environ.setdefault("JWT_ALG", "HS256")
 os.environ.setdefault("ACCESS_TOKEN_EXPIRE_MINUTES", "60")
 # Low limit so the rate-limit test only needs a few requests to trigger a 429.
 os.environ.setdefault("AI_RATE_LIMIT", "3/minute")
+# AI integration tests patch the Ollama client directly. Force the test
+# provider before settings are loaded so external env vars cannot bypass mocks.
+os.environ["LLM_PROVIDER"] = "ollama"
 
 import pytest
 from fastapi.testclient import TestClient
@@ -35,6 +38,7 @@ import app.db.base  # noqa: F401
 from app.db.session import get_db
 from app.core import security
 from app.models.user import User
+from app.models.trip_membership import TripMembership, TripMemberState
 
 
 # ---------------------------
@@ -129,6 +133,7 @@ def user_a(db):
         email="usera@example.com",
         hashed_password=security.get_password_hash("password123"),
         is_active=True,
+        email_verified=True,
     )
     db.add(u)
     db.commit()
@@ -143,6 +148,7 @@ def user_b(db):
         email="userb@example.com",
         hashed_password=security.get_password_hash("password456"),
         is_active=True,
+        email_verified=True,
     )
     db.add(u)
     db.commit()
@@ -165,3 +171,29 @@ def auth_headers_user_a(user_a):
 def auth_headers_user_b(user_b):
     token = security.create_access_token(data={"sub": user_b.email})
     return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture(scope="function")
+def attach_trip_membership(db):
+    def _attach(trip, user_id: int, *, role: str = "owner", added_by_user_id: int | None = None, budget_limit: float | None = None):
+        membership = TripMembership(
+            trip_id=trip.id,
+            user_id=user_id,
+            role=role,
+            added_by_user_id=added_by_user_id if added_by_user_id is not None else user_id,
+        )
+        db.add(membership)
+        db.flush()
+
+        state = TripMemberState(
+            membership_id=membership.id,
+            budget_limit=budget_limit,
+        )
+        db.add(state)
+        db.commit()
+        db.refresh(trip)
+        db.refresh(membership)
+        db.refresh(state)
+        return membership
+
+    return _attach

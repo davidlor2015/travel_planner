@@ -4,7 +4,9 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, field_validator, model_validator
+
+from app.core.normalization import normalize_trip_destination
 
 
 class TripBase(BaseModel):
@@ -21,6 +23,13 @@ class TripBase(BaseModel):
     start_date: date
     end_date: date
     notes: Optional[str] = None
+
+    @field_validator("destination", mode="before")
+    @classmethod
+    def normalize_destination(cls, value: str) -> str:
+        if not isinstance(value, str):
+            raise TypeError("destination must be a string")
+        return normalize_trip_destination(value)
 
     @model_validator(mode="after")
     def validate_dates(self):
@@ -47,6 +56,13 @@ class TripUpdate(BaseModel):
     end_date: Optional[date] = None
     notes: Optional[str] = None
 
+    @field_validator("destination", mode="before")
+    @classmethod
+    def normalize_destination(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        return normalize_trip_destination(value)
+
     @model_validator(mode="after")
     def validate_dates(self):
         if self.start_date is not None and self.end_date is not None:
@@ -55,11 +71,63 @@ class TripUpdate(BaseModel):
         return self
 
 
+class TripMemberResponse(BaseModel):
+    user_id: int
+    email: EmailStr
+    role: str
+    joined_at: datetime
+    status: str = "active"
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TripMemberAddRequest(BaseModel):
+    email: EmailStr
+
+
+class TripInviteCreateRequest(BaseModel):
+    email: EmailStr
+
+
+class TripInviteResponse(BaseModel):
+    id: int
+    email: EmailStr
+    status: str
+    created_at: datetime
+    expires_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TripInviteCreateResponse(TripInviteResponse):
+    invite_url: str
+
+
+class TripInviteAcceptResponse(BaseModel):
+    trip_id: int
+    trip_title: str
+    status: str
+
+
+class TripInviteDetailResponse(BaseModel):
+    trip_id: int
+    trip_title: str
+    destination: str
+    start_date: date
+    end_date: date
+    email: EmailStr
+    status: str
+    expires_at: datetime
+
+
 class TripResponse(TripBase):
     """Schema returned to client."""
     id: int
     user_id: int
     created_at: datetime
+    member_count: int
+    members: list[TripMemberResponse]
+    pending_invites: list[TripInviteResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
 

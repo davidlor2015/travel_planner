@@ -9,6 +9,7 @@ class UserCreate(UserBase):
 class UserResponse(UserBase):
     id: int
     is_active: bool
+    email_verified: bool
 
     class DictConfig:
         from_attributes = True
