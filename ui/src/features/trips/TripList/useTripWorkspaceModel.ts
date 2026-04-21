@@ -5,6 +5,7 @@ import {
   deleteTrip,
   getTrips,
   getTripSummaries,
+  updateWorkspaceLastSeen,
   type Trip,
   type TripSummary,
 } from "../../../shared/api/trips";
@@ -26,11 +27,8 @@ import {
   type EditableStopPatch,
 } from "../itineraryDraft";
 import {
-  buildTripActivities,
   loadMutedTripIds,
-  loadReadActivityIds,
   saveMutedTripIds,
-  saveReadActivityIds,
 } from "../TripActivity";
 import { track } from "../../../shared/analytics";
 import { useStreamingItinerary } from "../../../shared/hooks/useStreamingItinerary";
@@ -64,6 +62,10 @@ import {
   deriveTripActionItems,
   type TripActionDerivationInput,
 } from "../workspace/deriveTripActionItems";
+import {
+  buildWorkspaceActivityModel,
+  coerceWorkspaceActivitySnapshot,
+} from "../workspace/workspaceActivityModel";
 import { createItineraryDraftMutations } from "./itineraryDraftMutations";
 import { deriveDraftMutationState } from "./draftPublishStateMachine";
 
@@ -151,9 +153,6 @@ export function useTripWorkspaceModel({
   const [isActivityDrawerOpen, setIsActivityDrawerOpen] = useState(false);
   const [activityFilter, setActivityFilter] = useState<"all" | "unread">("all");
   const [showActivityPreferences, setShowActivityPreferences] = useState(false);
-  const [readActivityIdsByTrip, setReadActivityIdsByTrip] = useState<
-    Record<number, string[]>
-  >({});
   const [mutedTripIds, setMutedTripIds] = useState<number[]>(() =>
     loadMutedTripIds(),
   );
@@ -453,37 +452,66 @@ export function useTripWorkspaceModel({
         ? getDefaultRegenerationControls(selectedPendingItinerary)
         : null))
     : null;
-  const selectedActivities = useMemo(
+  const selectedStreamError = selectedTrip
+    ? (streams[selectedTrip.id]?.error ?? null)
+    : null;
+  const selectedMember = selectedTrip
+    ? selectedTrip.members.find(
+        (member) => member.email.toLowerCase() === currentUserEmail.toLowerCase(),
+      ) ?? null
+    : null;
+  const selectedLastSeenSignature = selectedMember?.workspace_last_seen_signature ?? null;
+  const selectedLastSeenSnapshot = coerceWorkspaceActivitySnapshot(
+    (selectedMember?.workspace_last_seen_snapshot as Record<string, unknown> | null | undefined) ??
+      null,
+  );
+  const selectedActivityModel = useMemo(
     () =>
       selectedTrip
-        ? buildTripActivities({
-            trip: selectedTrip,
-            savedItinerary: selectedSavedItinerary,
-            pendingItinerary: selectedPendingItinerary,
-            packingSummary: selectedPackingSummary,
-            budgetSummary: selectedBudgetSummary,
-            reservationSummary: selectedReservationSummary,
+        ? buildWorkspaceActivityModel({
+            input: {
+              trip: selectedTrip,
+              itinerary: selectedCurrentItinerary,
+              packingSummary: selectedPackingSummary,
+              budgetSummary: selectedBudgetSummary,
+              reservationSummary: selectedReservationSummary,
+              workspace: {
+                hasPendingDraft: selectedPendingItinerary !== null,
+                tripActionError,
+                draftActionError,
+                streamError: selectedStreamError,
+              },
+            },
+            lastSeenSignature: selectedLastSeenSignature,
+            lastSeenSnapshot: selectedLastSeenSnapshot,
           })
-        : [],
+        : null,
     [
-      selectedBudgetSummary,
-      selectedPackingSummary,
-      selectedPendingItinerary,
-      selectedReservationSummary,
-      selectedSavedItinerary,
       selectedTrip,
+      selectedCurrentItinerary,
+      selectedPackingSummary,
+      selectedBudgetSummary,
+      selectedReservationSummary,
+      selectedPendingItinerary,
+      tripActionError,
+      draftActionError,
+      selectedStreamError,
+      selectedLastSeenSignature,
+      selectedLastSeenSnapshot,
     ],
   );
-  const selectedReadIds = selectedTrip
-    ? new Set(readActivityIdsByTrip[selectedTrip.id] ?? [])
-    : new Set<string>();
+  const selectedActivities = selectedActivityModel?.drawerItems ?? [];
   const selectedTripIsMuted = selectedTrip
     ? mutedTripIds.includes(selectedTrip.id)
     : false;
+  const selectedReadIds = selectedActivityModel?.hasUnseenChanges
+    ? new Set<string>()
+    : new Set(selectedActivities.map((activity) => activity.id));
   const selectedUnreadCount = selectedTripIsMuted
     ? 0
-    : selectedActivities.filter((activity) => !selectedReadIds.has(activity.id))
-        .length;
+    : selectedActivityModel?.hasUnseenChanges
+      ? selectedActivities.length
+      : 0;
 
   useEffect(() => {
     if (!selectedTrip) {
@@ -491,32 +519,7 @@ export function useTripWorkspaceModel({
       setShowActivityPreferences(false);
       return;
     }
-
-    setReadActivityIdsByTrip((prev) => {
-      if (prev[selectedTrip.id]) return prev;
-      return {
-        ...prev,
-        [selectedTrip.id]: loadReadActivityIds(selectedTrip.id),
-      };
-    });
   }, [selectedTrip]);
-
-  useEffect(() => {
-    if (!selectedTrip) return;
-
-    const validIds = new Set(selectedActivities.map((activity) => activity.id));
-    setReadActivityIdsByTrip((prev) => {
-      const current =
-        prev[selectedTrip.id] ?? loadReadActivityIds(selectedTrip.id);
-      const next = current.filter((id) => validIds.has(id));
-      if (current.length === next.length) return prev;
-      saveReadActivityIds(selectedTrip.id, next);
-      return {
-        ...prev,
-        [selectedTrip.id]: next,
-      };
-    });
-  }, [selectedActivities, selectedTrip]);
 
   useEffect(() => {
     if (!selectedTrip || activeTab !== "overview" || !selectedHasSavedItinerary)
@@ -595,40 +598,64 @@ export function useTripWorkspaceModel({
     });
   };
 
-  const markActivityAsRead = (activityId: string) => {
-    if (!selectedTrip) return;
-
-    setReadActivityIdsByTrip((prev) => {
-      const current =
-        prev[selectedTrip.id] ?? loadReadActivityIds(selectedTrip.id);
-      if (current.includes(activityId)) return prev;
-      const next = [...current, activityId];
-      saveReadActivityIds(selectedTrip.id, next);
-      return {
-        ...prev,
-        [selectedTrip.id]: next,
-      };
-    });
+  const applyWorkspaceLastSeenLocal = (
+    tripId: number,
+    payload: {
+      signature: string;
+      snapshot: Record<string, unknown>;
+      seenAt: string;
+    },
+  ) => {
+    setTrips((prev) =>
+      prev.map((trip) => {
+        if (trip.id !== tripId) return trip;
+        return {
+          ...trip,
+          members: trip.members.map((member) => {
+            if (member.email.toLowerCase() !== currentUserEmail.toLowerCase()) {
+              return member;
+            }
+            return {
+              ...member,
+              workspace_last_seen_signature: payload.signature,
+              workspace_last_seen_snapshot: payload.snapshot,
+              workspace_last_seen_at: payload.seenAt,
+            };
+          }),
+        };
+      }),
+    );
   };
 
-  const markAllActivitiesAsRead = () => {
-    if (!selectedTrip) return;
-    const allIds = selectedActivities.map((activity) => activity.id);
-    setReadActivityIdsByTrip((prev) => {
-      saveReadActivityIds(selectedTrip.id, allIds);
-      return {
-        ...prev,
-        [selectedTrip.id]: allIds,
-      };
-    });
+  const markAllActivitiesAsRead = async () => {
+    if (!selectedTrip || !selectedActivityModel) return;
+    try {
+      const response = await updateWorkspaceLastSeen(token, selectedTrip.id, {
+        signature: selectedActivityModel.signature,
+        snapshot: selectedActivityModel.snapshot as unknown as Record<string, unknown>,
+      });
+      applyWorkspaceLastSeenLocal(selectedTrip.id, {
+        signature: response.workspace_last_seen_signature ?? selectedActivityModel.signature,
+        snapshot:
+          response.workspace_last_seen_snapshot ??
+          (selectedActivityModel.snapshot as unknown as Record<string, unknown>),
+        seenAt: response.workspace_last_seen_at ?? new Date().toISOString(),
+      });
+      track({
+        name: "trip_activity_mark_all_read",
+        props: {
+          trip_id: selectedTrip.id,
+          count: selectedActivities.length,
+        },
+      });
+    } catch {
+      // Keep change-awareness optimistic and non-blocking.
+    }
+  };
 
-    track({
-      name: "trip_activity_mark_all_read",
-      props: {
-        trip_id: selectedTrip.id,
-        count: allIds.length,
-      },
-    });
+  const markActivityAsRead = (activityId: string) => {
+    void activityId;
+    void markAllActivitiesAsRead();
   };
 
   const upsertDraftItinerary = (
@@ -1107,9 +1134,6 @@ export function useTripWorkspaceModel({
   const selectedHasStreamContent = Boolean(
     selectedTrip ? streams[selectedTrip.id]?.text?.trim() : "",
   );
-  const selectedStreamError = selectedTrip
-    ? (streams[selectedTrip.id]?.error ?? null)
-    : null;
   const selectedIsRegenerating = selectedTrip
     ? regeneratingIds.has(selectedTrip.id)
     : false;
@@ -1283,6 +1307,9 @@ export function useTripWorkspaceModel({
       selectedTripDateLabel,
       selectedHasSavedItinerary,
       selectedActivities,
+      selectedActivityStripItems: selectedActivityModel?.stripItems ?? [],
+      selectedActivityHasUnseenChanges:
+        selectedActivityModel?.hasUnseenChanges ?? false,
       selectedUnreadCount,
       selectedReadIds,
       selectedTripIsMuted,

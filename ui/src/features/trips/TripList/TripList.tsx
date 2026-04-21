@@ -174,6 +174,8 @@ export const TripList = ({
     showWorkspace,
     selectedDurationDays,
     selectedActivities,
+    selectedActivityStripItems,
+    selectedActivityHasUnseenChanges,
     selectedUnreadCount,
     selectedReadIds,
     selectedTripIsMuted,
@@ -314,6 +316,8 @@ export const TripList = ({
             isActivityMuted={selectedTripIsMuted}
             onManageGroup={() => openWorkspaceTab("members")}
             onOpenActivityDrawer={openActivityDrawer}
+            activityStripItems={selectedActivityStripItems}
+            activityHasUnseenChanges={selectedActivityHasUnseenChanges}
             onShareTrip={handleShareTrip}
           >
                 <TripActionBanner

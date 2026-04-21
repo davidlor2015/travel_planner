@@ -200,5 +200,13 @@ export function buildTripActivities({
     });
   }
 
-  return items.sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime());
+  const toSortableTimestamp = (value: string | null): number => {
+    if (!value) return 0;
+    const timestamp = new Date(value).getTime();
+    return Number.isNaN(timestamp) ? 0 : timestamp;
+  };
+
+  return items.sort(
+    (a, b) => toSortableTimestamp(b.occurredAt) - toSortableTimestamp(a.occurredAt),
+  );
 }

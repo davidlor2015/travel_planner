@@ -32,7 +32,8 @@ interface OverviewCoordinationPanelProps {
   onActionCommand: (command: TripActionCommand) => void;
 }
 
-function relativeTime(isoString: string): string {
+function relativeTime(isoString: string | null): string {
+  if (!isoString) return "";
   const timestamp = new Date(isoString).getTime();
   if (Number.isNaN(timestamp)) return "";
 

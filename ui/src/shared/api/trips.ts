@@ -7,6 +7,9 @@ export interface TripMember {
   role: string;
   joined_at: string;
   status: string;
+  workspace_last_seen_signature?: string | null;
+  workspace_last_seen_snapshot?: Record<string, unknown> | null;
+  workspace_last_seen_at?: string | null;
 }
 
 export interface TripInvite {
@@ -87,6 +90,17 @@ interface TripUpdate {
   notes?: string;
 }
 
+export interface WorkspaceLastSeenPayload {
+  signature: string;
+  snapshot: Record<string, unknown>;
+}
+
+export interface WorkspaceLastSeenResponse {
+  workspace_last_seen_signature: string | null;
+  workspace_last_seen_snapshot: Record<string, unknown> | null;
+  workspace_last_seen_at: string | null;
+}
+
 export const getTrips = async (token?: string): Promise<Trip[]> => {
   const response = await apiFetch(`${API_URL}/v1/trips/`, {
     method: 'GET',
@@ -149,6 +163,26 @@ export const getTripSummaries = async (token?: string): Promise<TripSummary[]> =
   if (!response.ok) {
     const text = await response.text();
     throw new Error(`Failed to fetch trip summaries (${response.status}): ${text}`);
+  }
+
+  return response.json();
+};
+
+export const updateWorkspaceLastSeen = async (
+  token: string,
+  tripId: number,
+  payload: WorkspaceLastSeenPayload,
+): Promise<WorkspaceLastSeenResponse> => {
+  const response = await apiFetch(`${API_URL}/v1/trips/${tripId}/workspace/last-seen`, {
+    method: 'POST',
+    token,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to update workspace last seen (${response.status}): ${text}`);
   }
 
   return response.json();

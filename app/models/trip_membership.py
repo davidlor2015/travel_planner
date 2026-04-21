@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -53,6 +54,27 @@ class TripMembership(Base):
     def joined_at(self) -> datetime:
         return self.created_at
 
+    @property
+    def workspace_last_seen_signature(self) -> str | None:
+        return self.member_state.workspace_last_seen_signature if self.member_state else None
+
+    @property
+    def workspace_last_seen_at(self) -> datetime | None:
+        return self.member_state.workspace_last_seen_at if self.member_state else None
+
+    @property
+    def workspace_last_seen_snapshot(self) -> dict | None:
+        if not self.member_state:
+            return None
+        raw = self.member_state.workspace_last_seen_snapshot
+        if not raw:
+            return None
+        try:
+            parsed = json.loads(raw)
+            return parsed if isinstance(parsed, dict) else None
+        except json.JSONDecodeError:
+            return None
+
 
 class TripMemberState(Base):
     __tablename__ = "trip_member_states"
@@ -65,6 +87,18 @@ class TripMemberState(Base):
         index=True,
     )
     budget_limit: Mapped[float | None] = mapped_column(Float, nullable=True)
+    workspace_last_seen_signature: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+    workspace_last_seen_snapshot: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+    workspace_last_seen_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
 
     membership: Mapped[TripMembership] = relationship(
         "TripMembership", back_populates="member_state"

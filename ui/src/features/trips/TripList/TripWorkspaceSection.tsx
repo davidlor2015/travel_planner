@@ -1,5 +1,6 @@
 import type { Trip } from "../../../shared/api/trips";
 import { TripHero } from "../workspace/TripHero";
+import { WorkspaceActivityStrip } from "../workspace/WorkspaceActivityStrip";
 import {
   WorkspaceTabBar,
   type WorkspaceTab,
@@ -10,6 +11,7 @@ import type {
   ReservationSummary,
 } from "../workspace/types";
 import type { TripReadinessSnapshot } from "../workspace/tripOverviewViewModel";
+import type { WorkspaceActivityStripItem } from "../workspace/workspaceActivityModel";
 
 /**
  * Layout / composition only: hero + tab chrome + scroll region for tab panels.
@@ -35,6 +37,8 @@ export interface TripWorkspaceSectionProps {
   isActivityMuted?: boolean;
   onManageGroup: () => void;
   onOpenActivityDrawer?: () => void;
+  activityStripItems?: WorkspaceActivityStripItem[];
+  activityHasUnseenChanges?: boolean;
   onShareTrip?: () => void;
   /** Tab panel content (errors, confirm UI, active tab body). */
   children: React.ReactNode;
@@ -59,6 +63,8 @@ export function TripWorkspaceSection({
   isActivityMuted,
   onManageGroup,
   onOpenActivityDrawer,
+  activityStripItems = [],
+  activityHasUnseenChanges = false,
   onShareTrip,
   children,
 }: TripWorkspaceSectionProps) {
@@ -78,6 +84,12 @@ export function TripWorkspaceSection({
         onManageGroup={onManageGroup}
         onOpenActivityDrawer={onOpenActivityDrawer}
         onShareTrip={onShareTrip}
+      />
+
+      <WorkspaceActivityStrip
+        hasUnseenChanges={activityHasUnseenChanges}
+        items={activityStripItems}
+        onOpenActivityDrawer={onOpenActivityDrawer}
       />
 
       <WorkspaceTabBar

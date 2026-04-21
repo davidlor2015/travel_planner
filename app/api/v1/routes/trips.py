@@ -11,6 +11,8 @@ from app.schemas.trip import (
     TripResponse,
     TripSummaryResponse,
     TripUpdate,
+    WorkspaceLastSeenResponse,
+    WorkspaceLastSeenUpdateRequest,
 )
 from app.services.trip_service import TripService
 
@@ -75,3 +77,20 @@ def update_trip(trip_id: int, trip_in: TripUpdate, db: SessionDep, current_user:
 def delete_trip(trip_id: int, db: SessionDep, current_user: CurrentUser):
     TripService(db).delete(trip_id, current_user.id)
     return Response(status_code=204)
+
+
+@router.post(
+    "/{trip_id}/workspace/last-seen",
+    response_model=WorkspaceLastSeenResponse,
+)
+def update_workspace_last_seen(
+    trip_id: int,
+    payload: WorkspaceLastSeenUpdateRequest,
+    db: SessionDep,
+    current_user: CurrentUser,
+):
+    return TripService(db).update_workspace_last_seen(
+        trip_id=trip_id,
+        user_id=current_user.id,
+        payload=payload,
+    )

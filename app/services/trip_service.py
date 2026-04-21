@@ -1,4 +1,5 @@
 from datetime import date, datetime, timedelta, timezone
+import json
 
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
@@ -22,6 +23,8 @@ from app.schemas.trip import (
     TripMemberAddRequest,
     TripMemberResponse,
     TripUpdate,
+    WorkspaceLastSeenResponse,
+    WorkspaceLastSeenUpdateRequest,
 )
 from app.services.matching_service import MatchingService
 from app.services.trip_access_service import TripAccessService
@@ -143,6 +146,9 @@ class TripService:
                 "role": membership.role,
                 "joined_at": membership.joined_at,
                 "status": "active",
+                "workspace_last_seen_signature": membership.workspace_last_seen_signature,
+                "workspace_last_seen_snapshot": membership.workspace_last_seen_snapshot,
+                "workspace_last_seen_at": membership.workspace_last_seen_at,
             })
             for membership in memberships
         ]
@@ -295,3 +301,36 @@ class TripService:
         if invite.status != "pending":
             raise HTTPException(status_code=409, detail="Invite has already been accepted")
         return invite
+
+    def update_workspace_last_seen(
+        self,
+        trip_id: int,
+        user_id: int,
+        payload: WorkspaceLastSeenUpdateRequest,
+    ) -> WorkspaceLastSeenResponse:
+        context = self.access_service.require_membership(trip_id, user_id)
+        state = context.member_state
+
+        signature = payload.signature.strip()
+        if not signature:
+            raise HTTPException(status_code=400, detail="signature is required")
+
+        state.workspace_last_seen_signature = signature
+        state.workspace_last_seen_snapshot = json.dumps(payload.snapshot, sort_keys=True)
+        state.workspace_last_seen_at = datetime.now(timezone.utc)
+        self.db.commit()
+        self.db.refresh(state)
+
+        parsed_snapshot: dict | None = None
+        if state.workspace_last_seen_snapshot:
+            try:
+                loaded = json.loads(state.workspace_last_seen_snapshot)
+                parsed_snapshot = loaded if isinstance(loaded, dict) else None
+            except json.JSONDecodeError:
+                parsed_snapshot = None
+
+        return WorkspaceLastSeenResponse(
+            workspace_last_seen_signature=state.workspace_last_seen_signature,
+            workspace_last_seen_snapshot=parsed_snapshot,
+            workspace_last_seen_at=state.workspace_last_seen_at,
+        )

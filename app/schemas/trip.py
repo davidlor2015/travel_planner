@@ -77,6 +77,9 @@ class TripMemberResponse(BaseModel):
     role: str
     joined_at: datetime
     status: str = "active"
+    workspace_last_seen_signature: str | None = None
+    workspace_last_seen_snapshot: dict | None = None
+    workspace_last_seen_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -147,3 +150,14 @@ class TripSummaryResponse(BaseModel):
     budget_remaining: float | None
     budget_is_over: bool
     budget_expense_count: int
+
+
+class WorkspaceLastSeenUpdateRequest(BaseModel):
+    signature: str
+    snapshot: dict
+
+
+class WorkspaceLastSeenResponse(BaseModel):
+    workspace_last_seen_signature: str | None = None
+    workspace_last_seen_snapshot: dict | None = None
+    workspace_last_seen_at: datetime | None = None
