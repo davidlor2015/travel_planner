@@ -14,24 +14,14 @@ import {
   type Itinerary,
 } from "../../../shared/api/ai";
 import {
-  addEditableItineraryStop,
   type DraftAiAssistRequest,
   appendEditableItineraryDay,
   buildItemReferences,
-  clearEditableItineraryDay,
-  deleteEditableItineraryStop,
-  duplicateEditableItineraryDay,
-  duplicateEditableItineraryStop,
-  moveEditableItineraryItem,
-  moveEditableItineraryStopToDay,
   preserveSelectionIds,
-  reorderEditableItineraryStopWithinDay,
   toApiItinerary,
   toEditableItinerary,
-  updateEditableItineraryDay,
-  updateEditableItineraryStop,
   type EditableItinerary,
-  type EditableItineraryItem,
+  type EditableStopPatch,
 } from "../itineraryDraft";
 import {
   buildTripActivities,
@@ -71,6 +61,8 @@ import {
   deriveTripActionItems,
   type TripActionDerivationInput,
 } from "../workspace/deriveTripActionItems";
+import { createItineraryDraftMutations } from "./itineraryDraftMutations";
+import { deriveDraftMutationState } from "./draftPublishStateMachine";
 
 interface DraftPlanMeta {
   source: string;
@@ -116,6 +108,9 @@ export function useTripWorkspaceModel({
     new Set(),
   );
   const [applyingIds, setApplyingIds] = useState<Set<number>>(new Set());
+  const [appliedSuccessIds, setAppliedSuccessIds] = useState<Set<number>>(
+    new Set(),
+  );
 
   const [packingSummaries, setPackingSummaries] = useState<
     Record<number, PackingSummary>
@@ -172,6 +167,19 @@ export function useTripWorkspaceModel({
     },
     [resetStreamBase],
   );
+  const draftMutations = useMemo(
+    () => createItineraryDraftMutations(setPendingItineraries),
+    [],
+  );
+
+  const clearAppliedSuccess = useCallback((tripId: number) => {
+    setAppliedSuccessIds((prev) => {
+      if (!prev.has(tripId)) return prev;
+      const next = new Set(prev);
+      next.delete(tripId);
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     const updateLayout = () => {
@@ -711,10 +719,13 @@ export function useTripWorkspaceModel({
     if (!itinerary) return;
 
     setDraftActionError(null);
+    clearAppliedSuccess(tripId);
     setApplyingIds((prev) => new Set(prev).add(tripId));
 
     try {
+      // Backend contract: persist is full-itinerary replace, not granular stop mutations.
       await applyItinerary(token, tripId, toApiItinerary(itinerary));
+      setAppliedSuccessIds((prev) => new Set(prev).add(tripId));
       const freshTrips = await getTrips(token);
       setTrips(freshTrips);
       const meta = draftPlanMeta[tripId];
@@ -749,6 +760,7 @@ export function useTripWorkspaceModel({
         return next;
       });
     } catch (err) {
+      clearAppliedSuccess(tripId);
       setDraftActionError(
         err instanceof Error ? err.message : "Failed to apply itinerary.",
       );
@@ -769,6 +781,7 @@ export function useTripWorkspaceModel({
     setDraftActionError(null);
     setRegeneratingIds((prev) => new Set(prev).add(tripId));
     try {
+      // Backend contract: locked/favorite references are positional to this exact snapshot.
       const refined = await refineItinerary(token, tripId, {
         current_itinerary: toApiItinerary(current),
         locked_items: buildItemReferences(current, lockedItemIds[tripId] ?? []),
@@ -824,6 +837,7 @@ export function useTripWorkspaceModel({
     setRegeneratingIds((prev) => new Set(prev).add(tripId));
 
     try {
+      // Backend contract: locked/favorite references are positional to this exact snapshot.
       const refined = await refineItinerary(token, tripId, {
         current_itinerary: toApiItinerary(current),
         locked_items: buildItemReferences(current, payload.lockedIds),
@@ -875,20 +889,14 @@ export function useTripWorkspaceModel({
     targetDayNumber: number,
     targetIndex: number,
   ) => {
-    setPendingItineraries((prev) => {
-      const current = prev[tripId];
-      if (!current) return prev;
-      return {
-        ...prev,
-        [tripId]: moveEditableItineraryItem(
-          current,
-          sourceDayNumber,
-          sourceIndex,
-          targetDayNumber,
-          targetIndex,
-        ),
-      };
-    });
+    clearAppliedSuccess(tripId);
+    draftMutations.moveItem(
+      tripId,
+      sourceDayNumber,
+      sourceIndex,
+      targetDayNumber,
+      targetIndex,
+    );
   };
 
   const handleAddDraftDay = (tripId: number) => {
@@ -900,19 +908,20 @@ export function useTripWorkspaceModel({
       const current = prev[tripId];
       if (!current) return prev;
 
-      const nextDraft = appendEditableItineraryDay(current);
-      const addedDay = nextDraft.days[nextDraft.days.length - 1];
+      const applied = appendEditableItineraryDay(current);
+      const addedDay = applied.days[applied.days.length - 1];
       nextDayNumber = addedDay?.day_number ?? null;
-      nextDraftSnapshot = nextDraft;
+      nextDraftSnapshot = applied;
       didAdd = true;
 
       return {
         ...prev,
-        [tripId]: nextDraft,
+        [tripId]: applied,
       };
     });
 
     if (!didAdd) return;
+    clearAppliedSuccess(tripId);
 
     if (nextDayNumber !== null) {
       setRegenerationControls((prev) => {
@@ -953,6 +962,7 @@ export function useTripWorkspaceModel({
     if (!trip) return;
 
     const previous = pendingItineraries[tripId];
+    clearAppliedSuccess(tripId);
     upsertDraftItinerary(tripId, buildManualItineraryDraft(trip), previous);
 
     track({
@@ -970,14 +980,8 @@ export function useTripWorkspaceModel({
       Pick<EditableItinerary["days"][number], "day_title" | "day_note" | "date">
     >,
   ) => {
-    setPendingItineraries((prev) => {
-      const current = prev[tripId];
-      if (!current) return prev;
-      return {
-        ...prev,
-        [tripId]: updateEditableItineraryDay(current, dayNumber, patch),
-      };
-    });
+    clearAppliedSuccess(tripId);
+    draftMutations.updateDay(tripId, dayNumber, patch);
   };
 
   const handleAddDraftStop = (
@@ -985,37 +989,18 @@ export function useTripWorkspaceModel({
     dayNumber: number,
     insertAfterIndex?: number,
   ) => {
-    setPendingItineraries((prev) => {
-      const current = prev[tripId];
-      if (!current) return prev;
-      return {
-        ...prev,
-        [tripId]: addEditableItineraryStop(current, dayNumber, {
-          insertAfterIndex,
-        }),
-      };
-    });
+    clearAppliedSuccess(tripId);
+    draftMutations.addStop(tripId, dayNumber, insertAfterIndex);
   };
 
   const handleUpdateDraftStop = (
     tripId: number,
     dayNumber: number,
     stopId: string,
-    patch: Partial<Omit<EditableItineraryItem, "client_id">>,
+    patch: EditableStopPatch,
   ) => {
-    setPendingItineraries((prev) => {
-      const current = prev[tripId];
-      if (!current) return prev;
-      return {
-        ...prev,
-        [tripId]: updateEditableItineraryStop(
-          current,
-          dayNumber,
-          stopId,
-          patch,
-        ),
-      };
-    });
+    clearAppliedSuccess(tripId);
+    draftMutations.updateStop(tripId, dayNumber, stopId, patch);
   };
 
   const handleDeleteDraftStop = (
@@ -1023,14 +1008,8 @@ export function useTripWorkspaceModel({
     dayNumber: number,
     stopId: string,
   ) => {
-    setPendingItineraries((prev) => {
-      const current = prev[tripId];
-      if (!current) return prev;
-      return {
-        ...prev,
-        [tripId]: deleteEditableItineraryStop(current, dayNumber, stopId),
-      };
-    });
+    clearAppliedSuccess(tripId);
+    draftMutations.deleteStop(tripId, dayNumber, stopId);
   };
 
   const handleDuplicateDraftStop = (
@@ -1038,14 +1017,8 @@ export function useTripWorkspaceModel({
     dayNumber: number,
     stopId: string,
   ) => {
-    setPendingItineraries((prev) => {
-      const current = prev[tripId];
-      if (!current) return prev;
-      return {
-        ...prev,
-        [tripId]: duplicateEditableItineraryStop(current, dayNumber, stopId),
-      };
-    });
+    clearAppliedSuccess(tripId);
+    draftMutations.duplicateStop(tripId, dayNumber, stopId);
   };
 
   const handleReorderDraftStopWithinDay = (
@@ -1054,62 +1027,23 @@ export function useTripWorkspaceModel({
     sourceIndex: number,
     targetIndex: number,
   ) => {
-    setPendingItineraries((prev) => {
-      const current = prev[tripId];
-      if (!current) return prev;
-      return {
-        ...prev,
-        [tripId]: reorderEditableItineraryStopWithinDay(
-          current,
-          dayNumber,
-          sourceIndex,
-          targetIndex,
-        ),
-      };
-    });
-  };
-
-  const handleMoveDraftStopToDay = (
-    tripId: number,
-    sourceDayNumber: number,
-    stopId: string,
-    targetDayNumber: number,
-  ) => {
-    setPendingItineraries((prev) => {
-      const current = prev[tripId];
-      if (!current) return prev;
-      return {
-        ...prev,
-        [tripId]: moveEditableItineraryStopToDay(
-          current,
-          sourceDayNumber,
-          stopId,
-          targetDayNumber,
-        ),
-      };
-    });
+    clearAppliedSuccess(tripId);
+    draftMutations.reorderStopsWithinDay(
+      tripId,
+      dayNumber,
+      sourceIndex,
+      targetIndex,
+    );
   };
 
   const handleDuplicateDraftDay = (tripId: number, dayNumber: number) => {
-    setPendingItineraries((prev) => {
-      const current = prev[tripId];
-      if (!current) return prev;
-      return {
-        ...prev,
-        [tripId]: duplicateEditableItineraryDay(current, dayNumber),
-      };
-    });
+    clearAppliedSuccess(tripId);
+    draftMutations.duplicateDay(tripId, dayNumber);
   };
 
   const handleClearDraftDay = (tripId: number, dayNumber: number) => {
-    setPendingItineraries((prev) => {
-      const current = prev[tripId];
-      if (!current) return prev;
-      return {
-        ...prev,
-        [tripId]: clearEditableItineraryDay(current, dayNumber),
-      };
-    });
+    clearAppliedSuccess(tripId);
+    draftMutations.clearDay(tripId, dayNumber);
   };
   const selectedTripIsOwner = Boolean(
     selectedTrip?.members.some(
@@ -1143,6 +1077,14 @@ export function useTripWorkspaceModel({
   const selectedIsApplying = selectedTrip
     ? applyingIds.has(selectedTrip.id)
     : false;
+  const selectedAppliedSuccess = selectedTrip
+    ? appliedSuccessIds.has(selectedTrip.id)
+    : false;
+  const selectedDraftMutationState = deriveDraftMutationState({
+    isApplying: selectedIsApplying,
+    hasAppliedSuccess: selectedAppliedSuccess,
+    hasDraftError: Boolean(draftActionError),
+  });
   const selectedIsAnyGenerating = selectedIsStreaming;
   const selectedDurationDays = selectedTrip
     ? getTripDurationDays(selectedTrip.start_date, selectedTrip.end_date)
@@ -1194,6 +1136,7 @@ export function useTripWorkspaceModel({
       selectedSavedItinerary,
       selectedPendingItinerary ?? undefined,
     );
+    clearAppliedSuccess(selectedTrip.id);
   };
 
   const handleShareTrip = async () => {
@@ -1298,6 +1241,7 @@ export function useTripWorkspaceModel({
       selectedStreamError,
       selectedIsRegenerating,
       selectedIsApplying,
+      selectedDraftMutationState,
       selectedIsAnyGenerating,
       actionInputs,
       actionItems,
@@ -1340,7 +1284,6 @@ export function useTripWorkspaceModel({
       handleDeleteDraftStop,
       handleDuplicateDraftStop,
       handleReorderDraftStopWithinDay,
-      handleMoveDraftStopToDay,
       handleDuplicateDraftDay,
       handleClearDraftDay,
       toggleDraftSelection,

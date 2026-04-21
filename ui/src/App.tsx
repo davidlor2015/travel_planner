@@ -58,9 +58,6 @@ const CreateTripForm = lazy(() =>
     default: m.CreateTripForm,
   })),
 );
-const Dashboard = lazy(() =>
-  import("./features/dashboard").then((m) => ({ default: m.Dashboard })),
-);
 const ExplorePage = lazy(() =>
   import("./features/explore").then((m) => ({ default: m.ExplorePage })),
 );
@@ -115,8 +112,6 @@ function FullPageLoading({ label }: { label: string }) {
 
 function routeForView(view: AppView, tripId?: number): string {
   switch (view) {
-    case "dashboard":
-      return "/app/dashboard";
     case "explore":
       return EXPLORE_ENABLED ? "/app/explore" : "/app/trips";
     case "archive":
@@ -132,7 +127,6 @@ function routeForView(view: AppView, tripId?: number): string {
 }
 
 function viewFromPath(pathname: string): AppView {
-  if (pathname.startsWith("/app/dashboard")) return "dashboard";
   if (pathname.startsWith("/app/explore"))
     return EXPLORE_ENABLED ? "explore" : "trips";
   if (pathname.startsWith("/app/archive")) return "archive";
@@ -183,7 +177,7 @@ function MarketingHome() {
   }
 
   if (auth.isAuthenticated) {
-    return <Navigate to="/app/dashboard" replace />;
+    return <Navigate to="/app/trips" replace />;
   }
 
   return (
@@ -198,7 +192,7 @@ function AuthRoute({ mode }: { mode: "login" | "register" }) {
   const auth = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const returnTo = searchParams.get("returnTo") ?? "/app/dashboard";
+  const returnTo = searchParams.get("returnTo") ?? "/app/trips";
 
   return (
     <LoginPage
@@ -299,19 +293,6 @@ function AppLayout() {
   );
 }
 
-function DashboardRoute() {
-  const { token, trips, navigateToView } = useAppLayoutContext();
-  const navigate = useNavigate();
-  return (
-    <Dashboard
-      token={token}
-      trips={trips}
-      onNavigate={navigateToView}
-      onCreateTrip={() => navigate("/app/trips/new")}
-    />
-  );
-}
-
 function MatchingRoute() {
   const { token, trips } = useAppLayoutContext();
   return <MatchingPage token={token} trips={trips} />;
@@ -364,9 +345,38 @@ function ExploreRoute() {
 }
 
 function TripsListRoute() {
-  const { token, user, setTrips } = useAppLayoutContext();
+  const { token, user, setTrips, trips } = useAppLayoutContext();
   const navigate = useNavigate();
   const { tripId } = useParams();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (tripId || trips.length === 0) return;
+
+    const now = new Date();
+    const withParsedDates = trips
+      .map((trip) => ({
+        trip,
+        start: new Date(`${trip.start_date}T00:00:00`),
+        end: new Date(`${trip.end_date}T23:59:59`),
+      }))
+      .filter(
+        ({ start, end }) =>
+          !Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()),
+      );
+
+    const activeTrip = withParsedDates
+      .filter(({ start, end }) => start <= now && now <= end)
+      .sort((a, b) => a.start.getTime() - b.start.getTime())[0]?.trip;
+    const upcomingTrip = withParsedDates
+      .filter(({ start }) => start > now)
+      .sort((a, b) => a.start.getTime() - b.start.getTime())[0]?.trip;
+    const fallbackTrip = [...trips].sort((a, b) => b.id - a.id)[0];
+
+    const targetTripId = activeTrip?.id ?? upcomingTrip?.id ?? fallbackTrip?.id;
+    if (!targetTripId) return;
+    navigate(`/app/trips/${targetTripId}`, { replace: true });
+  }, [navigate, tripId, trips]);
 
   return (
     <TripList
@@ -375,7 +385,7 @@ function TripsListRoute() {
       onCreateClick={() => navigate("/app/trips/new")}
       initialTripId={tripId ? Number(tripId) : undefined}
       onTripSelect={(nextTripId) =>
-        navigate(nextTripId ? `/app/trips/${nextTripId}` : "/app/trips", {
+        navigate(nextTripId ? `/app/trips/${nextTripId}` : location.pathname, {
           replace: true,
         })
       }
@@ -589,8 +599,7 @@ function AppRoutes() {
 
       <Route element={<RequireAuth />}>
         <Route path="/app" element={<AppLayout />}>
-          <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<DashboardRoute />} />
+          <Route index element={<Navigate to="trips" replace />} />
           <Route path="archive" element={<ArchiveRoute />} />
           <Route
             path="explore"
@@ -615,7 +624,7 @@ function AppRoutes() {
         path="*"
         element={
           <Navigate
-            to={auth.isAuthenticated ? "/app/dashboard" : "/"}
+            to={auth.isAuthenticated ? "/app/trips" : "/"}
             replace
           />
         }

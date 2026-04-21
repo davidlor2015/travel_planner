@@ -75,6 +75,22 @@ describe("itineraryEditorModels", () => {
       );
       expect(unknown.stopStatus).toBe("planned");
     });
+
+    it("surfaces ownership metadata from notes token", () => {
+      const vm = buildStopRowViewModel(
+        item({
+          client_id: "owner-1",
+          title: "Hotel check-in",
+          notes:
+            "Bring passport.\n\n[ownership:handledBy=Alex;bookedBy=Sam]",
+        }),
+        { isLocked: false, isFavorite: false },
+      );
+      expect(vm.handledBy).toBe("Alex");
+      expect(vm.bookedBy).toBe("Sam");
+      expect(vm.secondaryLine).toContain("Bring passport.");
+      expect(vm.secondaryLine).not.toContain("ownership:");
+    });
   });
 
   describe("buildDayPanelMeta", () => {

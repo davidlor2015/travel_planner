@@ -86,45 +86,67 @@ export const TripList = ({
   if (model.selection.trips.length === 0) {
     return (
       <div className="min-h-screen bg-[#F3EEE7]">
-        <header className="border-b border-[#EAE2D6] bg-[#FEFCF9]/96 px-4 py-4 backdrop-blur">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+        <header className="border-b border-[#EAE2D6] bg-[#FEFCF9]/96 px-4 py-3 backdrop-blur sm:py-4">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 sm:gap-3">
             <WaypointLogo variant="header" />
             <motion.button
               type="button"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               onClick={onCreateClick}
-              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#B86845] px-4 py-2 text-sm font-semibold text-white"
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-[#B86845] px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#A85B39] sm:gap-2 sm:px-4"
             >
               <PlusIcon size={14} strokeWidth={2.3} />
               New Trip
             </motion.button>
           </div>
         </header>
-        <div className="mx-auto flex max-w-7xl items-center justify-center px-4 py-12 sm:px-6">
-          <div className="w-full max-w-2xl overflow-hidden rounded-[28px] border border-[#EAE2D6] bg-[#FEFCF9] shadow-[0_18px_50px_rgba(28,17,8,0.08)]">
-            <div className="h-[280px] bg-[linear-gradient(120deg,#1C1108_0%,#6B5E52_45%,#B86845_100%)]" />
-            <div className="px-8 py-8 text-center">
+        <div className="mx-auto flex max-w-7xl items-center justify-center px-4 py-8 sm:px-6 sm:py-12">
+          <div className="w-full max-w-3xl overflow-hidden rounded-[28px] border border-[#EAE2D6] bg-[#FEFCF9] shadow-[0_18px_50px_rgba(28,17,8,0.08)]">
+            <div className="relative h-[220px] bg-[linear-gradient(120deg,#1C1108_0%,#6B5E52_45%,#B86845_100%)] sm:h-[280px]">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(255,255,255,0.2),transparent_35%),radial-gradient(circle_at_80%_30%,rgba(255,255,255,0.14),transparent_40%)]" />
+              <div className="absolute left-5 top-5 rounded-full border border-white/35 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-white/90 backdrop-blur sm:left-7 sm:top-7">
+                Trip workspace
+              </div>
+              <div className="absolute bottom-5 left-5 right-5 grid gap-2 text-white/90 sm:bottom-7 sm:left-7 sm:right-7 sm:grid-cols-3">
+                <div className="rounded-xl border border-white/20 bg-black/15 px-3 py-2 text-[11px] font-medium">
+                  Shared itinerary
+                </div>
+                <div className="rounded-xl border border-white/20 bg-black/15 px-3 py-2 text-[11px] font-medium">
+                  Team coordination
+                </div>
+                <div className="rounded-xl border border-white/20 bg-black/15 px-3 py-2 text-[11px] font-medium">
+                  Ready-to-travel checks
+                </div>
+              </div>
+            </div>
+            <div className="px-5 py-7 text-center sm:px-8 sm:py-8">
               <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#A39688]">
                 First trip
               </p>
-              <h2 className="mt-2 text-3xl font-semibold text-[#1C1108]">
-                Open your first shared travel home.
+              <h2 className="mt-2 text-2xl font-semibold text-[#1C1108] sm:text-3xl">
+                Open your first shared trip workspace.
               </h2>
-              <p className="mx-auto mt-3 max-w-lg text-[13.5px] leading-relaxed text-[#6B5E52]">
-                Start with a destination and dates, then generate a shared
-                itinerary the group can apply and track together.
+              <p className="mx-auto mt-3 max-w-xl text-[13.5px] leading-relaxed text-[#6B5E52]">
+                Start with destination and dates. Then shape the plan with
+                manual edits first, optional AI assist, and one place your group
+                can actually use together.
               </p>
-              <motion.button
-                type="button"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={onCreateClick}
-                className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#B86845] px-5 py-2.5 text-sm font-semibold text-white shadow-sm"
-              >
-                <PlusIcon size={15} strokeWidth={2.3} />
-                Create your first trip
-              </motion.button>
+              <div className="mt-6 flex flex-col items-center justify-center gap-2.5 sm:flex-row">
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={onCreateClick}
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#B86845] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#A85B39]"
+                >
+                  <PlusIcon size={15} strokeWidth={2.3} />
+                  Create your first trip
+                </motion.button>
+                <p className="text-[11px] text-[#8A7E74]">
+                  You can invite people and collaborate after setup.
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -165,6 +187,7 @@ export const TripList = ({
     selectedStreamError,
     selectedIsRegenerating,
     selectedIsApplying,
+    selectedDraftMutationState,
     selectedIsAnyGenerating,
   } = model.derived;
 
@@ -208,7 +231,6 @@ export const TripList = ({
     handleDeleteDraftStop,
     handleDuplicateDraftStop,
     handleReorderDraftStopWithinDay,
-    handleMoveDraftStopToDay,
     handleDuplicateDraftDay,
     handleClearDraftDay,
     toggleDraftSelection,
@@ -376,6 +398,7 @@ export const TripList = ({
                     isAnyGenerating={selectedIsAnyGenerating}
                     isRegenerating={selectedIsRegenerating}
                     isApplying={selectedIsApplying}
+                    draftMutationState={selectedDraftMutationState}
                     draftPublishError={draftActionError}
                     savedItinerary={selectedSavedItinerary}
                     pendingItinerary={selectedPendingItinerary}
@@ -436,18 +459,6 @@ export const TripList = ({
                         dayNumber,
                         sourceIndex,
                         targetIndex,
-                      )
-                    }
-                    onMoveStopToDay={(
-                      sourceDayNumber,
-                      stopId,
-                      targetDayNumber,
-                    ) =>
-                      handleMoveDraftStopToDay(
-                        selectedTrip.id,
-                        sourceDayNumber,
-                        stopId,
-                        targetDayNumber,
                       )
                     }
                     onDuplicateDay={(dayNumber) =>

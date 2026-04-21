@@ -44,6 +44,7 @@ interface OverviewTabProps {
   isAnyGenerating: boolean;
   isRegenerating: boolean;
   isApplying: boolean;
+  draftMutationState?: "idle" | "saving" | "saved";
   /** Shown on the draft panel when publish/assist fails (draft mutations only). */
   draftPublishError?: string | null;
   /** Enables compact draft UX (bottom sheet stop edit, larger drag targets). */
@@ -83,11 +84,6 @@ interface OverviewTabProps {
     dayNumber: number,
     sourceIndex: number,
     targetIndex: number,
-  ) => void;
-  onMoveStopToDay?: (
-    sourceDayNumber: number,
-    stopId: string,
-    targetDayNumber: number,
   ) => void;
   onDuplicateDay?: (dayNumber: number) => void;
   onClearDay?: (dayNumber: number) => void;
@@ -151,6 +147,7 @@ export function OverviewTab({
   isAnyGenerating,
   isRegenerating,
   isApplying,
+  draftMutationState = "idle",
   draftPublishError,
   isMobileLayout = false,
   savedItinerary,
@@ -171,7 +168,6 @@ export function OverviewTab({
   onDeleteStop,
   onDuplicateStop,
   onReorderStopWithinDay,
-  onMoveStopToDay,
   onDuplicateDay,
   onClearDay,
   onToggleLock,
@@ -313,6 +309,7 @@ export function OverviewTab({
               draftFallbackUsed={draftPlanMeta?.fallbackUsed ?? null}
               onApply={onApply}
               applying={isApplying}
+              draftMutationState={draftMutationState}
               publishError={draftPublishError}
               regenerating={isRegenerating}
               lockedItemIds={lockedItemIds}
@@ -329,7 +326,6 @@ export function OverviewTab({
               onDeleteStop={onDeleteStop}
               onDuplicateStop={onDuplicateStop}
               onReorderStopWithinDay={onReorderStopWithinDay}
-              onMoveStopToDay={onMoveStopToDay}
               onDuplicateDay={onDuplicateDay}
               onClearDay={onClearDay}
               onDayToggle={onItineraryDayToggle}

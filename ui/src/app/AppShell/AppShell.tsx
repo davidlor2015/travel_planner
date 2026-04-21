@@ -6,7 +6,6 @@ import { SiteFooterLinks, WaypointLogo } from "../../shared/ui";
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export type AppView =
-  | "dashboard"
   | "trips"
   | "explore"
   | "archive"
@@ -28,17 +27,6 @@ interface AppShellProps {
 }
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
-
-const DashboardIcon = () => (
-  <svg
-    viewBox="0 0 20 20"
-    className="w-4 h-4"
-    fill="currentColor"
-    aria-hidden="true"
-  >
-    <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
-  </svg>
-);
 
 const TripsIcon = () => (
   <svg
@@ -110,7 +98,6 @@ const ProfileIcon = () => (
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const NAV_TABS: NavTab[] = [
-  { id: "dashboard", label: "Home", icon: <DashboardIcon /> },
   { id: "trips", label: "Trips", icon: <TripsIcon /> },
   { id: "explore", label: "Explore", icon: <ExploreIcon /> },
   { id: "archive", label: "Archive", icon: <ArchiveIcon /> },

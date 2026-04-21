@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { EditableItineraryDayCard } from "./EditableItineraryDayCard";
 import { EditableTimelineStopRow } from "./EditableTimelineStopRow";
@@ -19,6 +19,7 @@ interface EditableItineraryPanelProps {
   draftSourceLabel?: string | null;
   draftFallbackUsed?: boolean | null;
   applying?: boolean;
+  draftMutationState?: "idle" | "saving" | "saved";
   regenerating?: boolean;
   lockedItemIds: string[];
   favoriteItemIds: string[];
@@ -50,11 +51,6 @@ interface EditableItineraryPanelProps {
     dayNumber: number,
     sourceIndex: number,
     targetIndex: number,
-  ) => void;
-  onMoveStopToDay?: (
-    sourceDayNumber: number,
-    stopId: string,
-    targetDayNumber: number,
   ) => void;
   onDuplicateDay?: (dayNumber: number) => void;
   onClearDay?: (dayNumber: number) => void;
@@ -151,6 +147,7 @@ export const EditableItineraryPanel = ({
   draftSourceLabel,
   draftFallbackUsed,
   applying,
+  draftMutationState = "idle",
   regenerating,
   lockedItemIds,
   favoriteItemIds,
@@ -165,7 +162,6 @@ export const EditableItineraryPanel = ({
   onDeleteStop,
   onDuplicateStop,
   onReorderStopWithinDay,
-  onMoveStopToDay,
   onDuplicateDay,
   onClearDay,
   onDayToggle,
@@ -190,20 +186,6 @@ export const EditableItineraryPanel = ({
   const [showAiAssist, setShowAiAssist] = useState(false);
   const [assistStopId, setAssistStopId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const day =
-      itinerary.days.find(
-        (candidate) => candidate.day_number === regenerateDayNumber,
-      ) ?? itinerary.days[0];
-    const firstStopId = day?.items[0]?.client_id ?? null;
-    setAssistStopId((previous) => {
-      if (previous && day?.items.some((item) => item.client_id === previous)) {
-        return previous;
-      }
-      return firstStopId;
-    });
-  }, [itinerary.days, regenerateDayNumber]);
-
   const lockedSet = new Set(lockedItemIds);
   const favoriteSet = new Set(favoriteItemIds);
 
@@ -211,9 +193,17 @@ export const EditableItineraryPanel = ({
     itinerary.days.find((day) => day.day_number === regenerateDayNumber) ??
     itinerary.days[0];
   const selectedStopOptions = selectedDay?.items ?? [];
+  const selectedAssistStopId = useMemo(() => {
+    if (
+      assistStopId &&
+      selectedStopOptions.some((item) => item.client_id === assistStopId)
+    ) {
+      return assistStopId;
+    }
+    return selectedStopOptions[0]?.client_id ?? null;
+  }, [assistStopId, selectedStopOptions]);
   const selectedAssistStop =
-    selectedStopOptions.find((item) => item.client_id === assistStopId) ??
-    selectedStopOptions[0] ??
+    selectedStopOptions.find((item) => item.client_id === selectedAssistStopId) ??
     null;
 
   const variantLabel =
@@ -259,6 +249,7 @@ export const EditableItineraryPanel = ({
     (draftSourceLabel ?? itinerary.source_label)?.trim() || "Draft";
   const fallbackUsed =
     draftFallbackUsed ?? Boolean(itinerary.fallback_used);
+  const editControlsDisabled = Boolean(applying);
 
   return (
     <div
@@ -344,7 +335,7 @@ export const EditableItineraryPanel = ({
                       Stop for alternatives
                     </span>
                     <select
-                      value={selectedAssistStop?.client_id ?? ""}
+                      value={selectedAssistStopId ?? ""}
                       onChange={(event) => setAssistStopId(event.target.value)}
                       disabled={selectedStopOptions.length === 0}
                       className="w-full rounded-xl border border-smoke bg-white px-3 py-2 text-sm text-espresso disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-amber/25"
@@ -467,9 +458,6 @@ export const EditableItineraryPanel = ({
         {itinerary.days.map((day) => {
           const meta = buildDayPanelMeta(day);
           const stopCount = day.items.length;
-          const moveTargetDays = itinerary.days.filter(
-            (candidate) => candidate.day_number !== day.day_number,
-          );
 
           const emptyState =
             day.items.length === 0 ? (
@@ -596,7 +584,7 @@ export const EditableItineraryPanel = ({
                       isLocked={lockedSet.has(item.client_id)}
                       isFavorite={favoriteSet.has(item.client_id)}
                       useStopEditBottomSheet={isMobileLayout}
-                      moveTargetDays={moveTargetDays}
+                      interactionDisabled={editControlsDisabled}
                       onUpdate={(patch) =>
                         onUpdateStop?.(day.day_number, item.client_id, patch)
                       }
@@ -621,13 +609,6 @@ export const EditableItineraryPanel = ({
                         )
                       }
                       onAddAfter={() => onAddStop?.(day.day_number, index)}
-                      onMoveToDay={(targetDayNumber) =>
-                        onMoveStopToDay?.(
-                          day.day_number,
-                          item.client_id,
-                          targetDayNumber,
-                        )
-                      }
                       onToggleLock={() => onToggleLock(item.client_id)}
                       onToggleFavorite={() => onToggleFavorite(item.client_id)}
                       onDragStart={() =>
@@ -745,6 +726,11 @@ export const EditableItineraryPanel = ({
         <p className="mb-2 text-center text-[11px] text-flint/90">
           Publish when this draft is the plan your group should follow.
         </p>
+        {draftMutationState === "saved" ? (
+          <p className="mb-3 rounded-xl border border-olive/25 bg-olive/10 px-3 py-2 text-center text-[12px] font-medium text-olive">
+            Draft published successfully.
+          </p>
+        ) : null}
         {publishError?.trim() ? (
           <p
             className="mb-3 rounded-xl border border-danger/25 bg-danger/10 px-3 py-2 text-center text-[12px] font-medium text-danger"

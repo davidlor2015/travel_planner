@@ -20,7 +20,7 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install -r requirements.txt pytest httpx email-validator pytest-cov
+        run: pip install -r requirements.txt
 
       - name: Run tests
         env:
@@ -48,11 +48,15 @@ jobs:
 
       - name: Install dependencies
         working-directory: ui
-        run: npm install
+        run: npm ci
 
       - name: Lint
         working-directory: ui
         run: npm run lint
+
+      - name: Test
+        working-directory: ui
+        run: npm run test
 
       - name: Build
         working-directory: ui

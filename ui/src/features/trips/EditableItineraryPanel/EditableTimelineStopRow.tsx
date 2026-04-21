@@ -4,8 +4,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { inputCls } from "../../../shared/ui/inputCls";
 import type { ItineraryStopStatus } from "../../../shared/api/ai";
 import {
+  applyStopOwnershipMetadata,
+  extractStopOwnershipMetadata,
   normalizeStopStatus,
-  type EditableItinerary,
   type EditableItineraryItem,
 } from "../itineraryDraft";
 import {
@@ -23,16 +24,14 @@ export interface EditableTimelineStopRowProps {
   isFavorite: boolean;
   /** When true, full stop edit opens in a bottom sheet (mobile). */
   useStopEditBottomSheet?: boolean;
-  moveTargetDays: Array<
-    Pick<EditableItinerary["days"][number], "day_number" | "day_title">
-  >;
+  /** Disable manual edit controls while draft publish is in-flight. */
+  interactionDisabled?: boolean;
   onUpdate: (patch: Partial<Omit<EditableItineraryItem, "client_id">>) => void;
   onDelete: () => void;
   onDuplicate: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
   onAddAfter: () => void;
-  onMoveToDay: (targetDayNumber: number) => void;
   onToggleLock: () => void;
   onToggleFavorite: () => void;
   onDragStart: () => void;
@@ -50,17 +49,20 @@ const STOP_STATUS_OPTIONS: { value: ItineraryStopStatus; label: string }[] = [
 function DragHandle({
   onDragStart,
   onDragEnd,
+  disabled,
 }: {
   onDragStart: () => void;
   onDragEnd: () => void;
+  disabled?: boolean;
 }) {
   return (
     <div
-      draggable
+      draggable={!disabled}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      className="flex min-h-11 min-w-11 cursor-grab flex-col items-center justify-center rounded-lg border border-transparent pt-0.5 transition-colors hover:border-smoke/40 hover:bg-parchment/30 active:cursor-grabbing"
+      className="flex min-h-11 min-w-11 cursor-grab flex-col items-center justify-center rounded-lg border border-transparent pt-0.5 transition-colors hover:border-smoke/40 hover:bg-parchment/30 active:cursor-grabbing disabled:cursor-not-allowed"
       aria-label="Drag to reorder stop"
+      aria-disabled={disabled}
     >
       <svg
         width="14"
@@ -127,11 +129,8 @@ function StopEditFormBody({
   onMoveDown,
   index,
   totalStops,
-  moveTargetDays,
-  resolvedMoveTarget,
-  setMoveTarget,
-  onMoveToDay,
   showMobileReorder,
+  disabled,
 }: {
   item: EditableItineraryItem;
   useHtmlTime: boolean;
@@ -148,14 +147,11 @@ function StopEditFormBody({
   onMoveDown: () => void;
   index: number;
   totalStops: number;
-  moveTargetDays: Array<
-    Pick<EditableItinerary["days"][number], "day_number" | "day_title">
-  >;
-  resolvedMoveTarget: number;
-  setMoveTarget: (n: number) => void;
-  onMoveToDay: (targetDayNumber: number) => void;
   showMobileReorder: boolean;
+  disabled: boolean;
 }) {
+  const ownership = extractStopOwnershipMetadata(item.notes);
+
   return (
     <div className="space-y-2.5 border-t border-smoke/40 pt-3">
       {showMobileReorder ? (
@@ -163,7 +159,7 @@ function StopEditFormBody({
           <button
             type="button"
             onClick={onMoveUp}
-            disabled={index === 0}
+            disabled={disabled || index === 0}
             className="min-h-10 flex-1 rounded-full border border-smoke/80 bg-white px-3 text-[12px] font-semibold text-espresso disabled:opacity-30"
           >
             Move up
@@ -171,7 +167,7 @@ function StopEditFormBody({
           <button
             type="button"
             onClick={onMoveDown}
-            disabled={index === totalStops - 1}
+            disabled={disabled || index === totalStops - 1}
             className="min-h-10 flex-1 rounded-full border border-smoke/80 bg-white px-3 text-[12px] font-semibold text-espresso disabled:opacity-30"
           >
             Move down
@@ -179,6 +175,7 @@ function StopEditFormBody({
           <button
             type="button"
             onClick={onDelete}
+            disabled={disabled}
             className="min-h-10 flex-1 rounded-full border border-danger/25 bg-danger/5 px-3 text-[12px] font-semibold text-danger"
           >
             Delete
@@ -190,6 +187,7 @@ function StopEditFormBody({
           <input
             type="time"
             value={htmlTimeValue}
+            disabled={disabled}
             onChange={(e) => onUpdate({ time: e.target.value || null })}
             className={inputCls()}
           />
@@ -197,6 +195,7 @@ function StopEditFormBody({
           <input
             type="text"
             value={item.time ?? ""}
+            disabled={disabled}
             onChange={(e) => onUpdate({ time: e.target.value || null })}
             placeholder="Time (e.g. 9:00 or Morning)"
             className={inputCls()}
@@ -205,6 +204,7 @@ function StopEditFormBody({
         <input
           type="text"
           value={item.title}
+          disabled={disabled}
           onChange={(e) => onUpdate({ title: e.target.value })}
           placeholder="Stop title"
           className={inputCls()}
@@ -214,6 +214,7 @@ function StopEditFormBody({
         <input
           type="text"
           value={item.location ?? ""}
+          disabled={disabled}
           onChange={(e) => onUpdate({ location: e.target.value || null })}
           placeholder="Location"
           className={inputCls()}
@@ -221,18 +222,59 @@ function StopEditFormBody({
         <input
           type="text"
           value={item.cost_estimate ?? ""}
+          disabled={disabled}
           onChange={(e) => onUpdate({ cost_estimate: e.target.value || null })}
           placeholder="Cost estimate"
           className={inputCls()}
         />
       </div>
       <textarea
-        value={item.notes ?? ""}
-        onChange={(e) => onUpdate({ notes: e.target.value || null })}
+        value={ownership.plainNotes ?? ""}
+        disabled={disabled}
+        onChange={(e) =>
+          onUpdate({
+            notes: applyStopOwnershipMetadata(
+              e.target.value || null,
+              ownership.metadata,
+            ),
+          })
+        }
         placeholder="Notes"
         rows={2}
         className={`${inputCls()} resize-none`}
       />
+      <div className="grid gap-2 sm:grid-cols-2">
+        <input
+          type="text"
+          value={ownership.metadata.handledBy ?? ""}
+          disabled={disabled}
+          onChange={(e) =>
+            onUpdate({
+              notes: applyStopOwnershipMetadata(ownership.plainNotes, {
+                ...ownership.metadata,
+                handledBy: e.target.value || null,
+              }),
+            })
+          }
+          placeholder="Handled by"
+          className={inputCls()}
+        />
+        <input
+          type="text"
+          value={ownership.metadata.bookedBy ?? ""}
+          disabled={disabled}
+          onChange={(e) =>
+            onUpdate({
+              notes: applyStopOwnershipMetadata(ownership.plainNotes, {
+                ...ownership.metadata,
+                bookedBy: e.target.value || null,
+              }),
+            })
+          }
+          placeholder="Booked by"
+          className={inputCls()}
+        />
+      </div>
       <div className="flex flex-wrap items-center gap-1.5">
         <StopStatusSelect
           value={normalizeStopStatus(item.status)}
@@ -241,6 +283,7 @@ function StopEditFormBody({
         <button
           type="button"
           onClick={onToggleFavorite}
+          disabled={disabled}
           className={`${pillCls} ${
             isFavorite
               ? "border-olive/20 bg-olive/10 text-olive"
@@ -252,6 +295,7 @@ function StopEditFormBody({
         <button
           type="button"
           onClick={onToggleLock}
+          disabled={disabled}
           className={`${pillCls} ${
             isLocked
               ? "border-clay/20 bg-clay/10 text-clay"
@@ -261,37 +305,29 @@ function StopEditFormBody({
           {isLocked ? "Locked" : "Lock"}
         </button>
         <span className="mx-0.5 h-4 w-px bg-smoke" aria-hidden />
-        <button type="button" onClick={onAddAfter} className={ghostPillCls}>
+        <button
+          type="button"
+          onClick={onAddAfter}
+          disabled={disabled}
+          className={ghostPillCls}
+        >
           Add after
         </button>
-        <button type="button" onClick={onDuplicate} className={ghostPillCls}>
+        <button
+          type="button"
+          onClick={onDuplicate}
+          disabled={disabled}
+          className={ghostPillCls}
+        >
           Duplicate
         </button>
-        {moveTargetDays.length > 0 ? (
-          <div className="flex items-center gap-1.5">
-            <select
-              value={resolvedMoveTarget}
-              onChange={(e) => setMoveTarget(Number(e.target.value))}
-              className="rounded-full border border-smoke bg-white px-2 py-1 text-[11px] font-semibold text-espresso focus:outline-none focus:ring-2 focus:ring-amber/25"
-            >
-              {moveTargetDays.map((d) => (
-                <option key={d.day_number} value={d.day_number}>
-                  Day {d.day_number}
-                  {d.day_title ? ` — ${d.day_title}` : ""}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              onClick={() => onMoveToDay(resolvedMoveTarget)}
-              className={ghostPillCls}
-            >
-              Move
-            </button>
-          </div>
-        ) : null}
         {!showMobileReorder ? (
-          <button type="button" onClick={onDelete} className={dangerPillCls}>
+          <button
+            type="button"
+            onClick={onDelete}
+            disabled={disabled}
+            className={dangerPillCls}
+          >
             Delete
           </button>
         ) : null}
@@ -308,14 +344,13 @@ export function EditableTimelineStopRow({
   isLocked,
   isFavorite,
   useStopEditBottomSheet = false,
-  moveTargetDays,
+  interactionDisabled = false,
   onUpdate,
   onDelete,
   onDuplicate,
   onMoveUp,
   onMoveDown,
   onAddAfter,
-  onMoveToDay,
   onToggleLock,
   onToggleFavorite,
   onDragStart,
@@ -324,15 +359,6 @@ export function EditableTimelineStopRow({
   onDrop,
 }: EditableTimelineStopRowProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [moveTarget, setMoveTarget] = useState<number>(
-    moveTargetDays[0]?.day_number ?? 0,
-  );
-
-  const resolvedMoveTarget = moveTargetDays.some(
-    (d) => d.day_number === moveTarget,
-  )
-    ? moveTarget
-    : (moveTargetDays[0]?.day_number ?? 0);
 
   const vm = useMemo(
     () =>
@@ -423,11 +449,8 @@ export function EditableTimelineStopRow({
               onMoveDown={onMoveDown}
               index={index}
               totalStops={totalStops}
-              moveTargetDays={moveTargetDays}
-              resolvedMoveTarget={resolvedMoveTarget}
-              setMoveTarget={setMoveTarget}
-              onMoveToDay={onMoveToDay}
               showMobileReorder
+              disabled={interactionDisabled}
             />
             <button
               type="button"
@@ -452,7 +475,11 @@ export function EditableTimelineStopRow({
       onDrop={onDrop}
     >
       <div className="flex w-11 shrink-0 flex-col items-center sm:w-9">
-        <DragHandle onDragStart={onDragStart} onDragEnd={onDragEnd} />
+        <DragHandle
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
+          disabled={interactionDisabled}
+        />
         <div
           className="mt-1 h-2 w-2 shrink-0 rounded-full border border-espresso/20 bg-espresso/90"
           aria-hidden
@@ -529,6 +556,16 @@ export function EditableTimelineStopRow({
                     {vm.costDisplay}
                   </span>
                 ) : null}
+                {vm.handledBy ? (
+                  <span className="text-[10px] font-semibold text-flint/90">
+                    Handled: {vm.handledBy}
+                  </span>
+                ) : null}
+                {vm.bookedBy ? (
+                  <span className="text-[10px] font-semibold text-flint/90">
+                    Booked: {vm.bookedBy}
+                  </span>
+                ) : null}
                 {vm.showLocked ? (
                   <span className="text-[10px] font-semibold text-clay">
                     Locked
@@ -547,7 +584,7 @@ export function EditableTimelineStopRow({
                 <button
                   type="button"
                   onClick={onMoveUp}
-                  disabled={index === 0}
+                  disabled={interactionDisabled || index === 0}
                   aria-label="Move stop up"
                   className="rounded-md border border-transparent p-1.5 text-flint hover:border-smoke hover:bg-white disabled:opacity-25"
                 >
@@ -569,7 +606,7 @@ export function EditableTimelineStopRow({
                 <button
                   type="button"
                   onClick={onMoveDown}
-                  disabled={index === totalStops - 1}
+                  disabled={interactionDisabled || index === totalStops - 1}
                   aria-label="Move stop down"
                   className="rounded-md border border-transparent p-1.5 text-flint hover:border-smoke hover:bg-white disabled:opacity-25"
                 >
@@ -591,6 +628,7 @@ export function EditableTimelineStopRow({
                 <button
                   type="button"
                   onClick={onDelete}
+                  disabled={interactionDisabled}
                   aria-label="Delete stop"
                   className="rounded-md border border-transparent p-1.5 text-danger hover:bg-danger/10"
                 >
@@ -612,6 +650,7 @@ export function EditableTimelineStopRow({
               </div>
               <button
                 type="button"
+                disabled={interactionDisabled}
                 onClick={() => setIsEditing((v) => !v)}
                 className={`min-h-9 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
                   isEditing
@@ -653,11 +692,8 @@ export function EditableTimelineStopRow({
                     onMoveDown={onMoveDown}
                     index={index}
                     totalStops={totalStops}
-                    moveTargetDays={moveTargetDays}
-                    resolvedMoveTarget={resolvedMoveTarget}
-                    setMoveTarget={setMoveTarget}
-                    onMoveToDay={onMoveToDay}
                     showMobileReorder={false}
+                    disabled={interactionDisabled}
                   />
                 </div>
               </motion.div>

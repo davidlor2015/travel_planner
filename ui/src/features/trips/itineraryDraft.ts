@@ -24,6 +24,26 @@ export interface EditableItineraryItem extends ItineraryItem {
   client_id: string;
 }
 
+export interface StopOwnershipMetadata {
+  handledBy: string | null;
+  bookedBy: string | null;
+}
+
+export type EditableStopPatch = Partial<
+  Omit<EditableItineraryItem, 'client_id'>
+>;
+
+export interface AddStopOptions {
+  insertAfterIndex?: number;
+  initial?: EditableStopPatch;
+}
+
+export interface ReorderStopsWithinDayInput {
+  dayNumber: number;
+  sourceIndex: number;
+  targetIndex: number;
+}
+
 export interface EditableDayPlan extends Omit<DayPlan, 'items'> {
   day_title: string | null;
   day_note: string | null;
@@ -37,6 +57,83 @@ export interface EditableItinerary extends Omit<Itinerary, 'days'> {
 export interface ItemReference {
   day_number: number;
   item_index: number;
+}
+
+const OWNERSHIP_TOKEN_START = '[ownership:';
+const OWNERSHIP_TOKEN_END = ']';
+
+function normalizeOwnershipValue(value: string | null | undefined): string | null {
+  const next = value?.trim() ?? '';
+  return next.length > 0 ? next : null;
+}
+
+function parseOwnershipToken(token: string): StopOwnershipMetadata {
+  const parts = token
+    .split(';')
+    .map((part) => part.trim())
+    .filter(Boolean);
+  let handledBy: string | null = null;
+  let bookedBy: string | null = null;
+  for (const part of parts) {
+    const [rawKey, ...rest] = part.split('=');
+    const key = rawKey?.trim();
+    const value = normalizeOwnershipValue(rest.join('=').trim());
+    if (key === 'handledBy') handledBy = value;
+    if (key === 'bookedBy') bookedBy = value;
+  }
+  return { handledBy, bookedBy };
+}
+
+function buildOwnershipToken(metadata: StopOwnershipMetadata): string | null {
+  const handledBy = normalizeOwnershipValue(metadata.handledBy);
+  const bookedBy = normalizeOwnershipValue(metadata.bookedBy);
+  const pairs: string[] = [];
+  if (handledBy) pairs.push(`handledBy=${handledBy}`);
+  if (bookedBy) pairs.push(`bookedBy=${bookedBy}`);
+  if (pairs.length === 0) return null;
+  return `${OWNERSHIP_TOKEN_START}${pairs.join(';')}${OWNERSHIP_TOKEN_END}`;
+}
+
+export function extractStopOwnershipMetadata(
+  notes: string | null | undefined,
+): {
+  metadata: StopOwnershipMetadata;
+  plainNotes: string | null;
+} {
+  const raw = notes?.trim() ?? '';
+  if (!raw) {
+    return {
+      metadata: { handledBy: null, bookedBy: null },
+      plainNotes: null,
+    };
+  }
+
+  const start = raw.lastIndexOf(OWNERSHIP_TOKEN_START);
+  const end = raw.endsWith(OWNERSHIP_TOKEN_END) ? raw.length - 1 : -1;
+  if (start === -1 || end === -1 || end <= start) {
+    return {
+      metadata: { handledBy: null, bookedBy: null },
+      plainNotes: raw,
+    };
+  }
+
+  const tokenBody = raw.slice(start + OWNERSHIP_TOKEN_START.length, end).trim();
+  const metadata = parseOwnershipToken(tokenBody);
+  const plainNotes = normalizeOwnershipValue(raw.slice(0, start).trim());
+
+  return { metadata, plainNotes };
+}
+
+export function applyStopOwnershipMetadata(
+  plainNotes: string | null | undefined,
+  metadata: StopOwnershipMetadata,
+): string | null {
+  const cleanNotes = normalizeOwnershipValue(plainNotes);
+  const token = buildOwnershipToken(metadata);
+  if (!cleanNotes && !token) return null;
+  if (!token) return cleanNotes;
+  if (!cleanNotes) return token;
+  return `${cleanNotes}\n\n${token}`;
 }
 
 function toIsoDate(value: Date): string {
@@ -318,10 +415,7 @@ export function updateEditableItineraryDay(
 export function addEditableItineraryStop(
   itinerary: EditableItinerary,
   dayNumber: number,
-  options?: {
-    insertAfterIndex?: number;
-    initial?: Partial<Omit<EditableItineraryItem, 'client_id'>>;
-  },
+  options?: AddStopOptions,
 ): EditableItinerary {
   const days = cloneDays(itinerary);
   const day = days.find((candidate) => candidate.day_number === dayNumber);
@@ -344,7 +438,7 @@ export function updateEditableItineraryStop(
   itinerary: EditableItinerary,
   dayNumber: number,
   stopId: string,
-  patch: Partial<Omit<EditableItineraryItem, 'client_id'>>,
+  patch: EditableStopPatch,
 ): EditableItinerary {
   const days = cloneDays(itinerary);
   const day = days.find((candidate) => candidate.day_number === dayNumber);
@@ -410,10 +504,9 @@ export function duplicateEditableItineraryStop(
 
 export function reorderEditableItineraryStopWithinDay(
   itinerary: EditableItinerary,
-  dayNumber: number,
-  sourceIndex: number,
-  targetIndex: number,
+  input: ReorderStopsWithinDayInput,
 ): EditableItinerary {
+  const { dayNumber, sourceIndex, targetIndex } = input;
   const days = cloneDays(itinerary);
   const day = days.find((candidate) => candidate.day_number === dayNumber);
   if (!day) return itinerary;
@@ -428,38 +521,6 @@ export function reorderEditableItineraryStopWithinDay(
   }
 
   day.items = moveIndexWithinArray(day.items, sourceIndex, targetIndex);
-
-  return {
-    ...itinerary,
-    days,
-  };
-}
-
-export function moveEditableItineraryStopToDay(
-  itinerary: EditableItinerary,
-  sourceDayNumber: number,
-  stopId: string,
-  targetDayNumber: number,
-  targetIndex?: number,
-): EditableItinerary {
-  if (sourceDayNumber === targetDayNumber) return itinerary;
-
-  const days = cloneDays(itinerary);
-  const sourceDay = days.find((candidate) => candidate.day_number === sourceDayNumber);
-  const targetDay = days.find((candidate) => candidate.day_number === targetDayNumber);
-  if (!sourceDay || !targetDay) return itinerary;
-
-  const sourceIndex = sourceDay.items.findIndex((item) => item.client_id === stopId);
-  if (sourceIndex === -1) return itinerary;
-
-  const [moved] = sourceDay.items.splice(sourceIndex, 1);
-  if (!moved) return itinerary;
-
-  const insertAt =
-    typeof targetIndex === 'number'
-      ? Math.max(0, Math.min(targetIndex, targetDay.items.length))
-      : targetDay.items.length;
-  targetDay.items.splice(insertAt, 0, moved);
 
   return {
     ...itinerary,

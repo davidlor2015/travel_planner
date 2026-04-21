@@ -1,5 +1,6 @@
 import type { EditableDayPlan, EditableItineraryItem } from "../itineraryDraft";
 import { normalizeStopStatus } from "../itineraryDraft";
+import { extractStopOwnershipMetadata } from "../itineraryDraft";
 import { inferStopCategory, type StopCategory } from "../EditableItineraryPanel/stopCategory";
 import type { ItineraryStopStatus } from "../../../shared/api/ai";
 
@@ -21,6 +22,8 @@ export interface StopRowViewModel {
   stopStatus: ItineraryStopStatus;
   stopStatusLabel: string;
   costDisplay: string | null;
+  handledBy: string | null;
+  bookedBy: string | null;
   showLocked: boolean;
   showFavorite: boolean;
 }
@@ -30,7 +33,8 @@ export function buildStopRowViewModel(
   flags: { isLocked: boolean; isFavorite: boolean },
 ): StopRowViewModel {
   const title = item.title?.trim() ?? "";
-  const secondaryLine = [item.location, item.notes]
+  const { metadata, plainNotes } = extractStopOwnershipMetadata(item.notes);
+  const secondaryLine = [item.location, plainNotes]
     .filter(Boolean)
     .join(" · ");
   const stopStatus = normalizeStopStatus(item.status);
@@ -50,6 +54,8 @@ export function buildStopRowViewModel(
     stopStatus,
     stopStatusLabel: STOP_STATUS_LABEL[stopStatus],
     costDisplay: item.cost_estimate?.trim() || null,
+    handledBy: metadata.handledBy,
+    bookedBy: metadata.bookedBy,
     showLocked: flags.isLocked,
     showFavorite: flags.isFavorite,
   };
