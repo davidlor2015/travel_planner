@@ -14,6 +14,6 @@ export interface TripActivityItem {
   type: TripActivityType;
   title: string;
   detail: string;
-  occurredAt: string;
+  occurredAt: string | null;
   unreadHint: string;
 }

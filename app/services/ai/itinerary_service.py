@@ -733,3 +733,34 @@ class ItineraryService:
                 f"DETAILS (JSON): {itinerary.model_dump_json(indent=2)}"
             ),
         })
+
+    def get_saved_itinerary(
+        self,
+        trip_id: int,
+        user_id: int,
+    ) -> ItineraryResponse:
+        try:
+            trip = self.access_service.require_membership(trip_id, user_id).trip
+        except Exception as exc:
+            raise ValueError("Trip not found.") from exc
+
+        summary = self._summary_from_description(trip.description)
+        itinerary = self.itinerary_repo.to_itinerary_response(
+            trip_id=trip_id,
+            title=trip.title,
+            summary=summary,
+            source="saved_itinerary",
+            source_label="Saved itinerary",
+            fallback_used=False,
+        )
+        if itinerary is None:
+            raise ValueError("No saved itinerary found.")
+        return itinerary
+
+    def _summary_from_description(self, description: str | None) -> str:
+        if not description:
+            return ""
+        for line in description.splitlines():
+            if line.startswith("SUMMARY:"):
+                return line.replace("SUMMARY:", "", 1).strip()
+        return ""

@@ -33,6 +33,7 @@ function makeDraft(): EditableItinerary {
         date: "2026-06-01",
         day_title: null,
         day_note: null,
+        day_anchors: [],
         items: [makeStop("a", "Museum"), makeStop("b", "Lunch")],
       },
     ],
@@ -76,18 +77,72 @@ describe("itineraryDraftMutations", () => {
     ]);
   });
 
-  it("reorders stops within a day deterministically", () => {
-    const harness = createStateHarness({ 9: makeDraft() });
-    const mutations = createItineraryDraftMutations(harness.setState);
+    it("reorders stops within a day deterministically", () => {
+      const harness = createStateHarness({ 9: makeDraft() });
+      const mutations = createItineraryDraftMutations(harness.setState);
 
     mutations.reorderStopsWithinDay(9, 1, 0, 1);
     const current = harness.getState()[9];
 
-    expect(current.days[0].items.map((item) => item.title)).toEqual([
-      "Lunch",
-      "Museum",
-    ]);
-  });
+      expect(current.days[0].items.map((item) => item.title)).toEqual([
+        "Lunch",
+        "Museum",
+      ]);
+    });
+
+    it("returns typed move outcomes for success/no-op/invalid", () => {
+      const harness = createStateHarness({
+        13: {
+          ...makeDraft(),
+          days: [
+            {
+              day_number: 1,
+              date: "2026-06-01",
+              day_title: null,
+              day_note: null,
+              day_anchors: [],
+              items: [makeStop("a", "Museum"), makeStop("b", "Lunch")],
+            },
+            {
+              day_number: 2,
+              date: "2026-06-02",
+              day_title: null,
+              day_note: null,
+              day_anchors: [],
+              items: [],
+            },
+          ],
+        },
+      });
+      const mutations = createItineraryDraftMutations(harness.setState);
+
+      const success = mutations.moveItem(13, {
+        sourceDayNumber: 1,
+        sourceIndex: 0,
+        targetDayNumber: 2,
+        targetIndex: 0,
+      });
+      expect(success?.kind).toBe("success");
+
+      const noOp = mutations.moveItem(13, {
+        sourceDayNumber: 2,
+        sourceIndex: 0,
+        targetDayNumber: 2,
+        targetIndex: 1,
+      });
+      expect(noOp?.kind).toBe("no_op");
+
+      const invalid = mutations.moveItem(13, {
+        sourceDayNumber: 2,
+        sourceIndex: 99,
+        targetDayNumber: 1,
+        targetIndex: 0,
+      });
+      expect(invalid?.kind).toBe("invalid");
+      if (invalid?.kind === "invalid") {
+        expect(invalid.reason).toBe("source_index_out_of_range");
+      }
+    });
 
   it("updates lightweight stop status in overview draft flow", () => {
     const harness = createStateHarness({ 11: makeDraft() });

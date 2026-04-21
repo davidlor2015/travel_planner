@@ -14,6 +14,7 @@ import type {
 } from "./types";
 import type { TripReadinessSnapshot } from "./tripOverviewViewModel";
 import { MemberAvatarStack, TripHeroMetadataRow } from "./WorkspacePrimitives";
+import { isCollaborationActive } from "./collaborationGate";
 
 interface TripHeroProps {
   trip: Trip;
@@ -294,7 +295,7 @@ export function TripHero({
             </div>
           </div>
 
-          {trip.members.length > 1 && (
+          {isCollaborationActive(trip) && (
             <div className="flex flex-shrink-0 items-center gap-2.5">
               <MemberAvatarStack members={trip.members} />
             </div>

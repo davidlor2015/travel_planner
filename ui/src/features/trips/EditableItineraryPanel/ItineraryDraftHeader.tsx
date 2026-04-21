@@ -6,6 +6,8 @@ export interface ItineraryDraftHeaderProps {
   /** From itinerary / draft meta — e.g. "Manual draft", "AI enhancement" */
   sourceLabel: string;
   fallbackUsed: boolean;
+  tripCostSummary?: string | null;
+  tripCostDetail?: string | null;
   onAddDay: () => void;
   onOpenGlobalAiAssist: () => void;
   globalAiDisabled?: boolean;
@@ -16,6 +18,8 @@ export function ItineraryDraftHeader({
   summary,
   sourceLabel,
   fallbackUsed,
+  tripCostSummary,
+  tripCostDetail,
   onAddDay,
   onOpenGlobalAiAssist,
   globalAiDisabled,
@@ -49,6 +53,16 @@ export function ItineraryDraftHeader({
           {summary?.trim() ? (
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-flint">
               {summary}
+            </p>
+          ) : null}
+          {tripCostSummary ? (
+            <p className="mt-2 text-[12px] font-semibold text-olive/90">
+              Estimated trip cost {tripCostSummary}
+              {tripCostDetail ? (
+                <span className="ml-1 font-normal text-flint/90">
+                  ({tripCostDetail})
+                </span>
+              ) : null}
             </p>
           ) : null}
         </div>

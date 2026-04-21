@@ -17,12 +17,15 @@ import { TripListLoadingSkeleton } from "./TripListLoadingSkeleton";
 import { PlusIcon } from "./tripListIcons";
 import { TripPickerBar } from "./TripPickerBar";
 import { TripActionBanner } from "../workspace/TripActionBanner";
+import type { TripActionCommand } from "../workspace/deriveTripActionItems";
 import {
   ITINERARY_DRAFT_PUBLISH_ANCHOR_ID,
   ITINERARY_STREAM_REGION_ID,
 } from "../workspace/itineraryEditorAnchors";
 import { TripWorkspaceSection } from "./TripWorkspaceSection";
 import { useTripWorkspaceModel } from "./useTripWorkspaceModel";
+import { isCollaborationActive } from "../workspace/collaborationGate";
+import { OnTripCompactMode } from "../workspace/OnTripCompactMode";
 
 interface TripListProps {
   token: string;
@@ -173,6 +176,8 @@ export const TripList = ({
     showWorkspace,
     selectedDurationDays,
     selectedActivities,
+    selectedActivityStripItems,
+    selectedActivityHasUnseenChanges,
     selectedUnreadCount,
     selectedReadIds,
     selectedTripIsMuted,
@@ -188,6 +193,8 @@ export const TripList = ({
     selectedIsApplying,
     selectedDraftMutationState,
     selectedIsAnyGenerating,
+    selectedOnTripSnapshot,
+    selectedIsOnTripCompactMode,
   } = model.derived;
 
   const {
@@ -244,11 +251,12 @@ export const TripList = ({
     resetStream,
     handleEditSavedAsDraft,
     handleShareTrip,
+    dismissOnTripCompactMode,
   } = model.actions;
 
   const { isMobileLayout, confirmDelete, editingTrip } = model.ui;
   const { tripActionError, draftActionError } = model.status;
-  const tripActionItems = model.derived.actionItems;
+  const actionability = model.derived.actionability;
 
   const focusItineraryAnchor = (elementId: string) => {
     openWorkspaceTab("overview");
@@ -257,6 +265,24 @@ export const TripList = ({
         .getElementById(elementId)
         ?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
+  };
+
+  const handleActionCommand = (command: TripActionCommand) => {
+    if (command.kind === "open_tab" && command.tab) {
+      openWorkspaceTab(command.tab);
+      return;
+    }
+    if (command.kind === "open_activity_drawer") {
+      openActivityDrawer();
+      return;
+    }
+    if (command.kind === "focus_draft_publish") {
+      focusItineraryAnchor(ITINERARY_DRAFT_PUBLISH_ANCHOR_ID);
+      return;
+    }
+    if (command.kind === "focus_itinerary_stream") {
+      focusItineraryAnchor(ITINERARY_STREAM_REGION_ID);
+    }
   };
 
   return (
@@ -273,6 +299,16 @@ export const TripList = ({
         />
 
         {showWorkspace && selectedTrip && selectedTripStatus ? (
+          selectedIsOnTripCompactMode && selectedOnTripSnapshot ? (
+            <OnTripCompactMode
+              trip={selectedTrip}
+              snapshot={selectedOnTripSnapshot}
+              onOpenFullWorkspace={() => {
+                dismissOnTripCompactMode(selectedTrip.id);
+                openWorkspaceTab("overview");
+              }}
+            />
+          ) : (
           <TripWorkspaceSection
             trip={selectedTrip}
             packingSummary={selectedPackingSummary}
@@ -290,32 +326,18 @@ export const TripList = ({
             bookingsBadge={selectedReservationSummary?.upcoming ?? 0}
             groupBadge={selectedTrip.member_count}
             hasItinerary={selectedSavedItinerary !== null}
-            showChat={selectedTrip.members.length > 1}
+            showChat={isCollaborationActive(selectedTrip)}
             activityUnreadCount={selectedUnreadCount}
             isActivityMuted={selectedTripIsMuted}
             onManageGroup={() => openWorkspaceTab("members")}
             onOpenActivityDrawer={openActivityDrawer}
+            activityStripItems={selectedActivityStripItems}
+            activityHasUnseenChanges={selectedActivityHasUnseenChanges}
             onShareTrip={handleShareTrip}
           >
                 <TripActionBanner
-                  items={tripActionItems}
-                  onCommand={(command) => {
-                    if (command.kind === "open_tab") {
-                      openWorkspaceTab(command.tab);
-                      return;
-                    }
-                    if (command.kind === "open_activity_drawer") {
-                      openActivityDrawer();
-                      return;
-                    }
-                    if (command.kind === "focus_draft_publish") {
-                      focusItineraryAnchor(ITINERARY_DRAFT_PUBLISH_ANCHOR_ID);
-                      return;
-                    }
-                    if (command.kind === "focus_itinerary_stream") {
-                      focusItineraryAnchor(ITINERARY_STREAM_REGION_ID);
-                    }
-                  }}
+                  model={actionability}
+                  onCommand={handleActionCommand}
                 />
 
                 <AnimatePresence>
@@ -390,6 +412,7 @@ export const TripList = ({
                     packingSummary={selectedPackingSummary}
                     budgetSummary={selectedBudgetSummary}
                     reservationSummary={selectedReservationSummary}
+                    actionability={actionability}
                     activities={selectedActivities}
                     isStreaming={selectedIsStreaming}
                     hasStreamContent={selectedHasStreamContent}
@@ -417,8 +440,8 @@ export const TripList = ({
                       handleStartManualDraft(selectedTrip.id)
                     }
                     onApply={() => void handleApply(selectedTrip.id)}
-                    onMoveItem={(sd, si, td, ti) =>
-                      handleMoveDraftItem(selectedTrip.id, sd, si, td, ti)
+                    onMoveItem={(intent) =>
+                      handleMoveDraftItem(selectedTrip.id, intent)
                     }
                     onUpdateDay={(dayNumber, patch) =>
                       handleUpdateDraftDay(selectedTrip.id, dayNumber, patch)
@@ -516,6 +539,7 @@ export const TripList = ({
                     onAddDay={() => handleAddDraftDay(selectedTrip.id)}
                     onOpenTab={(tab) => openWorkspaceTab(tab)}
                     onOpenActivityDrawer={openActivityDrawer}
+                    onActionCommand={handleActionCommand}
                     onItineraryDayToggle={(dayNumber, isOpen) => {
                       track({
                         name: "overview_day_toggled",
@@ -599,6 +623,7 @@ export const TripList = ({
                   />
                 )}
           </TripWorkspaceSection>
+          )
         ) : null}
       </main>
 

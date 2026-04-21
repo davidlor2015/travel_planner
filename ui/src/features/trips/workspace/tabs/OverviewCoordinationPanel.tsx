@@ -1,30 +1,40 @@
 import { motion } from "framer-motion";
 
 import type { Trip } from "../../../../shared/api/trips";
+import type { Itinerary } from "../../../../shared/api/ai";
 import type { TripActivityItem } from "../../TripActivity";
+import type {
+  TripActionabilityModel,
+  TripActionCommand,
+} from "../deriveTripActionItems";
 import type {
   BudgetSummary,
   PackingSummary,
   ReservationSummary,
 } from "../types";
 import {
-  buildTripAttentionItems,
+  buildItineraryOpsSnapshot,
   buildTripReadinessSnapshot,
-  type AttentionSeverity,
-  type TripAttentionItem,
 } from "../tripOverviewViewModel";
+import { isCollaborationActive } from "../collaborationGate";
 
 interface OverviewCoordinationPanelProps {
   trip: Trip;
   packingSummary: PackingSummary;
   budgetSummary: BudgetSummary;
   reservationSummary: ReservationSummary;
+  currentItinerary: Itinerary | null;
+  actionability: TripActionabilityModel;
   activities: TripActivityItem[];
-  onOpenTab: (tab: "bookings" | "budget" | "packing" | "members") => void;
+  onOpenTab: (
+    tab: "overview" | "bookings" | "budget" | "packing" | "members",
+  ) => void;
   onOpenActivityDrawer: () => void;
+  onActionCommand: (command: TripActionCommand) => void;
 }
 
-function relativeTime(isoString: string): string {
+function relativeTime(isoString: string | null): string {
+  if (!isoString) return "";
   const timestamp = new Date(isoString).getTime();
   if (Number.isNaN(timestamp)) return "";
 
@@ -116,7 +126,9 @@ function ProgressBar({ value, color }: { value: number; color: string }) {
   );
 }
 
-function severityStyles(severity: AttentionSeverity): string {
+function severityStyles(
+  severity: TripActionabilityModel["rankedOperationalActions"][number]["severity"],
+): string {
   if (severity === "blocker") {
     return "border-l-[3px] border-danger bg-danger/[0.06]";
   }
@@ -130,7 +142,7 @@ function AttentionItemRow({
   item,
   onAction,
 }: {
-  item: TripAttentionItem;
+  item: TripActionabilityModel["rankedOperationalActions"][number];
   onAction: () => void;
 }) {
   return (
@@ -161,29 +173,27 @@ export function OverviewCoordinationPanel({
   packingSummary,
   budgetSummary,
   reservationSummary,
+  currentItinerary,
+  actionability,
   activities,
   onOpenTab,
   onOpenActivityDrawer,
+  onActionCommand,
 }: OverviewCoordinationPanelProps) {
   const summariesLoaded =
     !packingSummary.loading &&
     !budgetSummary.loading &&
     !reservationSummary.loading;
 
-  const attentionItems = buildTripAttentionItems(
-    trip,
-    packingSummary,
-    budgetSummary,
-    reservationSummary,
-    summariesLoaded,
-  );
   const readiness = buildTripReadinessSnapshot(
     trip,
     packingSummary,
     budgetSummary,
     reservationSummary,
     summariesLoaded,
+    currentItinerary,
   );
+  const itineraryOps = buildItineraryOpsSnapshot(currentItinerary);
 
   const packingPct =
     typeof packingSummary.progressPct === "number"
@@ -204,6 +214,7 @@ export function OverviewCoordinationPanel({
   const bookingTotal = reservationSummary.total ?? 0;
   const bookingUpcoming = reservationSummary.upcoming ?? 0;
   const bookingPending = Math.max(0, bookingTotal - bookingUpcoming);
+  const isGroupTrip = isCollaborationActive(trip);
 
   const ownerCount = trip.members.filter(
     (member) => member.role === "owner",
@@ -211,6 +222,12 @@ export function OverviewCoordinationPanel({
   const joinedCount = trip.members.length;
   const pendingInvitesCount = trip.pending_invites.length;
   const visibleActivity = activities.slice(0, 4);
+  const unhandledStopCount = Math.max(
+    0,
+    itineraryOps.totalStops - itineraryOps.stopsWithHandledBy,
+  );
+  const handlerPreview = itineraryOps.handlerCounts.slice(0, 3);
+  const primaryAction = actionability.primaryAction;
 
   return (
     <aside
@@ -219,7 +236,7 @@ export function OverviewCoordinationPanel({
     >
       <div className="border-b border-[#EDE7DD] bg-[#FAF8F5]/80 px-5 py-4">
         <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#A39688]">
-          Group pulse
+          Trip readiness
         </p>
         {readiness.score != null && readiness.scoreLabel ? (
           <div className="mt-1 flex flex-wrap items-baseline gap-2">
@@ -229,11 +246,16 @@ export function OverviewCoordinationPanel({
             <span className="text-[12px] font-medium text-[#6B5E52]">
               {readiness.scoreLabel}
             </span>
+            {readiness.unknownState === "partial" ? (
+              <span className="text-[11px] text-[#A39688]">
+                Partial coverage
+              </span>
+            ) : null}
           </div>
         ) : summariesLoaded ? (
           <p className="mt-1 text-[12px] leading-relaxed text-[#6B5E52]">
-            Add packing, budget, or bookings so the group can track readiness
-            together.
+            Readiness is unknown. Add itinerary status, packing, budget, or
+            bookings so it can be measured from trip data.
           </p>
         ) : (
           <p className="mt-1 text-[12px] text-[#A39688]">
@@ -263,22 +285,124 @@ export function OverviewCoordinationPanel({
             What needs attention
           </span>
         </div>
-        {attentionItems.length === 0 ? (
+        {actionability.systemFailures.length === 0 &&
+        actionability.primaryAction == null ? (
           <p className="text-[12px] leading-relaxed text-[#6B5E52]">
             Nothing urgent surfaced from trip data. Keep the shared itinerary
             and logistics current.
           </p>
         ) : (
           <ul className="space-y-2">
-            {attentionItems.map((item) => (
+            {actionability.systemFailures.map((item) => (
               <li key={item.id}>
                 <AttentionItemRow
                   item={item}
-                  onAction={() => onOpenTab(item.targetTab)}
+                  onAction={() => onActionCommand(item.command)}
+                />
+              </li>
+            ))}
+            {primaryAction ? (
+              <li key={primaryAction.id}>
+                <AttentionItemRow
+                  item={primaryAction}
+                  onAction={() => onActionCommand(primaryAction.command)}
+                />
+              </li>
+            ) : null}
+            {actionability.secondaryActions.map((item) => (
+              <li key={item.id}>
+                <AttentionItemRow
+                  item={item}
+                  onAction={() => onActionCommand(item.command)}
                 />
               </li>
             ))}
           </ul>
+        )}
+      </div>
+
+      <Divider />
+
+      <div className="px-5 pt-5 pb-4">
+        <SectionHeader
+          label="Itinerary ops"
+          onOpen={() => onOpenTab("overview")}
+          icon={
+            <svg
+              viewBox="0 0 20 20"
+              className="h-3.5 w-3.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              aria-hidden="true"
+            >
+              <path
+                d="M5 4h10M5 10h10M5 16h6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          }
+        />
+        {!itineraryOps.hasItinerary ? (
+          <p className="text-[12px] text-[#B5AA9E]">
+            No itinerary source yet
+          </p>
+        ) : itineraryOps.totalStops === 0 ? (
+          <p className="text-[12px] text-[#B5AA9E]">
+            Itinerary has no stops yet
+          </p>
+        ) : (
+          <div className="space-y-3">
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <p className="font-display text-[20px] font-semibold leading-none text-espresso">
+                  {itineraryOps.totalStops}
+                </p>
+                <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#A39688]">
+                  Stops
+                </p>
+              </div>
+              <div>
+                <p className="font-display text-[20px] font-semibold leading-none text-[#3F6212]">
+                  {itineraryOps.confirmedStops}
+                </p>
+                <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#A39688]">
+                  Confirmed
+                </p>
+              </div>
+              <div>
+                <p className="font-display text-[20px] font-semibold leading-none text-[#B86845]">
+                  {itineraryOps.plannedStops}
+                </p>
+                <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#A39688]">
+                  Planned
+                </p>
+              </div>
+            </div>
+            {isGroupTrip ? (
+              itineraryOps.ownershipSignalsPresent ? (
+                <div className="rounded-xl border border-[#EDE7DD] bg-[#FAF8F5]/70 px-3 py-2.5">
+                  <p className="text-[12px] font-semibold text-espresso">
+                    {unhandledStopCount === 0
+                      ? "Every handled stop has an owner"
+                      : `${unhandledStopCount} stop${unhandledStopCount === 1 ? "" : "s"} without a handler`}
+                  </p>
+                  {handlerPreview.length > 0 ? (
+                    <p className="mt-1 text-[11px] leading-relaxed text-[#6B5E52]">
+                      {handlerPreview
+                        .map(({ name, count }) => `${name} ${count}`)
+                        .join(" · ")}
+                    </p>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="text-[12px] text-[#B5AA9E]">
+                  Ownership signals have not been set yet.
+                </p>
+              )
+            ) : null}
+          </div>
         )}
       </div>
 
@@ -411,7 +535,7 @@ export function OverviewCoordinationPanel({
         <p className="mt-2 text-[12px] text-[#6B5E52]">
           Trip chat:{" "}
           <span className="font-medium text-[#1C1108]">
-            {trip.members.length > 1 ? "Available" : "Needs 2+ travelers"}
+            {isGroupTrip ? "Available" : "Needs 2+ travelers"}
           </span>
         </p>
       </div>

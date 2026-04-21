@@ -34,7 +34,7 @@ class TripInvite(Base):
     )
     responded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    trip: Mapped["Trip"] = relationship("Trip", back_populates="pending_invites")
+    trip: Mapped["Trip"] = relationship("Trip", back_populates="invites")
     invited_by: Mapped["User"] = relationship("User", foreign_keys=[invited_by_user_id])
     accepted_by: Mapped["User | None"] = relationship("User", foreign_keys=[accepted_by_user_id])
 

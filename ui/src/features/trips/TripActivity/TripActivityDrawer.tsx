@@ -23,7 +23,8 @@ interface TripActivityDrawerProps {
   allTrips: Trip[];
 }
 
-function toTimeLabel(value: string): string {
+function toTimeLabel(value: string | null): string {
+  if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Recently";
 
@@ -179,7 +180,7 @@ export function TripActivityDrawer({
                   disabled={unreadCount === 0}
                   className="min-h-9 rounded-full border border-[#E5DDD1] px-3 text-[12px] font-semibold text-[#6B5E52] transition-colors hover:bg-[#F3EEE7] disabled:cursor-not-allowed disabled:opacity-45"
                 >
-                  Mark all read
+                  Mark seen
                 </button>
               </div>
             </header>
@@ -245,7 +246,7 @@ export function TripActivityDrawer({
                                 onClick={() => onMarkRead(activity.id)}
                                 className="min-h-8 rounded-full border border-[#E5DDD1] px-2.5 text-[11px] font-semibold text-[#6B5E52] transition-colors hover:bg-[#F3EEE7]"
                               >
-                                Mark read
+                                Mark seen
                               </button>
                             ) : null}
                           </div>

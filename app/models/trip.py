@@ -32,7 +32,7 @@ class Trip(Base):
         cascade="all, delete-orphan",
         order_by="TripMembership.created_at",
     )
-    pending_invites: Mapped[list["TripInvite"]] = relationship(
+    invites: Mapped[list["TripInvite"]] = relationship(
         "TripInvite",
         back_populates="trip",
         cascade="all, delete-orphan",
@@ -58,6 +58,10 @@ class Trip(Base):
     @property
     def members(self) -> list["TripMembership"]:
         return self.memberships
+
+    @property
+    def pending_invites(self) -> list["TripInvite"]:
+        return [invite for invite in self.invites if invite.resolved_status == "pending"]
 
     @property
     def member_count(self) -> int:

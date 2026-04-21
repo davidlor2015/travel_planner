@@ -119,6 +119,19 @@ async def apply_trip_plan(
         raise HTTPException(status_code=404, detail=str(e))
 
 
+@router.get("/trips/{trip_id}/itinerary", response_model=ItineraryResponse)
+def get_saved_trip_itinerary(
+    trip_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    service = ItineraryService(db)
+    try:
+        return service.get_saved_itinerary(trip_id=trip_id, user_id=current_user.id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
 @router.post("/refine", response_model=ItineraryResponse)
 @limiter.limit(settings.AI_RATE_LIMIT)
 async def refine_trip_plan(

@@ -16,12 +16,17 @@ import {
 } from "../workspace/itineraryEditorModels";
 
 export interface EditableTimelineStopRowProps {
+  dayNumber: number;
+  availableDayNumbers: number[];
   item: EditableItineraryItem;
   index: number;
   totalStops: number;
   isLast: boolean;
+  timeHint?: string | null;
+  readinessHint?: string | null;
   isLocked: boolean;
   isFavorite: boolean;
+  showOwnershipControls?: boolean;
   /** When true, full stop edit opens in a bottom sheet (mobile). */
   useStopEditBottomSheet?: boolean;
   /** Disable manual edit controls while draft publish is in-flight. */
@@ -31,6 +36,9 @@ export interface EditableTimelineStopRowProps {
   onDuplicate: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  onMoveToPreviousDay?: () => void;
+  onMoveToNextDay?: () => void;
+  onMoveToDay?: (targetDayNumber: number) => void;
   onAddAfter: () => void;
   onToggleLock: () => void;
   onToggleFavorite: () => void;
@@ -120,6 +128,7 @@ function StopEditFormBody({
   onUpdate,
   isLocked,
   isFavorite,
+  showOwnershipControls,
   onToggleLock,
   onToggleFavorite,
   onAddAfter,
@@ -127,10 +136,15 @@ function StopEditFormBody({
   onDelete,
   onMoveUp,
   onMoveDown,
+  onMoveToPreviousDay,
+  onMoveToNextDay,
+  onMoveToDay,
   index,
   totalStops,
   showMobileReorder,
   disabled,
+  dayNumber,
+  availableDayNumbers,
 }: {
   item: EditableItineraryItem;
   useHtmlTime: boolean;
@@ -138,6 +152,7 @@ function StopEditFormBody({
   onUpdate: (patch: Partial<Omit<EditableItineraryItem, "client_id">>) => void;
   isLocked: boolean;
   isFavorite: boolean;
+  showOwnershipControls: boolean;
   onToggleLock: () => void;
   onToggleFavorite: () => void;
   onAddAfter: () => void;
@@ -145,12 +160,32 @@ function StopEditFormBody({
   onDelete: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  onMoveToPreviousDay?: () => void;
+  onMoveToNextDay?: () => void;
+  onMoveToDay?: (targetDayNumber: number) => void;
   index: number;
   totalStops: number;
   showMobileReorder: boolean;
   disabled: boolean;
+  dayNumber: number;
+  availableDayNumbers: number[];
 }) {
-  const ownership = extractStopOwnershipMetadata(item.notes);
+  const targetableDays = useMemo(
+    () => availableDayNumbers.filter((candidate) => candidate !== dayNumber),
+    [availableDayNumbers, dayNumber],
+  );
+  const [selectedMoveDay, setSelectedMoveDay] = useState<number | null>(
+    targetableDays[0] ?? null,
+  );
+  const effectiveSelectedMoveDay =
+    selectedMoveDay != null && targetableDays.includes(selectedMoveDay)
+      ? selectedMoveDay
+      : targetableDays[0] ?? null;
+
+  const ownership = extractStopOwnershipMetadata(item.notes, {
+    handledBy: item.handled_by ?? null,
+    bookedBy: item.booked_by ?? null,
+  });
 
   return (
     <div className="space-y-2.5 border-t border-smoke/40 pt-3">
@@ -174,11 +209,58 @@ function StopEditFormBody({
           </button>
           <button
             type="button"
+            onClick={onMoveToPreviousDay}
+            disabled={disabled || !onMoveToPreviousDay}
+            className="min-h-10 flex-1 rounded-full border border-smoke/80 bg-white px-3 text-[12px] font-semibold text-espresso disabled:opacity-30"
+          >
+            Prev day
+          </button>
+          <button
+            type="button"
+            onClick={onMoveToNextDay}
+            disabled={disabled || !onMoveToNextDay}
+            className="min-h-10 flex-1 rounded-full border border-smoke/80 bg-white px-3 text-[12px] font-semibold text-espresso disabled:opacity-30"
+          >
+            Next day
+          </button>
+          <button
+            type="button"
             onClick={onDelete}
             disabled={disabled}
             className="min-h-10 flex-1 rounded-full border border-danger/25 bg-danger/5 px-3 text-[12px] font-semibold text-danger"
           >
             Delete
+          </button>
+        </div>
+      ) : null}
+      {showMobileReorder && targetableDays.length > 0 && onMoveToDay ? (
+        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+          <label className="sr-only" htmlFor={`move-day-${item.client_id}`}>
+            Move stop to day
+          </label>
+          <select
+            id={`move-day-${item.client_id}`}
+            value={effectiveSelectedMoveDay ?? ""}
+            onChange={(event) => setSelectedMoveDay(Number(event.target.value))}
+            disabled={disabled}
+            className={inputCls()}
+          >
+            {targetableDays.map((candidate) => (
+              <option key={candidate} value={candidate}>
+                Move to Day {candidate}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            disabled={disabled || effectiveSelectedMoveDay == null}
+            onClick={() => {
+              if (effectiveSelectedMoveDay == null) return;
+              onMoveToDay(effectiveSelectedMoveDay);
+            }}
+            className="min-h-10 rounded-full border border-smoke/80 bg-white px-3 text-[12px] font-semibold text-espresso disabled:opacity-30"
+          >
+            Move
           </button>
         </div>
       ) : null}
@@ -233,48 +315,43 @@ function StopEditFormBody({
         disabled={disabled}
         onChange={(e) =>
           onUpdate({
-            notes: applyStopOwnershipMetadata(
-              e.target.value || null,
-              ownership.metadata,
-            ),
+            notes: applyStopOwnershipMetadata(e.target.value || null, ownership.metadata),
           })
         }
         placeholder="Notes"
         rows={2}
         className={`${inputCls()} resize-none`}
       />
-      <div className="grid gap-2 sm:grid-cols-2">
-        <input
-          type="text"
-          value={ownership.metadata.handledBy ?? ""}
-          disabled={disabled}
-          onChange={(e) =>
-            onUpdate({
-              notes: applyStopOwnershipMetadata(ownership.plainNotes, {
-                ...ownership.metadata,
-                handledBy: e.target.value || null,
-              }),
-            })
-          }
-          placeholder="Handled by"
-          className={inputCls()}
-        />
-        <input
-          type="text"
-          value={ownership.metadata.bookedBy ?? ""}
-          disabled={disabled}
-          onChange={(e) =>
-            onUpdate({
-              notes: applyStopOwnershipMetadata(ownership.plainNotes, {
-                ...ownership.metadata,
-                bookedBy: e.target.value || null,
-              }),
-            })
-          }
-          placeholder="Booked by"
-          className={inputCls()}
-        />
-      </div>
+      {showOwnershipControls ? (
+        <div className="grid gap-2 sm:grid-cols-2">
+          <input
+            type="text"
+            value={ownership.metadata.handledBy ?? ""}
+            disabled={disabled}
+            onChange={(e) =>
+              onUpdate({
+                handled_by: e.target.value || null,
+                notes: applyStopOwnershipMetadata(ownership.plainNotes, ownership.metadata),
+              })
+            }
+            placeholder="Handled by"
+            className={inputCls()}
+          />
+          <input
+            type="text"
+            value={ownership.metadata.bookedBy ?? ""}
+            disabled={disabled}
+            onChange={(e) =>
+              onUpdate({
+                booked_by: e.target.value || null,
+                notes: applyStopOwnershipMetadata(ownership.plainNotes, ownership.metadata),
+              })
+            }
+            placeholder="Booked by"
+            className={inputCls()}
+          />
+        </div>
+      ) : null}
       <div className="flex flex-wrap items-center gap-1.5">
         <StopStatusSelect
           value={normalizeStopStatus(item.status)}
@@ -337,12 +414,17 @@ function StopEditFormBody({
 }
 
 export function EditableTimelineStopRow({
+  dayNumber,
+  availableDayNumbers,
   item,
   index,
   totalStops,
   isLast,
+  timeHint,
+  readinessHint,
   isLocked,
   isFavorite,
+  showOwnershipControls = false,
   useStopEditBottomSheet = false,
   interactionDisabled = false,
   onUpdate,
@@ -350,6 +432,9 @@ export function EditableTimelineStopRow({
   onDuplicate,
   onMoveUp,
   onMoveDown,
+  onMoveToPreviousDay,
+  onMoveToNextDay,
+  onMoveToDay,
   onAddAfter,
   onToggleLock,
   onToggleFavorite,
@@ -431,9 +516,10 @@ export function EditableTimelineStopRow({
               item={item}
               useHtmlTime={useHtmlTime}
               htmlTimeValue={htmlTimeValue}
-              onUpdate={onUpdate}
-              isLocked={isLocked}
-              isFavorite={isFavorite}
+                  onUpdate={onUpdate}
+                  isLocked={isLocked}
+                  isFavorite={isFavorite}
+                  showOwnershipControls={showOwnershipControls}
               onToggleLock={onToggleLock}
               onToggleFavorite={onToggleFavorite}
               onAddAfter={() => {
@@ -447,10 +533,15 @@ export function EditableTimelineStopRow({
               }}
               onMoveUp={onMoveUp}
               onMoveDown={onMoveDown}
+              onMoveToPreviousDay={onMoveToPreviousDay}
+              onMoveToNextDay={onMoveToNextDay}
+              onMoveToDay={onMoveToDay}
               index={index}
               totalStops={totalStops}
               showMobileReorder
               disabled={interactionDisabled}
+              dayNumber={dayNumber}
+              availableDayNumbers={availableDayNumbers}
             />
             <button
               type="button"
@@ -556,12 +647,22 @@ export function EditableTimelineStopRow({
                     {vm.costDisplay}
                   </span>
                 ) : null}
-                {vm.handledBy ? (
+                {timeHint ? (
+                  <span className="text-[10px] font-semibold text-amber">
+                    {timeHint}
+                  </span>
+                ) : null}
+                {readinessHint ? (
+                  <span className="text-[10px] font-semibold text-danger">
+                    {readinessHint}
+                  </span>
+                ) : null}
+                {showOwnershipControls && vm.handledBy ? (
                   <span className="text-[10px] font-semibold text-flint/90">
                     Handled: {vm.handledBy}
                   </span>
                 ) : null}
-                {vm.bookedBy ? (
+                {showOwnershipControls && vm.bookedBy ? (
                   <span className="text-[10px] font-semibold text-flint/90">
                     Booked: {vm.bookedBy}
                   </span>
@@ -627,6 +728,50 @@ export function EditableTimelineStopRow({
                 </button>
                 <button
                   type="button"
+                  onClick={onMoveToPreviousDay}
+                  disabled={interactionDisabled || !onMoveToPreviousDay}
+                  aria-label="Move stop to previous day"
+                  className="rounded-md border border-transparent p-1.5 text-flint hover:border-smoke hover:bg-white disabled:opacity-25"
+                >
+                  <svg
+                    width="10"
+                    height="10"
+                    viewBox="0 0 10 10"
+                    fill="none"
+                    aria-hidden
+                  >
+                    <path
+                      d="M6.5 2L3.5 5L6.5 8"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  onClick={onMoveToNextDay}
+                  disabled={interactionDisabled || !onMoveToNextDay}
+                  aria-label="Move stop to next day"
+                  className="rounded-md border border-transparent p-1.5 text-flint hover:border-smoke hover:bg-white disabled:opacity-25"
+                >
+                  <svg
+                    width="10"
+                    height="10"
+                    viewBox="0 0 10 10"
+                    fill="none"
+                    aria-hidden
+                  >
+                    <path
+                      d="M3.5 2L6.5 5L3.5 8"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </button>
+                <button
+                  type="button"
                   onClick={onDelete}
                   disabled={interactionDisabled}
                   aria-label="Delete stop"
@@ -680,6 +825,7 @@ export function EditableTimelineStopRow({
                     onUpdate={onUpdate}
                     isLocked={isLocked}
                     isFavorite={isFavorite}
+                    showOwnershipControls={showOwnershipControls}
                     onToggleLock={onToggleLock}
                     onToggleFavorite={onToggleFavorite}
                     onAddAfter={() => {
@@ -690,10 +836,15 @@ export function EditableTimelineStopRow({
                     onDelete={onDelete}
                     onMoveUp={onMoveUp}
                     onMoveDown={onMoveDown}
+                    onMoveToPreviousDay={onMoveToPreviousDay}
+                    onMoveToNextDay={onMoveToNextDay}
+                    onMoveToDay={onMoveToDay}
                     index={index}
                     totalStops={totalStops}
                     showMobileReorder={false}
                     disabled={interactionDisabled}
+                    dayNumber={dayNumber}
+                    availableDayNumbers={availableDayNumbers}
                   />
                 </div>
               </motion.div>

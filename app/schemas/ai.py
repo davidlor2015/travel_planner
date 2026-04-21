@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import List, Optional, Any, Literal
 
 ItineraryStopStatus = Literal["planned", "confirmed", "skipped"]
+DayAnchorType = Literal["flight", "hotel_checkin"]
 
 
 class ItineraryItem(BaseModel):
@@ -19,6 +20,14 @@ class ItineraryItem(BaseModel):
         None,
         description="Group coordination: planned vs confirmed vs skipped",
     )
+    handled_by: Optional[str] = Field(
+        None,
+        description="Owner for handling this stop (email/identifier).",
+    )
+    booked_by: Optional[str] = Field(
+        None,
+        description="Owner for booking this stop (email/identifier).",
+    )
 
     @field_validator("cost_estimate", mode="before")
     @classmethod
@@ -27,11 +36,31 @@ class ItineraryItem(BaseModel):
             return None
         return str(v) if not isinstance(v, str) else v
 
+class DayAnchor(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    type: DayAnchorType
+    label: str
+    time: Optional[str] = None
+    note: Optional[str] = None
+    handled_by: Optional[str] = Field(
+        None,
+        description="Owner for handling this anchor (email/identifier).",
+    )
+    booked_by: Optional[str] = Field(
+        None,
+        description="Owner for booking this anchor (email/identifier).",
+    )
+
+
 class DayPlan(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     day_number: int
     date: Optional[str] = None
+    day_title: Optional[str] = None
+    day_note: Optional[str] = None
+    anchors: List[DayAnchor] = []
     items: List[ItineraryItem] = []
 
 class ItineraryResponse(BaseModel):

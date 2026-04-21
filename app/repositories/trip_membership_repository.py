@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.trip import Trip
-from app.models.trip_membership import TripMembership
+from app.models.trip_membership import TripMembership, TripMemberState
 from app.repositories.base import BaseRepository
 
 
@@ -40,6 +40,21 @@ class TripMembershipRepository(BaseRepository[TripMembership]):
             self.db.scalars(
                 select(TripMembership)
                 .options(joinedload(TripMembership.user), joinedload(TripMembership.member_state))
+                .where(TripMembership.trip_id == trip_id)
+                .order_by(TripMembership.created_at.asc())
+            ).unique().all()
+        )
+
+    def list_with_planning_by_trip(self, trip_id: int) -> list[TripMembership]:
+        return list(
+            self.db.scalars(
+                select(TripMembership)
+                .options(
+                    joinedload(TripMembership.user),
+                    joinedload(TripMembership.member_state).joinedload(TripMemberState.packing_items),
+                    joinedload(TripMembership.member_state).joinedload(TripMemberState.budget_expenses),
+                    joinedload(TripMembership.member_state).joinedload(TripMemberState.prep_items),
+                )
                 .where(TripMembership.trip_id == trip_id)
                 .order_by(TripMembership.created_at.asc())
             ).unique().all()

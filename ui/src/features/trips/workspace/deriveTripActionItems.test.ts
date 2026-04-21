@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { Trip } from "../../../shared/api/trips";
+import type { Itinerary } from "../../../shared/api/ai";
+import type { Trip, TripMemberReadinessItem } from "../../../shared/api/trips";
 import type { BudgetSummary, PackingSummary, ReservationSummary } from "./types";
 import {
+  buildTripActionabilityModel,
   deriveTripActionItems,
   type TripActionDerivationInput,
   type TripActionInputs,
@@ -41,6 +43,38 @@ function tripBase(over: Partial<Trip> = {}): Trip {
       },
     ],
     pending_invites: [],
+    ...over,
+  };
+}
+
+function itineraryBase(over: Partial<Itinerary> = {}): Itinerary {
+  return {
+    title: "Test itinerary",
+    summary: "A real plan",
+    days: [
+      {
+        day_number: 1,
+        date: "2026-06-01",
+        items: [
+          {
+            time: "09:00",
+            title: "Museum",
+            location: "Main square",
+            lat: null,
+            lon: null,
+            notes: null,
+            cost_estimate: null,
+            status: "confirmed",
+          },
+        ],
+      },
+    ],
+    budget_breakdown: null,
+    packing_list: null,
+    tips: null,
+    source: "manual",
+    source_label: "Manual",
+    fallback_used: false,
     ...over,
   };
 }
@@ -85,21 +119,32 @@ function fullInput(
     budget?: BudgetSummary;
     reservations?: ReservationSummary;
     summariesLoaded?: boolean;
+    itinerary?: Itinerary | null;
+    memberReadiness?: TripMemberReadinessItem[] | null;
   },
 ): TripActionInputs {
   return {
     trip,
+    actorEmail: "owner@example.com",
     packing: overrides?.packing ?? loadedPacking,
     budget: overrides?.budget ?? loadedBudget,
     reservations: overrides?.reservations ?? loadedRes,
     summariesLoaded: overrides?.summariesLoaded ?? true,
+    itinerary:
+      overrides && "itinerary" in overrides
+        ? (overrides.itinerary ?? null)
+        : itineraryBase(),
+    memberReadiness:
+      overrides && "memberReadiness" in overrides
+        ? (overrides.memberReadiness ?? null)
+        : null,
     workspace,
   };
 }
 
 describe("deriveTripActionItems", () => {
   beforeEach(() => {
-    vi.useFakeTimers();
+    vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(FROZEN_NOW);
   });
 
@@ -179,6 +224,174 @@ describe("deriveTripActionItems", () => {
         }),
       );
       expect(items).toEqual([]);
+    });
+  });
+
+  describe("solo trips and itinerary-derived state", () => {
+    it("does not ask solo travelers to invite people", () => {
+      const items = deriveTripActionItems(
+        fullInput(quietWorkspace(), tripBase({ members: [], member_count: 1 })),
+      );
+      expect(items.find((i) => i.id === "solo-group")).toBeUndefined();
+      expect(items.find((i) => i.title.toLowerCase().includes("invite"))).toBeUndefined();
+    });
+
+    it("surfaces a missing itinerary as a real next action", () => {
+      const items = deriveTripActionItems(
+        fullInput(quietWorkspace(), tripBase(), { itinerary: null }),
+      );
+      expect(items.find((i) => i.id === "itinerary-missing")?.command).toEqual({
+        kind: "open_tab",
+        tab: "overview",
+      });
+    });
+
+    it("only surfaces stop ownership gaps after ownership is being used", () => {
+      const noOwnershipItems = deriveTripActionItems(
+        fullInput(quietWorkspace(), tripBase(), {
+          itinerary: itineraryBase({
+            days: [
+              {
+                day_number: 1,
+                date: "2026-06-01",
+                items: [
+                  {
+                    time: "09:00",
+                    title: "Museum",
+                    location: null,
+                    lat: null,
+                    lon: null,
+                    notes: null,
+                    cost_estimate: null,
+                    status: "planned",
+                  },
+                ],
+              },
+            ],
+          }),
+        }),
+      );
+      expect(
+        noOwnershipItems.find((i) => i.id === "itinerary-ownership-open"),
+      ).toBeUndefined();
+
+      const partiallyOwnedItems = deriveTripActionItems(
+        fullInput(quietWorkspace(), tripBase(), {
+          itinerary: itineraryBase({
+            days: [
+              {
+                day_number: 1,
+                date: "2026-06-01",
+                items: [
+                  {
+                    time: "09:00",
+                    title: "Museum",
+                    location: null,
+                    lat: null,
+                    lon: null,
+                    notes: "[ownership:handledBy=Alex]",
+                    cost_estimate: null,
+                    status: "planned",
+                  },
+                  {
+                    time: "12:00",
+                    title: "Lunch",
+                    location: null,
+                    lat: null,
+                    lon: null,
+                    notes: null,
+                    cost_estimate: null,
+                    status: "planned",
+                  },
+                ],
+              },
+            ],
+          }),
+        }),
+      );
+      expect(
+        partiallyOwnedItems.find((i) => i.id === "itinerary-ownership-open"),
+      ).toBeDefined();
+    });
+  });
+
+  describe("actor-aware ownership actions", () => {
+    it("prioritizes stops assigned to the current traveler", () => {
+      const items = deriveTripActionItems(
+        fullInput(
+          quietWorkspace(),
+          tripBase(),
+          {
+            itinerary: itineraryBase({
+              days: [
+                {
+                  day_number: 1,
+                  date: "2026-04-20",
+                  items: [
+                    {
+                      time: "09:00",
+                      title: "Museum",
+                      location: null,
+                      lat: null,
+                      lon: null,
+                      notes: "[ownership:handledBy=owner@example.com]",
+                      cost_estimate: null,
+                      status: "planned",
+                    },
+                  ],
+                },
+              ],
+            }),
+          },
+        ),
+      );
+      expect(items.find((i) => i.id === "itinerary-owned-by-you-open")).toBeDefined();
+    });
+
+    it("surfaces waiting-on signals when another known member owns planned stops", () => {
+      const input = fullInput(
+        quietWorkspace(),
+        tripBase(),
+        {
+          itinerary: itineraryBase({
+            days: [
+              {
+                day_number: 1,
+                date: "2026-04-20",
+                items: [
+                  {
+                    time: "09:00",
+                    title: "Museum",
+                    location: null,
+                    lat: null,
+                    lon: null,
+                    notes: "[ownership:handledBy=guest@example.com]",
+                    cost_estimate: null,
+                    status: "planned",
+                  },
+                ],
+              },
+            ],
+          }),
+          memberReadiness: [
+            {
+              user_id: 2,
+              email: "guest@example.com",
+              role: "member",
+              readiness_score: 50,
+              blocker_count: 2,
+              unknown: false,
+              status: "needs_attention",
+            },
+          ],
+        },
+      );
+      const items = deriveTripActionItems({
+        ...input,
+        actorEmail: "owner@example.com",
+      });
+      expect(items.find((i) => i.id === "itinerary-waiting-on-owner")).toBeDefined();
+      expect(items.find((i) => i.id === "itinerary-owned-by-you-open")).toBeUndefined();
     });
   });
 
@@ -284,6 +497,47 @@ describe("deriveTripActionItems", () => {
       );
       expect(items.find((i) => i.id === "workspace-unread-activity")).toBeUndefined();
     });
+
+    it("shows unread activity only when no other actions are present", () => {
+      const items = deriveTripActionItems({
+        ...fullInput({
+          ...quietWorkspace(),
+          unreadActivityCount: 2,
+          activityMuted: false,
+        }),
+        itinerary: itineraryBase({
+          days: [],
+        }),
+      });
+      expect(items.find((i) => i.id === "workspace-unread-activity")?.command).toEqual(
+        { kind: "open_activity_drawer" },
+      );
+    });
+
+    it("suppresses unread activity when there is a stronger actionable item", () => {
+      const items = deriveTripActionItems(
+        fullInput(
+          {
+            ...quietWorkspace(),
+            unreadActivityCount: 2,
+            activityMuted: false,
+          },
+          tripBase(),
+          {
+            budget: {
+              limit: 100,
+              totalSpent: 120,
+              remaining: -20,
+              isOverBudget: true,
+              expenseCount: 2,
+              loading: false,
+            },
+          },
+        ),
+      );
+      expect(items.find((i) => i.id === "budget-over")).toBeDefined();
+      expect(items.find((i) => i.id === "workspace-unread-activity")).toBeUndefined();
+    });
   });
 
   describe("mixed readiness and itinerary status", () => {
@@ -382,6 +636,72 @@ describe("deriveTripActionItems", () => {
         }),
       );
       expect(items.some((i) => i.id === "packing-behind")).toBe(true);
+    });
+  });
+
+  describe("canonical actionability model", () => {
+    it("keeps system failures separate from operational ranking", () => {
+      const model = buildTripActionabilityModel(
+        fullInput(
+          {
+            ...quietWorkspace(),
+            draftActionError: "Draft save failed",
+          },
+          tripBase(),
+          {
+            itinerary: null,
+            summariesLoaded: true,
+          },
+        ),
+      );
+      expect(model.systemFailures.some((item) => item.id === "workspace-draft-mutation-error")).toBe(true);
+      expect(model.rankedOperationalActions.some((item) => item.id === "itinerary-missing")).toBe(true);
+      expect(model.systemFailures.some((item) => item.id === "itinerary-missing")).toBe(false);
+    });
+
+    it("exposes typed reasons for explainable wording", () => {
+      const model = buildTripActionabilityModel(
+        fullInput(
+          {
+            ...quietWorkspace(),
+            hasPendingDraft: true,
+          },
+          tripBase(),
+          { summariesLoaded: true },
+        ),
+      );
+      expect(model.rankedOperationalActions[0]?.reason).toBe("draft_pending_publish");
+      expect(model.rankedOperationalActions[0]?.intent).toBe("draft_publish");
+    });
+
+    it("applies solo caps to secondary actions", () => {
+      const soloTrip = tripBase({
+        members: [
+          {
+            user_id: 1,
+            email: "owner@example.com",
+            role: "owner",
+            joined_at: "2026-01-01T00:00:00Z",
+            status: "active",
+          },
+        ],
+        pending_invites: [],
+      });
+      const model = buildTripActionabilityModel(
+        fullInput(
+          {
+            ...quietWorkspace(),
+            hasPendingDraft: true,
+          },
+          soloTrip,
+          {
+            itinerary: null,
+            reservations: { total: 0, upcoming: 0, loading: false },
+            summariesLoaded: true,
+          },
+        ),
+      );
+      expect(model.secondaryActions.length).toBeLessThanOrEqual(2);
     });
   });
 });

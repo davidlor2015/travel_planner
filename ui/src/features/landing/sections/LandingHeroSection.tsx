@@ -1,63 +1,212 @@
 import { motion, useReducedMotion } from "framer-motion";
-import { ActionButton } from "../../../shared/ui";
-import type { LandingContent } from "../landing.types";
 
 interface LandingHeroSectionProps {
-  content: LandingContent;
   onGetStarted: () => void;
 }
 
-export function LandingHeroSection({
-  content,
-  onGetStarted,
-}: LandingHeroSectionProps) {
+const MOCK_BLOCKERS = [
+  "Hotel deposit still unconfirmed",
+  "Travel insurance missing for Sam",
+  "Day 1 arrival transport still open",
+] as const;
+
+const MOCK_CHANGES = [
+  "Maya booked her flight",
+  "Day 3 was updated",
+  "Budget note added to Day 2",
+] as const;
+
+const HERO_PILLS = [
+  { title: "Readiness", body: "see blockers before they become stressful" },
+  { title: "Ownership", body: "know who is handling what" },
+  { title: "On-trip mode", body: "stay useful once the trip starts" },
+] as const;
+
+function AlertCircle({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      aria-hidden="true"
+    >
+      <circle cx="8" cy="8" r="7" />
+      <path d="M8 5v3.5" strokeLinecap="round" />
+      <circle cx="8" cy="11" r="0.6" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function ArrowRight({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden="true"
+    >
+      <path d="M3 8h10M9 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function DotIcon({ className }: { className?: string }) {
+  return (
+    <span
+      className={className}
+      aria-hidden="true"
+    />
+  );
+}
+
+function HeroMock() {
+  return (
+    <div
+      className="overflow-hidden rounded-[24px] border border-smoke bg-white shadow-[0_24px_72px_rgba(28,17,8,0.11)]"
+      aria-hidden="true"
+    >
+      {/* Trip header */}
+      <div className="border-b border-smoke bg-parchment/70 px-5 py-4">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">
+          Current trip
+        </p>
+        <p className="mt-0.5 font-display text-xl font-semibold text-espresso">
+          Tokyo, Japan
+        </p>
+        <p className="mt-0.5 text-xs text-flint">
+          Jun 14 – 21 · 4 travelers · 8 days out
+        </p>
+      </div>
+
+      {/* Readiness */}
+      <div className="border-b border-smoke px-5 py-4">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted">
+            Readiness
+          </p>
+          <span className="rounded-full bg-danger/10 px-2 py-0.5 text-[10px] font-semibold text-danger">
+            4 blockers
+          </span>
+        </div>
+        <ul className="space-y-2.5">
+          {MOCK_BLOCKERS.map((blocker) => (
+            <li key={blocker} className="flex items-start gap-2 text-xs text-flint">
+              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-danger" />
+              {blocker}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Next action */}
+      <div className="border-b border-smoke px-5 py-4">
+        <p className="mb-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted">
+          Next action
+        </p>
+        <div className="flex items-start gap-2">
+          <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-amber" />
+          <div>
+            <p className="text-sm font-semibold text-espresso">
+              Confirm Shinjuku hotel deposit
+            </p>
+            <p className="mt-0.5 text-xs text-flint">
+              Due in 3 days · currently handled by Kenji
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Since last time */}
+      <div className="px-5 py-4">
+        <p className="mb-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted">
+          Since last time
+        </p>
+        <ul className="space-y-2">
+          {MOCK_CHANGES.map((change) => (
+            <li key={change} className="flex items-center gap-2 text-xs text-flint">
+              <DotIcon className="h-1.5 w-1.5 shrink-0 rounded-full bg-flint/40" />
+              {change}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+export function LandingHeroSection({ onGetStarted }: LandingHeroSectionProps) {
   const reduceMotion = useReducedMotion();
 
   return (
-    <section className="relative flex min-h-[92svh] items-center overflow-hidden px-4 pb-16 pt-28 sm:px-6 sm:pt-32">
-      <img
-        src={content.heroImage}
-        alt=""
-        aria-hidden="true"
-        className="absolute inset-0 h-full w-full object-cover"
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/38 to-black/68" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.28)_72%)]" />
+    <section id="why-waypoint" className="bg-ivory px-4 pb-24 pt-16 sm:px-6 sm:pb-28 sm:pt-20">
+      <div className="mx-auto max-w-6xl">
+        <div className="grid items-center gap-12 lg:grid-cols-2">
+          {/* Left: copy */}
+          <motion.div
+            initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+            animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+            transition={{ type: "spring", bounce: 0.12, duration: 0.7 }}
+          >
+            <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber">
+              <span className="h-px w-5 bg-amber" aria-hidden="true" />
+              Operational trip planning
+            </p>
 
-      <motion.div
-        initial={reduceMotion ? false : { opacity: 0, y: 20 }}
-        animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-        transition={{ type: "spring", bounce: 0.16, duration: 0.8 }}
-        className="relative mx-auto w-full max-w-6xl"
-      >
-        <div className="max-w-3xl">
-          <p className="inline-flex rounded-full border border-white/20 bg-white/12 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/82 backdrop-blur">
-            Travel plans, shared beautifully
-          </p>
-          <h1 className="mt-6 max-w-3xl text-4xl font-semibold leading-[0.98] text-white drop-shadow-sm min-[380px]:text-5xl sm:text-6xl lg:text-7xl">
-            Plan group trips without losing the plot.
-          </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/84">
-            Waypoint brings your itinerary, invites, chat, bookings, budget,
-            packing, and trip map into one calm shared space.
-          </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <ActionButton
-              onClick={onGetStarted}
-              variant="primary"
-              className="min-h-12 bg-amber hover:bg-amber-dark"
-            >
-              Start planning
-            </ActionButton>
-            <a
-              href="#sample-trip"
-              className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/28 bg-white/12 px-7 py-3 text-sm font-semibold text-white backdrop-blur transition-colors hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-            >
-              View a sample trip
-            </a>
-          </div>
+            <h1 className="mt-4 font-display text-4xl font-semibold leading-[1.06] tracking-[-0.01em] text-espresso sm:text-5xl lg:text-[52px]">
+              The trip feels calm
+              <br />
+              when everyone knows
+              <br />
+              what happens.
+            </h1>
+
+            <p className="mt-5 max-w-lg text-base leading-relaxed text-flint">
+              Waypoint is where the itinerary becomes usable. See what's
+              happening, who owns what, and what to do next.
+            </p>
+
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={onGetStarted}
+                className="inline-flex min-h-[48px] items-center rounded-full bg-espresso px-7 py-3 text-sm font-semibold text-white transition-colors hover:bg-espresso-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-amber/35"
+              >
+                Start your trip
+              </button>
+              <a
+                href="#product"
+                className="inline-flex min-h-[48px] items-center gap-1.5 rounded-full border border-smoke bg-white px-6 py-3 text-sm font-semibold text-flint transition-colors hover:border-espresso/20 hover:text-espresso focus:outline-none focus-visible:ring-2 focus-visible:ring-amber/35"
+              >
+                See product demo
+                <ArrowRight className="h-3.5 w-3.5" />
+              </a>
+            </div>
+
+            {/* Feature pills */}
+            <div className="mt-10 flex flex-col gap-5 sm:flex-row sm:gap-8">
+              {HERO_PILLS.map((pill) => (
+                <div key={pill.title} className="flex flex-col gap-0.5">
+                  <p className="text-sm font-semibold text-espresso">{pill.title}</p>
+                  <p className="text-xs leading-relaxed text-flint">{pill.body}</p>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Right: product mock */}
+          <motion.div
+            initial={reduceMotion ? false : { opacity: 0, y: 24, scale: 0.97 }}
+            animate={reduceMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
+            transition={{ type: "spring", bounce: 0.1, duration: 0.9, delay: 0.12 }}
+          >
+            <HeroMock />
+          </motion.div>
         </div>
-      </motion.div>
+      </div>
     </section>
   );
 }

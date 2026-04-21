@@ -16,7 +16,7 @@ class TripRepository(BaseRepository[Trip]):
         return (
             selectinload(Trip.memberships).selectinload(TripMembership.user),
             selectinload(Trip.memberships).selectinload(TripMembership.member_state),
-            selectinload(Trip.pending_invites),
+            selectinload(Trip.invites),
         )
 
     def get_by_id_and_user(self, trip_id: int, user_id: int) -> Optional[Trip]:

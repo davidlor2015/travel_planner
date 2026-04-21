@@ -1,3 +1,6 @@
+from datetime import date, timedelta
+
+
 def _create_shared_trip(client, auth_headers_user_a, user_b) -> int:
     create_res = client.post(
         "/v1/trips/",
@@ -177,3 +180,146 @@ def test_trip_invite_can_be_accepted_after_login(
     trips_res = client.get("/v1/trips/", headers=invitee_headers)
     assert trips_res.status_code == 200, trips_res.text
     assert [trip["id"] for trip in trips_res.json()] == [trip_id]
+
+
+def test_on_trip_snapshot_resolves_today_and_next_stop_conservatively(
+    client,
+    auth_headers_user_a,
+):
+    today = date.today()
+    create_res = client.post(
+        "/v1/trips/",
+        json={
+            "title": "On Trip",
+            "destination": "Tokyo",
+            "description": None,
+            "start_date": (today - timedelta(days=1)).isoformat(),
+            "end_date": (today + timedelta(days=2)).isoformat(),
+            "notes": None,
+        },
+        headers=auth_headers_user_a,
+    )
+    assert create_res.status_code == 201, create_res.text
+    trip_id = create_res.json()["id"]
+
+    apply_res = client.post(
+        "/v1/ai/apply",
+        json={
+            "trip_id": trip_id,
+            "itinerary": {
+                "title": "Live plan",
+                "summary": "Execution mode",
+                "days": [
+                    {
+                        "day_number": 2,
+                        "date": today.isoformat(),
+                        "items": [
+                            {
+                                "time": "09:00",
+                                "title": "Asakusa walk",
+                                "location": "Asakusa",
+                                "status": "confirmed",
+                            }
+                        ],
+                    },
+                    {
+                        "day_number": 3,
+                        "date": (today + timedelta(days=1)).isoformat(),
+                        "items": [
+                            {
+                                "time": "11:00",
+                                "title": "Shinjuku lunch",
+                                "location": "Shinjuku",
+                                "status": "planned",
+                            }
+                        ],
+                    },
+                ],
+            },
+        },
+        headers=auth_headers_user_a,
+    )
+    assert apply_res.status_code == 200, apply_res.text
+
+    snapshot_res = client.get(
+        f"/v1/trips/{trip_id}/on-trip-snapshot",
+        headers=auth_headers_user_a,
+    )
+    assert snapshot_res.status_code == 200, snapshot_res.text
+    payload = snapshot_res.json()
+
+    assert payload["mode"] == "active"
+    assert payload["read_only"] is True
+    assert payload["today"]["title"] == "Asakusa walk"
+    assert payload["today"]["source"] == "day_date_exact"
+    assert payload["today"]["confidence"] == "high"
+    assert payload["next_stop"]["title"] is not None
+    assert payload["next_stop"]["confidence"] in {"high", "medium"}
+
+
+def test_on_trip_snapshot_blockers_use_execution_bucket(
+    client,
+    auth_headers_user_a,
+):
+    today = date.today()
+    create_res = client.post(
+        "/v1/trips/",
+        json={
+            "title": "On Trip Blockers",
+            "destination": "Berlin",
+            "description": None,
+            "start_date": (today - timedelta(days=1)).isoformat(),
+            "end_date": (today + timedelta(days=1)).isoformat(),
+            "notes": None,
+        },
+        headers=auth_headers_user_a,
+    )
+    assert create_res.status_code == 201, create_res.text
+    trip_id = create_res.json()["id"]
+
+    apply_res = client.post(
+        "/v1/ai/apply",
+        json={
+            "trip_id": trip_id,
+            "itinerary": {
+                "title": "Blockers plan",
+                "summary": "Execution blockers",
+                "days": [
+                    {
+                        "day_number": 2,
+                        "date": today.isoformat(),
+                        "anchors": [
+                            {
+                                "type": "flight",
+                                "label": "UA 100",
+                                "time": None,
+                            }
+                        ],
+                        "items": [
+                            {
+                                "time": "10:00",
+                                "title": "Hotel check-in",
+                                "status": "planned",
+                            }
+                        ],
+                    }
+                ],
+            },
+        },
+        headers=auth_headers_user_a,
+    )
+    assert apply_res.status_code == 200, apply_res.text
+
+    snapshot_res = client.get(
+        f"/v1/trips/{trip_id}/on-trip-snapshot",
+        headers=auth_headers_user_a,
+    )
+    assert snapshot_res.status_code == 200, snapshot_res.text
+    payload = snapshot_res.json()
+
+    assert payload["mode"] == "active"
+    assert payload["blockers"]
+    assert all(blocker["bucket"] == "on_trip_execution" for blocker in payload["blockers"])
+    blocker_ids = {blocker["id"] for blocker in payload["blockers"]}
+    assert "today-planned-open" in blocker_ids
+    assert "today-anchor-time-missing" in blocker_ids

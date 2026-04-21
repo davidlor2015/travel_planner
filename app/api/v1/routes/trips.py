@@ -7,10 +7,14 @@ from app.schemas.trip import (
     TripInviteCreateResponse,
     TripInviteCreateRequest,
     TripMemberAddRequest,
+    TripMemberReadinessResponse,
     TripMemberResponse,
+    TripOnTripSnapshotResponse,
     TripResponse,
     TripSummaryResponse,
     TripUpdate,
+    WorkspaceLastSeenResponse,
+    WorkspaceLastSeenUpdateRequest,
 )
 from app.services.trip_service import TripService
 
@@ -40,6 +44,16 @@ def read_trip(trip_id: int, db: SessionDep, current_user: CurrentUser): # pyrigh
 @router.get("/{trip_id}/members", response_model=List[TripMemberResponse])
 def read_trip_members(trip_id: int, db: SessionDep, current_user: CurrentUser):
     return TripService(db).list_members(trip_id, current_user.id)
+
+
+@router.get("/{trip_id}/member-readiness", response_model=TripMemberReadinessResponse)
+def read_trip_member_readiness(trip_id: int, db: SessionDep, current_user: CurrentUser):
+    return TripService(db).get_member_readiness(trip_id, current_user.id)
+
+
+@router.get("/{trip_id}/on-trip-snapshot", response_model=TripOnTripSnapshotResponse)
+def read_trip_on_trip_snapshot(trip_id: int, db: SessionDep, current_user: CurrentUser):
+    return TripService(db).get_on_trip_snapshot(trip_id, current_user.id)
 
 
 @router.post("/{trip_id}/members", response_model=TripMemberResponse, status_code=201)
@@ -75,3 +89,20 @@ def update_trip(trip_id: int, trip_in: TripUpdate, db: SessionDep, current_user:
 def delete_trip(trip_id: int, db: SessionDep, current_user: CurrentUser):
     TripService(db).delete(trip_id, current_user.id)
     return Response(status_code=204)
+
+
+@router.post(
+    "/{trip_id}/workspace/last-seen",
+    response_model=WorkspaceLastSeenResponse,
+)
+def update_workspace_last_seen(
+    trip_id: int,
+    payload: WorkspaceLastSeenUpdateRequest,
+    db: SessionDep,
+    current_user: CurrentUser,
+):
+    return TripService(db).update_workspace_last_seen(
+        trip_id=trip_id,
+        user_id=current_user.id,
+        payload=payload,
+    )
