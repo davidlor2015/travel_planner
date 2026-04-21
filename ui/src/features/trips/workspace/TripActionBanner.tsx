@@ -24,7 +24,7 @@ export function TripActionBanner({ items, onCommand }: TripActionBannerProps) {
         role="status"
         aria-live="polite"
       >
-        Nothing urgent on this trip right now.
+        No blockers from current trip data. Keep editing when the plan changes.
       </div>
     );
   }
@@ -36,7 +36,7 @@ export function TripActionBanner({ items, onCommand }: TripActionBannerProps) {
     >
       <div className="border-b border-[#EDE7DD]/90 bg-[#FAF8F5]/70 px-3 py-2">
         <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#A39688]">
-          Needs attention
+          Next up
         </p>
       </div>
       <ul className="divide-y divide-[#EDE7DD]/90">

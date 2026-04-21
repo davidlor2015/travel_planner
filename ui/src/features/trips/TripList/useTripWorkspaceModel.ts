@@ -408,6 +408,8 @@ export function useTripWorkspaceModel({
   const selectedPendingItinerary = selectedTrip
     ? (pendingItineraries[selectedTrip.id] ?? null)
     : null;
+  const selectedCurrentItinerary =
+    selectedPendingItinerary ?? selectedSavedItinerary;
   const selectedDraftPlanMeta = selectedTrip
     ? (draftPlanMeta[selectedTrip.id] ?? null)
     : null;
@@ -1108,6 +1110,7 @@ export function useTripWorkspaceModel({
             selectedBudgetSummary,
             selectedReservationSummary,
             selectedSummariesLoaded,
+            selectedCurrentItinerary,
           )
         : { score: null, scoreLabel: null },
     [
@@ -1116,6 +1119,7 @@ export function useTripWorkspaceModel({
       selectedBudgetSummary,
       selectedReservationSummary,
       selectedSummariesLoaded,
+      selectedCurrentItinerary,
     ],
   );
 
@@ -1169,6 +1173,7 @@ export function useTripWorkspaceModel({
       budget: selectedBudgetSummary,
       reservations: selectedReservationSummary,
       summariesLoaded: selectedSummariesLoaded,
+      itinerary: selectedCurrentItinerary,
       workspace: {
         tripActionError,
         draftActionError,
@@ -1185,6 +1190,7 @@ export function useTripWorkspaceModel({
     selectedBudgetSummary,
     selectedReservationSummary,
     selectedSummariesLoaded,
+    selectedCurrentItinerary,
     tripActionError,
     draftActionError,
     selectedStreamError,

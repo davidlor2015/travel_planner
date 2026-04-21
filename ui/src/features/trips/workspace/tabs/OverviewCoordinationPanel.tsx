@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 
 import type { Trip } from "../../../../shared/api/trips";
+import type { Itinerary } from "../../../../shared/api/ai";
 import type { TripActivityItem } from "../../TripActivity";
 import type {
   BudgetSummary,
@@ -9,6 +10,7 @@ import type {
 } from "../types";
 import {
   buildTripAttentionItems,
+  buildItineraryOpsSnapshot,
   buildTripReadinessSnapshot,
   type AttentionSeverity,
   type TripAttentionItem,
@@ -19,8 +21,11 @@ interface OverviewCoordinationPanelProps {
   packingSummary: PackingSummary;
   budgetSummary: BudgetSummary;
   reservationSummary: ReservationSummary;
+  currentItinerary: Itinerary | null;
   activities: TripActivityItem[];
-  onOpenTab: (tab: "bookings" | "budget" | "packing" | "members") => void;
+  onOpenTab: (
+    tab: "overview" | "bookings" | "budget" | "packing" | "members",
+  ) => void;
   onOpenActivityDrawer: () => void;
 }
 
@@ -161,6 +166,7 @@ export function OverviewCoordinationPanel({
   packingSummary,
   budgetSummary,
   reservationSummary,
+  currentItinerary,
   activities,
   onOpenTab,
   onOpenActivityDrawer,
@@ -176,6 +182,7 @@ export function OverviewCoordinationPanel({
     budgetSummary,
     reservationSummary,
     summariesLoaded,
+    currentItinerary,
   );
   const readiness = buildTripReadinessSnapshot(
     trip,
@@ -183,7 +190,9 @@ export function OverviewCoordinationPanel({
     budgetSummary,
     reservationSummary,
     summariesLoaded,
+    currentItinerary,
   );
+  const itineraryOps = buildItineraryOpsSnapshot(currentItinerary);
 
   const packingPct =
     typeof packingSummary.progressPct === "number"
@@ -211,6 +220,11 @@ export function OverviewCoordinationPanel({
   const joinedCount = trip.members.length;
   const pendingInvitesCount = trip.pending_invites.length;
   const visibleActivity = activities.slice(0, 4);
+  const unhandledStopCount = Math.max(
+    0,
+    itineraryOps.totalStops - itineraryOps.stopsWithHandledBy,
+  );
+  const handlerPreview = itineraryOps.handlerCounts.slice(0, 3);
 
   return (
     <aside
@@ -219,7 +233,7 @@ export function OverviewCoordinationPanel({
     >
       <div className="border-b border-[#EDE7DD] bg-[#FAF8F5]/80 px-5 py-4">
         <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#A39688]">
-          Group pulse
+          Trip readiness
         </p>
         {readiness.score != null && readiness.scoreLabel ? (
           <div className="mt-1 flex flex-wrap items-baseline gap-2">
@@ -232,8 +246,8 @@ export function OverviewCoordinationPanel({
           </div>
         ) : summariesLoaded ? (
           <p className="mt-1 text-[12px] leading-relaxed text-[#6B5E52]">
-            Add packing, budget, or bookings so the group can track readiness
-            together.
+            Add itinerary stops, packing, budget, or bookings so readiness can
+            be derived from trip data.
           </p>
         ) : (
           <p className="mt-1 text-[12px] text-[#A39688]">
@@ -279,6 +293,89 @@ export function OverviewCoordinationPanel({
               </li>
             ))}
           </ul>
+        )}
+      </div>
+
+      <Divider />
+
+      <div className="px-5 pt-5 pb-4">
+        <SectionHeader
+          label="Itinerary ops"
+          onOpen={() => onOpenTab("overview")}
+          icon={
+            <svg
+              viewBox="0 0 20 20"
+              className="h-3.5 w-3.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              aria-hidden="true"
+            >
+              <path
+                d="M5 4h10M5 10h10M5 16h6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          }
+        />
+        {!itineraryOps.hasItinerary ? (
+          <p className="text-[12px] text-[#B5AA9E]">
+            No itinerary source yet
+          </p>
+        ) : itineraryOps.totalStops === 0 ? (
+          <p className="text-[12px] text-[#B5AA9E]">
+            Itinerary has no stops yet
+          </p>
+        ) : (
+          <div className="space-y-3">
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <p className="font-display text-[20px] font-semibold leading-none text-espresso">
+                  {itineraryOps.totalStops}
+                </p>
+                <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#A39688]">
+                  Stops
+                </p>
+              </div>
+              <div>
+                <p className="font-display text-[20px] font-semibold leading-none text-[#3F6212]">
+                  {itineraryOps.confirmedStops}
+                </p>
+                <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#A39688]">
+                  Confirmed
+                </p>
+              </div>
+              <div>
+                <p className="font-display text-[20px] font-semibold leading-none text-[#B86845]">
+                  {itineraryOps.plannedStops}
+                </p>
+                <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#A39688]">
+                  Planned
+                </p>
+              </div>
+            </div>
+            {itineraryOps.ownershipSignalsPresent ? (
+              <div className="rounded-xl border border-[#EDE7DD] bg-[#FAF8F5]/70 px-3 py-2.5">
+                <p className="text-[12px] font-semibold text-espresso">
+                  {unhandledStopCount === 0
+                    ? "Every handled stop has an owner"
+                    : `${unhandledStopCount} stop${unhandledStopCount === 1 ? "" : "s"} without a handler`}
+                </p>
+                {handlerPreview.length > 0 ? (
+                  <p className="mt-1 text-[11px] leading-relaxed text-[#6B5E52]">
+                    {handlerPreview
+                      .map(({ name, count }) => `${name} ${count}`)
+                      .join(" · ")}
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <p className="text-[12px] text-[#B5AA9E]">
+                No handled-by ownership set on stops
+              </p>
+            )}
+          </div>
         )}
       </div>
 

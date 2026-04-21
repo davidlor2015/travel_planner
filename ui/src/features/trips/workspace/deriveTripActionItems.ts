@@ -1,4 +1,5 @@
 import type { Trip } from "../../../shared/api/trips";
+import type { Itinerary } from "../../../shared/api/ai";
 import type {
   BudgetSummary,
   PackingSummary,
@@ -36,6 +37,7 @@ export interface TripActionInputs {
   budget: BudgetSummary;
   reservations: ReservationSummary;
   summariesLoaded: boolean;
+  itinerary: Itinerary | null;
   workspace: TripWorkspaceSignals;
 }
 
@@ -73,8 +75,15 @@ export function deriveTripActionItems(
     return [];
   }
 
-  const { trip, packing, budget, reservations, summariesLoaded, workspace: ws } =
-    input;
+  const {
+    trip,
+    packing,
+    budget,
+    reservations,
+    summariesLoaded,
+    itinerary,
+    workspace: ws,
+  } = input;
   const workspaceItems: TripWorkspaceActionItem[] = [];
 
   const draftErr = ws.draftActionError?.trim();
@@ -141,6 +150,7 @@ export function deriveTripActionItems(
     budget,
     reservations,
     summariesLoaded,
+    itinerary,
   ).map(
     (row): TripWorkspaceActionItem => ({
       id: row.id,

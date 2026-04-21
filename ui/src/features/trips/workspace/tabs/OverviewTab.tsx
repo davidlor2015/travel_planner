@@ -95,7 +95,9 @@ interface OverviewTabProps {
   onRegenerate: () => void;
   onRunAiAssist?: (request: DraftAiAssistRequest) => void;
   onAddDay: () => void;
-  onOpenTab: (tab: "bookings" | "budget" | "packing" | "members") => void;
+  onOpenTab: (
+    tab: "overview" | "bookings" | "budget" | "packing" | "members",
+  ) => void;
   onOpenActivityDrawer: () => void;
   onItineraryDayToggle: (dayNumber: number, isOpen: boolean) => void;
 }
@@ -364,6 +366,7 @@ export function OverviewTab({
           packingSummary={packingSummary}
           budgetSummary={budgetSummary}
           reservationSummary={reservationSummary}
+          currentItinerary={pendingItinerary ?? savedItinerary}
           activities={activities}
           onOpenTab={onOpenTab}
           onOpenActivityDrawer={onOpenActivityDrawer}

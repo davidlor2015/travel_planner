@@ -28,9 +28,34 @@ function daysUntil(startIso: string, now: Date): number {
   const start = new Date(startIso);
   if (Number.isNaN(start.getTime())) return 0;
 
-  const midnightNow = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const midnightStart = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+  const midnightNow = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  ).getTime();
+  const midnightStart = new Date(
+    start.getFullYear(),
+    start.getMonth(),
+    start.getDate(),
+  ).getTime();
   return Math.round((midnightStart - midnightNow) / 86_400_000);
+}
+
+function hasTripEnded(endIso: string, now: Date): boolean {
+  const end = new Date(endIso);
+  if (Number.isNaN(end.getTime())) return false;
+
+  const midnightNow = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  ).getTime();
+  const midnightEnd = new Date(
+    end.getFullYear(),
+    end.getMonth(),
+    end.getDate(),
+  ).getTime();
+  return midnightEnd < midnightNow;
 }
 
 export function buildTripActivities({
@@ -133,7 +158,11 @@ export function buildTripActivities({
   }
 
   const departureDelta = daysUntil(trip.start_date, now);
-  if (departureDelta <= 7) {
+  if (
+    !hasTripEnded(trip.end_date, now) &&
+    departureDelta >= 0 &&
+    departureDelta <= 7
+  ) {
     const countdownLabel = departureDelta > 1
       ? `${departureDelta} days to departure`
       : departureDelta === 1
@@ -154,7 +183,11 @@ export function buildTripActivities({
     });
   }
 
-  if (budgetSummary?.isOverBudget) {
+  if (
+    budgetSummary?.limit != null &&
+    budgetSummary.limit > 0 &&
+    budgetSummary.isOverBudget
+  ) {
     items.push({
       id: 'budget-over',
       tripId: trip.id,

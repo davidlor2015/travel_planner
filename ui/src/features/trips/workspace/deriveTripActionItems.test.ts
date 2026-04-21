@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { Itinerary } from "../../../shared/api/ai";
 import type { Trip } from "../../../shared/api/trips";
 import type { BudgetSummary, PackingSummary, ReservationSummary } from "./types";
 import {
@@ -45,6 +46,38 @@ function tripBase(over: Partial<Trip> = {}): Trip {
   };
 }
 
+function itineraryBase(over: Partial<Itinerary> = {}): Itinerary {
+  return {
+    title: "Test itinerary",
+    summary: "A real plan",
+    days: [
+      {
+        day_number: 1,
+        date: "2026-06-01",
+        items: [
+          {
+            time: "09:00",
+            title: "Museum",
+            location: "Main square",
+            lat: null,
+            lon: null,
+            notes: null,
+            cost_estimate: null,
+            status: "confirmed",
+          },
+        ],
+      },
+    ],
+    budget_breakdown: null,
+    packing_list: null,
+    tips: null,
+    source: "manual",
+    source_label: "Manual",
+    fallback_used: false,
+    ...over,
+  };
+}
+
 const loadedPacking: PackingSummary = {
   total: 0,
   checked: 0,
@@ -85,6 +118,7 @@ function fullInput(
     budget?: BudgetSummary;
     reservations?: ReservationSummary;
     summariesLoaded?: boolean;
+    itinerary?: Itinerary | null;
   },
 ): TripActionInputs {
   return {
@@ -93,13 +127,17 @@ function fullInput(
     budget: overrides?.budget ?? loadedBudget,
     reservations: overrides?.reservations ?? loadedRes,
     summariesLoaded: overrides?.summariesLoaded ?? true,
+    itinerary:
+      overrides && "itinerary" in overrides
+        ? (overrides.itinerary ?? null)
+        : itineraryBase(),
     workspace,
   };
 }
 
 describe("deriveTripActionItems", () => {
   beforeEach(() => {
-    vi.useFakeTimers();
+    vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(FROZEN_NOW);
   });
 
@@ -179,6 +217,94 @@ describe("deriveTripActionItems", () => {
         }),
       );
       expect(items).toEqual([]);
+    });
+  });
+
+  describe("solo trips and itinerary-derived state", () => {
+    it("does not ask solo travelers to invite people", () => {
+      const items = deriveTripActionItems(
+        fullInput(quietWorkspace(), tripBase({ members: [], member_count: 1 })),
+      );
+      expect(items.find((i) => i.id === "solo-group")).toBeUndefined();
+      expect(items.find((i) => i.title.toLowerCase().includes("invite"))).toBeUndefined();
+    });
+
+    it("surfaces a missing itinerary as a real next action", () => {
+      const items = deriveTripActionItems(
+        fullInput(quietWorkspace(), tripBase(), { itinerary: null }),
+      );
+      expect(items.find((i) => i.id === "itinerary-missing")?.command).toEqual({
+        kind: "open_tab",
+        tab: "overview",
+      });
+    });
+
+    it("only surfaces stop ownership gaps after ownership is being used", () => {
+      const noOwnershipItems = deriveTripActionItems(
+        fullInput(quietWorkspace(), tripBase(), {
+          itinerary: itineraryBase({
+            days: [
+              {
+                day_number: 1,
+                date: "2026-06-01",
+                items: [
+                  {
+                    time: "09:00",
+                    title: "Museum",
+                    location: null,
+                    lat: null,
+                    lon: null,
+                    notes: null,
+                    cost_estimate: null,
+                    status: "planned",
+                  },
+                ],
+              },
+            ],
+          }),
+        }),
+      );
+      expect(
+        noOwnershipItems.find((i) => i.id === "itinerary-ownership-open"),
+      ).toBeUndefined();
+
+      const partiallyOwnedItems = deriveTripActionItems(
+        fullInput(quietWorkspace(), tripBase(), {
+          itinerary: itineraryBase({
+            days: [
+              {
+                day_number: 1,
+                date: "2026-06-01",
+                items: [
+                  {
+                    time: "09:00",
+                    title: "Museum",
+                    location: null,
+                    lat: null,
+                    lon: null,
+                    notes: "[ownership:handledBy=Alex]",
+                    cost_estimate: null,
+                    status: "planned",
+                  },
+                  {
+                    time: "12:00",
+                    title: "Lunch",
+                    location: null,
+                    lat: null,
+                    lon: null,
+                    notes: null,
+                    cost_estimate: null,
+                    status: "planned",
+                  },
+                ],
+              },
+            ],
+          }),
+        }),
+      );
+      expect(
+        partiallyOwnedItems.find((i) => i.id === "itinerary-ownership-open"),
+      ).toBeDefined();
     });
   });
 
