@@ -170,9 +170,4 @@ See interactive docs at `/docs` for request/response details.
 - Backend checks:
   - `pytest tests/ -v`
 
-## Contributing
 
-1. Keep changes scoped and tested.
-2. Prefer typed adapters/helpers for data transforms.
-3. Keep render components thin; move business logic to hooks/helpers.
-4. Run frontend tests/build and backend tests before merging.
