@@ -2,6 +2,9 @@
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import List, Optional, Any, Literal
 
+ItineraryStopStatus = Literal["planned", "confirmed", "skipped"]
+
+
 class ItineraryItem(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
@@ -12,6 +15,10 @@ class ItineraryItem(BaseModel):
     lon: Optional[float] = Field(None, description="Longitude of the location")
     notes: Optional[str] = Field(None, description="Short description or tip")
     cost_estimate: Optional[str] = Field(None, description="e.g. '$20' or 'Free'")
+    status: Optional[ItineraryStopStatus] = Field(
+        None,
+        description="Group coordination: planned vs confirmed vs skipped",
+    )
 
     @field_validator("cost_estimate", mode="before")
     @classmethod
@@ -56,6 +63,15 @@ class ItineraryResponse(BaseModel):
             return [v]
         return v
 
+    @field_validator("packing_list", mode="before")
+    @classmethod
+    def coerce_packing_list_to_list(cls, v: Any) -> Optional[List[str]]:
+        if v is None:
+            return None
+        if isinstance(v, str):
+            return [v]
+        return v
+
     @field_validator("budget_breakdown", mode="before")
     @classmethod
     def coerce_budget_values_to_str(cls, v: Any) -> Optional[dict]:
@@ -63,6 +79,11 @@ class ItineraryResponse(BaseModel):
             return None
         if isinstance(v, dict):
             return {k: str(val) for k, val in v.items()}
+        if isinstance(v, str):
+            text = v.strip()
+            if not text:
+                return None
+            return {"overview": text}
         return v
     source: str = Field("unknown", description="How this itinerary was generated")
     source_label: str = Field("Unknown source", description="Human-friendly itinerary source label")

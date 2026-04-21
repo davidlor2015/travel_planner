@@ -8,7 +8,7 @@ import {
   useEffect,
   useMemo,
   useState,
-} from 'react';
+} from "react";
 import {
   Navigate,
   Outlet,
@@ -19,22 +19,27 @@ import {
   useOutletContext,
   useParams,
   useSearchParams,
-} from 'react-router-dom';
+} from "react-router-dom";
 
-import { LandingPage } from './features/landing';
-import { LoginPage } from './features/auth/LoginPage';
-import { ForgotPasswordPage } from './features/auth/ForgotPasswordPage';
-import { ResetPasswordPage } from './features/auth/ResetPasswordPage';
-import { VerifyEmailPage } from './features/auth/VerifyEmailPage';
-import { VerifyEmailRequestPage } from './features/auth/VerifyEmailRequestPage';
-import { TripInvitePage } from './features/trips/TripInvitePage';
-import { AppShell, type AppView } from './app/AppShell';
-import { PrivacyPage } from './features/static/PrivacyPage';
-import { SupportPage } from './features/static/SupportPage';
-import { TermsPage } from './features/static/TermsPage';
-import { getMe, type LoginResponse, type UserProfile } from './shared/api/auth';
-import { getTrips, type Trip } from './shared/api/trips';
-import { identifyAnalyticsUser, resetAnalyticsUser, track } from './shared/analytics';
+import { LandingPage } from "./features/landing";
+import { LoginPage } from "./features/auth/LoginPage";
+import { ForgotPasswordPage } from "./features/auth/ForgotPasswordPage";
+import { ResetPasswordPage } from "./features/auth/ResetPasswordPage";
+import { VerifyEmailPage } from "./features/auth/VerifyEmailPage";
+import { VerifyEmailRequestPage } from "./features/auth/VerifyEmailRequestPage";
+import { TripInvitePage } from "./features/trips/TripInvitePage";
+import { AppShell, type AppView } from "./app/AppShell";
+import { ArchivePage } from "./features/archive/ArchivePage";
+import { PrivacyPage } from "./features/static/PrivacyPage";
+import { SupportPage } from "./features/static/SupportPage";
+import { TermsPage } from "./features/static/TermsPage";
+import { getMe, type LoginResponse, type UserProfile } from "./shared/api/auth";
+import { getTrips, type Trip } from "./shared/api/trips";
+import {
+  identifyAnalyticsUser,
+  resetAnalyticsUser,
+  track,
+} from "./shared/analytics";
 import {
   clearStoredSession,
   getStoredAccessToken,
@@ -43,14 +48,30 @@ import {
   SESSION_EVENT,
   storeSession,
   storeSessionUser,
-} from './shared/auth/session';
+} from "./shared/auth/session";
 
-const TripList = lazy(() => import('./features/trips/TripList').then((m) => ({ default: m.TripList })));
-const CreateTripForm = lazy(() => import('./features/trips/CreateTripForm').then((m) => ({ default: m.CreateTripForm })));
-const Dashboard = lazy(() => import('./features/dashboard').then((m) => ({ default: m.Dashboard })));
-const MatchingPage = lazy(() => import('./features/profile').then((m) => ({ default: m.MatchingPage })));
-const ProfilePage = lazy(() => import('./features/profile').then((m) => ({ default: m.ProfilePage })));
-const ExplorePage = lazy(() => import('./features/explore').then((m) => ({ default: m.ExplorePage })));
+const TripList = lazy(() =>
+  import("./features/trips/TripList").then((m) => ({ default: m.TripList })),
+);
+const CreateTripForm = lazy(() =>
+  import("./features/trips/CreateTripForm").then((m) => ({
+    default: m.CreateTripForm,
+  })),
+);
+const Dashboard = lazy(() =>
+  import("./features/dashboard").then((m) => ({ default: m.Dashboard })),
+);
+const ExplorePage = lazy(() =>
+  import("./features/explore").then((m) => ({ default: m.ExplorePage })),
+);
+const MatchingPage = lazy(() =>
+  import("./features/profile").then((m) => ({ default: m.MatchingPage })),
+);
+const ProfilePage = lazy(() =>
+  import("./features/profile").then((m) => ({ default: m.ProfilePage })),
+);
+
+const EXPLORE_ENABLED = import.meta.env.VITE_ENABLE_EXPLORE === "true";
 
 interface AuthContextValue {
   user: UserProfile | null;
@@ -68,7 +89,6 @@ interface AppLayoutContextValue {
   setTrips: React.Dispatch<React.SetStateAction<Trip[]>>;
   refreshTrips: () => Promise<void>;
   navigateToView: (view: AppView, tripId?: number) => void;
-  planTripFromDestination: (destination: string) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -76,7 +96,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 function useAuth() {
   const value = useContext(AuthContext);
   if (!value) {
-    throw new Error('useAuth must be used within App');
+    throw new Error("useAuth must be used within App");
   }
   return value;
 }
@@ -95,26 +115,31 @@ function FullPageLoading({ label }: { label: string }) {
 
 function routeForView(view: AppView, tripId?: number): string {
   switch (view) {
-    case 'dashboard':
-      return '/app/dashboard';
-    case 'explore':
-      return '/app/explore';
-    case 'matching':
-      return '/app/matching';
-    case 'profile':
-      return '/app/profile';
-    case 'trips':
+    case "dashboard":
+      return "/app/dashboard";
+    case "explore":
+      return EXPLORE_ENABLED ? "/app/explore" : "/app/trips";
+    case "archive":
+      return "/app/archive";
+    case "matching":
+      return "/app/matching";
+    case "profile":
+      return "/app/profile";
+    case "trips":
     default:
-      return tripId ? `/app/trips/${tripId}` : '/app/trips';
+      return tripId ? `/app/trips/${tripId}` : "/app/trips";
   }
 }
 
 function viewFromPath(pathname: string): AppView {
-  if (pathname.startsWith('/app/dashboard')) return 'dashboard';
-  if (pathname.startsWith('/app/explore')) return 'explore';
-  if (pathname.startsWith('/app/matching')) return 'matching';
-  if (pathname.startsWith('/app/profile')) return 'profile';
-  return 'trips';
+  if (pathname.startsWith("/app/dashboard")) return "dashboard";
+  if (pathname.startsWith("/app/explore"))
+    return EXPLORE_ENABLED ? "explore" : "trips";
+  if (pathname.startsWith("/app/archive")) return "archive";
+  if (pathname.startsWith("/app/matching")) return "matching";
+  if (pathname.startsWith("/app/profile")) return "profile";
+  if (pathname.startsWith("/app/workspace")) return "trips";
+  return "trips";
 }
 
 function RequireAuth() {
@@ -136,7 +161,7 @@ function RequireAuth() {
 function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
   const auth = useAuth();
   const [searchParams] = useSearchParams();
-  const returnTo = searchParams.get('returnTo') ?? '/app/trips';
+  const returnTo = searchParams.get("returnTo") ?? "/app/trips";
 
   if (auth.loading) {
     return <FullPageLoading label="Loading…" />;
@@ -158,28 +183,28 @@ function MarketingHome() {
   }
 
   if (auth.isAuthenticated) {
-    return <Navigate to="/app/trips" replace />;
+    return <Navigate to="/app/dashboard" replace />;
   }
 
   return (
     <LandingPage
-      onGetStarted={() => navigate('/register')}
-      onSignIn={() => navigate('/login')}
+      onGetStarted={() => navigate("/register")}
+      onSignIn={() => navigate("/login")}
     />
   );
 }
 
-function AuthRoute({ mode }: { mode: 'login' | 'register' }) {
+function AuthRoute({ mode }: { mode: "login" | "register" }) {
   const auth = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const returnTo = searchParams.get('returnTo') ?? '/app/trips';
+  const returnTo = searchParams.get("returnTo") ?? "/app/dashboard";
 
   return (
     <LoginPage
       initialMode={mode}
       forgotPasswordHref="/forgot-password"
-      onBack={() => navigate('/')}
+      onBack={() => navigate("/")}
       onLoginSuccess={async (session) => {
         await auth.completeLogin(session);
         navigate(returnTo, { replace: true });
@@ -231,16 +256,11 @@ function AppLayout() {
 
   const navigateToView = useCallback(
     (view: AppView, tripId?: number) => {
-      track({ name: 'view_changed', props: { from: viewFromPath(location.pathname), to: view } });
+      track({
+        name: "view_changed",
+        props: { from: viewFromPath(location.pathname), to: view },
+      });
       navigate(routeForView(view, tripId));
-    },
-    [location.pathname, navigate],
-  );
-
-  const planTripFromDestination = useCallback(
-    (destination: string) => {
-      track({ name: 'plan_trip_clicked', props: { source_view: viewFromPath(location.pathname), destination } });
-      navigate(`/app/trips/new?destination=${encodeURIComponent(destination)}`);
     },
     [location.pathname, navigate],
   );
@@ -256,10 +276,14 @@ function AppLayout() {
       userEmail={user.email}
       onLogout={() => {
         logout();
-        navigate('/', { replace: true });
+        navigate("/", { replace: true });
       }}
     >
-      <Suspense fallback={<div className="text-sm text-flint p-4">Loading section…</div>}>
+      <Suspense
+        fallback={
+          <div className="text-sm text-flint p-4">Loading section…</div>
+        }
+      >
         <Outlet
           context={{
             token,
@@ -268,7 +292,6 @@ function AppLayout() {
             setTrips,
             refreshTrips,
             navigateToView,
-            planTripFromDestination,
           }}
         />
       </Suspense>
@@ -278,12 +301,15 @@ function AppLayout() {
 
 function DashboardRoute() {
   const { token, trips, navigateToView } = useAppLayoutContext();
-  return <Dashboard token={token} trips={trips} onNavigate={navigateToView} />;
-}
-
-function ExploreRoute() {
-  const { token, planTripFromDestination } = useAppLayoutContext();
-  return <ExplorePage token={token} onPlanTrip={planTripFromDestination} />;
+  const navigate = useNavigate();
+  return (
+    <Dashboard
+      token={token}
+      trips={trips}
+      onNavigate={navigateToView}
+      onCreateTrip={() => navigate("/app/trips/new")}
+    />
+  );
 }
 
 function MatchingRoute() {
@@ -296,6 +322,47 @@ function ProfileRoute() {
   return <ProfilePage trips={trips} userEmail={user.email} />;
 }
 
+function ArchiveRoute() {
+  const { trips, navigateToView } = useAppLayoutContext();
+  const navigate = useNavigate();
+
+  return (
+    <ArchivePage
+      trips={trips}
+      onNavigate={navigateToView}
+      onCreateFromDestination={(destination) => {
+        track({
+          name: "plan_trip_clicked",
+          props: { source_view: "archive", destination },
+        });
+        navigate(
+          `/app/trips/new?destination=${encodeURIComponent(destination)}`,
+        );
+      }}
+    />
+  );
+}
+
+function ExploreRoute() {
+  const { trips } = useAppLayoutContext();
+  const navigate = useNavigate();
+
+  return (
+    <ExplorePage
+      plannedDestinations={trips.map((trip) => trip.destination)}
+      onStartTrip={(destination) => {
+        track({
+          name: "plan_trip_clicked",
+          props: { source_view: "explore", destination },
+        });
+        navigate(
+          `/app/trips/new?destination=${encodeURIComponent(destination)}`,
+        );
+      }}
+    />
+  );
+}
+
 function TripsListRoute() {
   const { token, user, setTrips } = useAppLayoutContext();
   const navigate = useNavigate();
@@ -305,9 +372,13 @@ function TripsListRoute() {
     <TripList
       token={token}
       currentUserEmail={user.email}
-      onCreateClick={() => navigate('/app/trips/new')}
+      onCreateClick={() => navigate("/app/trips/new")}
       initialTripId={tripId ? Number(tripId) : undefined}
-      onTripSelect={(nextTripId) => navigate(nextTripId ? `/app/trips/${nextTripId}` : '/app/trips', { replace: true })}
+      onTripSelect={(nextTripId) =>
+        navigate(nextTripId ? `/app/trips/${nextTripId}` : "/app/trips", {
+          replace: true,
+        })
+      }
       onTripsChange={setTrips}
     />
   );
@@ -317,7 +388,7 @@ function TripsCreateRoute() {
   const { token, setTrips } = useAppLayoutContext();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const defaultDestination = searchParams.get('destination') ?? undefined;
+  const defaultDestination = searchParams.get("destination") ?? undefined;
 
   return (
     <CreateTripForm
@@ -325,16 +396,30 @@ function TripsCreateRoute() {
       defaultDestination={defaultDestination}
       onSuccess={(newTrip) => {
         setTrips((prev) => [...prev, newTrip]);
-        navigate(`/app/trips/${newTrip.id}`, { replace: true });
+        navigate(`/app/trips/${newTrip.id}?from=create`, { replace: true });
       }}
-      onCancel={() => navigate('/app/trips')}
+      onCancel={() => navigate("/app/trips")}
+    />
+  );
+}
+
+function WorkspaceRoute() {
+  const { tripId } = useParams();
+  const [searchParams] = useSearchParams();
+  const from = searchParams.get("from");
+  return (
+    <Navigate
+      to={`/app/trips/${tripId ?? ""}${from ? `?from=${from}` : ""}`}
+      replace
     />
   );
 }
 
 function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(() => readStoredUser());
-  const [token, setToken] = useState<string | null>(() => getStoredAccessToken());
+  const [token, setToken] = useState<string | null>(() =>
+    getStoredAccessToken(),
+  );
   const [loading, setLoading] = useState(true);
 
   const syncFromStorage = useCallback(() => {
@@ -415,7 +500,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    track({ name: 'auth_logout_completed' });
+    track({ name: "auth_logout_completed" });
     clearStoredSession();
     setToken(null);
     setUser(null);
@@ -442,7 +527,7 @@ function AppRoutes() {
 
   useEffect(() => {
     track({
-      name: 'page_viewed',
+      name: "page_viewed",
       props: {
         path: location.pathname,
       },
@@ -459,43 +544,82 @@ function AppRoutes() {
 
       <Route
         path="/login"
-        element={(
+        element={
           <PublicOnlyRoute>
             <AuthRoute mode="login" />
           </PublicOnlyRoute>
-        )}
+        }
       />
       <Route
         path="/register"
-        element={(
+        element={
           <PublicOnlyRoute>
             <AuthRoute mode="register" />
           </PublicOnlyRoute>
-        )}
+        }
       />
-      <Route path="/forgot-password" element={<PublicOnlyRoute><ForgotPasswordPage /></PublicOnlyRoute>} />
-      <Route path="/reset-password" element={<PublicOnlyRoute><ResetPasswordPage /></PublicOnlyRoute>} />
+      <Route
+        path="/forgot-password"
+        element={
+          <PublicOnlyRoute>
+            <ForgotPasswordPage />
+          </PublicOnlyRoute>
+        }
+      />
+      <Route
+        path="/reset-password"
+        element={
+          <PublicOnlyRoute>
+            <ResetPasswordPage />
+          </PublicOnlyRoute>
+        }
+      />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
-      <Route path="/verify-email/request" element={<VerifyEmailRequestPage />} />
+      <Route
+        path="/verify-email/request"
+        element={<VerifyEmailRequestPage />}
+      />
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/support" element={<SupportPage />} />
-      <Route path="/invites/:inviteToken" element={<TripInvitePage token={auth.token} user={auth.user} />} />
+      <Route
+        path="/invites/:inviteToken"
+        element={<TripInvitePage token={auth.token} user={auth.user} />}
+      />
 
       <Route element={<RequireAuth />}>
         <Route path="/app" element={<AppLayout />}>
-          <Route index element={<Navigate to="trips" replace />} />
+          <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<DashboardRoute />} />
-          <Route path="explore" element={<ExploreRoute />} />
+          <Route path="archive" element={<ArchiveRoute />} />
+          <Route
+            path="explore"
+            element={
+              EXPLORE_ENABLED ? (
+                <ExploreRoute />
+              ) : (
+                <Navigate to="/app/trips" replace />
+              )
+            }
+          />
           <Route path="matching" element={<MatchingRoute />} />
           <Route path="profile" element={<ProfileRoute />} />
           <Route path="trips" element={<TripsListRoute />} />
           <Route path="trips/new" element={<TripsCreateRoute />} />
           <Route path="trips/:tripId" element={<TripsListRoute />} />
+          <Route path="workspace/:tripId" element={<WorkspaceRoute />} />
         </Route>
       </Route>
 
-      <Route path="*" element={<Navigate to={auth.isAuthenticated ? '/app/trips' : '/'} replace />} />
+      <Route
+        path="*"
+        element={
+          <Navigate
+            to={auth.isAuthenticated ? "/app/dashboard" : "/"}
+            replace
+          />
+        }
+      />
     </Routes>
   );
 }

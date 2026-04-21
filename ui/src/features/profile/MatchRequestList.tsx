@@ -171,8 +171,8 @@ export const MatchRequestList = ({ token, trips, requests }: MatchRequestListPro
             <p className="text-sm font-semibold text-espresso">No match requests yet</p>
             <p className="text-sm text-flint mt-1">
               {trips.length === 0
-                ? 'Create a trip first, then open a request when you want to find compatible travellers.'
-                : 'Open a trip request to start seeing compatible travellers.'}
+                ? 'Create a trip first, then open a request when you want to find compatible travelers.'
+                : 'Open a trip request to start seeing compatible travelers.'}
             </p>
           </div>
         )}

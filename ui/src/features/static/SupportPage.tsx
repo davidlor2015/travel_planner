@@ -15,7 +15,7 @@ export const SupportPage = () => (
     <section>
       <h2 className="text-base font-semibold text-espresso">Trip planning help</h2>
       <p className="mt-2">
-        Shared trip details, reservations, and itineraries are visible to trip members. Personal budgets, packing lists, and prep items stay private to each traveller.
+        Shared trip details, reservations, and itineraries are visible to trip members. Personal budgets and packing lists stay private to each traveler.
       </p>
     </section>
     <section>

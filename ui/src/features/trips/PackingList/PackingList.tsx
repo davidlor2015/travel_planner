@@ -1,308 +1,825 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { usePackingList } from './usePackingList';
-import { getPackingSuggestions, type PackingSuggestion } from '../../../shared/api/packing';
-import { Toast } from '../../../shared/ui/Toast';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+import {
+  getPackingSuggestions,
+  type PackingItem,
+  type PackingSuggestion,
+} from "../../../shared/api/packing";
+import { track } from "../../../shared/analytics";
+import { Toast } from "../../../shared/ui/Toast";
+import { usePackingList } from "./usePackingList";
 
 interface PackingListProps {
   token: string;
   tripId: number;
-  onSummaryChange?: (summary: { total: number; checked: number; progressPct: number; loading: boolean }) => void;
+  onSummaryChange?: (summary: {
+    total: number;
+    checked: number;
+    progressPct: number;
+    loading: boolean;
+  }) => void;
 }
 
-// ── Animation variants ────────────────────────────────────────────────────────
+type PackingCategoryKey =
+  | "clothing"
+  | "documents"
+  | "tech"
+  | "toiletries"
+  | "other";
 
-const itemVariants = {
-  hidden: { opacity: 0, x: -12 },
-  show:   { opacity: 1, x: 0, transition: { type: 'spring' as const, bounce: 0.3, duration: 0.4 } },
-  exit:   { opacity: 0, x: 12, transition: { duration: 0.18 } },
+interface PackingCategoryConfig {
+  key: PackingCategoryKey;
+  title: string;
+  hint: string;
+  chipClass: string;
+}
+
+const CATEGORY_CONFIG: PackingCategoryConfig[] = [
+  {
+    key: "clothing",
+    title: "Clothing",
+    hint: "Outfits and weather layers",
+    chipClass: "border-[#D7CAB9] bg-[#F7F0E8] text-[#7A6050]",
+  },
+  {
+    key: "documents",
+    title: "Documents",
+    hint: "Travel and entry paperwork",
+    chipClass: "border-[#D8CCB9] bg-[#FAF4E8] text-[#7D6335]",
+  },
+  {
+    key: "tech",
+    title: "Tech",
+    hint: "Devices and charging gear",
+    chipClass: "border-[#C8D5E4] bg-[#EDF3FA] text-[#3D5C7A]",
+  },
+  {
+    key: "toiletries",
+    title: "Toiletries",
+    hint: "Personal care essentials",
+    chipClass: "border-[#D0DDBF] bg-[#EEF3E8] text-[#556A35]",
+  },
+  {
+    key: "other",
+    title: "Other",
+    hint: "Everything else for this trip",
+    chipClass: "border-[#E1D8CB] bg-[#FAF8F5] text-[#6B5E52]",
+  },
+];
+
+const CATEGORY_KEYWORDS: Record<PackingCategoryKey, string[]> = {
+  clothing: [
+    "shirt",
+    "dress",
+    "pants",
+    "jeans",
+    "jacket",
+    "coat",
+    "sweater",
+    "sock",
+    "shoe",
+    "hat",
+    "scarf",
+    "outfit",
+  ],
+  documents: [
+    "passport",
+    "visa",
+    "id",
+    "document",
+    "ticket",
+    "insurance",
+    "boarding pass",
+    "reservation printout",
+    "license",
+  ],
+  tech: [
+    "charger",
+    "adapter",
+    "phone",
+    "laptop",
+    "tablet",
+    "camera",
+    "power bank",
+    "cable",
+    "headphones",
+    "watch",
+  ],
+  toiletries: [
+    "toiletry",
+    "toothbrush",
+    "toothpaste",
+    "soap",
+    "shampoo",
+    "conditioner",
+    "sunscreen",
+    "deodorant",
+    "razor",
+    "makeup",
+    "medication",
+  ],
+  other: [],
 };
 
-// ── Component ─────────────────────────────────────────────────────────────────
+const ESSENTIAL_KEYWORDS = [
+  "passport",
+  "visa",
+  "id",
+  "ticket",
+  "boarding pass",
+  "medication",
+  "charger",
+  "wallet",
+  "keys",
+  "insurance",
+  "license",
+];
 
-export const PackingList = ({ token, tripId, onSummaryChange }: PackingListProps) => {
-  const { items, loading, addItem, toggleItem, removeItem, clearChecked } = usePackingList(token, tripId);
-  const [draft, setDraft] = useState('');
+const OVERRIDES_STORAGE_KEY = "wp_packing_category_overrides_v1";
+
+function emptyCategoryBuckets<T>(): Record<PackingCategoryKey, T[]> {
+  return {
+    clothing: [],
+    documents: [],
+    tech: [],
+    toiletries: [],
+    other: [],
+  };
+}
+
+function normalize(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function detectCategory(label: string): PackingCategoryKey {
+  const normalized = normalize(label);
+
+  for (const category of CATEGORY_CONFIG) {
+    if (category.key === "other") continue;
+    const keywords = CATEGORY_KEYWORDS[category.key];
+    if (keywords.some((keyword) => normalized.includes(keyword))) {
+      return category.key;
+    }
+  }
+
+  return "other";
+}
+
+function isEssential(label: string): boolean {
+  const normalized = normalize(label);
+  return ESSENTIAL_KEYWORDS.some((keyword) => normalized.includes(keyword));
+}
+
+function loadOverrides(tripId: number): Record<number, PackingCategoryKey> {
+  if (typeof window === "undefined") return {};
+
+  try {
+    const raw = window.localStorage.getItem(
+      `${OVERRIDES_STORAGE_KEY}:${tripId}`,
+    );
+    if (!raw) return {};
+
+    const parsed = JSON.parse(raw) as Record<string, PackingCategoryKey>;
+    if (!parsed || typeof parsed !== "object") return {};
+
+    const result: Record<number, PackingCategoryKey> = {};
+    for (const [key, value] of Object.entries(parsed)) {
+      const id = Number(key);
+      if (
+        !Number.isNaN(id) &&
+        CATEGORY_CONFIG.some((category) => category.key === value)
+      ) {
+        result[id] = value;
+      }
+    }
+    return result;
+  } catch {
+    return {};
+  }
+}
+
+function saveOverrides(
+  tripId: number,
+  overrides: Record<number, PackingCategoryKey>,
+): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(
+    `${OVERRIDES_STORAGE_KEY}:${tripId}`,
+    JSON.stringify(overrides),
+  );
+}
+
+export const PackingList = ({
+  token,
+  tripId,
+  onSummaryChange,
+}: PackingListProps) => {
+  const {
+    items,
+    loading,
+    error,
+    addItem,
+    toggleItem,
+    removeItem,
+    clearChecked,
+  } = usePackingList(token, tripId);
+
+  const [draft, setDraft] = useState("");
+  const [draftCategory, setDraftCategory] =
+    useState<PackingCategoryKey>("clothing");
   const [suggestions, setSuggestions] = useState<PackingSuggestion[]>([]);
-  const [showCustomInput, setShowCustomInput] = useState(false);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [categoryOverrides, setCategoryOverrides] = useState<
+    Record<number, PackingCategoryKey>
+  >({});
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const checkedCount = items.filter((i) => i.checked).length;
-  const total        = items.length;
-  const progressPct  = total === 0 ? 0 : Math.round((checkedCount / total) * 100);
+  const checkedCount = items.filter((item) => item.checked).length;
+  const total = items.length;
+  const remaining = Math.max(0, total - checkedCount);
+  const progressPct =
+    total === 0 ? 0 : Math.round((checkedCount / total) * 100);
 
   useEffect(() => {
     onSummaryChange?.({ total, checked: checkedCount, progressPct, loading });
   }, [checkedCount, loading, onSummaryChange, progressPct, total]);
 
   useEffect(() => {
+    setCategoryOverrides(loadOverrides(tripId));
+  }, [tripId]);
+
+  useEffect(() => {
+    saveOverrides(tripId, categoryOverrides);
+  }, [categoryOverrides, tripId]);
+
+  useEffect(() => {
+    // Keep override storage aligned with currently rendered items only.
+    setCategoryOverrides((current) => {
+      const validIds = new Set(items.map((item) => item.id));
+      let changed = false;
+      const next: Record<number, PackingCategoryKey> = {};
+
+      for (const [idText, category] of Object.entries(current)) {
+        const id = Number(idText);
+        if (validIds.has(id)) {
+          next[id] = category;
+        } else {
+          changed = true;
+        }
+      }
+
+      return changed ? next : current;
+    });
+  }, [items]);
+
+  useEffect(() => {
     let cancelled = false;
+    setSuggestionsLoading(true);
+
     getPackingSuggestions(token, tripId)
       .then((data) => {
-        if (!cancelled) setSuggestions(data.slice(0, 6));
+        if (!cancelled) {
+          setSuggestions(data.slice(0, 10));
+        }
       })
       .catch(() => {
-        if (!cancelled) setSuggestions([]);
+        if (!cancelled) {
+          setSuggestions([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setSuggestionsLoading(false);
+        }
       });
+
     return () => {
       cancelled = true;
     };
-  }, [token, tripId, total]);
+  }, [token, tripId]);
+
+  const groupedItems = useMemo(() => {
+    const buckets = emptyCategoryBuckets<PackingItem>();
+
+    for (const item of items) {
+      const category = categoryOverrides[item.id] ?? detectCategory(item.label);
+      buckets[category].push(item);
+    }
+
+    for (const key of Object.keys(buckets) as PackingCategoryKey[]) {
+      buckets[key].sort((left, right) => {
+        if (left.checked !== right.checked) {
+          return left.checked ? 1 : -1;
+        }
+        return left.label.localeCompare(right.label);
+      });
+    }
+
+    return buckets;
+  }, [categoryOverrides, items]);
+
+  const groupedSuggestions = useMemo(() => {
+    const buckets = emptyCategoryBuckets<PackingSuggestion>();
+
+    for (const suggestion of suggestions) {
+      buckets[detectCategory(suggestion.label)].push(suggestion);
+    }
+
+    return buckets;
+  }, [suggestions]);
 
   const handleAdd = useCallback(async () => {
+    const trimmed = draft.trim();
+    if (!trimmed) return;
+
     setFeedback(null);
+
     try {
-      await addItem(draft);
-      setDraft('');
-      setShowCustomInput(false);
-      setFeedback('Packing item added.');
+      const created = await addItem(trimmed);
+      if (created) {
+        setCategoryOverrides((prev) => ({
+          ...prev,
+          [created.id]: draftCategory,
+        }));
+      }
+
+      setDraft("");
+      setFeedback("Packing item added.");
+
+      track({
+        name: "packing_item_added",
+        props: {
+          trip_id: tripId,
+          category: draftCategory,
+          source: "custom",
+          essential: isEssential(trimmed),
+        },
+      });
+
       inputRef.current?.focus();
     } catch {
-      return;
+      // Hook already handles rollback, so only stop here.
     }
-  }, [addItem, draft]);
+  }, [addItem, draft, draftCategory, tripId]);
 
-  const handleAddSuggestion = useCallback(async (label: string) => {
-    setFeedback(null);
+  const handleAddSuggestion = useCallback(
+    async (suggestion: PackingSuggestion) => {
+      setFeedback(null);
+
+      const category = detectCategory(suggestion.label);
+
+      try {
+        const created = await addItem(suggestion.label);
+        if (created) {
+          setCategoryOverrides((prev) => ({ ...prev, [created.id]: category }));
+        }
+
+        setSuggestions((prev) =>
+          prev.filter((candidate) => candidate.label !== suggestion.label),
+        );
+        setFeedback("Suggested item added.");
+
+        track({
+          name: "packing_item_added",
+          props: {
+            trip_id: tripId,
+            category,
+            source: "suggestion",
+            essential: isEssential(suggestion.label),
+          },
+        });
+      } catch {
+        // Hook already handles rollback, so only stop here.
+      }
+    },
+    [addItem, tripId],
+  );
+
+  const handleToggle = useCallback(
+    async (item: PackingItem) => {
+      try {
+        await toggleItem(item.id);
+
+        const nextChecked = !item.checked;
+        setFeedback(nextChecked ? "Marked packed." : "Marked as still needed.");
+
+        track({
+          name: "packing_item_toggled",
+          props: {
+            trip_id: tripId,
+            item_id: item.id,
+            checked: nextChecked,
+            category: categoryOverrides[item.id] ?? detectCategory(item.label),
+            essential: isEssential(item.label),
+          },
+        });
+      } catch {
+        // Hook already handles rollback, so only stop here.
+      }
+    },
+    [categoryOverrides, toggleItem, tripId],
+  );
+
+  const handleRemove = useCallback(
+    async (item: PackingItem) => {
+      try {
+        await removeItem(item.id);
+        setFeedback("Packing item removed.");
+
+        track({
+          name: "packing_item_removed",
+          props: {
+            trip_id: tripId,
+            item_id: item.id,
+            category: categoryOverrides[item.id] ?? detectCategory(item.label),
+            essential: isEssential(item.label),
+          },
+        });
+      } catch {
+        // Hook already handles rollback, so only stop here.
+      }
+    },
+    [categoryOverrides, removeItem, tripId],
+  );
+
+  const handleClearPacked = useCallback(async () => {
+    if (checkedCount === 0) return;
+
     try {
-      await addItem(label);
-      setSuggestions((prev) => prev.filter((item) => item.label !== label));
-      setFeedback('Suggested item added.');
-    } catch {
-      return;
-    }
-  }, [addItem]);
+      await clearChecked();
+      setFeedback("Packed items cleared.");
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') handleAdd();
-  }, [handleAdd]);
+      track({
+        name: "packing_items_cleared",
+        props: {
+          trip_id: tripId,
+          cleared_count: checkedCount,
+        },
+      });
+    } catch {
+      // Hook already handles rollback, so only stop here.
+    }
+  }, [checkedCount, clearChecked, tripId]);
+
+  const hasSuggestions = CATEGORY_CONFIG.some(
+    (category) => groupedSuggestions[category.key].length > 0,
+  );
 
   return (
-    <div className="mt-2 rounded-2xl border border-clay/20 bg-clay/5 overflow-hidden">
-
-      {/* ── Header ── */}
-      <div className="px-5 pt-5 pb-4 border-b border-clay/10">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
+    <div className="space-y-4">
+      <section className="rounded-2xl border border-[#EAE2D6] bg-[#FEFCF9] px-4 py-4 shadow-[0_1px_0_rgba(28,17,8,0.03)] sm:px-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h4 className="text-base font-bold text-espresso">Pack</h4>
-            <p className="text-xs text-flint mt-0.5">
-              {loading ? 'Loading…' : total === 0 ? 'Nothing added yet.' : `${checkedCount} of ${total} packed`}
+            <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#A39688]">
+              My packing list
             </p>
-            <p className="text-xs text-flint mt-1">This list is personal to you and hidden from other trip members.</p>
+            <h4 className="mt-1 text-lg font-semibold text-[#1C1108]">
+              Pack with confidence before departure
+            </h4>
+            <p className="mt-2 text-[13px] text-[#6B5E52]">
+              Your checklist is personal. Shared guidance below can still help
+              the group align on essentials.
+            </p>
           </div>
-
-          {checkedCount > 0 && (
-            <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
-              onClick={async () => {
-                setFeedback(null);
-                try {
-                  await clearChecked();
-                  setFeedback('Packed items cleared.');
-                } catch {
-                  return;
-                }
-              }}
-              className="text-xs font-semibold text-clay hover:text-clay-dark transition-colors cursor-pointer"
+          {checkedCount > 0 ? (
+            <button
+              type="button"
+              onClick={() => void handleClearPacked()}
+              className="inline-flex min-h-10 items-center rounded-full border border-[#E5DDD1] bg-[#FAF8F5] px-4 text-[12px] font-semibold text-[#6B5E52] transition-colors hover:bg-[#F3EEE7]"
             >
               Clear packed
-            </motion.button>
-          )}
-          <motion.button
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.96 }}
-            onClick={() => setShowCustomInput((prev) => !prev)}
-            className="text-xs font-semibold text-espresso hover:text-clay transition-colors cursor-pointer"
-          >
-            {showCustomInput ? 'Close custom item' : 'Add custom item'}
-          </motion.button>
+            </button>
+          ) : null}
         </div>
 
-        {/* Progress bar */}
-        {total > 0 && (
-          <div className="mt-3 h-1.5 rounded-full bg-clay/15 overflow-hidden">
-            <motion.div
-              className="h-full rounded-full bg-clay"
-              initial={{ width: 0 }}
-              animate={{ width: `${progressPct}%` }}
-              transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
-            />
+        <div className="mt-4 grid gap-2 sm:grid-cols-3">
+          <div className="rounded-xl border border-[#E5DDD1] bg-[#FAF8F5] px-3 py-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8A7E74]">
+              Completion
+            </p>
+            <p className="mt-1 text-lg font-semibold text-[#1C1108]">
+              {progressPct}%
+            </p>
           </div>
-        )}
-
-        <Toast message={feedback} onDismiss={() => setFeedback(null)} />
-
-        {suggestions.length > 0 && (
-          <div className="mt-4 space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-flint">Suggested for this trip</p>
-            <div className="flex flex-wrap gap-2">
-              {suggestions.map((suggestion) => (
-                <motion.button
-                  key={suggestion.label}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => handleAddSuggestion(suggestion.label)}
-                  className="px-3 py-2 rounded-full border border-clay/20 bg-white text-left hover:border-clay/40 transition-colors"
-                  title={suggestion.reason}
-                >
-                  <span className="block text-sm font-semibold text-espresso">+ {suggestion.label}</span>
-                  <span className="block text-xs text-flint mt-0.5">{suggestion.reason}</span>
-                </motion.button>
-              ))}
-            </div>
+          <div className="rounded-xl border border-[#E5DDD1] bg-[#FAF8F5] px-3 py-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8A7E74]">
+              Packed
+            </p>
+            <p className="mt-1 text-lg font-semibold text-[#1C1108]">
+              {checkedCount} item{checkedCount === 1 ? "" : "s"}
+            </p>
           </div>
-        )}
-      </div>
-
-      {/* ── Item list ── */}
-      {loading && (
-        <div className="divide-y divide-clay/10">
-          {[72, 52, 64].map((w, i) => (
-            <div key={i} className="flex items-center gap-3 px-5 py-3 animate-pulse">
-              <div className="flex-shrink-0 w-5 h-5 rounded-full bg-smoke" />
-              <div className="h-3.5 rounded-full bg-parchment" style={{ width: `${w}%` }} />
-            </div>
-          ))}
+          <div className="rounded-xl border border-[#E5DDD1] bg-[#FAF8F5] px-3 py-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8A7E74]">
+              Remaining
+            </p>
+            <p className="mt-1 text-lg font-semibold text-[#1C1108]">
+              {remaining} item{remaining === 1 ? "" : "s"}
+            </p>
+          </div>
         </div>
-      )}
-      <ul className="divide-y divide-clay/10 list-none p-0 m-0">
-        <AnimatePresence initial={false}>
-          {items.map((item) => (
-            <motion.li
-              key={item.id}
-              variants={itemVariants}
-              initial="hidden"
-              animate="show"
-              exit="exit"
-              layout
-              className="flex items-center gap-3 px-5 py-3"
-            >
-              {/* Checkbox */}
-              <motion.button
-                onClick={async () => {
-                  setFeedback(null);
-                  try {
-                    await toggleItem(item.id);
-                    setFeedback(item.checked ? 'Marked as still needed.' : 'Marked packed.');
-                  } catch {
-                    return;
-                  }
-                }}
-                whileTap={{ scale: 0.85 }}
-                aria-label={item.checked ? 'Mark unpacked' : 'Mark packed'}
-                className={[
-                  'flex-shrink-0 w-5 h-5 rounded-full border-2 transition-colors duration-150 cursor-pointer',
-                  item.checked
-                    ? 'bg-clay border-clay'
-                    : 'bg-white border-smoke hover:border-clay',
-                ].join(' ')}
-              >
-                {item.checked && (
-                  <svg viewBox="0 0 10 10" className="w-full h-full text-white" fill="none">
-                    <path
-                      d="M2 5.5l2 2 4-4"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                )}
-              </motion.button>
 
-              {/* Label */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className={[
-                    'text-xs font-bold px-2 py-0.5 rounded-full border',
-                    item.checked ? 'bg-olive/10 text-olive border-olive/20' : 'bg-parchment text-flint border-smoke',
-                  ].join(' ')}>
-                    {item.checked ? 'Done' : 'Planned'}
-                  </span>
-                  <span
-                    className={[
-                      'text-sm transition-colors duration-150',
-                      item.checked ? 'line-through text-flint' : 'text-espresso font-medium',
-                    ].join(' ')}
-                  >
-                    {item.label}
-                  </span>
-                </div>
-              </div>
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#E5DDD1]">
+          <div
+            className="h-full rounded-full bg-[#B86845] transition-[width] duration-300 ease-out"
+            style={{ width: `${progressPct}%` }}
+          />
+        </div>
+      </section>
 
-              {/* Remove */}
-              <motion.button
-                onClick={async () => {
-                  setFeedback(null);
-                  try {
-                    await removeItem(item.id);
-                    setFeedback('Packing item removed.');
-                  } catch {
-                    return;
-                  }
-                }}
-                whileHover={{ scale: 1.15 }}
-                whileTap={{ scale: 0.9 }}
-                aria-label="Remove item"
-                className="flex-shrink-0 text-flint hover:text-clay transition-colors duration-150 cursor-pointer"
-              >
-                <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none">
-                  <path
-                    d="M4 4l8 8M12 4l-8 8"
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </motion.button>
-            </motion.li>
-          ))}
-        </AnimatePresence>
-      </ul>
-
-      {/* ── Add item row ── */}
-      <AnimatePresence initial={false}>
-        {showCustomInput && (
-          <motion.div
-            initial={{ opacity: 0, height: 0, y: -6 }}
-            animate={{ opacity: 1, height: 'auto', y: 0 }}
-            exit={{ opacity: 0, height: 0, y: -6 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
+      <section className="rounded-2xl border border-[#EAE2D6] bg-[#FEFCF9] px-4 py-4 shadow-[0_1px_0_rgba(28,17,8,0.03)] sm:px-5">
+        <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#A39688]">
+          Add item
+        </p>
+        <div className="mt-2 grid gap-2 sm:grid-cols-[180px_minmax(0,1fr)_auto]">
+          <label className="sr-only" htmlFor={`packing-category-${tripId}`}>
+            Category
+          </label>
+          <select
+            id={`packing-category-${tripId}`}
+            value={draftCategory}
+            onChange={(event) =>
+              setDraftCategory(event.target.value as PackingCategoryKey)
+            }
+            className="min-h-12 rounded-xl border border-[#E5DDD1] bg-[#FEFCF9] px-3 text-[13px] text-[#1C1108] outline-none transition focus:border-[#D2B49A] focus:ring-2 focus:ring-[#B86845]/18"
           >
-            <div className="px-5 py-4 border-t border-clay/10 flex gap-2">
-              <input
-                ref={inputRef}
-                type="text"
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Add an item..."
-                className={[
-                  'flex-1 px-4 py-2 rounded-full border border-smoke bg-white text-sm text-espresso',
-                  'placeholder:text-flint focus:outline-none focus:ring-2 focus:ring-clay/35 focus:border-clay',
-                  'transition-all duration-150',
-                ].join(' ')}
+            {CATEGORY_CONFIG.filter((category) => category.key !== "other").map(
+              (category) => (
+                <option key={category.key} value={category.key}>
+                  {category.title}
+                </option>
+              ),
+            )}
+            <option value="other">Other</option>
+          </select>
+
+          <label className="sr-only" htmlFor={`packing-draft-${tripId}`}>
+            Packing item
+          </label>
+          <input
+            id={`packing-draft-${tripId}`}
+            ref={inputRef}
+            type="text"
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                void handleAdd();
+              }
+            }}
+            placeholder="Add item (passport, sandals, charger)"
+            className="min-h-12 rounded-xl border border-[#E5DDD1] bg-[#FEFCF9] px-3 text-[13.5px] text-[#1C1108] outline-none transition placeholder:text-[#A39688] focus:border-[#D2B49A] focus:ring-2 focus:ring-[#B86845]/18"
+          />
+
+          <button
+            type="button"
+            onClick={() => void handleAdd()}
+            disabled={draft.trim().length === 0}
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#B86845] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#9A5230] disabled:cursor-not-allowed disabled:opacity-55"
+          >
+            <span aria-hidden="true" className="text-base leading-none">
+              +
+            </span>
+            Add item
+          </button>
+        </div>
+      </section>
+
+      {error ? (
+        <p
+          className="rounded-xl border border-danger/25 bg-danger/10 px-4 py-3 text-sm text-danger"
+          role="alert"
+        >
+          {error}
+        </p>
+      ) : null}
+
+      <section className="rounded-2xl border border-[#EAE2D6] bg-[#FEFCF9] px-4 py-4 shadow-[0_1px_0_rgba(28,17,8,0.03)] sm:px-5">
+        <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#A39688]">
+          Checklist
+        </p>
+
+        {loading ? (
+          <div className="mt-3 space-y-2">
+            {[1, 2, 3, 4].map((row) => (
+              <div
+                key={row}
+                className="h-12 animate-pulse rounded-xl border border-[#EAE2D6] bg-[#FAF8F5]"
               />
-            <motion.button
-              onClick={() => void handleAdd()}
-                disabled={!draft.trim()}
-                whileHover={draft.trim() ? { scale: 1.04 } : undefined}
-                whileTap={draft.trim() ? { scale: 0.96 } : undefined}
-                className="px-4 py-2 rounded-full bg-clay text-white text-sm font-bold shadow-sm shadow-clay/20
-                           hover:bg-clay-dark transition-colors duration-150
-                           disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-              >
-                Add
-              </motion.button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            ))}
+          </div>
+        ) : null}
+
+        {!loading && total === 0 ? (
+          <div className="mt-3 rounded-xl border border-dashed border-[#DCCDBD] bg-[#FAF8F5] px-4 py-4 text-sm text-[#6B5E52]">
+            Add your first item using the + Add item row above, or pull one from
+            shared guidance below.
+          </div>
+        ) : null}
+
+        {!loading && total > 0 ? (
+          <div className="mt-3 space-y-3">
+            {CATEGORY_CONFIG.map((category) => {
+              const categoryItems = groupedItems[category.key];
+              if (categoryItems.length === 0 && category.key === "other") {
+                return null;
+              }
+
+              return (
+                <section
+                  key={category.key}
+                  className="rounded-xl border border-[#EAE2D6] bg-[#FAF8F5] p-3"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <h5 className="text-[13px] font-semibold text-[#1C1108]">
+                      {category.title}
+                    </h5>
+                    <span
+                      className={[
+                        "inline-flex min-h-6 items-center rounded-full border px-2 py-0.5 text-[10.5px] font-semibold",
+                        category.chipClass,
+                      ].join(" ")}
+                    >
+                      {categoryItems.length}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[11px] text-[#8A7E74]">
+                    {category.hint}
+                  </p>
+
+                  {categoryItems.length === 0 ? (
+                    <p className="mt-2 text-[12px] text-[#8A7E74]">
+                      No items here yet.
+                    </p>
+                  ) : (
+                    <ul className="mt-2 space-y-2">
+                      {categoryItems.map((item) => {
+                        const essential = isEssential(item.label);
+
+                        return (
+                          <li
+                            key={item.id}
+                            className="flex items-stretch gap-2"
+                          >
+                            <label
+                              className={[
+                                "flex min-h-12 flex-1 cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 transition-colors",
+                                item.checked
+                                  ? "border-[#DBD1C4] bg-[#F4EFE8]"
+                                  : "border-[#E2D6C8] bg-[#FEFCF9] hover:bg-[#F9F3EB]",
+                              ].join(" ")}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={item.checked}
+                                onChange={() => void handleToggle(item)}
+                                className="h-5 w-5 shrink-0 rounded border-[#C9B9A7] text-[#B86845] focus:ring-[#B86845]/30"
+                                aria-label={
+                                  item.checked
+                                    ? `Mark ${item.label} as unpacked`
+                                    : `Mark ${item.label} as packed`
+                                }
+                              />
+                              <span className="min-w-0 flex-1">
+                                <span
+                                  className={[
+                                    "block text-[13.5px]",
+                                    item.checked
+                                      ? "text-[#8A7E74] line-through"
+                                      : "font-medium text-[#1C1108]",
+                                  ].join(" ")}
+                                >
+                                  {item.label}
+                                </span>
+                              </span>
+
+                              {essential ? (
+                                <span className="inline-flex min-h-6 items-center rounded-full border border-[#E5DDD1] bg-[#FAF8F5] px-2 py-0.5 text-[10px] font-semibold text-[#7A6A5E]">
+                                  Essential
+                                </span>
+                              ) : null}
+                            </label>
+
+                            <button
+                              type="button"
+                              onClick={() => void handleRemove(item)}
+                              aria-label={`Remove ${item.label}`}
+                              className="inline-flex min-h-12 min-w-11 items-center justify-center rounded-xl border border-[#E5DDD1] bg-white text-[#8A7E74] transition-colors hover:bg-[#F3EEE7] hover:text-[#1C1108]"
+                            >
+                              <svg
+                                viewBox="0 0 20 20"
+                                className="h-4 w-4"
+                                fill="none"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  d="M5.5 5.5 14.5 14.5M14.5 5.5l-9 9"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </section>
+              );
+            })}
+          </div>
+        ) : null}
+      </section>
+
+      <section className="rounded-2xl border border-[#EAE2D6] bg-[#FEFCF9] px-4 py-4 shadow-[0_1px_0_rgba(28,17,8,0.03)] sm:px-5">
+        <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#A39688]">
+          Shared guidance
+        </p>
+        <p className="mt-2 text-[13px] text-[#6B5E52]">
+          Use these trip-aware suggestions as a shared baseline, then add what
+          you personally need.
+        </p>
+
+        {suggestionsLoading ? (
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {[1, 2, 3, 4].map((row) => (
+              <div
+                key={row}
+                className="h-16 animate-pulse rounded-xl border border-[#EAE2D6] bg-[#FAF8F5]"
+              />
+            ))}
+          </div>
+        ) : null}
+
+        {!suggestionsLoading && !hasSuggestions ? (
+          <p className="mt-3 rounded-xl border border-dashed border-[#DCCDBD] bg-[#FAF8F5] px-4 py-3 text-sm text-[#6B5E52]">
+            Suggestions will appear when we have enough destination and trip
+            context.
+          </p>
+        ) : null}
+
+        {!suggestionsLoading && hasSuggestions ? (
+          <div className="mt-3 space-y-3">
+            {CATEGORY_CONFIG.map((category) => {
+              const categorySuggestions = groupedSuggestions[category.key];
+              if (categorySuggestions.length === 0) return null;
+
+              return (
+                <section
+                  key={category.key}
+                  className="rounded-xl border border-[#EAE2D6] bg-[#FAF8F5] p-3"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <h5 className="text-[13px] font-semibold text-[#1C1108]">
+                      {category.title}
+                    </h5>
+                    <span
+                      className={[
+                        "inline-flex min-h-6 items-center rounded-full border px-2 py-0.5 text-[10.5px] font-semibold",
+                        category.chipClass,
+                      ].join(" ")}
+                    >
+                      {categorySuggestions.length}
+                    </span>
+                  </div>
+
+                  <ul className="mt-2 space-y-2">
+                    {categorySuggestions.map((suggestion) => (
+                      <li
+                        key={suggestion.label}
+                        className="rounded-xl border border-[#E2D6C8] bg-[#FEFCF9] px-3 py-2.5"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-[13px] font-medium text-[#1C1108]">
+                              {suggestion.label}
+                            </p>
+                            <p className="mt-1 text-[11.5px] text-[#8A7E74]">
+                              {suggestion.reason}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => void handleAddSuggestion(suggestion)}
+                            className="inline-flex min-h-10 items-center rounded-full bg-[#F5EDE7] px-3 text-[12px] font-semibold text-[#9A5230] transition-colors hover:bg-[#EEDFD4]"
+                          >
+                            + Add
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              );
+            })}
+          </div>
+        ) : null}
+      </section>
+
+      <Toast message={feedback} onDismiss={() => setFeedback(null)} />
     </div>
   );
 };

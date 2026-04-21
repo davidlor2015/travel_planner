@@ -4,7 +4,7 @@ export const TermsPage = () => (
   <StaticPageLayout
     eyebrow="Terms"
     title="Terms of Use"
-    intro="Waypoint is provided as a planning tool. The goal is to make trip planning easier, but the final responsibility for travel choices and purchases still belongs to the traveller."
+    intro="Waypoint is provided as a planning tool. The goal is to make trip planning easier, but the final responsibility for travel choices and purchases still belongs to the traveler."
   >
     <section>
       <h2 className="text-base font-semibold text-espresso">Use of the service</h2>

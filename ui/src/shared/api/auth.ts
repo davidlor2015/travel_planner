@@ -49,21 +49,6 @@ export const login = async (email: string, password: string): Promise<LoginRespo
   return response.json();
 };
 
-export const refreshSession = async (refreshToken: string): Promise<LoginResponse> => {
-  const response = await fetch(`${API_URL}/v1/auth/refresh`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refresh_token: refreshToken }),
-  });
-
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    throw new Error((body as { detail?: string }).detail ?? 'Session refresh failed');
-  }
-
-  return response.json();
-};
-
 export const register = async (email: string, password: string): Promise<UserProfile> => {
   const response = await fetch(`${API_URL}/v1/auth/register`, {
     method: 'POST',

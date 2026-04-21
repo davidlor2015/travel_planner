@@ -45,7 +45,7 @@ export const MatchResultList = ({ requestId, token }: MatchResultListProps) => {
       <div className="px-4 py-5 rounded-2xl bg-parchment border border-smoke text-sm text-flint">
         <p className="font-semibold text-espresso">No matches yet</p>
         <p className="mt-1">
-          We have not found a compatible traveller for this request yet. Leave it open and check back after more people add matching profiles and trips.
+          We have not found a compatible traveler for this request yet. Leave it open and check back after more people add matching profiles and trips.
         </p>
       </div>
     );

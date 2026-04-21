@@ -16,7 +16,15 @@ from app.schemas.ai import (
     RefinementTimeBlock,
     RefinementVariant,
 )
+from app.core.config import settings as _settings
 from app.services.llm.ollama_client import LLMUnavailableError, OllamaClient
+from app.services.llm.gemini_client import GeminiClient
+
+
+def _make_llm_client():
+    if _settings.LLM_PROVIDER == "gemini":
+        return GeminiClient()
+    return OllamaClient()
 from app.services.ai.rule_based_service import generate_rule_based_itinerary
 from app.repositories.trip_repository import TripRepository
 from app.repositories.itinerary_repository import ItineraryRepository
@@ -159,7 +167,7 @@ class ItineraryService:
     def __init__(self, db: Session):
         self.trip_repo = TripRepository(db)
         self.itinerary_repo = ItineraryRepository(db)
-        self.llm_client = OllamaClient()
+        self.llm_client = _make_llm_client()
         self.access_service = TripAccessService(db)
 
     def _build_system_prompt(self) -> str:
@@ -330,19 +338,6 @@ class ItineraryService:
         if not recovered_days:
             return None
 
-    def _annotate_source(
-        self,
-        itinerary: ItineraryResponse,
-        *,
-        source: str,
-        source_label: str,
-        fallback_used: bool = False,
-    ) -> ItineraryResponse:
-        itinerary.source = source
-        itinerary.source_label = source_label
-        itinerary.fallback_used = fallback_used
-        return itinerary
-
         title_m = re.search(r'"title"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"', clean)
         summary_m = re.search(r'"summary"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"', clean)
         title = title_m.group(1) if title_m else "Trip Itinerary"
@@ -367,6 +362,19 @@ class ItineraryService:
         except Exception as exc:
             logger.error("Partial recovery assembly failed: %s", exc)
             return None
+
+    def _annotate_source(
+        self,
+        itinerary: ItineraryResponse,
+        *,
+        source: str,
+        source_label: str,
+        fallback_used: bool = False,
+    ) -> ItineraryResponse:
+        itinerary.source = source
+        itinerary.source_label = source_label
+        itinerary.fallback_used = fallback_used
+        return itinerary
 
     def _merge_refined_day(
         self,

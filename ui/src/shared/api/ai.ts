@@ -1,6 +1,9 @@
 import { API_URL } from '../../app/config';
 import { apiFetch } from './client';
 
+/** Group coordination for a stop (persisted with itinerary JSON). */
+export type ItineraryStopStatus = 'planned' | 'confirmed' | 'skipped';
+
 export interface ItineraryItem {
   time: string | null;
   title: string;
@@ -9,6 +12,7 @@ export interface ItineraryItem {
   lon: number | null;
   notes: string | null;
   cost_estimate: string | null;
+  status?: ItineraryStopStatus | null;
 }
 
 export interface DayPlan {
@@ -39,54 +43,6 @@ export interface ItineraryItemReference {
 
 export const AI_REQUEST_TIMEOUT_MS = 180_000;
 export const AI_SLOW_THRESHOLD_MS = 30_000;
-
-export const planItinerary = async (
-  token: string,
-  tripId: number,
-  options?: { interests_override?: string; budget_override?: string },
-  signal?: AbortSignal,
-): Promise<Itinerary> => {
-  const response = await apiFetch(`${API_URL}/v1/ai/plan`, {
-    method: 'POST',
-    token,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ trip_id: tripId, ...options }),
-    signal,
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Failed to generate itinerary (${response.status}): ${text}`);
-  }
-
-  return response.json();
-};
-
-export const planItinerarySmart = async (
-  token: string,
-  tripId: number,
-  options?: { interests_override?: string; budget_override?: string },
-  signal?: AbortSignal,
-): Promise<Itinerary> => {
-  const response = await apiFetch(`${API_URL}/v1/ai/plan-smart`, {
-    method: 'POST',
-    token,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ trip_id: tripId, ...options }),
-    signal,
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Failed to generate itinerary (${response.status}): ${text}`);
-  }
-
-  return response.json();
-};
 
 export const applyItinerary = async (
   token: string,

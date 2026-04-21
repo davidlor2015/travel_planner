@@ -154,22 +154,6 @@ export const getTripSummaries = async (token?: string): Promise<TripSummary[]> =
   return response.json();
 };
 
-export const addTripMember = async (token: string, tripId: number, email: string): Promise<TripMember> => {
-  const response = await apiFetch(`${API_URL}/v1/trips/${tripId}/members`, {
-    method: 'POST',
-    token,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email }),
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Failed to add trip member (${response.status}): ${text}`);
-  }
-
-  return response.json();
-};
-
 export const createTripInvite = async (
   token: string,
   tripId: number,

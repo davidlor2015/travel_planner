@@ -44,13 +44,6 @@ async function fetchCoords(destination: string): Promise<[number, number] | null
   }
 }
 
-function buildPins(destinations: string[]): GeocodedPin[] {
-  return destinations.flatMap((d) => {
-    const coords = geocodeCache.get(d);
-    return coords ? [{ destination: d, coords }] : [];
-  });
-}
-
 function buildPinsFromQueries(queries: GeocodeQuery[]): GeocodedPin[] {
   return queries.flatMap((item) => {
     const candidates = [item.query, ...(item.fallbackQueries ?? [])];
@@ -62,63 +55,6 @@ function buildPinsFromQueries(queries: GeocodeQuery[]): GeocodedPin[] {
     }
     return [];
   });
-}
-
-
-
-/**
- * Geocodes an array of destination strings via Nominatim (OpenStreetMap).
- * Results are cached at module scope so the same destination is never
- * fetched twice within a session. Requests are spaced 1.1 s apart to
- * respect Nominatim's rate limit of 1 req/s.
- */
-export function useGeocode(destinations: string[]): { pins: GeocodedPin[]; loading: boolean } {
-  const [pins, setPins] = useState<GeocodedPin[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  // Stable string key — only changes when the set of destinations changes,
-  // not on every parent re-render that produces a new array reference.
-  const stableKey = useMemo(
-    () => [...new Set(destinations)].sort().join('||'),
-    [destinations],
-  );
-
-  useEffect(() => {
-    // Reconstruct unique list from the stable key so the effect closure is
-    // only bound to `stableKey`, avoiding stale-closure issues.
-    const unique = stableKey.length > 0 ? stableKey.split('||') : [];
-    let cancelled = false;
-
-    (async () => {
-      if (unique.length === 0) {
-        setPins([]);
-        return;
-      }
-
-      const toFetch = unique.filter((d) => !geocodeCache.has(d));
-
-      if (toFetch.length > 0) {
-        setLoading(true);
-        for (let i = 0; i < toFetch.length; i++) {
-          if (cancelled) break;
-          if (i > 0) await sleep(1100); // Nominatim policy: max 1 request/second
-          const coords = await fetchCoords(toFetch[i]);
-          geocodeCache.set(toFetch[i], coords);
-        }
-      }
-
-      if (!cancelled) {
-        setPins(buildPins(unique));
-        setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [stableKey]);
-
-  return { pins, loading };
 }
 
 export function useGeocodeQueries(queries: GeocodeQuery[]): { pins: GeocodedPin[]; loading: boolean } {

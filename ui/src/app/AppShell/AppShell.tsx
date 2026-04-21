@@ -1,10 +1,17 @@
-import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import { SiteFooterLinks, WaypointLogo } from '../../shared/ui';
+import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
+import { SiteFooterLinks, WaypointLogo } from "../../shared/ui";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export type AppView = 'dashboard' | 'trips' | 'explore' | 'matching' | 'profile';
+export type AppView =
+  | "dashboard"
+  | "trips"
+  | "explore"
+  | "archive"
+  | "matching"
+  | "profile";
 
 interface NavTab {
   id: AppView;
@@ -23,44 +30,91 @@ interface AppShellProps {
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
 const DashboardIcon = () => (
-  <svg viewBox="0 0 20 20" className="w-4 h-4" fill="currentColor" aria-hidden="true">
+  <svg
+    viewBox="0 0 20 20"
+    className="w-4 h-4"
+    fill="currentColor"
+    aria-hidden="true"
+  >
     <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
   </svg>
 );
 
 const TripsIcon = () => (
-  <svg viewBox="0 0 20 20" className="w-4 h-4" fill="currentColor" aria-hidden="true">
-    <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-  </svg>
-);
-
-const ExploreIcon = () => (
-  <svg viewBox="0 0 20 20" className="w-4 h-4" fill="currentColor" aria-hidden="true">
-    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clipRule="evenodd" />
+  <svg
+    viewBox="0 0 20 20"
+    className="w-4 h-4"
+    fill="currentColor"
+    aria-hidden="true"
+  >
+    <path
+      fillRule="evenodd"
+      d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+      clipRule="evenodd"
+    />
   </svg>
 );
 
 const CompanionsIcon = () => (
-  <svg viewBox="0 0 20 20" className="w-4 h-4" fill="currentColor" aria-hidden="true">
-    <path d="M6.5 9a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM13.5 10a2 2 0 100-4 2 2 0 000 4z" />
-    <path d="M2.5 15.5a4 4 0 018 0v.5h-8v-.5zM10.5 16v-.5a3.5 3.5 0 014.915-3.196A3.5 3.5 0 0117.5 15.5v.5h-7z" />
+  <svg
+    viewBox="0 0 20 20"
+    className="w-4 h-4"
+    fill="currentColor"
+    aria-hidden="true"
+  >
+    <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v1h8v-1zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-1a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v1h-3zM4.75 14.094A5.973 5.973 0 004 17v1H1v-1a3 3 0 013.75-2.906z" />
+  </svg>
+);
+
+const ExploreIcon = () => (
+  <svg
+    viewBox="0 0 20 20"
+    className="w-4 h-4"
+    fill="currentColor"
+    aria-hidden="true"
+  >
+    <path
+      fillRule="evenodd"
+      d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z"
+      clipRule="evenodd"
+    />
+  </svg>
+);
+
+const ArchiveIcon = () => (
+  <svg
+    viewBox="0 0 20 20"
+    className="w-4 h-4"
+    fill="currentColor"
+    aria-hidden="true"
+  >
+    <path d="M4 3a2 2 0 00-2 2v10.5A1.5 1.5 0 003.5 17H16a2 2 0 002-2V7a2 2 0 00-2-2h-5.2L9.6 3.8A2 2 0 008.2 3H4z" />
   </svg>
 );
 
 const ProfileIcon = () => (
-  <svg viewBox="0 0 20 20" className="w-4 h-4" fill="currentColor" aria-hidden="true">
-    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+  <svg
+    viewBox="0 0 20 20"
+    className="w-4 h-4"
+    fill="currentColor"
+    aria-hidden="true"
+  >
+    <path
+      fillRule="evenodd"
+      d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+      clipRule="evenodd"
+    />
   </svg>
 );
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const NAV_TABS: NavTab[] = [
-  { id: 'dashboard', label: 'Dashboard',  icon: <DashboardIcon />  },
-  { id: 'trips',     label: 'My Trips',   icon: <TripsIcon />      },
-  { id: 'explore',   label: 'Explore',    icon: <ExploreIcon />    },
-  { id: 'matching',  label: 'Companions', icon: <CompanionsIcon /> },
-  { id: 'profile',   label: 'Profile',    icon: <ProfileIcon />    },
+  { id: "dashboard", label: "Home", icon: <DashboardIcon /> },
+  { id: "trips", label: "Trips", icon: <TripsIcon /> },
+  { id: "explore", label: "Explore", icon: <ExploreIcon /> },
+  { id: "archive", label: "Archive", icon: <ArchiveIcon /> },
+  { id: "matching", label: "Companions", icon: <CompanionsIcon /> },
 ];
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -71,82 +125,181 @@ export const AppShell = ({
   userEmail,
   onLogout,
   children,
-}: AppShellProps) => (
-  <div className="min-h-screen bg-ivory font-sans">
+}: AppShellProps) => {
+  const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
+  const avatarRef = useRef<HTMLDivElement>(null);
 
-    {/* ── Top Navbar ── */}
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-smoke">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+  useEffect(() => {
+    if (!avatarMenuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (avatarRef.current && !avatarRef.current.contains(e.target as Node))
+        setAvatarMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [avatarMenuOpen]);
 
-        {/* Logo */}
-        <WaypointLogo variant="header" className="flex-shrink-0 select-none" />
+  const initial = userEmail[0]?.toUpperCase() ?? "W";
+  const isTrips = view === "trips";
+  const shellWidth = "max-w-6xl";
 
-        {/* Nav Tabs */}
-        <nav className="flex items-center gap-1 bg-parchment rounded-full p-1">
-          {NAV_TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => onViewChange(tab.id)}
-              className="relative px-2.5 sm:px-4 py-1.5 rounded-full text-sm font-semibold transition-colors duration-150 cursor-pointer"
+  return (
+    <div
+      className={`flex min-h-screen flex-col font-sans ${isTrips ? "bg-[#F3EEE7] text-espresso" : "bg-ivory"}`}
+    >
+      {/* ── Top Navbar ── */}
+      <header className="sticky top-0 z-50 hidden border-b border-smoke bg-white/95 backdrop-blur-md sm:block">
+        <div
+          className={`${isTrips ? "max-w-7xl" : shellWidth} mx-auto flex h-16 items-center justify-between gap-4 px-4 sm:px-6`}
+        >
+          {/* Logo */}
+          <WaypointLogo
+            variant="header"
+            className="flex-shrink-0 select-none"
+          />
+
+          {/* Nav Tabs */}
+          <nav className="flex items-center gap-1 rounded-full bg-parchment p-1">
+            {NAV_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => onViewChange(tab.id)}
+                aria-current={view === tab.id ? "page" : undefined}
+                className="relative rounded-full px-2.5 py-1.5 text-sm font-semibold transition-colors duration-150 cursor-pointer sm:px-4"
+              >
+                {view === tab.id && (
+                  <motion.div
+                    layoutId="nav-active-pill"
+                    className="absolute inset-0 rounded-full bg-espresso shadow-sm"
+                    transition={{ type: "spring", bounce: 0.25, duration: 0.4 }}
+                  />
+                )}
+                <span
+                  className={`relative z-10 flex items-center gap-1.5 transition-colors duration-150 ${
+                    view === tab.id
+                      ? "text-white"
+                      : "text-flint hover:text-espresso"
+                  }`}
+                >
+                  {tab.icon}
+                  <span className="hidden sm:inline">{tab.label}</span>
+                </span>
+              </button>
+            ))}
+          </nav>
+
+          {/* Right: Help + Avatar menu */}
+          <div className="flex flex-shrink-0 items-center gap-3">
+            <Link
+              to="/support"
+              className="hidden text-sm font-medium text-flint transition-colors duration-200 hover:text-espresso sm:inline"
             >
-              {/* Animated sliding pill */}
-              {view === tab.id && (
-                <motion.div
-                  layoutId="nav-active-pill"
-                  className="absolute inset-0 bg-espresso rounded-full shadow-sm"
-                  transition={{ type: 'spring', bounce: 0.25, duration: 0.4 }}
-                />
-              )}
-              <span
-                className={`relative z-10 flex items-center gap-1.5 transition-colors duration-150 ${
-                  view === tab.id ? 'text-white' : 'text-flint hover:text-espresso'
+              Help
+            </Link>
+            <div className="relative" ref={avatarRef}>
+              <button
+                type="button"
+                onClick={() => setAvatarMenuOpen((prev) => !prev)}
+                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-[#1C1108] text-[13px] font-semibold text-white transition-colors hover:bg-[#2E2216] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B86845]/35"
+                aria-label="Open user menu"
+                title={userEmail}
+              >
+                {initial}
+              </button>
+              <AnimatePresence>
+                {avatarMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.96 }}
+                    transition={{ duration: 0.14 }}
+                    className="absolute right-0 top-full z-50 mt-2 w-48 overflow-hidden rounded-2xl border border-[#EAE2D6] bg-[#FEFCF9] shadow-[0_8px_30px_rgba(28,17,8,0.1)]"
+                  >
+                    <div className="px-3 py-2.5">
+                      <p className="truncate text-[11px] text-[#A39688]">{userEmail}</p>
+                    </div>
+                    <div className="border-t border-[#EAE2D6]">
+                      <button
+                        type="button"
+                        onClick={() => { onViewChange("profile"); setAvatarMenuOpen(false); }}
+                        className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-[#1C1108] transition-colors hover:bg-[#F5EDE7]"
+                      >
+                        <ProfileIcon />
+                        Profile
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { onLogout(); setAvatarMenuOpen(false); }}
+                        className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-[#6B5E52] transition-colors hover:bg-[#F5EDE7]"
+                      >
+                        <svg viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor" aria-hidden="true">
+                          <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
+                        </svg>
+                        Sign out
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* ── Page Content ── */}
+      {isTrips ? (
+        <div className="flex-1">{children}</div>
+      ) : (
+        <main
+          className={`${shellWidth} mx-auto w-full flex-1 px-4 py-6 pb-24 sm:px-6 sm:py-8`}
+        >
+          {children}
+        </main>
+      )}
+
+      {!isTrips && (
+        <footer className="hidden border-t border-smoke bg-white/70 sm:block">
+          <div
+            className={`${shellWidth} mx-auto flex flex-wrap items-center justify-between gap-3 px-4 py-5 sm:px-6`}
+          >
+            <p className="text-xs text-muted">
+              Verify AI suggestions, bookings, and schedules before you spend
+              money.
+            </p>
+            <SiteFooterLinks />
+          </div>
+        </footer>
+      )}
+
+      <nav
+        aria-label="Primary"
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-smoke bg-[#FEFCF9]/98 px-2 pb-[calc(env(safe-area-inset-bottom)+0.25rem)] pt-2 backdrop-blur-md sm:hidden"
+      >
+        <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
+          {NAV_TABS.map((tab) => {
+            const isActive = view === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => onViewChange(tab.id)}
+                aria-current={isActive ? "page" : undefined}
+                className={`flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl px-1.5 py-2 text-[9px] font-semibold uppercase tracking-[0.04em] transition-colors min-[380px]:text-[10px] min-[380px]:tracking-[0.08em] ${
+                  isActive ? "bg-[#F5EDE7]" : "hover:bg-[#FAF8F5]"
                 }`}
               >
-                {tab.icon}
-                <span className="hidden sm:inline">{tab.label}</span>
-              </span>
-            </button>
-          ))}
-        </nav>
-
-        {/* User + Sign out */}
-        <div className="flex items-center gap-4 flex-shrink-0">
-          <Link to="/support" className="hidden text-sm font-medium text-flint transition-colors duration-200 hover:text-espresso sm:inline">
-            Help
-          </Link>
-          <span
-            className="hidden sm:block text-sm text-muted font-normal truncate max-w-[180px]"
-            title={userEmail}
-          >
-            {userEmail}
-          </span>
-          <motion.button
-            onClick={onLogout}
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            className="px-4 py-1.5 rounded-full text-sm font-medium text-flint border border-smoke
-                       hover:border-espresso hover:text-espresso transition-colors duration-200 cursor-pointer"
-          >
-            Sign out
-          </motion.button>
+                <span className={isActive ? "text-amber" : "text-muted"}>
+                  {tab.icon}
+                </span>
+                <span className={isActive ? "text-amber" : "text-muted"}>
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
         </div>
-
-      </div>
-    </header>
-
-    {/* ── Page Content ── */}
-    <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-      {children}
-    </main>
-
-    <footer className="border-t border-smoke bg-white/70">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-5 sm:px-6">
-        <p className="text-xs text-muted">
-          Verify AI suggestions, bookings, and schedules before you spend money.
-        </p>
-        <SiteFooterLinks />
-      </div>
-    </footer>
-
-  </div>
-);
+      </nav>
+    </div>
+  );
+};

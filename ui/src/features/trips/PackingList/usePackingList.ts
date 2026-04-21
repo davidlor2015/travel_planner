@@ -13,7 +13,7 @@ interface UsePackingListReturn {
   items: PackingItem[];
   loading: boolean;
   error: string | null;
-  addItem: (label: string) => Promise<void>;
+  addItem: (label: string) => Promise<PackingItem | null>;
   toggleItem: (id: number) => Promise<void>;
   removeItem: (id: number) => Promise<void>;
   clearChecked: () => Promise<void>;
@@ -59,7 +59,7 @@ export function usePackingList(token: string, tripId: number): UsePackingListRet
 
   const addItem = useCallback(async (label: string) => {
     const trimmed = label.trim();
-    if (!trimmed) return;
+    if (!trimmed) return null;
     const tempId = -Date.now();
     const optimistic: PackingItem = {
       id: tempId,
@@ -72,6 +72,7 @@ export function usePackingList(token: string, tripId: number): UsePackingListRet
     try {
       const item = await createPackingItem(token, tripId, trimmed);
       dispatch({ type: 'item/replace', previousId: tempId, item });
+      return item;
     } catch (error) {
       dispatch({ type: 'item/remove', id: tempId });
       throw error;

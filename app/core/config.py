@@ -43,6 +43,10 @@ class Settings(BaseSettings):
     OLLAMA_NUM_PREDICT: int = 8192
 
     OPENTRIPMAP_API_KEY: str = ""
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-2.0-flash"
+    # "ollama" or "gemini"
+    LLM_PROVIDER: str = "ollama"
 
     # Amadeus — self-service sandbox credentials.
     # Sign up at https://developers.amadeus.com and copy the Client ID / Secret

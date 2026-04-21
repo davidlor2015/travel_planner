@@ -49,22 +49,6 @@ export async function createExpense(
   return res.json();
 }
 
-export async function updateExpense(
-  token: string,
-  tripId: number,
-  expenseId: number,
-  patch: { label?: string; amount?: number; category?: string },
-): Promise<BudgetExpense> {
-  const res = await apiFetch(`${base(tripId)}/expenses/${expenseId}`, {
-    method: 'PATCH',
-    token,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(patch),
-  });
-  if (!res.ok) throw new Error(`Failed to update expense (${res.status})`);
-  return res.json();
-}
-
 export async function deleteExpense(token: string, tripId: number, expenseId: number): Promise<void> {
   const res = await apiFetch(`${base(tripId)}/expenses/${expenseId}`, {
     method: 'DELETE',
