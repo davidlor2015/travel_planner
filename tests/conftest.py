@@ -20,6 +20,9 @@ os.environ.setdefault("JWT_ALG", "HS256")
 os.environ.setdefault("ACCESS_TOKEN_EXPIRE_MINUTES", "60")
 # Low limit so the rate-limit test only needs a few requests to trigger a 429.
 os.environ.setdefault("AI_RATE_LIMIT", "3/minute")
+# AI integration tests patch the Ollama client directly. Force the test
+# provider before settings are loaded so external env vars cannot bypass mocks.
+os.environ["LLM_PROVIDER"] = "ollama"
 
 import pytest
 from fastapi.testclient import TestClient

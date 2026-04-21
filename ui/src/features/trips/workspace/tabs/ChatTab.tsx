@@ -7,7 +7,6 @@ interface ChatTabProps {
   token: string;
   tripId: number;
   tripTitle: string;
-  tripDateLabel: string;
   members: TripMember[];
   currentUserEmail: string;
   itineraryDays: DayPlan[] | null;
@@ -20,7 +19,6 @@ export function ChatTab({
   token,
   tripId,
   tripTitle,
-  tripDateLabel,
   members,
   currentUserEmail,
   itineraryDays,
@@ -32,7 +30,6 @@ export function ChatTab({
         token={token}
         tripId={tripId}
         tripTitle={tripTitle}
-        tripDateLabel={tripDateLabel}
         members={members}
         currentUserEmail={currentUserEmail}
         itineraryDays={itineraryDays}

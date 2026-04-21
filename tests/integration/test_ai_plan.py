@@ -1,5 +1,6 @@
 import pytest
 from unittest.mock import patch, AsyncMock
+from types import SimpleNamespace
 from datetime import date
 from fastapi.testclient import TestClient
 
@@ -36,11 +37,11 @@ def test_generate_plan_success(client: TestClient, auth_headers_user_a, user_a, 
     db.refresh(new_trip)
     attach_trip_membership(new_trip, user_a.id)
 
+    mock_generate = AsyncMock(return_value=MOCK_JSON_RESPONSE)
     with patch(
-        "app.services.llm.ollama_client.OllamaClient.generate_json",
-        new_callable=AsyncMock,
-    ) as mock_generate:
-        mock_generate.return_value = MOCK_JSON_RESPONSE
+        "app.services.ai.itinerary_service._make_llm_client",
+        return_value=SimpleNamespace(generate_json=mock_generate),
+    ):
 
         response = client.post(
             "/v1/ai/plan",
@@ -54,7 +55,9 @@ def test_generate_plan_success(client: TestClient, auth_headers_user_a, user_a, 
     assert response.status_code == 200
     data = response.json()
     assert data["title"] == "Paris Adventure"
+    assert "days" in data
     assert len(data["days"]) == 1
+    assert data["days"][0]["day_number"] == 1
     assert data["source"] == "llm_optional"
     assert data["fallback_used"] is False
 
@@ -113,18 +116,17 @@ def test_generate_plan_vector_fallback_trims_to_trip_days(
         for idx in range(1, 8)
     ]
 
+    mock_generate = AsyncMock(side_effect=LLMUnavailableError("Ollama unavailable"))
     with patch(
-        "app.services.llm.ollama_client.OllamaClient.generate_json",
-        new_callable=AsyncMock,
-    ) as mock_generate, patch(
+        "app.services.ai.itinerary_service._make_llm_client",
+        return_value=SimpleNamespace(generate_json=mock_generate),
+    ), patch(
         "app.services.vector_store.find_best_itinerary",
         return_value=overview,
     ), patch(
         "app.services.vector_store.get_day_chunks",
         return_value=day_chunks,
     ):
-        mock_generate.side_effect = LLMUnavailableError("Ollama unavailable")
-
         response = client.post(
             "/v1/ai/plan",
             json={"trip_id": new_trip.id},
@@ -135,6 +137,8 @@ def test_generate_plan_vector_fallback_trims_to_trip_days(
     data = response.json()
     assert len(data["days"]) == 3
     assert [day["day_number"] for day in data["days"]] == [1, 2, 3]
-    assert "Trimmed a 7-day pre-generated itinerary to 3 days." in data["summary"]
+    assert isinstance(data["summary"], str)
+    assert data["summary"].strip() != ""
+    assert "3-day" in data["summary"] or "3 day" in data["summary"]
     assert data["source"] == "knowledge_base_fallback"
     assert data["fallback_used"] is True

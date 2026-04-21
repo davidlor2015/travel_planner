@@ -16,7 +16,6 @@ interface TripChatPanelProps {
   token: string;
   tripId: number;
   tripTitle: string;
-  tripDateLabel: string;
   members: TripMember[];
   currentUserEmail: string;
   itineraryDays: DayPlan[] | null;
@@ -93,7 +92,6 @@ export function TripChatPanel({
   token,
   tripId,
   tripTitle,
-  tripDateLabel: _tripDateLabel,
   members,
   currentUserEmail,
   itineraryDays,

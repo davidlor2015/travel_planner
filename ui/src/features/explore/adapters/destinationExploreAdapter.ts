@@ -211,10 +211,7 @@ export function listDestinationMoods(): DestinationMood[] {
   return ["Trending", "Beach & Islands", "Adventure", "Culture & History", "Culinary", "Slow Travel"];
 }
 
-export function getDestinations(
-  _plannedDestinations: string[],
-  filters: DestinationFilters = {},
-): Destination[] {
+export function getDestinations(filters: DestinationFilters = {}): Destination[] {
   const { query = "", mood = null } = filters;
   const normalizedQuery = query.trim().toLowerCase();
 
@@ -227,13 +224,11 @@ export function getDestinations(
   });
 }
 
-export function getEditorsPicks(_plannedDestinations: string[]): Destination[] {
+export function getEditorsPicks(): Destination[] {
   return CATALOG.filter((d) => d.isEditorsPick);
 }
 
-export function getFeaturedDestinations(
-  _plannedDestinations: string[],
-): Destination[] {
+export function getFeaturedDestinations(): Destination[] {
   return CATALOG.filter((d) => d.isFeatured);
 }
 

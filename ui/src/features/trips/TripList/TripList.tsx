@@ -172,7 +172,6 @@ export const TripList = ({
     selectedReadiness,
     showWorkspace,
     selectedDurationDays,
-    selectedTripDateLabel,
     selectedActivities,
     selectedUnreadCount,
     selectedReadIds,
@@ -546,7 +545,6 @@ export const TripList = ({
                     token={token}
                     tripId={selectedTrip.id}
                     tripTitle={selectedTrip.title}
-                    tripDateLabel={selectedTripDateLabel}
                     members={selectedTrip.members}
                     currentUserEmail={currentUserEmail}
                     itineraryDays={

@@ -192,7 +192,10 @@ export const EditableItineraryPanel = ({
   const selectedDay =
     itinerary.days.find((day) => day.day_number === regenerateDayNumber) ??
     itinerary.days[0];
-  const selectedStopOptions = selectedDay?.items ?? [];
+  const selectedStopOptions = useMemo(
+    () => selectedDay?.items ?? [],
+    [selectedDay],
+  );
   const selectedAssistStopId = useMemo(() => {
     if (
       assistStopId &&

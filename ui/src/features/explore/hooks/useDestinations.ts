@@ -34,17 +34,11 @@ export function useDestinations({
 }: UseDestinationsParams): UseDestinationsResult {
   const moods = useMemo(() => listDestinationMoods(), []);
   const destinations = useMemo(
-    () => getDestinations(plannedDestinations, { query, mood }),
-    [plannedDestinations, query, mood],
+    () => getDestinations({ query, mood }),
+    [query, mood],
   );
-  const editorsPicks = useMemo(
-    () => getEditorsPicks(plannedDestinations),
-    [plannedDestinations],
-  );
-  const featuredDestinations = useMemo(
-    () => getFeaturedDestinations(plannedDestinations),
-    [plannedDestinations],
-  );
+  const editorsPicks = useMemo(() => getEditorsPicks(), []);
+  const featuredDestinations = useMemo(() => getFeaturedDestinations(), []);
   const recommendedDestinations = useMemo(
     () => getRecommendedForPlannedDestinations(plannedDestinations),
     [plannedDestinations],
