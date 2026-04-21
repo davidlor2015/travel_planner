@@ -1,9 +1,10 @@
-import type { Trip } from "../../../shared/api/trips";
+import type { Trip, TripMemberReadinessItem } from "../../../shared/api/trips";
 import type { DayAnchorType, Itinerary, ItineraryItem } from "../../../shared/api/ai";
 import {
   extractStopOwnershipMetadata,
   normalizeStopStatus,
 } from "../itineraryDraft";
+import { isCollaborationActive } from "./collaborationGate";
 import type {
   BudgetSummary,
   PackingSummary,
@@ -93,9 +94,12 @@ function clampPct(value: number): number {
 
 interface OwnershipActionSignals {
   actorOwnedPlannedCount: number;
-  topOtherOwnerEmail: string | null;
-  topOtherOwnerPlannedCount: number;
   unassignedPlannedWhenOwnershipUsed: number;
+}
+
+interface WaitingOnSignals {
+  topOtherBlockedEmail: string | null;
+  topOtherBlockerCount: number;
 }
 
 const OPERATIONAL_ANCHOR_TYPES: ReadonlySet<DayAnchorType> = new Set([
@@ -118,17 +122,10 @@ function labelFromEmail(email: string): string {
 }
 
 function deriveOwnershipActionSignals(
-  trip: Trip,
   itinerary: Itinerary | null,
   actorEmail: string | null,
 ): OwnershipActionSignals {
-  const knownMemberEmails = new Set(
-    trip.members
-      .map((member) => normalizeEmailLike(member.email))
-      .filter((email): email is string => email != null),
-  );
   const normalizedActor = normalizeEmailLike(actorEmail);
-  const plannedByKnownOwner = new Map<string, number>();
   let ownershipUsed = false;
   let actorOwnedPlannedCount = 0;
   let unassignedPlannedItems = 0;
@@ -146,12 +143,6 @@ function deriveOwnershipActionSignals(
 
     if (handledBy) {
       ownershipUsed = true;
-      if (knownMemberEmails.has(handledBy)) {
-        plannedByKnownOwner.set(
-          handledBy,
-          (plannedByKnownOwner.get(handledBy) ?? 0) + 1,
-        );
-      }
       if (normalizedActor && handledBy === normalizedActor) {
         actorOwnedPlannedCount += 1;
       }
@@ -167,12 +158,6 @@ function deriveOwnershipActionSignals(
     const handledBy = normalizeEmailLike(anchor.handled_by);
     if (handledBy) {
       ownershipUsed = true;
-      if (knownMemberEmails.has(handledBy)) {
-        plannedByKnownOwner.set(
-          handledBy,
-          (plannedByKnownOwner.get(handledBy) ?? 0) + 1,
-        );
-      }
       if (normalizedActor && handledBy === normalizedActor) {
         actorOwnedPlannedCount += 1;
       }
@@ -181,23 +166,43 @@ function deriveOwnershipActionSignals(
     unassignedOperationalAnchors += 1;
   }
 
-  let topOtherOwnerEmail: string | null = null;
-  let topOtherOwnerPlannedCount = 0;
-  for (const [email, count] of plannedByKnownOwner.entries()) {
-    if (normalizedActor && email === normalizedActor) continue;
-    if (count > topOtherOwnerPlannedCount) {
-      topOtherOwnerEmail = email;
-      topOtherOwnerPlannedCount = count;
+  return {
+    actorOwnedPlannedCount,
+    unassignedPlannedWhenOwnershipUsed: ownershipUsed
+      ? unassignedPlannedItems + unassignedOperationalAnchors
+      : 0,
+  };
+}
+
+function deriveWaitingOnSignals(
+  memberReadiness: TripMemberReadinessItem[] | null,
+  actorEmail: string | null,
+): WaitingOnSignals {
+  if (!memberReadiness || memberReadiness.length === 0) {
+    return {
+      topOtherBlockedEmail: null,
+      topOtherBlockerCount: 0,
+    };
+  }
+
+  const normalizedActor = normalizeEmailLike(actorEmail);
+  let topOtherBlockedEmail: string | null = null;
+  let topOtherBlockerCount = 0;
+
+  for (const member of memberReadiness) {
+    const memberEmail = normalizeEmailLike(member.email);
+    if (!memberEmail) continue;
+    if (normalizedActor && memberEmail === normalizedActor) continue;
+    if (member.blocker_count <= 0) continue;
+    if (member.blocker_count > topOtherBlockerCount) {
+      topOtherBlockedEmail = memberEmail;
+      topOtherBlockerCount = member.blocker_count;
     }
   }
 
   return {
-    actorOwnedPlannedCount,
-    topOtherOwnerEmail,
-    topOtherOwnerPlannedCount,
-    unassignedPlannedWhenOwnershipUsed: ownershipUsed
-      ? unassignedPlannedItems + unassignedOperationalAnchors
-      : 0,
+    topOtherBlockedEmail,
+    topOtherBlockerCount,
   };
 }
 
@@ -295,19 +300,19 @@ export function buildTripAttentionItems(
   summariesLoaded: boolean,
   itinerary: Itinerary | null = null,
   actorEmail: string | null = null,
+  memberReadiness: TripMemberReadinessItem[] | null = null,
 ): TripAttentionItem[] {
   const items: TripAttentionItem[] = [];
   const untilStart = daysUntilStart(trip.start_date);
   const untilEnd = daysUntilEnd(trip.end_date);
   const tripNotEnded = untilEnd === null || untilEnd >= 0;
   const itineraryOps = buildItineraryOpsSnapshot(itinerary);
-  const isGroupTrip =
-    trip.members.length > 1 || trip.pending_invites.length > 0;
+  const isGroupTrip = isCollaborationActive(trip);
   const ownershipSignals = deriveOwnershipActionSignals(
-    trip,
     itinerary,
     actorEmail,
   );
+  const waitingOnSignals = deriveWaitingOnSignals(memberReadiness, actorEmail);
 
   if (!summariesLoaded) {
     if (
@@ -402,15 +407,15 @@ export function buildTripAttentionItems(
   } else if (
     tripNotEnded &&
     isGroupTrip &&
-    ownershipSignals.topOtherOwnerEmail &&
-    ownershipSignals.topOtherOwnerPlannedCount > 0
+    waitingOnSignals.topOtherBlockedEmail &&
+    waitingOnSignals.topOtherBlockerCount > 0
   ) {
-    const ownerLabel = labelFromEmail(ownershipSignals.topOtherOwnerEmail);
+    const ownerLabel = labelFromEmail(waitingOnSignals.topOtherBlockedEmail);
     items.push({
       id: "itinerary-waiting-on-owner",
       severity: "nudge",
       title: `Waiting on ${ownerLabel}`,
-      detail: `${ownershipSignals.topOtherOwnerPlannedCount} planned stop${ownershipSignals.topOtherOwnerPlannedCount === 1 ? "" : "s"} are still assigned there.`,
+      detail: `${waitingOnSignals.topOtherBlockerCount} blocker${waitingOnSignals.topOtherBlockerCount === 1 ? "" : "s"} are explicitly owned there.`,
       actionLabel: "Check ownership",
       targetTab: "overview",
     });

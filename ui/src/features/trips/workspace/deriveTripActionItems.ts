@@ -1,4 +1,4 @@
-import type { Trip } from "../../../shared/api/trips";
+import type { Trip, TripMemberReadinessItem } from "../../../shared/api/trips";
 import type { Itinerary } from "../../../shared/api/ai";
 import type {
   BudgetSummary,
@@ -10,6 +10,7 @@ import {
   buildTripAttentionItems,
   type AttentionSeverity,
 } from "./tripOverviewViewModel";
+import { isSoloTripWorkspace } from "./collaborationGate";
 
 const SEVERITY_ORDER: Record<AttentionSeverity, number> = {
   blocker: 0,
@@ -52,6 +53,7 @@ export interface TripActionInputs {
   reservations: ReservationSummary;
   summariesLoaded: boolean;
   itinerary: Itinerary | null;
+  memberReadiness?: TripMemberReadinessItem[] | null;
   workspace: TripWorkspaceSignals;
 }
 
@@ -166,7 +168,7 @@ function intentForReason(reason: TripActionReason): TripActionIntent {
 }
 
 function isSoloTrip(trip: Trip): boolean {
-  return trip.members.length <= 1 && trip.pending_invites.length === 0;
+  return isSoloTripWorkspace(trip);
 }
 
 function sortDeterministic(items: TripWorkspaceActionItem[]): TripWorkspaceActionItem[] {
@@ -248,6 +250,7 @@ function deriveOperationalActionItems(input: TripActionInputs): TripWorkspaceAct
     reservations,
     summariesLoaded,
     itinerary,
+    memberReadiness,
     workspace: ws,
   } = input;
   const operationals: TripWorkspaceActionItem[] = [];
@@ -273,6 +276,7 @@ function deriveOperationalActionItems(input: TripActionInputs): TripWorkspaceAct
     summariesLoaded,
     itinerary,
     actorEmail,
+    memberReadiness ?? null,
   ).map(
     (row): TripWorkspaceActionItem => {
       const reason = toAttentionReason(row.id);

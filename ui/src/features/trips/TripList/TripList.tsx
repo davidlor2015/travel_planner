@@ -24,6 +24,8 @@ import {
 } from "../workspace/itineraryEditorAnchors";
 import { TripWorkspaceSection } from "./TripWorkspaceSection";
 import { useTripWorkspaceModel } from "./useTripWorkspaceModel";
+import { isCollaborationActive } from "../workspace/collaborationGate";
+import { OnTripCompactMode } from "../workspace/OnTripCompactMode";
 
 interface TripListProps {
   token: string;
@@ -191,6 +193,8 @@ export const TripList = ({
     selectedIsApplying,
     selectedDraftMutationState,
     selectedIsAnyGenerating,
+    selectedOnTripSnapshot,
+    selectedIsOnTripCompactMode,
   } = model.derived;
 
   const {
@@ -247,6 +251,7 @@ export const TripList = ({
     resetStream,
     handleEditSavedAsDraft,
     handleShareTrip,
+    dismissOnTripCompactMode,
   } = model.actions;
 
   const { isMobileLayout, confirmDelete, editingTrip } = model.ui;
@@ -294,6 +299,16 @@ export const TripList = ({
         />
 
         {showWorkspace && selectedTrip && selectedTripStatus ? (
+          selectedIsOnTripCompactMode && selectedOnTripSnapshot ? (
+            <OnTripCompactMode
+              trip={selectedTrip}
+              snapshot={selectedOnTripSnapshot}
+              onOpenFullWorkspace={() => {
+                dismissOnTripCompactMode(selectedTrip.id);
+                openWorkspaceTab("overview");
+              }}
+            />
+          ) : (
           <TripWorkspaceSection
             trip={selectedTrip}
             packingSummary={selectedPackingSummary}
@@ -311,7 +326,7 @@ export const TripList = ({
             bookingsBadge={selectedReservationSummary?.upcoming ?? 0}
             groupBadge={selectedTrip.member_count}
             hasItinerary={selectedSavedItinerary !== null}
-            showChat={selectedTrip.members.length > 1}
+            showChat={isCollaborationActive(selectedTrip)}
             activityUnreadCount={selectedUnreadCount}
             isActivityMuted={selectedTripIsMuted}
             onManageGroup={() => openWorkspaceTab("members")}
@@ -608,6 +623,7 @@ export const TripList = ({
                   />
                 )}
           </TripWorkspaceSection>
+          )
         ) : null}
       </main>
 

@@ -101,6 +101,59 @@ export interface WorkspaceLastSeenResponse {
   workspace_last_seen_at: string | null;
 }
 
+export interface TripMemberReadinessItem {
+  user_id: number;
+  email: string;
+  role: string;
+  readiness_score: number | null;
+  blocker_count: number;
+  unknown: boolean;
+  status: "unknown" | "ready" | "needs_attention";
+}
+
+export interface TripMemberReadiness {
+  generated_at: string;
+  members: TripMemberReadinessItem[];
+}
+
+export type TripOnTripResolutionSource =
+  | "day_date_exact"
+  | "trip_day_offset"
+  | "itinerary_sequence"
+  | "ambiguous"
+  | "none";
+
+export type TripOnTripResolutionConfidence = "high" | "medium" | "low";
+
+export interface TripOnTripStopSnapshot {
+  day_number: number | null;
+  day_date: string | null;
+  title: string | null;
+  time: string | null;
+  location: string | null;
+  status: "planned" | "confirmed" | "skipped" | null;
+  source: TripOnTripResolutionSource;
+  confidence: TripOnTripResolutionConfidence;
+}
+
+export interface TripOnTripBlocker {
+  id: string;
+  bucket: "on_trip_execution";
+  severity: "blocker" | "watch";
+  title: string;
+  detail: string;
+  owner_email: string | null;
+}
+
+export interface TripOnTripSnapshot {
+  generated_at: string;
+  mode: "inactive" | "active";
+  read_only: boolean;
+  today: TripOnTripStopSnapshot;
+  next_stop: TripOnTripStopSnapshot;
+  blockers: TripOnTripBlocker[];
+}
+
 export const getTrips = async (token?: string): Promise<Trip[]> => {
   const response = await apiFetch(`${API_URL}/v1/trips/`, {
     method: 'GET',
@@ -183,6 +236,40 @@ export const updateWorkspaceLastSeen = async (
   if (!response.ok) {
     const text = await response.text();
     throw new Error(`Failed to update workspace last seen (${response.status}): ${text}`);
+  }
+
+  return response.json();
+};
+
+export const getTripMemberReadiness = async (
+  token: string,
+  tripId: number,
+): Promise<TripMemberReadiness> => {
+  const response = await apiFetch(`${API_URL}/v1/trips/${tripId}/member-readiness`, {
+    method: 'GET',
+    token,
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to fetch member readiness (${response.status}): ${text}`);
+  }
+
+  return response.json();
+};
+
+export const getTripOnTripSnapshot = async (
+  token: string,
+  tripId: number,
+): Promise<TripOnTripSnapshot> => {
+  const response = await apiFetch(`${API_URL}/v1/trips/${tripId}/on-trip-snapshot`, {
+    method: 'GET',
+    token,
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to fetch on-trip snapshot (${response.status}): ${text}`);
   }
 
   return response.json();

@@ -16,6 +16,7 @@ import {
   buildItineraryOpsSnapshot,
   buildTripReadinessSnapshot,
 } from "../tripOverviewViewModel";
+import { isCollaborationActive } from "../collaborationGate";
 
 interface OverviewCoordinationPanelProps {
   trip: Trip;
@@ -213,7 +214,7 @@ export function OverviewCoordinationPanel({
   const bookingTotal = reservationSummary.total ?? 0;
   const bookingUpcoming = reservationSummary.upcoming ?? 0;
   const bookingPending = Math.max(0, bookingTotal - bookingUpcoming);
-  const isGroupTrip = trip.members.length > 1 || trip.pending_invites.length > 0;
+  const isGroupTrip = isCollaborationActive(trip);
 
   const ownerCount = trip.members.filter(
     (member) => member.role === "owner",
@@ -534,7 +535,7 @@ export function OverviewCoordinationPanel({
         <p className="mt-2 text-[12px] text-[#6B5E52]">
           Trip chat:{" "}
           <span className="font-medium text-[#1C1108]">
-            {trip.members.length > 1 ? "Available" : "Needs 2+ travelers"}
+            {isGroupTrip ? "Available" : "Needs 2+ travelers"}
           </span>
         </p>
       </div>

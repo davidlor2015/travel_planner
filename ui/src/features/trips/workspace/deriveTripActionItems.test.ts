@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Itinerary } from "../../../shared/api/ai";
-import type { Trip } from "../../../shared/api/trips";
+import type { Trip, TripMemberReadinessItem } from "../../../shared/api/trips";
 import type { BudgetSummary, PackingSummary, ReservationSummary } from "./types";
 import {
   buildTripActionabilityModel,
@@ -120,6 +120,7 @@ function fullInput(
     reservations?: ReservationSummary;
     summariesLoaded?: boolean;
     itinerary?: Itinerary | null;
+    memberReadiness?: TripMemberReadinessItem[] | null;
   },
 ): TripActionInputs {
   return {
@@ -133,6 +134,10 @@ function fullInput(
       overrides && "itinerary" in overrides
         ? (overrides.itinerary ?? null)
         : itineraryBase(),
+    memberReadiness:
+      overrides && "memberReadiness" in overrides
+        ? (overrides.memberReadiness ?? null)
+        : null,
     workspace,
   };
 }
@@ -368,6 +373,17 @@ describe("deriveTripActionItems", () => {
               },
             ],
           }),
+          memberReadiness: [
+            {
+              user_id: 2,
+              email: "guest@example.com",
+              role: "member",
+              readiness_score: 50,
+              blocker_count: 2,
+              unknown: false,
+              status: "needs_attention",
+            },
+          ],
         },
       );
       const items = deriveTripActionItems({

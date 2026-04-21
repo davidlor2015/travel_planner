@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, field_validator, model_validator
 
@@ -161,3 +161,58 @@ class WorkspaceLastSeenResponse(BaseModel):
     workspace_last_seen_signature: str | None = None
     workspace_last_seen_snapshot: dict | None = None
     workspace_last_seen_at: datetime | None = None
+
+
+class TripMemberReadinessItemResponse(BaseModel):
+    user_id: int
+    email: EmailStr
+    role: str
+    readiness_score: int | None = None
+    blocker_count: int
+    unknown: bool
+    status: Literal["unknown", "ready", "needs_attention"]
+
+
+class TripMemberReadinessResponse(BaseModel):
+    generated_at: datetime
+    members: list[TripMemberReadinessItemResponse]
+
+
+OnTripResolutionSource = Literal[
+    "day_date_exact",
+    "trip_day_offset",
+    "itinerary_sequence",
+    "ambiguous",
+    "none",
+]
+OnTripResolutionConfidence = Literal["high", "medium", "low"]
+OnTripBlockerSeverity = Literal["blocker", "watch"]
+
+
+class TripOnTripStopSnapshotResponse(BaseModel):
+    day_number: int | None = None
+    day_date: date | None = None
+    title: str | None = None
+    time: str | None = None
+    location: str | None = None
+    status: Literal["planned", "confirmed", "skipped"] | None = None
+    source: OnTripResolutionSource
+    confidence: OnTripResolutionConfidence
+
+
+class TripOnTripBlockerResponse(BaseModel):
+    id: str
+    bucket: Literal["on_trip_execution"] = "on_trip_execution"
+    severity: OnTripBlockerSeverity
+    title: str
+    detail: str
+    owner_email: EmailStr | None = None
+
+
+class TripOnTripSnapshotResponse(BaseModel):
+    generated_at: datetime
+    mode: Literal["inactive", "active"]
+    read_only: bool = True
+    today: TripOnTripStopSnapshotResponse
+    next_stop: TripOnTripStopSnapshotResponse
+    blockers: list[TripOnTripBlockerResponse]

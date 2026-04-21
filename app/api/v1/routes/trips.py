@@ -7,7 +7,9 @@ from app.schemas.trip import (
     TripInviteCreateResponse,
     TripInviteCreateRequest,
     TripMemberAddRequest,
+    TripMemberReadinessResponse,
     TripMemberResponse,
+    TripOnTripSnapshotResponse,
     TripResponse,
     TripSummaryResponse,
     TripUpdate,
@@ -42,6 +44,16 @@ def read_trip(trip_id: int, db: SessionDep, current_user: CurrentUser): # pyrigh
 @router.get("/{trip_id}/members", response_model=List[TripMemberResponse])
 def read_trip_members(trip_id: int, db: SessionDep, current_user: CurrentUser):
     return TripService(db).list_members(trip_id, current_user.id)
+
+
+@router.get("/{trip_id}/member-readiness", response_model=TripMemberReadinessResponse)
+def read_trip_member_readiness(trip_id: int, db: SessionDep, current_user: CurrentUser):
+    return TripService(db).get_member_readiness(trip_id, current_user.id)
+
+
+@router.get("/{trip_id}/on-trip-snapshot", response_model=TripOnTripSnapshotResponse)
+def read_trip_on_trip_snapshot(trip_id: int, db: SessionDep, current_user: CurrentUser):
+    return TripService(db).get_on_trip_snapshot(trip_id, current_user.id)
 
 
 @router.post("/{trip_id}/members", response_model=TripMemberResponse, status_code=201)

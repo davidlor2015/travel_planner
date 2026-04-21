@@ -3,10 +3,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   createTripInvite,
   deleteTrip,
+  getTripMemberReadiness,
+  getTripOnTripSnapshot,
   getTrips,
   getTripSummaries,
   updateWorkspaceLastSeen,
+  type TripOnTripSnapshot,
   type Trip,
+  type TripMemberReadinessItem,
   type TripSummary,
 } from "../../../shared/api/trips";
 import {
@@ -129,6 +133,14 @@ export function useTripWorkspaceModel({
   const [reservationSummaries, setReservationSummaries] = useState<
     Record<number, ReservationSummary>
   >({});
+  const [memberReadinessByTripId, setMemberReadinessByTripId] = useState<
+    Record<number, TripMemberReadinessItem[]>
+  >({});
+  const [onTripSnapshotByTripId, setOnTripSnapshotByTripId] = useState<
+    Record<number, TripOnTripSnapshot>
+  >({});
+  const [onTripCompactDismissedByTripId, setOnTripCompactDismissedByTripId] =
+    useState<Record<number, boolean>>({});
 
   const [lockedItemIds, setLockedItemIds] = useState<Record<number, string[]>>(
     {},
@@ -213,6 +225,8 @@ export function useTripWorkspaceModel({
       setPackingSummaries({});
       setBudgetSummaries({});
       setReservationSummaries({});
+      setMemberReadinessByTripId({});
+      setOnTripSnapshotByTripId({});
 
       try {
         const tripRows = await getTrips(token);
@@ -286,6 +300,37 @@ export function useTripWorkspaceModel({
       cancelled = true;
     };
   }, [token]);
+
+  useEffect(() => {
+    if (!selectedTripId) return;
+    let cancelled = false;
+
+    const loadOnTripSignals = async () => {
+      const [readinessResult, onTripResult] = await Promise.allSettled([
+        getTripMemberReadiness(token, selectedTripId),
+        getTripOnTripSnapshot(token, selectedTripId),
+      ]);
+      if (cancelled) return;
+
+      if (readinessResult.status === "fulfilled") {
+        setMemberReadinessByTripId((prev) => ({
+          ...prev,
+          [selectedTripId]: readinessResult.value.members,
+        }));
+      }
+      if (onTripResult.status === "fulfilled") {
+        setOnTripSnapshotByTripId((prev) => ({
+          ...prev,
+          [selectedTripId]: onTripResult.value,
+        }));
+      }
+    };
+
+    void loadOnTripSignals();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedTripId, token]);
 
   useEffect(() => {
     if (trips.length === 0) {
@@ -1111,10 +1156,25 @@ export function useTripWorkspaceModel({
     clearAppliedSuccess(tripId);
     draftMutations.clearDay(tripId, dayNumber);
   };
+  const normalizedCurrentUserEmail = currentUserEmail.trim().toLowerCase();
   const selectedTripIsOwner = Boolean(
     selectedTrip?.members.some(
-      (member) => member.email === currentUserEmail && member.role === "owner",
+      (member) =>
+        member.email.trim().toLowerCase() === normalizedCurrentUserEmail &&
+        member.role === "owner",
     ),
+  );
+  const selectedMemberReadiness = selectedTrip
+    ? (memberReadinessByTripId[selectedTrip.id] ?? null)
+    : null;
+  const selectedOnTripSnapshot = selectedTrip
+    ? (onTripSnapshotByTripId[selectedTrip.id] ?? null)
+    : null;
+  const selectedOnTripCompactDismissed = selectedTrip
+    ? Boolean(onTripCompactDismissedByTripId[selectedTrip.id])
+    : false;
+  const selectedIsOnTripCompactMode = Boolean(
+    selectedOnTripSnapshot?.mode === "active" && !selectedOnTripCompactDismissed,
   );
   const selectedMemberDraft = selectedTrip
     ? (memberDrafts[selectedTrip.id] ?? "")
@@ -1242,6 +1302,7 @@ export function useTripWorkspaceModel({
       reservations: selectedReservationSummary,
       summariesLoaded: selectedSummariesLoaded,
       itinerary: selectedCurrentItinerary,
+      memberReadiness: selectedMemberReadiness,
       workspace: {
         tripActionError,
         draftActionError,
@@ -1260,6 +1321,7 @@ export function useTripWorkspaceModel({
     selectedReservationSummary,
     selectedSummariesLoaded,
     selectedCurrentItinerary,
+    selectedMemberReadiness,
     tripActionError,
     draftActionError,
     selectedStreamError,
@@ -1325,6 +1387,8 @@ export function useTripWorkspaceModel({
       selectedIsApplying,
       selectedDraftMutationState,
       selectedIsAnyGenerating,
+      selectedOnTripSnapshot,
+      selectedIsOnTripCompactMode,
       actionInputs,
       actionItems,
       actionability,
@@ -1381,6 +1445,12 @@ export function useTripWorkspaceModel({
       resetStream,
       handleEditSavedAsDraft,
       handleShareTrip,
+      dismissOnTripCompactMode: (tripId: number) => {
+        setOnTripCompactDismissedByTripId((prev) => ({
+          ...prev,
+          [tripId]: true,
+        }));
+      },
     },
     ui: { isMobileLayout, confirmDelete, editingTrip },
   };

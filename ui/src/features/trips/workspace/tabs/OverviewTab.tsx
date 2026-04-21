@@ -21,6 +21,7 @@ import type {
   TripActionabilityModel,
   TripActionCommand,
 } from "../deriveTripActionItems";
+import { isCollaborationActive } from "../collaborationGate";
 import { OverviewCoordinationPanel } from "./OverviewCoordinationPanel";
 import { WorkspaceSectionCard } from "../WorkspacePrimitives";
 import { ITINERARY_STREAM_REGION_ID } from "../itineraryEditorAnchors";
@@ -314,9 +315,7 @@ export function OverviewTab({
             <EditableItineraryPanel
               itinerary={pendingItinerary}
               isMobileLayout={isMobileLayout}
-              showGroupCoordination={
-                trip.members.length > 1 || trip.pending_invites.length > 0
-              }
+              showGroupCoordination={isCollaborationActive(trip)}
               draftSourceLabel={draftPlanMeta?.sourceLabel ?? null}
               draftFallbackUsed={draftPlanMeta?.fallbackUsed ?? null}
               onApply={onApply}

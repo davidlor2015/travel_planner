@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Itinerary } from "../../../shared/api/ai";
-import type { Trip } from "../../../shared/api/trips";
+import type { Trip, TripMemberReadinessItem } from "../../../shared/api/trips";
 import type { BudgetSummary, PackingSummary, ReservationSummary } from "./types";
 import {
   buildTripAttentionItems,
@@ -216,6 +216,18 @@ describe("trip overview derivation", () => {
       member_count: 2,
     });
 
+    const readiness: TripMemberReadinessItem[] = [
+      {
+        user_id: 2,
+        email: "friend@example.com",
+        role: "member",
+        readiness_score: 60,
+        blocker_count: 2,
+        unknown: false,
+        status: "needs_attention",
+      },
+    ];
+
     const attention = buildTripAttentionItems(
       groupTrip,
       packing,
@@ -224,6 +236,7 @@ describe("trip overview derivation", () => {
       true,
       itineraryWithOperationalAnchors(),
       "owner@example.com",
+      readiness,
     );
 
     expect(attention.some((row) => row.id === "itinerary-waiting-on-owner")).toBe(
