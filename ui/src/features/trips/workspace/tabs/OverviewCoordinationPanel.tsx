@@ -4,16 +4,17 @@ import type { Trip } from "../../../../shared/api/trips";
 import type { Itinerary } from "../../../../shared/api/ai";
 import type { TripActivityItem } from "../../TripActivity";
 import type {
+  TripActionabilityModel,
+  TripActionCommand,
+} from "../deriveTripActionItems";
+import type {
   BudgetSummary,
   PackingSummary,
   ReservationSummary,
 } from "../types";
 import {
-  buildTripAttentionItems,
   buildItineraryOpsSnapshot,
   buildTripReadinessSnapshot,
-  type AttentionSeverity,
-  type TripAttentionItem,
 } from "../tripOverviewViewModel";
 
 interface OverviewCoordinationPanelProps {
@@ -22,11 +23,13 @@ interface OverviewCoordinationPanelProps {
   budgetSummary: BudgetSummary;
   reservationSummary: ReservationSummary;
   currentItinerary: Itinerary | null;
+  actionability: TripActionabilityModel;
   activities: TripActivityItem[];
   onOpenTab: (
     tab: "overview" | "bookings" | "budget" | "packing" | "members",
   ) => void;
   onOpenActivityDrawer: () => void;
+  onActionCommand: (command: TripActionCommand) => void;
 }
 
 function relativeTime(isoString: string): string {
@@ -121,7 +124,9 @@ function ProgressBar({ value, color }: { value: number; color: string }) {
   );
 }
 
-function severityStyles(severity: AttentionSeverity): string {
+function severityStyles(
+  severity: TripActionabilityModel["rankedOperationalActions"][number]["severity"],
+): string {
   if (severity === "blocker") {
     return "border-l-[3px] border-danger bg-danger/[0.06]";
   }
@@ -135,7 +140,7 @@ function AttentionItemRow({
   item,
   onAction,
 }: {
-  item: TripAttentionItem;
+  item: TripActionabilityModel["rankedOperationalActions"][number];
   onAction: () => void;
 }) {
   return (
@@ -167,23 +172,17 @@ export function OverviewCoordinationPanel({
   budgetSummary,
   reservationSummary,
   currentItinerary,
+  actionability,
   activities,
   onOpenTab,
   onOpenActivityDrawer,
+  onActionCommand,
 }: OverviewCoordinationPanelProps) {
   const summariesLoaded =
     !packingSummary.loading &&
     !budgetSummary.loading &&
     !reservationSummary.loading;
 
-  const attentionItems = buildTripAttentionItems(
-    trip,
-    packingSummary,
-    budgetSummary,
-    reservationSummary,
-    summariesLoaded,
-    currentItinerary,
-  );
   const readiness = buildTripReadinessSnapshot(
     trip,
     packingSummary,
@@ -213,6 +212,7 @@ export function OverviewCoordinationPanel({
   const bookingTotal = reservationSummary.total ?? 0;
   const bookingUpcoming = reservationSummary.upcoming ?? 0;
   const bookingPending = Math.max(0, bookingTotal - bookingUpcoming);
+  const isGroupTrip = trip.members.length > 1 || trip.pending_invites.length > 0;
 
   const ownerCount = trip.members.filter(
     (member) => member.role === "owner",
@@ -225,6 +225,7 @@ export function OverviewCoordinationPanel({
     itineraryOps.totalStops - itineraryOps.stopsWithHandledBy,
   );
   const handlerPreview = itineraryOps.handlerCounts.slice(0, 3);
+  const primaryAction = actionability.primaryAction;
 
   return (
     <aside
@@ -243,11 +244,16 @@ export function OverviewCoordinationPanel({
             <span className="text-[12px] font-medium text-[#6B5E52]">
               {readiness.scoreLabel}
             </span>
+            {readiness.unknownState === "partial" ? (
+              <span className="text-[11px] text-[#A39688]">
+                Partial coverage
+              </span>
+            ) : null}
           </div>
         ) : summariesLoaded ? (
           <p className="mt-1 text-[12px] leading-relaxed text-[#6B5E52]">
-            Add itinerary stops, packing, budget, or bookings so readiness can
-            be derived from trip data.
+            Readiness is unknown. Add itinerary status, packing, budget, or
+            bookings so it can be measured from trip data.
           </p>
         ) : (
           <p className="mt-1 text-[12px] text-[#A39688]">
@@ -277,18 +283,35 @@ export function OverviewCoordinationPanel({
             What needs attention
           </span>
         </div>
-        {attentionItems.length === 0 ? (
+        {actionability.systemFailures.length === 0 &&
+        actionability.primaryAction == null ? (
           <p className="text-[12px] leading-relaxed text-[#6B5E52]">
             Nothing urgent surfaced from trip data. Keep the shared itinerary
             and logistics current.
           </p>
         ) : (
           <ul className="space-y-2">
-            {attentionItems.map((item) => (
+            {actionability.systemFailures.map((item) => (
               <li key={item.id}>
                 <AttentionItemRow
                   item={item}
-                  onAction={() => onOpenTab(item.targetTab)}
+                  onAction={() => onActionCommand(item.command)}
+                />
+              </li>
+            ))}
+            {primaryAction ? (
+              <li key={primaryAction.id}>
+                <AttentionItemRow
+                  item={primaryAction}
+                  onAction={() => onActionCommand(primaryAction.command)}
+                />
+              </li>
+            ) : null}
+            {actionability.secondaryActions.map((item) => (
+              <li key={item.id}>
+                <AttentionItemRow
+                  item={item}
+                  onAction={() => onActionCommand(item.command)}
                 />
               </li>
             ))}
@@ -355,26 +378,28 @@ export function OverviewCoordinationPanel({
                 </p>
               </div>
             </div>
-            {itineraryOps.ownershipSignalsPresent ? (
-              <div className="rounded-xl border border-[#EDE7DD] bg-[#FAF8F5]/70 px-3 py-2.5">
-                <p className="text-[12px] font-semibold text-espresso">
-                  {unhandledStopCount === 0
-                    ? "Every handled stop has an owner"
-                    : `${unhandledStopCount} stop${unhandledStopCount === 1 ? "" : "s"} without a handler`}
-                </p>
-                {handlerPreview.length > 0 ? (
-                  <p className="mt-1 text-[11px] leading-relaxed text-[#6B5E52]">
-                    {handlerPreview
-                      .map(({ name, count }) => `${name} ${count}`)
-                      .join(" · ")}
+            {isGroupTrip ? (
+              itineraryOps.ownershipSignalsPresent ? (
+                <div className="rounded-xl border border-[#EDE7DD] bg-[#FAF8F5]/70 px-3 py-2.5">
+                  <p className="text-[12px] font-semibold text-espresso">
+                    {unhandledStopCount === 0
+                      ? "Every handled stop has an owner"
+                      : `${unhandledStopCount} stop${unhandledStopCount === 1 ? "" : "s"} without a handler`}
                   </p>
-                ) : null}
-              </div>
-            ) : (
-              <p className="text-[12px] text-[#B5AA9E]">
-                No handled-by ownership set on stops
-              </p>
-            )}
+                  {handlerPreview.length > 0 ? (
+                    <p className="mt-1 text-[11px] leading-relaxed text-[#6B5E52]">
+                      {handlerPreview
+                        .map(({ name, count }) => `${name} ${count}`)
+                        .join(" · ")}
+                    </p>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="text-[12px] text-[#B5AA9E]">
+                  Ownership signals have not been set yet.
+                </p>
+              )
+            ) : null}
           </div>
         )}
       </div>

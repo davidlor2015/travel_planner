@@ -1,4 +1,8 @@
-import type { TripActionCommand, TripWorkspaceActionItem } from "./deriveTripActionItems";
+import type {
+  TripActionCommand,
+  TripActionabilityModel,
+  TripWorkspaceActionItem,
+} from "./deriveTripActionItems";
 import type { AttentionSeverity } from "./tripOverviewViewModel";
 
 function severityBarClass(severity: AttentionSeverity): string {
@@ -11,13 +15,58 @@ function severityBarClass(severity: AttentionSeverity): string {
   return "border-l-[3px] border-[#D2B49A] bg-[#FAF8F5]";
 }
 
+function reasonSummary(reason: TripWorkspaceActionItem["reason"]): string {
+  if (reason.startsWith("workspace_")) return "System state";
+  if (reason.startsWith("ownership_")) return "Ownership signal";
+  if (reason.startsWith("bookings_")) return "Booking coverage";
+  if (reason.startsWith("budget_")) return "Budget signal";
+  if (reason.startsWith("packing_")) return "Packing signal";
+  if (reason.startsWith("readiness_")) return "Readiness coverage";
+  if (reason === "itinerary_missing") return "Itinerary baseline";
+  if (reason === "first_day_timing_missing") return "First-day timing";
+  if (reason === "draft_pending_publish") return "Draft status";
+  if (reason === "unread_activity") return "Recent activity";
+  return "Trip signal";
+}
+
 interface TripActionBannerProps {
-  items: TripWorkspaceActionItem[];
+  model: TripActionabilityModel;
   onCommand: (command: TripActionCommand) => void;
 }
 
-export function TripActionBanner({ items, onCommand }: TripActionBannerProps) {
-  if (items.length === 0) {
+function ActionRow({
+  item,
+  onCommand,
+}: {
+  item: TripWorkspaceActionItem;
+  onCommand: (command: TripActionCommand) => void;
+}) {
+  return (
+    <div className={`px-3 py-2.5 ${severityBarClass(item.severity)}`}>
+      <p className="text-[12px] font-semibold leading-snug text-[#1C1108]">
+        {item.title}
+      </p>
+      {item.detail ? (
+        <p className="mt-0.5 text-[11px] leading-relaxed text-[#6B5E52]">
+          {item.detail}
+        </p>
+      ) : null}
+      <button
+        type="button"
+        onClick={() => onCommand(item.command)}
+        className="mt-2 text-left text-[11px] font-semibold text-[#B86845] underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B86845]/35"
+      >
+        {item.actionLabel}
+      </button>
+      <p className="mt-1 text-[10px] text-[#8A7E72]">
+        Why now: {reasonSummary(item.reason)}
+      </p>
+    </div>
+  );
+}
+
+export function TripActionBanner({ model, onCommand }: TripActionBannerProps) {
+  if (model.systemFailures.length === 0 && model.primaryAction == null) {
     return (
       <div
         className="mb-3 rounded-lg border border-[#EDE7DD] bg-[#FAF8F5]/80 px-3 py-2.5 text-[11px] leading-snug text-[#8A7E72]"
@@ -40,25 +89,19 @@ export function TripActionBanner({ items, onCommand }: TripActionBannerProps) {
         </p>
       </div>
       <ul className="divide-y divide-[#EDE7DD]/90">
-        {items.map((item) => (
+        {model.systemFailures.map((item) => (
           <li key={item.id}>
-            <div className={`px-3 py-2.5 ${severityBarClass(item.severity)}`}>
-              <p className="text-[12px] font-semibold leading-snug text-[#1C1108]">
-                {item.title}
-              </p>
-              {item.detail ? (
-                <p className="mt-0.5 text-[11px] leading-relaxed text-[#6B5E52]">
-                  {item.detail}
-                </p>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => onCommand(item.command)}
-                className="mt-2 text-left text-[11px] font-semibold text-[#B86845] underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B86845]/35"
-              >
-                {item.actionLabel}
-              </button>
-            </div>
+            <ActionRow item={item} onCommand={onCommand} />
+          </li>
+        ))}
+        {model.primaryAction ? (
+          <li key={model.primaryAction.id}>
+            <ActionRow item={model.primaryAction} onCommand={onCommand} />
+          </li>
+        ) : null}
+        {model.secondaryActions.map((item) => (
+          <li key={item.id}>
+            <ActionRow item={item} onCommand={onCommand} />
           </li>
         ))}
       </ul>

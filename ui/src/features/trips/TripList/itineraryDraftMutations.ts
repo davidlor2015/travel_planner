@@ -7,12 +7,14 @@ import {
   deleteEditableItineraryStop,
   duplicateEditableItineraryDay,
   duplicateEditableItineraryStop,
-  moveEditableItineraryItem,
+  moveEditableItineraryItemByIntent,
   reorderEditableItineraryStopWithinDay,
   updateEditableItineraryDay,
   updateEditableItineraryStop,
   type EditableItinerary,
   type EditableStopPatch,
+  type MoveEditableItineraryItemIntent,
+  type MoveEditableItineraryItemOutcome,
 } from '../itineraryDraft';
 
 type PendingDraftState = Record<number, EditableItinerary>;
@@ -45,7 +47,10 @@ export function createItineraryDraftMutations(
       tripId: number,
       dayNumber: number,
       patch: Partial<
-        Pick<EditableItinerary['days'][number], 'day_title' | 'day_note' | 'date'>
+        Pick<
+          EditableItinerary["days"][number],
+          "day_title" | "day_note" | "date" | "day_anchors"
+        >
       >,
     ) {
       mutateTripDraft(setPendingItineraries, tripId, (current) =>
@@ -103,20 +108,14 @@ export function createItineraryDraftMutations(
     },
     moveItem(
       tripId: number,
-      sourceDayNumber: number,
-      sourceIndex: number,
-      targetDayNumber: number,
-      targetIndex: number,
-    ) {
-      mutateTripDraft(setPendingItineraries, tripId, (current) =>
-        moveEditableItineraryItem(
-          current,
-          sourceDayNumber,
-          sourceIndex,
-          targetDayNumber,
-          targetIndex,
-        ),
-      );
+      intent: MoveEditableItineraryItemIntent,
+    ): MoveEditableItineraryItemOutcome | null {
+      let outcome: MoveEditableItineraryItemOutcome | null = null;
+      mutateTripDraft(setPendingItineraries, tripId, (current) => {
+        outcome = moveEditableItineraryItemByIntent(current, intent);
+        return outcome.itinerary;
+      });
+      return outcome;
     },
   };
 }

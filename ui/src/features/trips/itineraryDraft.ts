@@ -44,9 +44,50 @@ export interface ReorderStopsWithinDayInput {
   targetIndex: number;
 }
 
+export interface MoveEditableItineraryItemIntent {
+  sourceDayNumber: number;
+  sourceIndex: number;
+  targetDayNumber: number;
+  targetIndex: number;
+}
+
+export type MoveEditableItineraryItemOutcome =
+  | {
+      kind: 'success';
+      itinerary: EditableItinerary;
+      movedItemId: string;
+    }
+  | {
+      kind: 'no_op';
+      reason: 'same_position';
+      itinerary: EditableItinerary;
+    }
+  | {
+      kind: 'invalid';
+      reason:
+        | 'source_day_missing'
+        | 'target_day_missing'
+        | 'source_index_out_of_range'
+        | 'target_index_out_of_range';
+      itinerary: EditableItinerary;
+    };
+
+export type DayAnchorType = 'flight' | 'hotel_checkin';
+
+export interface DayAnchor {
+  id: string;
+  type: DayAnchorType;
+  label: string;
+  time: string | null;
+  note: string | null;
+  handled_by: string | null;
+  booked_by: string | null;
+}
+
 export interface EditableDayPlan extends Omit<DayPlan, 'items'> {
   day_title: string | null;
   day_note: string | null;
+  day_anchors: DayAnchor[];
   items: EditableItineraryItem[];
 }
 
@@ -84,26 +125,19 @@ function parseOwnershipToken(token: string): StopOwnershipMetadata {
   return { handledBy, bookedBy };
 }
 
-function buildOwnershipToken(metadata: StopOwnershipMetadata): string | null {
-  const handledBy = normalizeOwnershipValue(metadata.handledBy);
-  const bookedBy = normalizeOwnershipValue(metadata.bookedBy);
-  const pairs: string[] = [];
-  if (handledBy) pairs.push(`handledBy=${handledBy}`);
-  if (bookedBy) pairs.push(`bookedBy=${bookedBy}`);
-  if (pairs.length === 0) return null;
-  return `${OWNERSHIP_TOKEN_START}${pairs.join(';')}${OWNERSHIP_TOKEN_END}`;
-}
-
 export function extractStopOwnershipMetadata(
   notes: string | null | undefined,
+  explicitOwnership?: Partial<StopOwnershipMetadata> | null,
 ): {
   metadata: StopOwnershipMetadata;
   plainNotes: string | null;
 } {
+  const explicitHandled = normalizeOwnershipValue(explicitOwnership?.handledBy);
+  const explicitBooked = normalizeOwnershipValue(explicitOwnership?.bookedBy);
   const raw = notes?.trim() ?? '';
   if (!raw) {
     return {
-      metadata: { handledBy: null, bookedBy: null },
+      metadata: { handledBy: explicitHandled, bookedBy: explicitBooked },
       plainNotes: null,
     };
   }
@@ -112,13 +146,17 @@ export function extractStopOwnershipMetadata(
   const end = raw.endsWith(OWNERSHIP_TOKEN_END) ? raw.length - 1 : -1;
   if (start === -1 || end === -1 || end <= start) {
     return {
-      metadata: { handledBy: null, bookedBy: null },
+      metadata: { handledBy: explicitHandled, bookedBy: explicitBooked },
       plainNotes: raw,
     };
   }
 
   const tokenBody = raw.slice(start + OWNERSHIP_TOKEN_START.length, end).trim();
-  const metadata = parseOwnershipToken(tokenBody);
+  const parsedMetadata = parseOwnershipToken(tokenBody);
+  const metadata = {
+    handledBy: explicitHandled ?? parsedMetadata.handledBy,
+    bookedBy: explicitBooked ?? parsedMetadata.bookedBy,
+  };
   const plainNotes = normalizeOwnershipValue(raw.slice(0, start).trim());
 
   return { metadata, plainNotes };
@@ -128,12 +166,9 @@ export function applyStopOwnershipMetadata(
   plainNotes: string | null | undefined,
   metadata: StopOwnershipMetadata,
 ): string | null {
+  void metadata;
   const cleanNotes = normalizeOwnershipValue(plainNotes);
-  const token = buildOwnershipToken(metadata);
-  if (!cleanNotes && !token) return null;
-  if (!token) return cleanNotes;
-  if (!cleanNotes) return token;
-  return `${cleanNotes}\n\n${token}`;
+  return cleanNotes;
 }
 
 function toIsoDate(value: Date): string {
@@ -174,6 +209,10 @@ function createDraftItemId(): string {
   return `draft-item-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
+export function createDayAnchorId(): string {
+  return `day-anchor-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 function cloneStopWithNewId(item: EditableItineraryItem): EditableItineraryItem {
   return {
     ...item,
@@ -184,6 +223,7 @@ function cloneStopWithNewId(item: EditableItineraryItem): EditableItineraryItem 
 function cloneDays(itinerary: EditableItinerary): EditableDayPlan[] {
   return itinerary.days.map((day) => ({
     ...day,
+    day_anchors: day.day_anchors.map((anchor) => ({ ...anchor })),
     items: [...day.items],
   }));
 }
@@ -230,7 +270,7 @@ export function toEditableItinerary(
   const previousIdByFingerprint = new Map<string, string[]>();
   const previousDayMetaByNumber = new Map<
     number,
-    { day_title: string | null; day_note: string | null }
+    { day_title: string | null; day_note: string | null; day_anchors: DayAnchor[] }
   >();
 
   if (previous) {
@@ -238,6 +278,7 @@ export function toEditableItinerary(
       previousDayMetaByNumber.set(day.day_number, {
         day_title: day.day_title,
         day_note: day.day_note,
+        day_anchors: (day.day_anchors ?? []).map((anchor) => ({ ...anchor })),
       });
 
       for (const item of day.items) {
@@ -260,6 +301,19 @@ export function toEditableItinerary(
       ...day,
       day_title: previousDayMetaByNumber.get(day.day_number)?.day_title ?? null,
       day_note: previousDayMetaByNumber.get(day.day_number)?.day_note ?? null,
+      day_anchors:
+        previousDayMetaByNumber.get(day.day_number)?.day_anchors.map((anchor) => ({
+          ...anchor,
+        })) ??
+        (day.anchors ?? []).map((anchor) => ({
+          id: createDayAnchorId(),
+          type: anchor.type,
+          label: anchor.label,
+          time: anchor.time ?? null,
+          note: anchor.note ?? null,
+          handled_by: anchor.handled_by ?? null,
+          booked_by: anchor.booked_by ?? null,
+        })),
       items: day.items.map((item) => {
         const fingerprint = itemFingerprint(item);
         const retained = previousIdByFingerprint.get(fingerprint)?.shift();
@@ -279,6 +333,16 @@ export function toApiItinerary(itinerary: EditableItinerary): Itinerary {
     days: itinerary.days.map((day) => ({
       day_number: day.day_number,
       date: day.date,
+      day_title: day.day_title,
+      day_note: day.day_note,
+      anchors: day.day_anchors.map((anchor) => ({
+        type: anchor.type,
+        label: anchor.label,
+        time: anchor.time,
+        note: anchor.note,
+        handled_by: anchor.handled_by,
+        booked_by: anchor.booked_by,
+      })),
       items: day.items.map((item) => ({
         time: item.time,
         title: item.title,
@@ -288,6 +352,8 @@ export function toApiItinerary(itinerary: EditableItinerary): Itinerary {
         notes: item.notes,
         cost_estimate: item.cost_estimate,
         status: item.status ?? null,
+        handled_by: item.handled_by ?? null,
+        booked_by: item.booked_by ?? null,
       })),
     })),
   };
@@ -320,6 +386,95 @@ export function preserveSelectionIds(
   return nextIds;
 }
 
+export function moveEditableItineraryItemByIntent(
+  itinerary: EditableItinerary,
+  intent: MoveEditableItineraryItemIntent,
+): MoveEditableItineraryItemOutcome {
+  const {
+    sourceDayNumber,
+    sourceIndex,
+    targetDayNumber,
+    targetIndex,
+  } = intent;
+  const sourceDay = itinerary.days.find((day) => day.day_number === sourceDayNumber);
+  if (!sourceDay) {
+    return {
+      kind: 'invalid',
+      reason: 'source_day_missing',
+      itinerary,
+    };
+  }
+  const targetDay = itinerary.days.find((day) => day.day_number === targetDayNumber);
+  if (!targetDay) {
+    return {
+      kind: 'invalid',
+      reason: 'target_day_missing',
+      itinerary,
+    };
+  }
+  if (sourceIndex < 0 || sourceIndex >= sourceDay.items.length) {
+    return {
+      kind: 'invalid',
+      reason: 'source_index_out_of_range',
+      itinerary,
+    };
+  }
+  const maxTargetIndex = targetDay.items.length;
+  if (targetIndex < 0 || targetIndex > maxTargetIndex) {
+    return {
+      kind: 'invalid',
+      reason: 'target_index_out_of_range',
+      itinerary,
+    };
+  }
+  if (
+    sourceDayNumber === targetDayNumber &&
+    (targetIndex === sourceIndex || targetIndex === sourceIndex + 1)
+  ) {
+    return {
+      kind: 'no_op',
+      reason: 'same_position',
+      itinerary,
+    };
+  }
+
+  const next: EditableItinerary = {
+    ...itinerary,
+    days: itinerary.days.map((day) => ({ ...day, items: [...day.items] })),
+  };
+
+  const nextSourceDay = next.days.find((day) => day.day_number === sourceDayNumber);
+  const nextTargetDay = next.days.find((day) => day.day_number === targetDayNumber);
+  if (!nextSourceDay || !nextTargetDay) {
+    return {
+      kind: 'invalid',
+      reason: nextSourceDay ? 'target_day_missing' : 'source_day_missing',
+      itinerary,
+    };
+  }
+
+  const [movedItem] = nextSourceDay.items.splice(sourceIndex, 1);
+  if (!movedItem) {
+    return {
+      kind: 'invalid',
+      reason: 'source_index_out_of_range',
+      itinerary,
+    };
+  }
+
+  let insertionIndex = targetIndex;
+  if (sourceDayNumber === targetDayNumber && sourceIndex < targetIndex) {
+    insertionIndex -= 1;
+  }
+
+  nextTargetDay.items.splice(insertionIndex, 0, movedItem);
+  return {
+    kind: 'success',
+    itinerary: next,
+    movedItemId: movedItem.client_id,
+  };
+}
+
 export function moveEditableItineraryItem(
   itinerary: EditableItinerary,
   sourceDayNumber: number,
@@ -327,25 +482,12 @@ export function moveEditableItineraryItem(
   targetDayNumber: number,
   targetIndex: number,
 ): EditableItinerary {
-  const next: EditableItinerary = {
-    ...itinerary,
-    days: itinerary.days.map((day) => ({ ...day, items: [...day.items] })),
-  };
-
-  const sourceDay = next.days.find((day) => day.day_number === sourceDayNumber);
-  const targetDay = next.days.find((day) => day.day_number === targetDayNumber);
-  if (!sourceDay || !targetDay) return itinerary;
-
-  const [movedItem] = sourceDay.items.splice(sourceIndex, 1);
-  if (!movedItem) return itinerary;
-
-  let insertionIndex = targetIndex;
-  if (sourceDayNumber === targetDayNumber && sourceIndex < targetIndex) {
-    insertionIndex -= 1;
-  }
-
-  targetDay.items.splice(Math.max(0, insertionIndex), 0, movedItem);
-  return next;
+  return moveEditableItineraryItemByIntent(itinerary, {
+    sourceDayNumber,
+    sourceIndex,
+    targetDayNumber,
+    targetIndex,
+  }).itinerary;
 }
 
 export function buildItemReferences(
@@ -384,6 +526,7 @@ export function appendEditableItineraryDay(
         date: nextIsoDate(lastDay?.date ?? null),
         day_title: null,
         day_note: null,
+        day_anchors: [],
         items: [],
       },
     ],
@@ -393,7 +536,9 @@ export function appendEditableItineraryDay(
 export function updateEditableItineraryDay(
   itinerary: EditableItinerary,
   dayNumber: number,
-  patch: Partial<Pick<EditableDayPlan, 'day_title' | 'day_note' | 'date'>>,
+  patch: Partial<
+    Pick<EditableDayPlan, 'day_title' | 'day_note' | 'date' | 'day_anchors'>
+  >,
 ): EditableItinerary {
   let didUpdate = false;
   const days = itinerary.days.map((day) => {
@@ -540,6 +685,10 @@ export function duplicateEditableItineraryDay(
     ...sourceDay,
     day_number: sourceDay.day_number + 1,
     date: nextIsoDate(sourceDay.date),
+    day_anchors: sourceDay.day_anchors.map((anchor) => ({
+      ...anchor,
+      id: createDayAnchorId(),
+    })),
     items: sourceDay.items.map(cloneStopWithNewId),
   };
 

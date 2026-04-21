@@ -6,6 +6,11 @@ export interface EditableItineraryDayCardProps {
   formattedDate: string;
   /** e.g. "4 stops · 9:00 to 6:00" */
   metaLine: string;
+  dayCostDisplay?: string | null;
+  dayCostCoverageLabel?: string | null;
+  anchorSummary?: string | null;
+  advisoryHint?: string | null;
+  readinessHint?: string | null;
   onAssistThisDay: () => void;
   assistDisabled?: boolean;
   onToggleEditDetails: () => void;
@@ -24,6 +29,11 @@ export function EditableItineraryDayCard({
   dayTitle,
   formattedDate,
   metaLine,
+  dayCostDisplay,
+  dayCostCoverageLabel,
+  anchorSummary,
+  advisoryHint,
+  readinessHint,
   onAssistThisDay,
   assistDisabled,
   onToggleEditDetails,
@@ -59,6 +69,33 @@ export function EditableItineraryDayCard({
             </div>
           </div>
           <p className="mt-2 text-[12px] text-flint/95">{metaLine}</p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            {dayCostDisplay ? (
+              <span className="inline-flex items-center gap-1 rounded-md border border-olive/30 bg-olive/10 px-1.5 py-0.5 text-[10px] font-semibold text-olive/95">
+                <span>{dayCostDisplay}</span>
+                {dayCostCoverageLabel ? (
+                  <span className="text-[9px] font-medium text-olive/85">
+                    ({dayCostCoverageLabel})
+                  </span>
+                ) : null}
+              </span>
+            ) : null}
+            {anchorSummary ? (
+              <span className="inline-flex rounded-md border border-smoke/70 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-flint/95">
+                {anchorSummary}
+              </span>
+            ) : null}
+            {advisoryHint ? (
+              <span className="inline-flex rounded-md border border-amber/30 bg-amber/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber">
+                {advisoryHint}
+              </span>
+            ) : null}
+            {readinessHint ? (
+              <span className="inline-flex rounded-md border border-danger/25 bg-danger/10 px-1.5 py-0.5 text-[10px] font-semibold text-danger">
+                {readinessHint}
+              </span>
+            ) : null}
+          </div>
         </div>
 
         <div className="flex flex-shrink-0 flex-wrap items-center justify-end gap-2 sm:max-w-[min(100%,20rem)]">

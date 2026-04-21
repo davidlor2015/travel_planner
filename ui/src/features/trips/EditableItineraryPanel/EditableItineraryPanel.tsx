@@ -4,13 +4,21 @@ import { EditableItineraryDayCard } from "./EditableItineraryDayCard";
 import { EditableTimelineStopRow } from "./EditableTimelineStopRow";
 import { ItineraryDraftHeader } from "./ItineraryDraftHeader";
 import type {
+  DayAnchor,
+  DayAnchorType,
   DraftAiAssistRequest,
   EditableItinerary,
   EditableItineraryItem,
+  MoveEditableItineraryItemIntent,
   RefinementTimeBlock,
   RefinementVariant,
 } from "../itineraryDraft";
-import { buildDayPanelMeta } from "../workspace/itineraryEditorModels";
+import { createDayAnchorId } from "../itineraryDraft";
+import {
+  buildDayPanelMeta,
+  buildTripCostSummary,
+} from "../workspace/itineraryEditorModels";
+import { buildItineraryReadinessSnapshot } from "../workspace/itineraryReadinessModel";
 import { ITINERARY_DRAFT_PUBLISH_ANCHOR_ID } from "../workspace/itineraryEditorAnchors";
 
 interface EditableItineraryPanelProps {
@@ -27,16 +35,14 @@ interface EditableItineraryPanelProps {
   regenerateTimeBlock: RefinementTimeBlock;
   regenerateVariant: RefinementVariant;
   onApply: () => void;
-  onMoveItem: (
-    sourceDayNumber: number,
-    sourceIndex: number,
-    targetDayNumber: number,
-    targetIndex: number,
-  ) => void;
+  onMoveItem: (intent: MoveEditableItineraryItemIntent) => void;
   onUpdateDay?: (
     dayNumber: number,
     patch: Partial<
-      Pick<EditableItinerary["days"][number], "day_title" | "day_note" | "date">
+      Pick<
+        EditableItinerary["days"][number],
+        "day_title" | "day_note" | "date" | "day_anchors"
+      >
     >,
   ) => void;
   onAddStop?: (dayNumber: number, insertAfterIndex?: number) => void;
@@ -67,6 +73,8 @@ interface EditableItineraryPanelProps {
   publishError?: string | null;
   /** Mobile-oriented stop editing and drag affordances. */
   isMobileLayout?: boolean;
+  /** Group-aware controls (ownership, coordination) shown only when true. */
+  showGroupCoordination?: boolean;
 }
 
 const TIME_BLOCK_OPTIONS: Array<{ value: RefinementTimeBlock; label: string }> =
@@ -117,6 +125,22 @@ const AI_ASSIST_ACTIONS: Array<{
     detail: "Preview a lower-walking order; confirm before treating as final.",
   },
 ];
+
+function defaultAnchorLabel(type: DayAnchorType): string {
+  return type === "flight" ? "Flight" : "Hotel check-in";
+}
+
+function createDayAnchor(type: DayAnchorType = "flight"): DayAnchor {
+  return {
+    id: createDayAnchorId(),
+    type,
+    label: defaultAnchorLabel(type),
+    time: null,
+    note: null,
+    handled_by: null,
+    booked_by: null,
+  };
+}
 
 function InsertBetweenTrigger({ onInsert }: { onInsert: () => void }) {
   return (
@@ -175,6 +199,7 @@ export const EditableItineraryPanel = ({
   onAddDay,
   publishError,
   isMobileLayout = false,
+  showGroupCoordination = false,
 }: EditableItineraryPanelProps) => {
   const [dragState, setDragState] = useState<{
     dayNumber: number;
@@ -226,16 +251,80 @@ export const EditableItineraryPanel = ({
       onReorderStopWithinDay(dayNumber, sourceIndex, targetIndex);
       return;
     }
-    onMoveItem(dayNumber, sourceIndex, dayNumber, targetIndex);
+    onMoveItem({
+      sourceDayNumber: dayNumber,
+      sourceIndex,
+      targetDayNumber: dayNumber,
+      targetIndex,
+    });
+  };
+
+  const moveStopToAdjacentDay = (
+    sourceDayNumber: number,
+    sourceIndex: number,
+    targetDayNumber: number | null,
+  ) => {
+    if (!targetDayNumber) return;
+    const targetDay = itinerary.days.find((day) => day.day_number === targetDayNumber);
+    if (!targetDay) return;
+    onMoveItem({
+      sourceDayNumber,
+      sourceIndex,
+      targetDayNumber,
+      targetIndex: targetDay.items.length,
+    });
   };
 
   const updateDayField = (
     dayNumber: number,
     patch: Partial<
-      Pick<EditableItinerary["days"][number], "day_title" | "day_note" | "date">
+      Pick<
+        EditableItinerary["days"][number],
+        "day_title" | "day_note" | "date" | "day_anchors"
+      >
     >,
   ) => {
     onUpdateDay?.(dayNumber, patch);
+  };
+
+  const updateDayAnchor = (
+    dayNumber: number,
+    anchorId: string,
+    patch: Partial<DayAnchor>,
+  ) => {
+    const day = itinerary.days.find((row) => row.day_number === dayNumber);
+    if (!day) return;
+    const nextAnchors = (day.day_anchors ?? []).map((anchor) => {
+      if (anchor.id !== anchorId) return anchor;
+      const nextType = (patch.type ?? anchor.type) as DayAnchorType;
+      const nextLabel =
+        patch.type && (!anchor.label?.trim() || anchor.label === defaultAnchorLabel(anchor.type))
+          ? defaultAnchorLabel(nextType)
+          : (patch.label ?? anchor.label);
+      return {
+        ...anchor,
+        ...patch,
+        type: nextType,
+        label: nextLabel,
+      };
+    });
+    updateDayField(dayNumber, { day_anchors: nextAnchors });
+  };
+
+  const addDayAnchor = (dayNumber: number, type: DayAnchorType) => {
+    const day = itinerary.days.find((row) => row.day_number === dayNumber);
+    if (!day) return;
+    updateDayField(dayNumber, {
+      day_anchors: [...(day.day_anchors ?? []), createDayAnchor(type)],
+    });
+  };
+
+  const removeDayAnchor = (dayNumber: number, anchorId: string) => {
+    const day = itinerary.days.find((row) => row.day_number === dayNumber);
+    if (!day) return;
+    updateDayField(dayNumber, {
+      day_anchors: (day.day_anchors ?? []).filter((anchor) => anchor.id !== anchorId),
+    });
   };
 
   const runAssistAction = (request: DraftAiAssistRequest) => {
@@ -253,6 +342,17 @@ export const EditableItineraryPanel = ({
   const fallbackUsed =
     draftFallbackUsed ?? Boolean(itinerary.fallback_used);
   const editControlsDisabled = Boolean(applying);
+  const tripCostSummary = useMemo(
+    () => buildTripCostSummary(itinerary.days),
+    [itinerary.days],
+  );
+  const itineraryReadiness = useMemo(
+    () =>
+      buildItineraryReadinessSnapshot(itinerary, {
+        groupTrip: showGroupCoordination,
+      }),
+    [itinerary, showGroupCoordination],
+  );
 
   return (
     <div
@@ -264,6 +364,12 @@ export const EditableItineraryPanel = ({
         summary={itinerary.summary}
         sourceLabel={sourceLabel}
         fallbackUsed={fallbackUsed}
+        tripCostSummary={tripCostSummary.display}
+        tripCostDetail={
+          tripCostSummary.estimatedItemCount > 0
+            ? `${tripCostSummary.parsedItemCount}/${tripCostSummary.estimatedItemCount} estimates`
+            : null
+        }
         onAddDay={onAddDay}
         onOpenGlobalAiAssist={() => setShowAiAssist(true)}
         globalAiDisabled={regenerating}
@@ -458,13 +564,36 @@ export const EditableItineraryPanel = ({
       ) : null}
 
       <div className="space-y-6 px-4 pb-4 pt-2 sm:px-5">
-        {itinerary.days.map((day) => {
+        {itinerary.days.map((day, dayIndex) => {
           const meta = buildDayPanelMeta(day);
           const stopCount = day.items.length;
+          const previousDayNumber =
+            dayIndex > 0 ? itinerary.days[dayIndex - 1]?.day_number ?? null : null;
+          const nextDayNumber =
+            dayIndex >= 0 && dayIndex < itinerary.days.length - 1
+              ? itinerary.days[dayIndex + 1]?.day_number ?? null
+              : null;
 
           const emptyState =
             day.items.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-smoke/80 bg-parchment/25 px-4 py-8 text-center">
+              <div
+                className="rounded-xl border border-dashed border-smoke/80 bg-parchment/25 px-4 py-8 text-center"
+                onDragOver={(event) => {
+                  if (!dragState) return;
+                  event.preventDefault();
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  if (!dragState) return;
+                  onMoveItem({
+                    sourceDayNumber: dragState.dayNumber,
+                    sourceIndex: dragState.index,
+                    targetDayNumber: day.day_number,
+                    targetIndex: 0,
+                  });
+                  setDragState(null);
+                }}
+              >
                 <p className="text-sm font-medium text-espresso">
                   Nothing planned for this day yet
                 </p>
@@ -505,7 +634,8 @@ export const EditableItineraryPanel = ({
 
           const dayDetailsForm =
             editingDayDetails === day.day_number ? (
-              <div className="mt-3 grid gap-3 rounded-xl border border-smoke/50 bg-parchment/20 px-3 py-3 sm:grid-cols-2">
+              <div className="mt-3 space-y-3 rounded-xl border border-smoke/50 bg-parchment/20 px-3 py-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                 <input
                   type="text"
                   value={day.day_title ?? ""}
@@ -538,6 +668,124 @@ export const EditableItineraryPanel = ({
                   rows={2}
                   className="sm:col-span-2 w-full rounded-xl border border-smoke/70 bg-white px-3 py-2 text-sm text-espresso focus:outline-none focus:ring-2 focus:ring-amber/25 resize-none"
                 />
+                </div>
+                <div className="rounded-xl border border-smoke/50 bg-white/75 px-3 py-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-[12px] font-semibold text-espresso">
+                      Day anchors
+                    </p>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => addDayAnchor(day.day_number, "flight")}
+                        className="rounded-full border border-smoke/70 bg-white px-2.5 py-1 text-[11px] font-semibold text-flint hover:bg-parchment"
+                      >
+                        + Flight
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          addDayAnchor(day.day_number, "hotel_checkin")
+                        }
+                        className="rounded-full border border-smoke/70 bg-white px-2.5 py-1 text-[11px] font-semibold text-flint hover:bg-parchment"
+                      >
+                        + Hotel check-in
+                      </button>
+                    </div>
+                  </div>
+                  {(day.day_anchors ?? []).length === 0 ? (
+                    <p className="mt-2 text-[11px] text-flint/90">
+                      Add anchors for fixed events like flights and check-in.
+                    </p>
+                  ) : (
+                    <div className="mt-2 space-y-2">
+                      {(day.day_anchors ?? []).map((anchor) => (
+                        <div
+                          key={anchor.id}
+                          className="grid gap-2 rounded-lg border border-smoke/60 bg-white px-2 py-2 sm:grid-cols-[9rem_1fr_7rem_auto]"
+                        >
+                          <select
+                            value={anchor.type}
+                            onChange={(event) =>
+                              updateDayAnchor(day.day_number, anchor.id, {
+                                type: event.target.value as DayAnchorType,
+                              })
+                            }
+                            className="rounded-lg border border-smoke/70 bg-white px-2 py-1.5 text-xs text-espresso focus:outline-none focus:ring-2 focus:ring-amber/25"
+                          >
+                            <option value="flight">Flight</option>
+                            <option value="hotel_checkin">Hotel check-in</option>
+                          </select>
+                          <input
+                            type="text"
+                            value={anchor.label}
+                            onChange={(event) =>
+                              updateDayAnchor(day.day_number, anchor.id, {
+                                label: event.target.value,
+                              })
+                            }
+                            placeholder="Anchor label"
+                            className="rounded-lg border border-smoke/70 bg-white px-2 py-1.5 text-xs text-espresso focus:outline-none focus:ring-2 focus:ring-amber/25"
+                          />
+                          <input
+                            type="time"
+                            value={anchor.time ?? ""}
+                            onChange={(event) =>
+                              updateDayAnchor(day.day_number, anchor.id, {
+                                time: event.target.value || null,
+                              })
+                            }
+                            className="rounded-lg border border-smoke/70 bg-white px-2 py-1.5 text-xs text-espresso focus:outline-none focus:ring-2 focus:ring-amber/25"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeDayAnchor(day.day_number, anchor.id)}
+                            className="rounded-lg border border-danger/25 bg-danger/5 px-2 py-1.5 text-xs font-semibold text-danger hover:bg-danger/10"
+                          >
+                            Remove
+                          </button>
+                          <textarea
+                            value={anchor.note ?? ""}
+                            onChange={(event) =>
+                              updateDayAnchor(day.day_number, anchor.id, {
+                                note: event.target.value || null,
+                              })
+                            }
+                            rows={1}
+                            placeholder="Optional note"
+                            className="sm:col-span-4 rounded-lg border border-smoke/70 bg-white px-2 py-1.5 text-xs text-espresso focus:outline-none focus:ring-2 focus:ring-amber/25 resize-none"
+                          />
+                          {showGroupCoordination ? (
+                            <>
+                              <input
+                                type="text"
+                                value={anchor.handled_by ?? ""}
+                                onChange={(event) =>
+                                  updateDayAnchor(day.day_number, anchor.id, {
+                                    handled_by: event.target.value || null,
+                                  })
+                                }
+                                placeholder="Handled by"
+                                className="sm:col-span-2 rounded-lg border border-smoke/70 bg-white px-2 py-1.5 text-xs text-espresso focus:outline-none focus:ring-2 focus:ring-amber/25"
+                              />
+                              <input
+                                type="text"
+                                value={anchor.booked_by ?? ""}
+                                onChange={(event) =>
+                                  updateDayAnchor(day.day_number, anchor.id, {
+                                    booked_by: event.target.value || null,
+                                  })
+                                }
+                                placeholder="Booked by"
+                                className="sm:col-span-2 rounded-lg border border-smoke/70 bg-white px-2 py-1.5 text-xs text-espresso focus:outline-none focus:ring-2 focus:ring-amber/25"
+                              />
+                            </>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             ) : null;
 
@@ -580,12 +828,15 @@ export const EditableItineraryPanel = ({
                       />
                     )}
                     <EditableTimelineStopRow
+                      dayNumber={day.day_number}
+                      availableDayNumbers={itinerary.days.map((row) => row.day_number)}
                       item={item}
                       index={index}
                       totalStops={day.items.length}
                       isLast={index === day.items.length - 1}
                       isLocked={lockedSet.has(item.client_id)}
                       isFavorite={favoriteSet.has(item.client_id)}
+                      showOwnershipControls={showGroupCoordination}
                       useStopEditBottomSheet={isMobileLayout}
                       interactionDisabled={editControlsDisabled}
                       onUpdate={(patch) =>
@@ -611,9 +862,46 @@ export const EditableItineraryPanel = ({
                           Math.min(day.items.length - 1, index + 1),
                         )
                       }
+                      onMoveToPreviousDay={
+                        previousDayNumber
+                          ? () =>
+                              moveStopToAdjacentDay(
+                                day.day_number,
+                                index,
+                                previousDayNumber,
+                              )
+                          : undefined
+                      }
+                      onMoveToNextDay={
+                        nextDayNumber
+                          ? () =>
+                              moveStopToAdjacentDay(
+                                day.day_number,
+                                index,
+                                nextDayNumber,
+                              )
+                          : undefined
+                      }
+                      onMoveToDay={(targetDayNumber) => {
+                        const targetDay = itinerary.days.find(
+                          (row) => row.day_number === targetDayNumber,
+                        );
+                        if (!targetDay) return;
+                        onMoveItem({
+                          sourceDayNumber: day.day_number,
+                          sourceIndex: index,
+                          targetDayNumber,
+                          targetIndex: targetDay.items.length,
+                        });
+                      }}
                       onAddAfter={() => onAddStop?.(day.day_number, index)}
                       onToggleLock={() => onToggleLock(item.client_id)}
                       onToggleFavorite={() => onToggleFavorite(item.client_id)}
+                      timeHint={meta.rowTimeHints.get(index) ?? null}
+                      readinessHint={
+                        itineraryReadiness.stopIndicators[item.client_id]?.label ??
+                        null
+                      }
                       onDragStart={() =>
                         setDragState({
                           dayNumber: day.day_number,
@@ -622,22 +910,23 @@ export const EditableItineraryPanel = ({
                       }
                       onDragEnd={() => setDragState(null)}
                       onDragOver={(event) => {
-                        if (dragState?.dayNumber === day.day_number) {
+                        if (dragState) {
                           event.preventDefault();
                         }
                       }}
                       onDrop={(event) => {
                         event.preventDefault();
-                        if (
-                          !dragState ||
-                          dragState.dayNumber !== day.day_number
-                        )
-                          return;
-                        handleReorder(
-                          day.day_number,
-                          dragState.index,
-                          index,
-                        );
+                        if (!dragState) return;
+                        if (dragState.dayNumber === day.day_number) {
+                          handleReorder(day.day_number, dragState.index, index);
+                        } else {
+                          onMoveItem({
+                            sourceDayNumber: dragState.dayNumber,
+                            sourceIndex: dragState.index,
+                            targetDayNumber: day.day_number,
+                            targetIndex: index,
+                          });
+                        }
                         setDragState(null);
                       }}
                     />
@@ -665,22 +954,27 @@ export const EditableItineraryPanel = ({
               <div
                 className="mt-2 rounded-lg border border-dashed border-transparent px-3 py-2 text-center text-[11px] text-flint/80 hover:border-smoke/50"
                 onDragOver={(event) => {
-                  if (dragState?.dayNumber === day.day_number) {
+                  if (dragState) {
                     event.preventDefault();
                   }
                 }}
                 onDrop={(event) => {
                   event.preventDefault();
-                  if (
-                    !dragState ||
-                    dragState.dayNumber !== day.day_number
-                  )
-                    return;
-                  handleReorder(
-                    day.day_number,
-                    dragState.index,
-                    day.items.length - 1,
-                  );
+                  if (!dragState) return;
+                  if (dragState.dayNumber === day.day_number) {
+                    handleReorder(
+                      day.day_number,
+                      dragState.index,
+                      day.items.length - 1,
+                    );
+                  } else {
+                    onMoveItem({
+                      sourceDayNumber: dragState.dayNumber,
+                      sourceIndex: dragState.index,
+                      targetDayNumber: day.day_number,
+                      targetIndex: day.items.length,
+                    });
+                  }
                   setDragState(null);
                 }}
               >
@@ -695,6 +989,13 @@ export const EditableItineraryPanel = ({
               dayTitle={meta.dayLabel}
               formattedDate={meta.formattedDate}
               metaLine={meta.metaLine}
+              dayCostDisplay={meta.dayCostDisplay}
+              dayCostCoverageLabel={meta.dayCostCoverageLabel}
+              anchorSummary={meta.anchorSummary}
+              advisoryHint={meta.timeConflictHint}
+              readinessHint={
+                itineraryReadiness.dayIndicators[day.day_number]?.label ?? null
+              }
               onAssistThisDay={() => {
                 openAssistForDay(day.day_number);
                 onDayToggle?.(day.day_number, true);

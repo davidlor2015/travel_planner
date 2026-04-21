@@ -20,8 +20,7 @@ describe("itinerary draft ownership metadata", () => {
       handledBy: "Alex",
       bookedBy: "Sam",
     });
-    expect(withOwnership).toContain("Main notes");
-    expect(withOwnership).toContain("[ownership:handledBy=Alex;bookedBy=Sam]");
+    expect(withOwnership).toBe("Main notes");
   });
 
   it("removes ownership token when ownership values are cleared", () => {

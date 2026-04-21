@@ -47,6 +47,8 @@ SAMPLE_ITINERARY = {
         {
             "day_number": 1,
             "date": "2025-06-01",
+            "day_title": "Arrival + landmarks",
+            "day_note": "Prioritize early check-in and keep evening flexible.",
             "items": [
                 {
                     "time": "09:00",
@@ -56,6 +58,9 @@ SAMPLE_ITINERARY = {
                     "lon": 2.2945,
                     "notes": "Arrive early to beat the crowds.",
                     "cost_estimate": "€29",
+                    "status": "confirmed",
+                    "handled_by": "usera@example.com",
+                    "booked_by": "usera@example.com",
                 },
                 {
                     "time": "14:00",
@@ -64,15 +69,27 @@ SAMPLE_ITINERARY = {
                     "cost_estimate": "€17",
                 },
             ],
+            "anchors": [
+                {
+                    "type": "flight",
+                    "label": "AF123 arrival",
+                    "time": "07:30",
+                    "note": "CDG",
+                    "handled_by": "usera@example.com",
+                    "booked_by": "usera@example.com",
+                }
+            ],
         },
         {
             "day_number": 2,
             "date": "2025-06-02",
+            "day_title": "Neighborhood day",
             "items": [
                 {
                     "time": "10:00",
                     "title": "Montmartre",
                     "cost_estimate": "Free",
+                    "status": "planned",
                 }
             ],
         },
@@ -95,12 +112,18 @@ class TestItineraryRepository:
         assert days[0].day_number == 1
         assert days[0].day_date == "2025-06-01"
         assert len(days[0].events) == 2
+        assert len(days[0].anchors) == 1
+        assert days[0].day_title == "Arrival + landmarks"
+        assert days[0].day_note == "Prioritize early check-in and keep evening flexible."
 
         first_event = days[0].events[0]
         assert first_event.title == "Eiffel Tower"
         assert first_event.lat == pytest.approx(48.8584)
         assert first_event.lon == pytest.approx(2.2945)
         assert first_event.sort_order == 0
+        assert first_event.status == "confirmed"
+        assert first_event.handled_by_user_id is not None
+        assert first_event.booked_by_user_id is not None
 
         assert days[1].day_number == 2
         assert len(days[1].events) == 1
@@ -131,6 +154,26 @@ class TestItineraryRepository:
         assert len(all_days) == 1
         all_events = db.query(ItineraryEvent).filter_by(day_id=all_days[0].id).all()
         assert len(all_events) == 1
+
+    def test_repository_roundtrip_exposes_structured_ownership_and_anchors(
+        self, db: Session, paris_trip: Trip
+    ):
+        itinerary = ItineraryResponse(**SAMPLE_ITINERARY)
+        repo = ItineraryRepository(db)
+        repo.save_itinerary(paris_trip.id, itinerary)
+
+        restored = repo.to_itinerary_response(
+            trip_id=paris_trip.id,
+            title=paris_trip.title,
+            summary="Recovered",
+        )
+        assert restored is not None
+        assert restored.days[0].anchors[0].type == "flight"
+        assert restored.days[0].day_title == "Arrival + landmarks"
+        assert restored.days[0].day_note == "Prioritize early check-in and keep evening flexible."
+        assert restored.days[0].anchors[0].handled_by == "usera@example.com"
+        assert restored.days[0].items[0].handled_by == "usera@example.com"
+        assert restored.days[0].items[0].status == "confirmed"
 
     def test_get_days_by_trip_returns_ordered(self, db: Session, paris_trip: Trip):
         itinerary = ItineraryResponse(**SAMPLE_ITINERARY)
@@ -185,6 +228,28 @@ class TestApplyEndpoint:
         assert paris_trip.title == "Paris Adventure"
         assert "SUMMARY:" in paris_trip.description
         assert "DETAILS (JSON):" in paris_trip.description
+
+    def test_get_saved_itinerary_reads_relational_source(
+        self, client: TestClient, auth_headers_user_a, paris_trip: Trip
+    ):
+        apply_res = client.post(
+            "/v1/ai/apply",
+            json={"trip_id": paris_trip.id, "itinerary": SAMPLE_ITINERARY},
+            headers=auth_headers_user_a,
+        )
+        assert apply_res.status_code == 200, apply_res.text
+
+        read_res = client.get(
+            f"/v1/ai/trips/{paris_trip.id}/itinerary",
+            headers=auth_headers_user_a,
+        )
+        assert read_res.status_code == 200, read_res.text
+        payload = read_res.json()
+        assert payload["days"][0]["anchors"][0]["type"] == "flight"
+        assert payload["days"][0]["day_title"] == "Arrival + landmarks"
+        assert payload["days"][0]["day_note"] == "Prioritize early check-in and keep evening flexible."
+        assert payload["days"][0]["items"][0]["status"] == "confirmed"
+        assert payload["days"][0]["items"][0]["handled_by"] == "usera@example.com"
 
     def test_apply_reapply_replaces_rows(
         self, client: TestClient, auth_headers_user_a, paris_trip: Trip, db: Session

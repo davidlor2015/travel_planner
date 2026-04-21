@@ -33,7 +33,10 @@ export function buildStopRowViewModel(
   flags: { isLocked: boolean; isFavorite: boolean },
 ): StopRowViewModel {
   const title = item.title?.trim() ?? "";
-  const { metadata, plainNotes } = extractStopOwnershipMetadata(item.notes);
+  const { metadata, plainNotes } = extractStopOwnershipMetadata(item.notes, {
+    handledBy: item.handled_by ?? null,
+    bookedBy: item.booked_by ?? null,
+  });
   const secondaryLine = [item.location, plainNotes]
     .filter(Boolean)
     .join(" · ");
@@ -117,6 +120,175 @@ function countItemsWithCostEstimate(day: EditableDayPlan): number {
   return day.items.filter((item) => item.cost_estimate?.trim()).length;
 }
 
+const USD_FORMATTER = new Intl.NumberFormat(undefined, {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 2,
+});
+
+const DAY_ANCHOR_TYPE_LABEL: Record<EditableDayPlan["day_anchors"][number]["type"], string> = {
+  flight: "Flight",
+  hotel_checkin: "Hotel check-in",
+};
+
+export interface DayTimeConflict {
+  previousIndex: number;
+  currentIndex: number;
+  kind: "overlap" | "out_of_order";
+}
+
+export interface DayTimeConflictSummary {
+  conflicts: DayTimeConflict[];
+  rowHints: Map<number, string>;
+}
+
+function parseComparableTimeToMinutes(raw: string | null | undefined): number | null {
+  const value = raw?.trim().toLowerCase();
+  if (!value) return null;
+
+  const hhmmMatch = value.match(/^(\d{1,2}):(\d{2})(?:\s*([ap]m))?$/i);
+  if (hhmmMatch) {
+    let hour = Number(hhmmMatch[1]);
+    const minute = Number(hhmmMatch[2]);
+    if (Number.isNaN(hour) || Number.isNaN(minute)) return null;
+    if (minute < 0 || minute > 59) return null;
+    const meridiem = hhmmMatch[3]?.toLowerCase() ?? null;
+    if (meridiem) {
+      if (hour < 1 || hour > 12) return null;
+      if (hour === 12) hour = 0;
+      if (meridiem === "pm") hour += 12;
+    } else if (hour < 0 || hour > 23) {
+      return null;
+    }
+    return hour * 60 + minute;
+  }
+
+  const hourOnlyMatch = value.match(/^(\d{1,2})\s*([ap]m)$/i);
+  if (hourOnlyMatch) {
+    let hour = Number(hourOnlyMatch[1]);
+    const meridiem = hourOnlyMatch[2]?.toLowerCase();
+    if (Number.isNaN(hour) || !meridiem) return null;
+    if (hour < 1 || hour > 12) return null;
+    if (hour === 12) hour = 0;
+    if (meridiem === "pm") hour += 12;
+    return hour * 60;
+  }
+
+  return null;
+}
+
+function summarizeDayAnchor(anchor: EditableDayPlan["day_anchors"][number]): string {
+  const typeLabel = DAY_ANCHOR_TYPE_LABEL[anchor.type];
+  const label = anchor.label.trim();
+  const base = label || typeLabel;
+  const time = anchor.time?.trim();
+  if (!time) return base;
+  return `${base} ${time}`;
+}
+
+function parseConservativeCostAmount(raw: string | null | undefined): number | null {
+  const value = raw?.trim();
+  if (!value) return null;
+  const normalized = value.replace(/\s+/g, " ");
+  const strictCurrency = normalized.match(
+    /^(?:[$€£]\s*)?\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?(?:\s*(?:usd|dollars?))?$/i,
+  );
+  const strictPlain = normalized.match(/^\d+(?:\.\d{1,2})?\s*(?:usd|dollars?)$/i);
+  if (!strictCurrency && !strictPlain) return null;
+  const numeric = normalized.replace(/[$€£,\s]|usd|dollars?/gi, "");
+  if (!numeric) return null;
+  const parsed = Number(numeric);
+  if (!Number.isFinite(parsed) || parsed < 0) return null;
+  return parsed;
+}
+
+export interface DayCostSummary {
+  total: number | null;
+  display: string | null;
+  parsedItemCount: number;
+  estimatedItemCount: number;
+}
+
+export interface TripCostSummary {
+  total: number | null;
+  display: string | null;
+  parsedItemCount: number;
+  estimatedItemCount: number;
+}
+
+export function buildDayCostSummary(day: EditableDayPlan): DayCostSummary {
+  let total = 0;
+  let parsedItemCount = 0;
+  const estimatedItemCount = day.items.filter((item) => Boolean(item.cost_estimate?.trim())).length;
+  for (const item of day.items) {
+    const parsed = parseConservativeCostAmount(item.cost_estimate);
+    if (parsed == null) continue;
+    total += parsed;
+    parsedItemCount += 1;
+  }
+  return {
+    total: parsedItemCount > 0 ? total : null,
+    display: parsedItemCount > 0 ? USD_FORMATTER.format(total) : null,
+    parsedItemCount,
+    estimatedItemCount,
+  };
+}
+
+export function buildTripCostSummary(days: EditableDayPlan[]): TripCostSummary {
+  let total = 0;
+  let parsedItemCount = 0;
+  let estimatedItemCount = 0;
+  for (const day of days) {
+    const daySummary = buildDayCostSummary(day);
+    if (daySummary.total != null) {
+      total += daySummary.total;
+      parsedItemCount += daySummary.parsedItemCount;
+    }
+    estimatedItemCount += daySummary.estimatedItemCount;
+  }
+  return {
+    total: parsedItemCount > 0 ? total : null,
+    display: parsedItemCount > 0 ? USD_FORMATTER.format(total) : null,
+    parsedItemCount,
+    estimatedItemCount,
+  };
+}
+
+export function deriveDayTimeConflictSummary(
+  items: EditableItineraryItem[],
+): DayTimeConflictSummary {
+  const rowHints = new Map<number, string>();
+  const conflicts: DayTimeConflict[] = [];
+  let previousTimedIndex: number | null = null;
+  let previousMinutes: number | null = null;
+
+  items.forEach((item, index) => {
+    const currentMinutes = parseComparableTimeToMinutes(item.time);
+    if (currentMinutes == null) return;
+    if (previousTimedIndex != null && previousMinutes != null) {
+      if (currentMinutes < previousMinutes) {
+        conflicts.push({
+          previousIndex: previousTimedIndex,
+          currentIndex: index,
+          kind: "out_of_order",
+        });
+        rowHints.set(index, "Time is earlier than the stop above.");
+      } else if (currentMinutes === previousMinutes) {
+        conflicts.push({
+          previousIndex: previousTimedIndex,
+          currentIndex: index,
+          kind: "overlap",
+        });
+        rowHints.set(index, "Same time as the stop above.");
+      }
+    }
+    previousTimedIndex = index;
+    previousMinutes = currentMinutes;
+  });
+
+  return { conflicts, rowHints };
+}
+
 export interface DayPanelMeta {
   dayLabel: string;
   formattedDate: string;
@@ -125,12 +297,31 @@ export interface DayPanelMeta {
   timeWindowLabel: string;
   locationCount: number;
   dayPreview: string | null;
+  dayCostDisplay: string | null;
+  dayCostCoverageLabel: string | null;
+  dayCostSummary: DayCostSummary;
+  anchorSummary: string | null;
+  anchorCount: number;
+  timeConflictHint: string | null;
+  timeConflictCount: number;
+  rowTimeHints: Map<number, string>;
 }
 
 export function buildDayPanelMeta(day: EditableDayPlan): DayPanelMeta {
   const stopCount = day.items.length;
   const costCount = countItemsWithCostEstimate(day);
   const timeWindowLabel = summarizeTimeWindowLabel(day.items);
+  const dayCostSummary = buildDayCostSummary(day);
+  const timeConflictSummary = deriveDayTimeConflictSummary(day.items);
+  const anchors = day.day_anchors ?? [];
+  const anchorCount = anchors.length;
+  const anchorSummary =
+    anchorCount > 0
+      ? anchors
+          .slice(0, 2)
+          .map((anchor) => summarizeDayAnchor(anchor))
+          .join(" · ")
+      : null;
   const locationCount = new Set(
     day.items
       .map((item) => item.location?.trim())
@@ -152,6 +343,9 @@ export function buildDayPanelMeta(day: EditableDayPlan): DayPanelMeta {
   if (costCount > 0) {
     metaParts.push(`${costCount} with cost${costCount === 1 ? "" : "s"}`);
   }
+  if (anchorCount > 0) {
+    metaParts.push(`${anchorCount} ${anchorCount === 1 ? "anchor" : "anchors"}`);
+  }
 
   return {
     dayLabel,
@@ -161,5 +355,21 @@ export function buildDayPanelMeta(day: EditableDayPlan): DayPanelMeta {
     timeWindowLabel,
     locationCount,
     dayPreview,
+    dayCostDisplay: dayCostSummary.display,
+    dayCostCoverageLabel:
+      dayCostSummary.estimatedItemCount > 0
+        ? `${dayCostSummary.parsedItemCount}/${dayCostSummary.estimatedItemCount} parsed`
+        : null,
+    dayCostSummary,
+    anchorSummary,
+    anchorCount,
+    timeConflictHint:
+      timeConflictSummary.conflicts.length > 0
+        ? `${timeConflictSummary.conflicts.length} advisory time conflict${
+            timeConflictSummary.conflicts.length === 1 ? "" : "s"
+          }`
+        : null,
+    timeConflictCount: timeConflictSummary.conflicts.length,
+    rowTimeHints: timeConflictSummary.rowHints,
   };
 }

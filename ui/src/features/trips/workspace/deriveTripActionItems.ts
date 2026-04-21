@@ -17,6 +17,19 @@ const SEVERITY_ORDER: Record<AttentionSeverity, number> = {
   nudge: 2,
 };
 
+const INTENT_ORDER: Record<TripActionIntent, number> = {
+  workspace_error: 0,
+  draft_publish: 1,
+  itinerary_setup: 2,
+  first_day_timing: 3,
+  ownership: 4,
+  bookings: 5,
+  budget: 6,
+  packing: 7,
+  readiness: 8,
+  activity: 9,
+};
+
 /** Workspace-only signals (no UI, no handlers). */
 export interface TripWorkspaceSignals {
   /** Non-itinerary mutations (e.g. delete trip). */
@@ -33,6 +46,7 @@ export interface TripWorkspaceSignals {
 /** Full payload when a trip is selected (summaries + workspace signals). */
 export interface TripActionInputs {
   trip: Trip;
+  actorEmail: string;
   packing: PackingSummary;
   budget: BudgetSummary;
   reservations: ReservationSummary;
@@ -53,8 +67,43 @@ export type TripActionCommand =
   | { kind: "focus_draft_publish" }
   | { kind: "focus_itinerary_stream" };
 
+export type TripActionReason =
+  | "workspace_draft_error"
+  | "workspace_trip_error"
+  | "workspace_stream_error"
+  | "draft_pending_publish"
+  | "unread_activity"
+  | "itinerary_missing"
+  | "first_day_timing_missing"
+  | "ownership_assigned_to_you"
+  | "ownership_waiting_on_other"
+  | "ownership_unassigned"
+  | "itinerary_status_open"
+  | "budget_over"
+  | "budget_tight"
+  | "packing_behind"
+  | "bookings_missing"
+  | "bookings_no_upcoming"
+  | "invites_pending"
+  | "readiness_unknown"
+  | "generic_attention";
+
+export type TripActionIntent =
+  | "workspace_error"
+  | "draft_publish"
+  | "itinerary_setup"
+  | "first_day_timing"
+  | "ownership"
+  | "bookings"
+  | "budget"
+  | "packing"
+  | "readiness"
+  | "activity";
+
 export interface TripWorkspaceActionItem {
   id: string;
+  reason: TripActionReason;
+  intent: TripActionIntent;
   severity: AttentionSeverity;
   title: string;
   detail?: string;
@@ -62,34 +111,95 @@ export interface TripWorkspaceActionItem {
   command: TripActionCommand;
 }
 
-const MAX_ITEMS = 5;
+export interface TripActionabilityModel {
+  state: "blocked" | "actionable" | "steady";
+  systemFailures: TripWorkspaceActionItem[];
+  rankedOperationalActions: TripWorkspaceActionItem[];
+  primaryAction: TripWorkspaceActionItem | null;
+  secondaryActions: TripWorkspaceActionItem[];
+}
 
-/**
- * Prioritized “what needs attention” items for the trip workspace.
- * Composes domain attention rules with workspace-level signals only when present.
- */
-export function deriveTripActionItems(
-  input: TripActionDerivationInput,
-): TripWorkspaceActionItem[] {
-  if (input.trip === null) {
-    return [];
+const MAX_OPERATIONAL_ITEMS = 5;
+
+function toAttentionReason(id: string): TripActionReason {
+  if (id === "itinerary-missing") return "itinerary_missing";
+  if (id === "itinerary-status-open") return "itinerary_status_open";
+  if (id === "itinerary-owned-by-you-open") return "ownership_assigned_to_you";
+  if (id === "itinerary-waiting-on-owner") return "ownership_waiting_on_other";
+  if (id === "itinerary-ownership-open") return "ownership_unassigned";
+  if (id === "budget-over") return "budget_over";
+  if (id === "budget-tight") return "budget_tight";
+  if (id === "packing-behind") return "packing_behind";
+  if (id === "bookings-none") return "bookings_missing";
+  if (id === "bookings-no-upcoming") return "bookings_no_upcoming";
+  if (id === "invites-pending") return "invites_pending";
+  if (id.startsWith("readiness-unknown")) return "readiness_unknown";
+  return "generic_attention";
+}
+
+function intentForReason(reason: TripActionReason): TripActionIntent {
+  if (
+    reason === "workspace_draft_error" ||
+    reason === "workspace_trip_error" ||
+    reason === "workspace_stream_error"
+  ) {
+    return "workspace_error";
   }
+  if (reason === "draft_pending_publish") return "draft_publish";
+  if (reason === "itinerary_missing") return "itinerary_setup";
+  if (reason === "first_day_timing_missing") return "first_day_timing";
+  if (
+    reason === "ownership_assigned_to_you" ||
+    reason === "ownership_waiting_on_other" ||
+    reason === "ownership_unassigned"
+  ) {
+    return "ownership";
+  }
+  if (reason === "bookings_missing" || reason === "bookings_no_upcoming") {
+    return "bookings";
+  }
+  if (reason === "budget_over" || reason === "budget_tight") return "budget";
+  if (reason === "packing_behind") return "packing";
+  if (reason === "readiness_unknown") return "readiness";
+  if (reason === "unread_activity") return "activity";
+  return "readiness";
+}
 
-  const {
-    trip,
-    packing,
-    budget,
-    reservations,
-    summariesLoaded,
-    itinerary,
-    workspace: ws,
-  } = input;
-  const workspaceItems: TripWorkspaceActionItem[] = [];
+function isSoloTrip(trip: Trip): boolean {
+  return trip.members.length <= 1 && trip.pending_invites.length === 0;
+}
+
+function sortDeterministic(items: TripWorkspaceActionItem[]): TripWorkspaceActionItem[] {
+  return [...items].sort((a, b) => {
+    const bySeverity = SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity];
+    if (bySeverity !== 0) return bySeverity;
+    const byIntent = INTENT_ORDER[a.intent] - INTENT_ORDER[b.intent];
+    if (byIntent !== 0) return byIntent;
+    return a.id.localeCompare(b.id);
+  });
+}
+
+function dedupeByIntent(items: TripWorkspaceActionItem[]): TripWorkspaceActionItem[] {
+  const sorted = sortDeterministic(items);
+  const selectedByIntent = new Map<TripActionIntent, TripWorkspaceActionItem>();
+  for (const item of sorted) {
+    if (!selectedByIntent.has(item.intent)) {
+      selectedByIntent.set(item.intent, item);
+    }
+  }
+  return sortDeterministic(Array.from(selectedByIntent.values()));
+}
+
+function deriveSystemFailureItems(input: TripActionInputs): TripWorkspaceActionItem[] {
+  const ws = input.workspace;
+  const items: TripWorkspaceActionItem[] = [];
 
   const draftErr = ws.draftActionError?.trim();
   if (draftErr) {
-    workspaceItems.push({
+    items.push({
       id: "workspace-draft-mutation-error",
+      reason: "workspace_draft_error",
+      intent: "workspace_error",
       severity: "blocker",
       title: "Draft couldn’t update",
       detail: draftErr,
@@ -100,8 +210,10 @@ export function deriveTripActionItems(
 
   const tripErr = ws.tripActionError?.trim();
   if (tripErr) {
-    workspaceItems.push({
+    items.push({
       id: "workspace-trip-mutation-error",
+      reason: "workspace_trip_error",
+      intent: "workspace_error",
       severity: "blocker",
       title: "Something went wrong",
       detail: tripErr,
@@ -112,8 +224,10 @@ export function deriveTripActionItems(
 
   const streamErr = ws.streamError?.trim();
   if (streamErr) {
-    workspaceItems.push({
+    items.push({
       id: "workspace-stream-error",
+      reason: "workspace_stream_error",
+      intent: "workspace_error",
       severity: "watch",
       title: "Itinerary generation issue",
       detail: streamErr,
@@ -122,25 +236,32 @@ export function deriveTripActionItems(
     });
   }
 
+  return sortDeterministic(items);
+}
+
+function deriveOperationalActionItems(input: TripActionInputs): TripWorkspaceActionItem[] {
+  const {
+    trip,
+    actorEmail,
+    packing,
+    budget,
+    reservations,
+    summariesLoaded,
+    itinerary,
+    workspace: ws,
+  } = input;
+  const operationals: TripWorkspaceActionItem[] = [];
+
   if (ws.hasPendingDraft && !ws.isApplyingItinerary) {
-    workspaceItems.push({
+    operationals.push({
       id: "workspace-draft-pending",
+      reason: "draft_pending_publish",
+      intent: "draft_publish",
       severity: "watch",
       title: "Draft itinerary in progress",
       detail: "Review edits and apply when the group is ready.",
       actionLabel: "Review draft",
       command: { kind: "focus_draft_publish" },
-    });
-  }
-
-  if (!ws.activityMuted && ws.unreadActivityCount > 0) {
-    workspaceItems.push({
-      id: "workspace-unread-activity",
-      severity: "nudge",
-      title: "Unread trip activity",
-      detail: `${ws.unreadActivityCount} update(s) to review.`,
-      actionLabel: "Open activity",
-      command: { kind: "open_activity_drawer" },
     });
   }
 
@@ -151,26 +272,92 @@ export function deriveTripActionItems(
     reservations,
     summariesLoaded,
     itinerary,
+    actorEmail,
   ).map(
-    (row): TripWorkspaceActionItem => ({
-      id: row.id,
-      severity: row.severity,
-      title: row.title,
-      detail: row.detail,
-      actionLabel: row.actionLabel,
-      command: { kind: "open_tab", tab: row.targetTab },
-    }),
+    (row): TripWorkspaceActionItem => {
+      const reason = toAttentionReason(row.id);
+      return {
+        id: row.id,
+        reason,
+        intent: intentForReason(reason),
+        severity: row.severity,
+        title: row.title,
+        detail: row.detail,
+        actionLabel: row.actionLabel,
+        command: { kind: "open_tab", tab: row.targetTab },
+      };
+    },
   );
 
-  const seen = new Set(workspaceItems.map((w) => w.id));
-  const merged: TripWorkspaceActionItem[] = [
-    ...workspaceItems,
-    ...attention.filter((row) => !seen.has(row.id)),
+  const seen = new Set(operationals.map((item) => item.id));
+  const merged = [
+    ...operationals,
+    ...attention.filter((item) => !seen.has(item.id)),
   ];
 
-  merged.sort(
-    (a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity],
-  );
+  if (!ws.activityMuted && ws.unreadActivityCount > 0 && merged.length === 0) {
+    merged.push({
+      id: "workspace-unread-activity",
+      reason: "unread_activity",
+      intent: "activity",
+      severity: "nudge",
+      title: "Unread trip activity",
+      detail: `${ws.unreadActivityCount} update(s) to review.`,
+      actionLabel: "Open activity",
+      command: { kind: "open_activity_drawer" },
+    });
+  }
 
-  return merged.slice(0, MAX_ITEMS);
+  return sortDeterministic(merged).slice(0, MAX_OPERATIONAL_ITEMS);
+}
+
+export function buildTripActionabilityModel(
+  input: TripActionDerivationInput,
+): TripActionabilityModel {
+  if (input.trip === null) {
+    return {
+      state: "steady",
+      systemFailures: [],
+      rankedOperationalActions: [],
+      primaryAction: null,
+      secondaryActions: [],
+    };
+  }
+
+  const failures = deriveSystemFailureItems(input);
+  const operational = dedupeByIntent(deriveOperationalActionItems(input));
+  const solo = isSoloTrip(input.trip);
+  const maxSecondary = solo ? 2 : 4;
+  const primaryAction = operational[0] ?? null;
+  const secondaryActions = operational.slice(1, 1 + maxSecondary);
+
+  const hasBlockerFailure = failures.some((item) => item.severity === "blocker");
+  const state =
+    hasBlockerFailure
+      ? "blocked"
+      : primaryAction
+        ? "actionable"
+        : "steady";
+
+  return {
+    state,
+    systemFailures: failures,
+    rankedOperationalActions: operational,
+    primaryAction,
+    secondaryActions,
+  };
+}
+
+/**
+ * Backward-compatible flat list used by existing callers/tests.
+ * Prefer `buildTripActionabilityModel` for new UI surfaces.
+ */
+export function deriveTripActionItems(
+  input: TripActionDerivationInput,
+): TripWorkspaceActionItem[] {
+  const model = buildTripActionabilityModel(input);
+  return [
+    ...model.systemFailures,
+    ...model.rankedOperationalActions,
+  ];
 }

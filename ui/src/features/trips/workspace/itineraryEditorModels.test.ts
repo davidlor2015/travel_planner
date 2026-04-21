@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import type { EditableDayPlan, EditableItineraryItem } from "../itineraryDraft";
 import {
   buildDayPanelMeta,
+  buildTripCostSummary,
   buildStopRowViewModel,
   dayNotePreview,
+  deriveDayTimeConflictSummary,
   formatDayDateLabel,
   htmlTimeFromStoredTime,
   shouldUseHtmlTimeInput,
@@ -100,6 +102,7 @@ describe("itineraryEditorModels", () => {
         date: "2026-06-01",
         day_title: null,
         day_note: null,
+        day_anchors: [],
         items: [],
       };
       const m = buildDayPanelMeta(day);
@@ -123,6 +126,85 @@ describe("itineraryEditorModels", () => {
       ];
       expect(summarizeTimeWindowLabel(items)).toContain("10:00");
       expect(summarizeTimeWindowLabel(items)).toContain("18:00");
+    });
+
+    it("adds advisory time hint when stops are out of order", () => {
+      const day: EditableDayPlan = {
+        day_number: 1,
+        date: null,
+        day_title: null,
+        day_note: null,
+        day_anchors: [],
+        items: [
+          item({ client_id: "1", title: "A", time: "13:00" }),
+          item({ client_id: "2", title: "B", time: "11:00" }),
+        ],
+      };
+      const m = buildDayPanelMeta(day);
+      expect(m.timeConflictCount).toBe(1);
+      expect(m.timeConflictHint).toContain("advisory time conflict");
+      expect(m.rowTimeHints.get(1)).toBeTruthy();
+    });
+
+    it("exposes day anchor and cost summaries", () => {
+      const day: EditableDayPlan = {
+        day_number: 2,
+        date: "2026-06-02",
+        day_title: null,
+        day_note: null,
+        day_anchors: [
+          {
+            id: "a1",
+            type: "flight",
+            label: "JFK → SFO",
+            time: "09:00",
+            note: null,
+            handled_by: null,
+            booked_by: null,
+          },
+        ],
+        items: [item({ client_id: "1", title: "Ride", cost_estimate: "$24.50" })],
+      };
+      const m = buildDayPanelMeta(day);
+      expect(m.anchorCount).toBe(1);
+      expect(m.anchorSummary).toContain("JFK");
+      expect(m.dayCostDisplay).toBeTruthy();
+      expect(m.dayCostCoverageLabel).toBe("1/1 parsed");
+    });
+  });
+
+  describe("cost summary", () => {
+    it("rolls up parsed costs conservatively", () => {
+      const days: EditableDayPlan[] = [
+        {
+          day_number: 1,
+          date: null,
+          day_title: null,
+          day_note: null,
+          day_anchors: [],
+          items: [
+            item({ client_id: "a", title: "A", cost_estimate: "$10" }),
+            item({ client_id: "b", title: "B", cost_estimate: "about 30" }),
+          ],
+        },
+      ];
+      const summary = buildTripCostSummary(days);
+      expect(summary.parsedItemCount).toBe(1);
+      expect(summary.estimatedItemCount).toBe(2);
+      expect(summary.total).toBe(10);
+    });
+  });
+
+  describe("deriveDayTimeConflictSummary", () => {
+    it("identifies overlap and out-of-order conflicts", () => {
+      const summary = deriveDayTimeConflictSummary([
+        item({ client_id: "a", title: "A", time: "9:00" }),
+        item({ client_id: "b", title: "B", time: "9:00" }),
+        item({ client_id: "c", title: "C", time: "8:30" }),
+      ]);
+      expect(summary.conflicts).toHaveLength(2);
+      expect(summary.rowHints.get(1)).toContain("Same time");
+      expect(summary.rowHints.get(2)).toContain("earlier");
     });
   });
 });

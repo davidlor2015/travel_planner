@@ -8,6 +8,7 @@ import type {
   DraftAiAssistRequest,
   EditableItinerary,
   EditableItineraryItem,
+  MoveEditableItineraryItemIntent,
   RefinementTimeBlock,
   RefinementVariant,
 } from "../../itineraryDraft";
@@ -16,6 +17,10 @@ import type {
   PackingSummary,
   ReservationSummary,
 } from "../types";
+import type {
+  TripActionabilityModel,
+  TripActionCommand,
+} from "../deriveTripActionItems";
 import { OverviewCoordinationPanel } from "./OverviewCoordinationPanel";
 import { WorkspaceSectionCard } from "../WorkspacePrimitives";
 import { ITINERARY_STREAM_REGION_ID } from "../itineraryEditorAnchors";
@@ -37,6 +42,7 @@ interface OverviewTabProps {
   packingSummary: PackingSummary;
   budgetSummary: BudgetSummary;
   reservationSummary: ReservationSummary;
+  actionability: TripActionabilityModel;
   activities: TripActivityItem[];
   isStreaming: boolean;
   hasStreamContent: boolean;
@@ -60,16 +66,14 @@ interface OverviewTabProps {
   onEditSavedAsDraft: () => void;
   onStartManualDraft?: () => void;
   onApply: () => void;
-  onMoveItem: (
-    sourceDayNumber: number,
-    sourceIndex: number,
-    targetDayNumber: number,
-    targetIndex: number,
-  ) => void;
+  onMoveItem: (intent: MoveEditableItineraryItemIntent) => void;
   onUpdateDay?: (
     dayNumber: number,
     patch: Partial<
-      Pick<EditableItinerary["days"][number], "day_title" | "day_note" | "date">
+      Pick<
+        EditableItinerary["days"][number],
+        "day_title" | "day_note" | "date" | "day_anchors"
+      >
     >,
   ) => void;
   onAddStop?: (dayNumber: number, insertAfterIndex?: number) => void;
@@ -99,6 +103,7 @@ interface OverviewTabProps {
     tab: "overview" | "bookings" | "budget" | "packing" | "members",
   ) => void;
   onOpenActivityDrawer: () => void;
+  onActionCommand: (command: TripActionCommand) => void;
   onItineraryDayToggle: (dayNumber: number, isOpen: boolean) => void;
 }
 
@@ -142,6 +147,7 @@ export function OverviewTab({
   packingSummary,
   budgetSummary,
   reservationSummary,
+  actionability,
   activities,
   isStreaming,
   hasStreamContent,
@@ -182,6 +188,7 @@ export function OverviewTab({
   onAddDay,
   onOpenTab,
   onOpenActivityDrawer,
+  onActionCommand,
   onItineraryDayToggle,
 }: OverviewTabProps) {
   const autoDraftSignatureRef = useRef<string | null>(null);
@@ -307,6 +314,9 @@ export function OverviewTab({
             <EditableItineraryPanel
               itinerary={pendingItinerary}
               isMobileLayout={isMobileLayout}
+              showGroupCoordination={
+                trip.members.length > 1 || trip.pending_invites.length > 0
+              }
               draftSourceLabel={draftPlanMeta?.sourceLabel ?? null}
               draftFallbackUsed={draftPlanMeta?.fallbackUsed ?? null}
               onApply={onApply}
@@ -367,9 +377,11 @@ export function OverviewTab({
           budgetSummary={budgetSummary}
           reservationSummary={reservationSummary}
           currentItinerary={pendingItinerary ?? savedItinerary}
+          actionability={actionability}
           activities={activities}
           onOpenTab={onOpenTab}
           onOpenActivityDrawer={onOpenActivityDrawer}
+          onActionCommand={onActionCommand}
         />
       </div>
     </div>

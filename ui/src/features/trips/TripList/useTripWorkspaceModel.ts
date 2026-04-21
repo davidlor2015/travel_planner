@@ -10,6 +10,7 @@ import {
 } from "../../../shared/api/trips";
 import {
   applyItinerary,
+  getSavedItinerary,
   refineItinerary,
   type Itinerary,
 } from "../../../shared/api/ai";
@@ -21,6 +22,7 @@ import {
   toApiItinerary,
   toEditableItinerary,
   type EditableItinerary,
+  type MoveEditableItineraryItemIntent,
   type EditableStopPatch,
 } from "../itineraryDraft";
 import {
@@ -58,6 +60,7 @@ import {
 } from "../workspace/workspaceFallbacks";
 import { WORKSPACE_STORAGE_KEY } from "../workspace/workspacePersistence";
 import {
+  buildTripActionabilityModel,
   deriveTripActionItems,
   type TripActionDerivationInput,
 } from "../workspace/deriveTripActionItems";
@@ -100,6 +103,9 @@ export function useTripWorkspaceModel({
 
   const [pendingItineraries, setPendingItineraries] = useState<
     Record<number, EditableItinerary>
+  >({});
+  const [savedItineraries, setSavedItineraries] = useState<
+    Record<number, Itinerary | null>
   >({});
   const [draftPlanMeta, setDraftPlanMeta] = useState<
     Record<number, DraftPlanMeta>
@@ -379,6 +385,33 @@ export function useTripWorkspaceModel({
     ? getTripStatus(selectedTrip.start_date, selectedTrip.end_date)
     : null;
 
+  useEffect(() => {
+    if (!selectedTrip) return;
+    if (savedItineraries[selectedTrip.id] !== undefined) return;
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const saved = await getSavedItinerary(token, selectedTrip.id);
+        if (cancelled) return;
+        setSavedItineraries((prev) => ({
+          ...prev,
+          [selectedTrip.id]: saved,
+        }));
+      } catch {
+        if (cancelled) return;
+        setSavedItineraries((prev) => ({
+          ...prev,
+          [selectedTrip.id]: null,
+        }));
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [savedItineraries, selectedTrip, token]);
+
   const selectedPackingSummary = useMemo(
     () =>
       selectedTrip
@@ -402,7 +435,8 @@ export function useTripWorkspaceModel({
     [reservationSummaries, selectedTrip],
   );
   const selectedSavedItinerary = selectedTrip?.description
-    ? parseTripItineraryPayload(selectedTrip.description)
+    ? (savedItineraries[selectedTrip.id] ??
+      parseTripItineraryPayload(selectedTrip.description))
     : null;
   const selectedHasSavedItinerary = selectedSavedItinerary !== null;
   const selectedPendingItinerary = selectedTrip
@@ -699,6 +733,11 @@ export function useTripWorkspaceModel({
       await deleteTrip(token, trip.id);
       const remaining = trips.filter((row) => row.id !== trip.id);
       setTrips(remaining);
+      setSavedItineraries((prev) => {
+        const next = { ...prev };
+        delete next[trip.id];
+        return next;
+      });
       setConfirmDelete(false);
       if (selectedTripId === trip.id) {
         const nextTripId = remaining[0]?.id ?? null;
@@ -727,6 +766,10 @@ export function useTripWorkspaceModel({
     try {
       // Backend contract: persist is full-itinerary replace, not granular stop mutations.
       await applyItinerary(token, tripId, toApiItinerary(itinerary));
+      setSavedItineraries((prev) => ({
+        ...prev,
+        [tripId]: toApiItinerary(itinerary),
+      }));
       setAppliedSuccessIds((prev) => new Set(prev).add(tripId));
       const freshTrips = await getTrips(token);
       setTrips(freshTrips);
@@ -886,19 +929,10 @@ export function useTripWorkspaceModel({
 
   const handleMoveDraftItem = (
     tripId: number,
-    sourceDayNumber: number,
-    sourceIndex: number,
-    targetDayNumber: number,
-    targetIndex: number,
+    intent: MoveEditableItineraryItemIntent,
   ) => {
     clearAppliedSuccess(tripId);
-    draftMutations.moveItem(
-      tripId,
-      sourceDayNumber,
-      sourceIndex,
-      targetDayNumber,
-      targetIndex,
-    );
+    draftMutations.moveItem(tripId, intent);
   };
 
   const handleAddDraftDay = (tripId: number) => {
@@ -979,7 +1013,10 @@ export function useTripWorkspaceModel({
     tripId: number,
     dayNumber: number,
     patch: Partial<
-      Pick<EditableItinerary["days"][number], "day_title" | "day_note" | "date">
+      Pick<
+        EditableItinerary["days"][number],
+        "day_title" | "day_note" | "date" | "day_anchors"
+      >
     >,
   ) => {
     clearAppliedSuccess(tripId);
@@ -1112,7 +1149,13 @@ export function useTripWorkspaceModel({
             selectedSummariesLoaded,
             selectedCurrentItinerary,
           )
-        : { score: null, scoreLabel: null },
+        : {
+            score: null,
+            scoreLabel: null,
+            knownSignalCount: 0,
+            unknownSignalCount: 4,
+            unknownState: "no_signals" as const,
+          },
     [
       selectedTrip,
       selectedPackingSummary,
@@ -1169,6 +1212,7 @@ export function useTripWorkspaceModel({
     if (!selectedTrip) return { trip: null };
     return {
       trip: selectedTrip,
+      actorEmail: currentUserEmail,
       packing: selectedPackingSummary,
       budget: selectedBudgetSummary,
       reservations: selectedReservationSummary,
@@ -1186,6 +1230,7 @@ export function useTripWorkspaceModel({
     };
   }, [
     selectedTrip,
+    currentUserEmail,
     selectedPackingSummary,
     selectedBudgetSummary,
     selectedReservationSummary,
@@ -1202,6 +1247,10 @@ export function useTripWorkspaceModel({
 
   const actionItems = useMemo(
     () => deriveTripActionItems(actionInputs),
+    [actionInputs],
+  );
+  const actionability = useMemo(
+    () => buildTripActionabilityModel(actionInputs),
     [actionInputs],
   );
 
@@ -1251,6 +1300,7 @@ export function useTripWorkspaceModel({
       selectedIsAnyGenerating,
       actionInputs,
       actionItems,
+      actionability,
     },
     draft: {
       selectedSavedItinerary,

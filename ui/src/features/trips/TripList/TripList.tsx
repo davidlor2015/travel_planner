@@ -17,6 +17,7 @@ import { TripListLoadingSkeleton } from "./TripListLoadingSkeleton";
 import { PlusIcon } from "./tripListIcons";
 import { TripPickerBar } from "./TripPickerBar";
 import { TripActionBanner } from "../workspace/TripActionBanner";
+import type { TripActionCommand } from "../workspace/deriveTripActionItems";
 import {
   ITINERARY_DRAFT_PUBLISH_ANCHOR_ID,
   ITINERARY_STREAM_REGION_ID,
@@ -248,7 +249,7 @@ export const TripList = ({
 
   const { isMobileLayout, confirmDelete, editingTrip } = model.ui;
   const { tripActionError, draftActionError } = model.status;
-  const tripActionItems = model.derived.actionItems;
+  const actionability = model.derived.actionability;
 
   const focusItineraryAnchor = (elementId: string) => {
     openWorkspaceTab("overview");
@@ -257,6 +258,24 @@ export const TripList = ({
         .getElementById(elementId)
         ?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
+  };
+
+  const handleActionCommand = (command: TripActionCommand) => {
+    if (command.kind === "open_tab" && command.tab) {
+      openWorkspaceTab(command.tab);
+      return;
+    }
+    if (command.kind === "open_activity_drawer") {
+      openActivityDrawer();
+      return;
+    }
+    if (command.kind === "focus_draft_publish") {
+      focusItineraryAnchor(ITINERARY_DRAFT_PUBLISH_ANCHOR_ID);
+      return;
+    }
+    if (command.kind === "focus_itinerary_stream") {
+      focusItineraryAnchor(ITINERARY_STREAM_REGION_ID);
+    }
   };
 
   return (
@@ -298,24 +317,8 @@ export const TripList = ({
             onShareTrip={handleShareTrip}
           >
                 <TripActionBanner
-                  items={tripActionItems}
-                  onCommand={(command) => {
-                    if (command.kind === "open_tab") {
-                      openWorkspaceTab(command.tab);
-                      return;
-                    }
-                    if (command.kind === "open_activity_drawer") {
-                      openActivityDrawer();
-                      return;
-                    }
-                    if (command.kind === "focus_draft_publish") {
-                      focusItineraryAnchor(ITINERARY_DRAFT_PUBLISH_ANCHOR_ID);
-                      return;
-                    }
-                    if (command.kind === "focus_itinerary_stream") {
-                      focusItineraryAnchor(ITINERARY_STREAM_REGION_ID);
-                    }
-                  }}
+                  model={actionability}
+                  onCommand={handleActionCommand}
                 />
 
                 <AnimatePresence>
@@ -390,6 +393,7 @@ export const TripList = ({
                     packingSummary={selectedPackingSummary}
                     budgetSummary={selectedBudgetSummary}
                     reservationSummary={selectedReservationSummary}
+                    actionability={actionability}
                     activities={selectedActivities}
                     isStreaming={selectedIsStreaming}
                     hasStreamContent={selectedHasStreamContent}
@@ -417,8 +421,8 @@ export const TripList = ({
                       handleStartManualDraft(selectedTrip.id)
                     }
                     onApply={() => void handleApply(selectedTrip.id)}
-                    onMoveItem={(sd, si, td, ti) =>
-                      handleMoveDraftItem(selectedTrip.id, sd, si, td, ti)
+                    onMoveItem={(intent) =>
+                      handleMoveDraftItem(selectedTrip.id, intent)
                     }
                     onUpdateDay={(dayNumber, patch) =>
                       handleUpdateDraftDay(selectedTrip.id, dayNumber, patch)
@@ -516,6 +520,7 @@ export const TripList = ({
                     onAddDay={() => handleAddDraftDay(selectedTrip.id)}
                     onOpenTab={(tab) => openWorkspaceTab(tab)}
                     onOpenActivityDrawer={openActivityDrawer}
+                    onActionCommand={handleActionCommand}
                     onItineraryDayToggle={(dayNumber, isOpen) => {
                       track({
                         name: "overview_day_toggled",

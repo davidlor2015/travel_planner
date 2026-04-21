@@ -1,5 +1,5 @@
 import type { Trip } from "../../../shared/api/trips";
-import type { Itinerary, ItineraryItem } from "../../../shared/api/ai";
+import type { DayAnchorType, Itinerary, ItineraryItem } from "../../../shared/api/ai";
 import {
   extractStopOwnershipMetadata,
   normalizeStopStatus,
@@ -33,6 +33,12 @@ export interface TripReadinessSnapshot {
   score: number | null;
   /** Short label for hero or compact UI; null if no score. */
   scoreLabel: string | null;
+  /** Number of readiness signals scored from concrete workspace state. */
+  knownSignalCount: number;
+  /** Number of readiness signals currently unknown / not configured. */
+  unknownSignalCount: number;
+  /** Explicit unknown state for UI copy and conservative handling. */
+  unknownState: "loading" | "no_signals" | "partial" | null;
 }
 
 export interface ItineraryOpsSnapshot {
@@ -76,6 +82,125 @@ const SEVERITY_ORDER: Record<AttentionSeverity, number> = {
   nudge: 2,
 };
 
+interface ReadinessMetric {
+  key: "itinerary" | "packing" | "budget" | "bookings";
+  score: number | null;
+}
+
+function clampPct(value: number): number {
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+interface OwnershipActionSignals {
+  actorOwnedPlannedCount: number;
+  topOtherOwnerEmail: string | null;
+  topOtherOwnerPlannedCount: number;
+  unassignedPlannedWhenOwnershipUsed: number;
+}
+
+const OPERATIONAL_ANCHOR_TYPES: ReadonlySet<DayAnchorType> = new Set([
+  "flight",
+  "hotel_checkin",
+]);
+
+function isOperationalAnchorType(type: string | null | undefined): type is DayAnchorType {
+  if (type !== "flight" && type !== "hotel_checkin") return false;
+  return OPERATIONAL_ANCHOR_TYPES.has(type);
+}
+
+function normalizeEmailLike(value: string | null | undefined): string | null {
+  const next = value?.trim().toLowerCase() ?? "";
+  return next.length > 0 ? next : null;
+}
+
+function labelFromEmail(email: string): string {
+  return email.split("@")[0] ?? email;
+}
+
+function deriveOwnershipActionSignals(
+  trip: Trip,
+  itinerary: Itinerary | null,
+  actorEmail: string | null,
+): OwnershipActionSignals {
+  const knownMemberEmails = new Set(
+    trip.members
+      .map((member) => normalizeEmailLike(member.email))
+      .filter((email): email is string => email != null),
+  );
+  const normalizedActor = normalizeEmailLike(actorEmail);
+  const plannedByKnownOwner = new Map<string, number>();
+  let ownershipUsed = false;
+  let actorOwnedPlannedCount = 0;
+  let unassignedPlannedItems = 0;
+  let unassignedOperationalAnchors = 0;
+
+  const items = itineraryItems(itinerary);
+  for (const item of items) {
+    const status = normalizeStopStatus(item.status);
+    if (status !== "planned") continue;
+    const { metadata } = extractStopOwnershipMetadata(item.notes, {
+      handledBy: item.handled_by ?? null,
+      bookedBy: item.booked_by ?? null,
+    });
+    const handledBy = normalizeEmailLike(metadata.handledBy);
+
+    if (handledBy) {
+      ownershipUsed = true;
+      if (knownMemberEmails.has(handledBy)) {
+        plannedByKnownOwner.set(
+          handledBy,
+          (plannedByKnownOwner.get(handledBy) ?? 0) + 1,
+        );
+      }
+      if (normalizedActor && handledBy === normalizedActor) {
+        actorOwnedPlannedCount += 1;
+      }
+      continue;
+    }
+    unassignedPlannedItems += 1;
+  }
+
+  const anchors = itineraryAnchors(itinerary).filter((anchor) =>
+    isOperationalAnchorType(anchor.type),
+  );
+  for (const anchor of anchors) {
+    const handledBy = normalizeEmailLike(anchor.handled_by);
+    if (handledBy) {
+      ownershipUsed = true;
+      if (knownMemberEmails.has(handledBy)) {
+        plannedByKnownOwner.set(
+          handledBy,
+          (plannedByKnownOwner.get(handledBy) ?? 0) + 1,
+        );
+      }
+      if (normalizedActor && handledBy === normalizedActor) {
+        actorOwnedPlannedCount += 1;
+      }
+      continue;
+    }
+    unassignedOperationalAnchors += 1;
+  }
+
+  let topOtherOwnerEmail: string | null = null;
+  let topOtherOwnerPlannedCount = 0;
+  for (const [email, count] of plannedByKnownOwner.entries()) {
+    if (normalizedActor && email === normalizedActor) continue;
+    if (count > topOtherOwnerPlannedCount) {
+      topOtherOwnerEmail = email;
+      topOtherOwnerPlannedCount = count;
+    }
+  }
+
+  return {
+    actorOwnedPlannedCount,
+    topOtherOwnerEmail,
+    topOtherOwnerPlannedCount,
+    unassignedPlannedWhenOwnershipUsed: ownershipUsed
+      ? unassignedPlannedItems + unassignedOperationalAnchors
+      : 0,
+  };
+}
+
 function sortCounts(
   counts: Map<string, number>,
 ): Array<{ name: string; count: number }> {
@@ -88,10 +213,19 @@ function itineraryItems(itinerary: Itinerary | null): ItineraryItem[] {
   return itinerary?.days.flatMap((day) => day.items) ?? [];
 }
 
+function itineraryAnchors(itinerary: Itinerary | null): Array<{
+  type?: string | null;
+  handled_by?: string | null;
+  booked_by?: string | null;
+}> {
+  return itinerary?.days.flatMap((day) => day.anchors ?? []) ?? [];
+}
+
 export function buildItineraryOpsSnapshot(
   itinerary: Itinerary | null,
 ): ItineraryOpsSnapshot {
   const items = itineraryItems(itinerary);
+  const anchors = itineraryAnchors(itinerary);
   const handlerCounts = new Map<string, number>();
   let confirmedStops = 0;
   let skippedStops = 0;
@@ -103,7 +237,10 @@ export function buildItineraryOpsSnapshot(
     if (status === "confirmed") confirmedStops += 1;
     if (status === "skipped") skippedStops += 1;
 
-    const { metadata } = extractStopOwnershipMetadata(item.notes);
+    const { metadata } = extractStopOwnershipMetadata(item.notes, {
+      handledBy: item.handled_by ?? null,
+      bookedBy: item.booked_by ?? null,
+    });
     if (metadata.handledBy) {
       stopsWithHandledBy += 1;
       handlerCounts.set(
@@ -112,6 +249,22 @@ export function buildItineraryOpsSnapshot(
       );
     }
     if (metadata.bookedBy) {
+      stopsWithBookedBy += 1;
+    }
+  }
+
+  for (const anchor of anchors) {
+    if (!isOperationalAnchorType(anchor.type)) continue;
+    const handledBy = anchor.handled_by?.trim() || null;
+    const bookedBy = anchor.booked_by?.trim() || null;
+    if (handledBy) {
+      stopsWithHandledBy += 1;
+      handlerCounts.set(
+        handledBy,
+        (handlerCounts.get(handledBy) ?? 0) + 1,
+      );
+    }
+    if (bookedBy) {
       stopsWithBookedBy += 1;
     }
   }
@@ -141,6 +294,7 @@ export function buildTripAttentionItems(
   reservations: ReservationSummary,
   summariesLoaded: boolean,
   itinerary: Itinerary | null = null,
+  actorEmail: string | null = null,
 ): TripAttentionItem[] {
   const items: TripAttentionItem[] = [];
   const untilStart = daysUntilStart(trip.start_date);
@@ -149,8 +303,29 @@ export function buildTripAttentionItems(
   const itineraryOps = buildItineraryOpsSnapshot(itinerary);
   const isGroupTrip =
     trip.members.length > 1 || trip.pending_invites.length > 0;
+  const ownershipSignals = deriveOwnershipActionSignals(
+    trip,
+    itinerary,
+    actorEmail,
+  );
 
   if (!summariesLoaded) {
+    if (
+      tripNotEnded &&
+      untilStart !== null &&
+      untilStart <= 30 &&
+      untilStart >= 0
+    ) {
+      items.push({
+        id: "readiness-unknown-loading",
+        severity: "nudge",
+        title: "Readiness still loading",
+        detail: "Workspace summaries are still loading, so readiness is unknown.",
+        actionLabel: "Open overview",
+        targetTab: "overview",
+      });
+    }
+
     if (tripNotEnded && !itineraryOps.hasItinerary) {
       items.push({
         id: "itinerary-missing",
@@ -185,19 +360,73 @@ export function buildTripAttentionItems(
     });
   }
 
+  const readiness = buildTripReadinessSnapshot(
+    trip,
+    packing,
+    budget,
+    reservations,
+    summariesLoaded,
+    itinerary,
+  );
+  if (
+    tripNotEnded &&
+    readiness.score === null &&
+    readiness.unknownState === "no_signals" &&
+    untilStart !== null &&
+    untilStart <= 30 &&
+    untilStart >= 0
+  ) {
+    items.push({
+      id: "readiness-unknown-config",
+      severity: "nudge",
+      title: "Readiness is still unknown",
+      detail:
+        "Add itinerary status, packing, budget, or bookings to make readiness measurable.",
+      actionLabel: "Open overview",
+      targetTab: "overview",
+    });
+  }
+
+  if (
+    tripNotEnded &&
+    ownershipSignals.actorOwnedPlannedCount > 0
+  ) {
+    items.push({
+      id: "itinerary-owned-by-you-open",
+      severity: "watch",
+      title: "You have open trip stops",
+      detail: `${ownershipSignals.actorOwnedPlannedCount} planned stop${ownershipSignals.actorOwnedPlannedCount === 1 ? "" : "s"} are assigned to you.`,
+      actionLabel: "Review your stops",
+      targetTab: "overview",
+    });
+  } else if (
+    tripNotEnded &&
+    isGroupTrip &&
+    ownershipSignals.topOtherOwnerEmail &&
+    ownershipSignals.topOtherOwnerPlannedCount > 0
+  ) {
+    const ownerLabel = labelFromEmail(ownershipSignals.topOtherOwnerEmail);
+    items.push({
+      id: "itinerary-waiting-on-owner",
+      severity: "nudge",
+      title: `Waiting on ${ownerLabel}`,
+      detail: `${ownershipSignals.topOtherOwnerPlannedCount} planned stop${ownershipSignals.topOtherOwnerPlannedCount === 1 ? "" : "s"} are still assigned there.`,
+      actionLabel: "Check ownership",
+      targetTab: "overview",
+    });
+  }
+
   if (
     tripNotEnded &&
     isGroupTrip &&
-    itineraryOps.totalStops > 0 &&
     itineraryOps.ownershipSignalsPresent &&
-    itineraryOps.stopsWithHandledBy < itineraryOps.totalStops
+    ownershipSignals.unassignedPlannedWhenOwnershipUsed > 0
   ) {
-    const openCount = itineraryOps.totalStops - itineraryOps.stopsWithHandledBy;
     items.push({
       id: "itinerary-ownership-open",
       severity: "nudge",
       title: "Some stops need a handler",
-      detail: `${openCount} stop${openCount === 1 ? "" : "s"} do not have handled-by ownership yet.`,
+      detail: `${ownershipSignals.unassignedPlannedWhenOwnershipUsed} planned stop${ownershipSignals.unassignedPlannedWhenOwnershipUsed === 1 ? "" : "s"} do not have handled-by ownership yet.`,
       actionLabel: "Assign stops",
       targetTab: "overview",
     });
@@ -328,7 +557,7 @@ export function buildTripAttentionItems(
  * Returns null score when too little is configured to mean anything.
  */
 export function buildTripReadinessSnapshot(
-  trip: Trip,
+  _trip: Trip,
   packing: PackingSummary,
   budget: BudgetSummary,
   reservations: ReservationSummary,
@@ -336,65 +565,88 @@ export function buildTripReadinessSnapshot(
   itinerary: Itinerary | null = null,
 ): TripReadinessSnapshot {
   if (!summariesLoaded) {
-    return { score: null, scoreLabel: null };
+    return {
+      score: null,
+      scoreLabel: null,
+      knownSignalCount: 0,
+      unknownSignalCount: 4,
+      unknownState: "loading",
+    };
   }
 
   const itineraryOps = buildItineraryOpsSnapshot(itinerary);
-  const hasAnySignal =
-    itineraryOps.totalStops > 0 ||
-    packing.total > 0 ||
-    (budget.limit != null && budget.limit > 0) ||
-    reservations.total > 0 ||
-    trip.pending_invites.length > 0;
+  const metrics: ReadinessMetric[] = [];
 
-  if (!hasAnySignal) {
-    return { score: null, scoreLabel: null };
+  if (itineraryOps.totalStops === 0 || !itineraryOps.statusSignalsPresent) {
+    metrics.push({ key: "itinerary", score: null });
+  } else {
+    metrics.push({
+      key: "itinerary",
+      score: clampPct(
+        ((itineraryOps.confirmedStops + itineraryOps.skippedStops) /
+          itineraryOps.totalStops) *
+          100,
+      ),
+    });
   }
 
-  const parts: number[] = [];
-
-  if (itineraryOps.totalStops > 0) {
-    const statusHealth = itineraryOps.statusSignalsPresent
-      ? Math.round(
-          ((itineraryOps.confirmedStops + itineraryOps.skippedStops) /
-            itineraryOps.totalStops) *
-            100,
-        )
-      : 100;
-    parts.push(statusHealth);
+  if (packing.total === 0) {
+    metrics.push({ key: "packing", score: null });
+  } else {
+    metrics.push({ key: "packing", score: clampPct(packing.progressPct) });
   }
 
-  if (packing.total > 0) {
-    parts.push(Math.max(0, Math.min(100, packing.progressPct)));
-  }
-
-  if (budget.limit != null && budget.limit > 0) {
+  if (budget.limit == null || budget.limit <= 0) {
+    metrics.push({ key: "budget", score: null });
+  } else {
     const spendRatio = budget.totalSpent / budget.limit;
-    const budgetHealth = budget.isOverBudget
-      ? 0
-      : Math.max(0, Math.min(100, (1 - spendRatio) * 100));
-    parts.push(budgetHealth);
+    metrics.push({
+      key: "budget",
+      score: budget.isOverBudget ? 0 : clampPct((1 - spendRatio) * 100),
+    });
   }
 
-  if (reservations.total > 0) {
-    const bookingRatio = reservations.upcoming / reservations.total;
-    parts.push(Math.round(bookingRatio * 100));
+  if (reservations.total === 0) {
+    metrics.push({ key: "bookings", score: null });
+  } else {
+    metrics.push({
+      key: "bookings",
+      score: clampPct((reservations.upcoming / reservations.total) * 100),
+    });
   }
 
-  if (trip.pending_invites.length > 0) {
-    parts.push(75);
+  const knownScores = metrics
+    .map((metric) => metric.score)
+    .filter((score): score is number => score != null);
+  const knownSignalCount = knownScores.length;
+  const unknownSignalCount = metrics.length - knownSignalCount;
+
+  if (knownScores.length === 0) {
+    return {
+      score: null,
+      scoreLabel: null,
+      knownSignalCount,
+      unknownSignalCount,
+      unknownState: "no_signals",
+    };
   }
 
-  const score = Math.round(parts.reduce((a, b) => a + b, 0) / parts.length);
+  const score = Math.round(
+    knownScores.reduce((total, part) => total + part, 0) / knownScores.length,
+  );
+  const unknownState = unknownSignalCount > 0 ? "partial" : null;
   return {
     score,
     scoreLabel:
       score >= 90
         ? "Ready"
-        : score >= 75
+        : score >= 70
           ? "On track"
-          : score >= 45
+          : score >= 40
             ? "Needs focus"
             : "Behind",
+    knownSignalCount,
+    unknownSignalCount,
+    unknownState,
   };
 }

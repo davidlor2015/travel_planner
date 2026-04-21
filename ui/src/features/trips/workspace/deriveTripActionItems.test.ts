@@ -4,6 +4,7 @@ import type { Itinerary } from "../../../shared/api/ai";
 import type { Trip } from "../../../shared/api/trips";
 import type { BudgetSummary, PackingSummary, ReservationSummary } from "./types";
 import {
+  buildTripActionabilityModel,
   deriveTripActionItems,
   type TripActionDerivationInput,
   type TripActionInputs,
@@ -123,6 +124,7 @@ function fullInput(
 ): TripActionInputs {
   return {
     trip,
+    actorEmail: "owner@example.com",
     packing: overrides?.packing ?? loadedPacking,
     budget: overrides?.budget ?? loadedBudget,
     reservations: overrides?.reservations ?? loadedRes,
@@ -308,6 +310,75 @@ describe("deriveTripActionItems", () => {
     });
   });
 
+  describe("actor-aware ownership actions", () => {
+    it("prioritizes stops assigned to the current traveler", () => {
+      const items = deriveTripActionItems(
+        fullInput(
+          quietWorkspace(),
+          tripBase(),
+          {
+            itinerary: itineraryBase({
+              days: [
+                {
+                  day_number: 1,
+                  date: "2026-04-20",
+                  items: [
+                    {
+                      time: "09:00",
+                      title: "Museum",
+                      location: null,
+                      lat: null,
+                      lon: null,
+                      notes: "[ownership:handledBy=owner@example.com]",
+                      cost_estimate: null,
+                      status: "planned",
+                    },
+                  ],
+                },
+              ],
+            }),
+          },
+        ),
+      );
+      expect(items.find((i) => i.id === "itinerary-owned-by-you-open")).toBeDefined();
+    });
+
+    it("surfaces waiting-on signals when another known member owns planned stops", () => {
+      const input = fullInput(
+        quietWorkspace(),
+        tripBase(),
+        {
+          itinerary: itineraryBase({
+            days: [
+              {
+                day_number: 1,
+                date: "2026-04-20",
+                items: [
+                  {
+                    time: "09:00",
+                    title: "Museum",
+                    location: null,
+                    lat: null,
+                    lon: null,
+                    notes: "[ownership:handledBy=guest@example.com]",
+                    cost_estimate: null,
+                    status: "planned",
+                  },
+                ],
+              },
+            ],
+          }),
+        },
+      );
+      const items = deriveTripActionItems({
+        ...input,
+        actorEmail: "owner@example.com",
+      });
+      expect(items.find((i) => i.id === "itinerary-waiting-on-owner")).toBeDefined();
+      expect(items.find((i) => i.id === "itinerary-owned-by-you-open")).toBeUndefined();
+    });
+  });
+
   describe("workspace signals", () => {
     it("surfaces draft mutation errors as blocker", () => {
       const items = deriveTripActionItems(
@@ -410,6 +481,47 @@ describe("deriveTripActionItems", () => {
       );
       expect(items.find((i) => i.id === "workspace-unread-activity")).toBeUndefined();
     });
+
+    it("shows unread activity only when no other actions are present", () => {
+      const items = deriveTripActionItems({
+        ...fullInput({
+          ...quietWorkspace(),
+          unreadActivityCount: 2,
+          activityMuted: false,
+        }),
+        itinerary: itineraryBase({
+          days: [],
+        }),
+      });
+      expect(items.find((i) => i.id === "workspace-unread-activity")?.command).toEqual(
+        { kind: "open_activity_drawer" },
+      );
+    });
+
+    it("suppresses unread activity when there is a stronger actionable item", () => {
+      const items = deriveTripActionItems(
+        fullInput(
+          {
+            ...quietWorkspace(),
+            unreadActivityCount: 2,
+            activityMuted: false,
+          },
+          tripBase(),
+          {
+            budget: {
+              limit: 100,
+              totalSpent: 120,
+              remaining: -20,
+              isOverBudget: true,
+              expenseCount: 2,
+              loading: false,
+            },
+          },
+        ),
+      );
+      expect(items.find((i) => i.id === "budget-over")).toBeDefined();
+      expect(items.find((i) => i.id === "workspace-unread-activity")).toBeUndefined();
+    });
   });
 
   describe("mixed readiness and itinerary status", () => {
@@ -508,6 +620,72 @@ describe("deriveTripActionItems", () => {
         }),
       );
       expect(items.some((i) => i.id === "packing-behind")).toBe(true);
+    });
+  });
+
+  describe("canonical actionability model", () => {
+    it("keeps system failures separate from operational ranking", () => {
+      const model = buildTripActionabilityModel(
+        fullInput(
+          {
+            ...quietWorkspace(),
+            draftActionError: "Draft save failed",
+          },
+          tripBase(),
+          {
+            itinerary: null,
+            summariesLoaded: true,
+          },
+        ),
+      );
+      expect(model.systemFailures.some((item) => item.id === "workspace-draft-mutation-error")).toBe(true);
+      expect(model.rankedOperationalActions.some((item) => item.id === "itinerary-missing")).toBe(true);
+      expect(model.systemFailures.some((item) => item.id === "itinerary-missing")).toBe(false);
+    });
+
+    it("exposes typed reasons for explainable wording", () => {
+      const model = buildTripActionabilityModel(
+        fullInput(
+          {
+            ...quietWorkspace(),
+            hasPendingDraft: true,
+          },
+          tripBase(),
+          { summariesLoaded: true },
+        ),
+      );
+      expect(model.rankedOperationalActions[0]?.reason).toBe("draft_pending_publish");
+      expect(model.rankedOperationalActions[0]?.intent).toBe("draft_publish");
+    });
+
+    it("applies solo caps to secondary actions", () => {
+      const soloTrip = tripBase({
+        members: [
+          {
+            user_id: 1,
+            email: "owner@example.com",
+            role: "owner",
+            joined_at: "2026-01-01T00:00:00Z",
+            status: "active",
+          },
+        ],
+        pending_invites: [],
+      });
+      const model = buildTripActionabilityModel(
+        fullInput(
+          {
+            ...quietWorkspace(),
+            hasPendingDraft: true,
+          },
+          soloTrip,
+          {
+            itinerary: null,
+            reservations: { total: 0, upcoming: 0, loading: false },
+            summariesLoaded: true,
+          },
+        ),
+      );
+      expect(model.secondaryActions.length).toBeLessThanOrEqual(2);
     });
   });
 });

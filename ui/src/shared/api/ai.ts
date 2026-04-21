@@ -13,11 +13,27 @@ export interface ItineraryItem {
   notes: string | null;
   cost_estimate: string | null;
   status?: ItineraryStopStatus | null;
+  handled_by?: string | null;
+  booked_by?: string | null;
+}
+
+export type DayAnchorType = 'flight' | 'hotel_checkin';
+
+export interface DayAnchor {
+  type: DayAnchorType;
+  label: string;
+  time: string | null;
+  note: string | null;
+  handled_by?: string | null;
+  booked_by?: string | null;
 }
 
 export interface DayPlan {
   day_number: number;
   date: string | null;
+  day_title?: string | null;
+  day_note?: string | null;
+  anchors?: DayAnchor[];
   items: ItineraryItem[];
 }
 
@@ -90,6 +106,23 @@ export const refineItinerary = async (
   if (!response.ok) {
     const text = await response.text();
     throw new Error(`Failed to refine itinerary (${response.status}): ${text}`);
+  }
+
+  return response.json();
+};
+
+export const getSavedItinerary = async (
+  token: string,
+  tripId: number,
+): Promise<Itinerary> => {
+  const response = await apiFetch(`${API_URL}/v1/ai/trips/${tripId}/itinerary`, {
+    method: 'GET',
+    token,
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to fetch itinerary (${response.status}): ${text}`);
   }
 
   return response.json();
