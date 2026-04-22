@@ -19,6 +19,10 @@ export type MutationFeedback = {
 
 export type StatusOverride = TripExecutionStatus;
 
+type OptimisticEntry =
+  | { kind: "pending"; requestId: number; target: TripExecutionStatus }
+  | { kind: "committed"; requestId: number; target: TripExecutionStatus };
+
 export type UseOnTripMutationsOptions = {
   token: string;
   tripId: number | null;
@@ -45,7 +49,7 @@ export type UseOnTripMutationsResult = {
 };
 
 type OptimisticState = {
-  statusByRef: Record<string, StatusOverride>;
+  statusByRef: Record<string, OptimisticEntry>;
   deletedUnplannedIds: Record<number, true>;
 };
 
@@ -82,6 +86,59 @@ export function useOnTripMutations({
   // Track the last refresh timestamp so coalescing visibility + focus events
   // does not fire two fetches back-to-back when a tab resume triggers both.
   const lastRefreshAtRef = useRef<number>(0);
+  const requestIdRef = useRef<number>(0);
+  const lastInteractionAtRef = useRef<number>(Date.now());
+
+  useEffect(() => {
+    if (!tripId) return;
+    if (typeof document === "undefined" || typeof window === "undefined") return;
+
+    const mark = () => {
+      lastInteractionAtRef.current = Date.now();
+    };
+
+    window.addEventListener("pointerdown", mark, { passive: true });
+    window.addEventListener("keydown", mark);
+    window.addEventListener("scroll", mark, { passive: true });
+    return () => {
+      window.removeEventListener("pointerdown", mark);
+      window.removeEventListener("keydown", mark);
+      window.removeEventListener("scroll", mark);
+    };
+  }, [tripId]);
+
+  const reconcileOptimistic = useCallback(
+    (prev: OptimisticState, next: TripOnTripSnapshot): OptimisticState => {
+      const nextMap: Record<string, OptimisticEntry> = {};
+      for (const [stopRef, entry] of Object.entries(prev.statusByRef)) {
+        const server = next.today_stops.find((s) => s.stop_ref === stopRef);
+        const serverStatus = server?.execution_status ?? null;
+
+        if (entry.kind === "pending") {
+          // Keep pending entries until the mutation path commits.
+          nextMap[stopRef] = entry;
+          continue;
+        }
+
+        // committed: clear once server agrees; otherwise notify and clear
+        if (serverStatus === entry.target) {
+          continue;
+        }
+
+        setFeedback({
+          kind: "success",
+          message: `Synced: server shows ${serverStatus ?? "planned"}.`,
+          at: Date.now(),
+        });
+      }
+
+      return {
+        ...prev,
+        statusByRef: nextMap,
+      };
+    },
+    [],
+  );
 
   const refreshSnapshot = useCallback(async () => {
     if (!tripId) return;
@@ -89,24 +146,24 @@ export function useOnTripMutations({
       const next = await getTripOnTripSnapshot(token, tripId);
       lastRefreshAtRef.current = Date.now();
       onSnapshotRefresh(next);
-      // A successful server read clears all local overrides for this trip; the
-      // server is now the source of truth.
-      setOptimistic(emptyOptimisticState());
+      setOptimistic((prev) => reconcileOptimistic(prev, next));
     } catch {
       // Non-fatal: keep any existing overrides so the UI doesn't flash.
     }
-  }, [onSnapshotRefresh, token, tripId]);
+  }, [onSnapshotRefresh, reconcileOptimistic, token, tripId]);
 
   // Background refresh: while a trip is selected, re-fetch the snapshot every
-  // 60s so state converges across devices (group trips, or one user on two
-  // devices) without requiring a manual reload. refreshSnapshot already
-  // swallows errors and no-ops when tripId is null, so a flaky network does
-  // not surface toasts here.
+  // 20s while the user is active and 60s while idle so state converges across
+  // devices without spamming the network when the user isn't engaging.
   useEffect(() => {
     if (!tripId) return;
     const intervalId = setInterval(() => {
+      const idleForMs = Date.now() - lastInteractionAtRef.current;
+      const isActive = idleForMs < 60_000;
+      const minInterval = isActive ? 20_000 : 60_000;
+      if (Date.now() - lastRefreshAtRef.current < minInterval) return;
       void refreshSnapshot();
-    }, 60_000);
+    }, 20_000);
     return () => clearInterval(intervalId);
   }, [tripId, refreshSnapshot]);
 
@@ -142,19 +199,38 @@ export function useOnTripMutations({
   const setStopStatus = useCallback<UseOnTripMutationsResult["setStopStatus"]>(
     async (stopRef, nextStatus) => {
       if (!tripId) return;
-      // Record previous override so we can roll back cleanly on failure.
-      const previousOverride = optimistic.statusByRef[stopRef];
+      const requestId = ++requestIdRef.current;
+      const previousOverride = optimistic.statusByRef[stopRef] ?? null;
       setOptimistic((prev) => ({
         ...prev,
-        statusByRef: { ...prev.statusByRef, [stopRef]: nextStatus },
+        statusByRef: {
+          ...prev.statusByRef,
+          [stopRef]: { kind: "pending", requestId, target: nextStatus },
+        },
       }));
       setStatusPending((prev) => ({ ...prev, [stopRef]: true }));
       try {
         await postStopStatus(token, tripId, { stop_ref: stopRef, status: nextStatus });
+        setOptimistic((prev) => {
+          const current = prev.statusByRef[stopRef];
+          if (!current || current.requestId !== requestId) return prev;
+          return {
+            ...prev,
+            statusByRef: {
+              ...prev.statusByRef,
+              [stopRef]: { kind: "committed", requestId, target: nextStatus },
+            },
+          };
+        });
         await refreshSnapshot();
       } catch (error) {
         setOptimistic((prev) => {
           const nextMap = { ...prev.statusByRef };
+          const current = nextMap[stopRef];
+          if (current && current.requestId !== requestId) {
+            return prev;
+          }
+
           if (previousOverride) {
             nextMap[stopRef] = previousOverride;
           } else {
@@ -238,8 +314,8 @@ export function useOnTripMutations({
     if (!snapshot) return null;
     const overrides = optimistic.statusByRef;
     const overriddenStops = snapshot.today_stops.map<TripOnTripStopSnapshot>((stop) => {
-      const override = stop.stop_ref ? overrides[stop.stop_ref] : undefined;
-      return override ? { ...stop, execution_status: override } : stop;
+      const entry = stop.stop_ref ? overrides[stop.stop_ref] : undefined;
+      return entry ? { ...stop, execution_status: entry.target } : stop;
     });
     const filteredUnplanned = snapshot.today_unplanned.filter(
       (item) => !optimistic.deletedUnplannedIds[item.event_id],

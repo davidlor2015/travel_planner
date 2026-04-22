@@ -98,6 +98,55 @@ def test_stop_status_event_is_merged_into_snapshot(client, auth_headers_user_a):
     assert other["execution_status"] is None
 
 
+def test_snapshot_includes_lat_lon_when_present(client, auth_headers_user_a):
+    trip_id = _create_active_trip(client, auth_headers_user_a)
+    today = date.today()
+    res = client.post(
+        "/v1/ai/apply",
+        json={
+            "trip_id": trip_id,
+            "itinerary": {
+                "title": "Plan",
+                "summary": "Execution",
+                "days": [
+                    {
+                        "day_number": 2,
+                        "date": today.isoformat(),
+                        "items": [
+                            {
+                                "time": "09:00",
+                                "title": "Breakfast in Alfama",
+                                "location": "Alfama",
+                                "lat": 38.7110,
+                                "lon": -9.1290,
+                                "status": "planned",
+                            },
+                            {
+                                "time": "13:00",
+                                "title": "Tram 28",
+                                "location": "Praca do Comercio",
+                                "status": "planned",
+                            },
+                        ],
+                    }
+                ],
+            },
+        },
+        headers=auth_headers_user_a,
+    )
+    assert res.status_code == 200, res.text
+
+    snapshot = _snapshot(client, auth_headers_user_a, trip_id)
+    assert len(snapshot["today_stops"]) == 2
+    first = snapshot["today_stops"][0]
+    assert first["title"] == "Breakfast in Alfama"
+    assert first["lat"] == 38.711
+    assert first["lon"] == -9.129
+    second = snapshot["today_stops"][1]
+    assert second["lat"] is None
+    assert second["lon"] is None
+
+
 def test_latest_stop_status_wins(client, auth_headers_user_a):
     trip_id = _create_active_trip(client, auth_headers_user_a)
     _apply_basic_itinerary(client, auth_headers_user_a, trip_id)

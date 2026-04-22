@@ -135,6 +135,8 @@ export interface TripOnTripStopSnapshot {
   title: string | null;
   time: string | null;
   location: string | null;
+  lat: number | null;
+  lon: number | null;
   status: "planned" | "confirmed" | "skipped" | null;
   source: TripOnTripResolutionSource;
   confidence: TripOnTripResolutionConfidence;

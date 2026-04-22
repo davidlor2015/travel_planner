@@ -5,58 +5,22 @@ import type {
   TripExecutionStatus,
   TripOnTripSnapshot,
   TripOnTripStopSnapshot,
-  TripOnTripUnplannedStop,
 } from "../../../shared/api/trips";
+import { track } from "../../../shared/analytics";
 import { Toast } from "../../../shared/ui/Toast";
 import { useOnTripMutations } from "./useOnTripMutations";
-
-type StopRow = TripOnTripStopSnapshot & { key: string };
-
-const STATUS_OPTIONS: Array<{ id: TripExecutionStatus; label: string }> = [
-  { id: "planned", label: "Planned" },
-  { id: "confirmed", label: "Confirmed" },
-  { id: "skipped", label: "Skipped" },
-];
+import { OnTripHeader } from "./onTripParts/OnTripHeader";
+import { HappeningNowCard } from "./onTripParts/HappeningNowCard";
+import { DayTimeline } from "./onTripParts/DayTimeline";
+import { UnplannedList } from "./onTripParts/UnplannedList";
+import { NeedsAttentionCard } from "./onTripParts/NeedsAttentionCard";
+import { LogStopFAB } from "./onTripParts/LogStopFAB";
+import { LogStopSheet } from "./onTripParts/LogStopSheet";
+import type { StopVM } from "./onTripParts/types";
+import { deriveStopVisualState } from "./onTripParts/deriveStopVisualState";
 
 function effectiveStatus(stop: TripOnTripStopSnapshot): TripExecutionStatus {
   return stop.execution_status ?? stop.status ?? "planned";
-}
-
-function stopSubline(stop: TripOnTripStopSnapshot): string {
-  const time = stop.time?.trim() || "time TBD";
-  const place = stop.location?.trim() || "location TBD";
-  return `${time} · ${place}`;
-}
-
-/**
- * Detect iOS-class devices (iPhone, iPad incl. iPadOS "Mac-like" UA, iPod).
- * Done at module scope via `typeof navigator` so SSR or test envs don't crash.
- */
-function isAppleMobile(): boolean {
-  if (typeof navigator === "undefined") return false;
-  const ua = navigator.userAgent || "";
-  if (/iPhone|iPad|iPod/i.test(ua)) return true;
-  // iPadOS 13+ reports "MacIntel" with touch support.
-  const platform = navigator.platform || "";
-  const touchPoints = (navigator as Navigator & { maxTouchPoints?: number })
-    .maxTouchPoints;
-  return platform === "MacIntel" && (touchPoints ?? 0) > 1;
-}
-
-function mapsHrefForStop(stop: {
-  location: string | null;
-  title?: string | null;
-}): string | null {
-  const query = (stop.location || stop.title || "").trim();
-  if (!query) return null;
-  const encoded = encodeURIComponent(query);
-  // On iOS, `maps://` opens Apple Maps directly (and `https://maps.apple.com`
-  // resolves there too on desktop Safari). Android / other browsers stay on
-  // Google Maps, which is the expected default there.
-  if (isAppleMobile()) {
-    return `maps://?q=${encoded}`;
-  }
-  return `https://www.google.com/maps/search/?api=1&query=${encoded}`;
 }
 
 function todayLocalISODate(): string {
@@ -65,13 +29,6 @@ function todayLocalISODate(): string {
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
-}
-
-function localTimeHHMM(): string {
-  const now = new Date();
-  return `${String(now.getHours()).padStart(2, "0")}:${String(
-    now.getMinutes(),
-  ).padStart(2, "0")}`;
 }
 
 /**
@@ -119,330 +76,6 @@ function deriveCurrentStop(
   return best?.stop ?? null;
 }
 
-type StopRowProps = {
-  stop: StopRow;
-  isPending: boolean;
-  onStatusChange: (stopRef: string, nextStatus: TripExecutionStatus) => void;
-};
-
-function StopRowView({ stop, isPending, onStatusChange }: StopRowProps) {
-  const currentStatus = effectiveStatus(stop);
-  const mapsHref = mapsHrefForStop(stop);
-  const isSkipped = currentStatus === "skipped";
-
-  return (
-    <li
-      className={`rounded-2xl border px-4 py-3 transition-colors ${
-        isSkipped
-          ? "border-[#E8DFD2] bg-[#F4EFE7]/60"
-          : "border-[#EDE7DD] bg-[#FAF8F5]/70"
-      }`}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p
-            className={`text-sm font-semibold ${
-              isSkipped ? "text-[#8A7D6F] line-through" : "text-[#1C1108]"
-            }`}
-          >
-            {stop.title ?? "Untitled stop"}
-          </p>
-          <p className="mt-0.5 text-xs text-[#6B5E52]">{stopSubline(stop)}</p>
-        </div>
-        {mapsHref ? (
-          <a
-            href={mapsHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="shrink-0 inline-flex min-h-9 items-center rounded-full border border-[#1C1108] px-3 py-1 text-xs font-semibold text-[#1C1108] hover:bg-[#1C1108] hover:text-white transition-colors"
-            aria-label={`Navigate to ${stop.title ?? "stop"}`}
-          >
-            Navigate
-          </a>
-        ) : null}
-      </div>
-
-      <div
-        className="mt-3 -mx-1 flex gap-1 overflow-x-auto"
-        role="group"
-        aria-label="Update status"
-      >
-        {STATUS_OPTIONS.map((option) => {
-          const isActive = currentStatus === option.id;
-          const disabled = !stop.stop_ref || isPending;
-          return (
-            <button
-              key={option.id}
-              type="button"
-              disabled={disabled}
-              onClick={() => stop.stop_ref && onStatusChange(stop.stop_ref, option.id)}
-              aria-pressed={isActive}
-              className={`min-h-9 shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-                isActive
-                  ? "bg-[#1C1108] text-white"
-                  : "border border-[#EDE7DD] bg-white text-[#6B5E52] hover:border-[#1C1108] hover:text-[#1C1108]"
-              } ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}
-            >
-              {option.label}
-            </button>
-          );
-        })}
-      </div>
-    </li>
-  );
-}
-
-type UnplannedRowProps = {
-  stop: TripOnTripUnplannedStop;
-  isPending: boolean;
-  onRemove: (eventId: number) => void;
-};
-
-function UnplannedRow({ stop, isPending, onRemove }: UnplannedRowProps) {
-  const mapsHref = mapsHrefForStop(stop);
-  return (
-    <li className="rounded-2xl border border-dashed border-[#CEBFAA] bg-[#FDF8EF] px-4 py-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#B58C4B]">
-            Unplanned
-          </p>
-          <p className="mt-0.5 text-sm font-semibold text-[#1C1108]">{stop.title}</p>
-          <p className="mt-0.5 text-xs text-[#6B5E52]">
-            {(stop.time?.trim() || "time TBD") + " · " + (stop.location?.trim() || "location TBD")}
-          </p>
-          {stop.notes ? (
-            <p className="mt-1 text-xs italic text-[#6B5E52]">{stop.notes}</p>
-          ) : null}
-        </div>
-        <div className="flex shrink-0 flex-col gap-2">
-          {mapsHref ? (
-            <a
-              href={mapsHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-h-9 items-center rounded-full border border-[#1C1108] px-3 py-1 text-xs font-semibold text-[#1C1108] hover:bg-[#1C1108] hover:text-white transition-colors"
-            >
-              Navigate
-            </a>
-          ) : null}
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={() => onRemove(stop.event_id)}
-            className="inline-flex min-h-9 items-center rounded-full border border-[#E8DFD2] bg-white px-3 py-1 text-xs font-medium text-[#6B5E52] hover:border-danger hover:text-danger transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-            aria-label={`Remove ${stop.title}`}
-          >
-            Remove
-          </button>
-        </div>
-      </div>
-    </li>
-  );
-}
-
-type LogStopFormProps = {
-  disabled: boolean;
-  defaultDate: string;
-  onSubmit: (payload: {
-    day_date: string;
-    title: string;
-    time: string | null;
-    location: string | null;
-  }) => Promise<void>;
-};
-
-function LogStopForm({ disabled, defaultDate, onSubmit }: LogStopFormProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [title, setTitle] = useState("");
-  const [time, setTime] = useState("");
-  const [location, setLocation] = useState("");
-
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const trimmedTitle = title.trim();
-    if (!trimmedTitle) return;
-    await onSubmit({
-      day_date: defaultDate,
-      title: trimmedTitle,
-      time: time.trim() || null,
-      location: location.trim() || null,
-    });
-    setTitle("");
-    setTime("");
-    setLocation("");
-    setIsExpanded(false);
-  };
-
-  const openForm = () => {
-    // Pre-fill the time so "log where I am right now" is one extra field (title)
-    // instead of three. The user can still edit any of them.
-    setTime((prev) => (prev ? prev : localTimeHHMM()));
-    setIsExpanded(true);
-  };
-
-  if (!isExpanded) {
-    return (
-      <button
-        type="button"
-        onClick={openForm}
-        className="w-full min-h-10 rounded-full border border-dashed border-[#CEBFAA] bg-white px-4 py-2 text-sm font-semibold text-[#6B5E52] transition-colors hover:border-[#1C1108] hover:text-[#1C1108]"
-      >
-        + Log where you are
-      </button>
-    );
-  }
-
-  return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-2 rounded-2xl border border-[#EDE7DD] bg-white px-3 py-3"
-    >
-      <input
-        type="text"
-        value={title}
-        onChange={(event) => setTitle(event.target.value)}
-        placeholder="What happened? (required)"
-        required
-        autoFocus
-        className="w-full rounded-lg border border-[#EDE7DD] bg-white px-3 py-2 text-sm text-[#1C1108] placeholder:text-[#A39688] focus:border-[#1C1108] focus:outline-none"
-      />
-      <div className="flex gap-2">
-        <input
-          type="text"
-          value={time}
-          onChange={(event) => setTime(event.target.value)}
-          placeholder="Time (e.g. 16:30)"
-          className="flex-1 rounded-lg border border-[#EDE7DD] bg-white px-3 py-2 text-sm text-[#1C1108] placeholder:text-[#A39688] focus:border-[#1C1108] focus:outline-none"
-        />
-        <input
-          type="text"
-          value={location}
-          onChange={(event) => setLocation(event.target.value)}
-          placeholder="Location"
-          className="flex-1 rounded-lg border border-[#EDE7DD] bg-white px-3 py-2 text-sm text-[#1C1108] placeholder:text-[#A39688] focus:border-[#1C1108] focus:outline-none"
-        />
-      </div>
-      <div className="flex justify-end gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            setIsExpanded(false);
-            setTitle("");
-            setTime("");
-            setLocation("");
-          }}
-          className="min-h-9 rounded-full border border-[#EDE7DD] bg-white px-3 py-1.5 text-sm font-medium text-[#6B5E52] hover:border-[#1C1108] hover:text-[#1C1108] transition-colors"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={disabled || !title.trim()}
-          className="min-h-9 rounded-full bg-[#1C1108] px-4 py-1.5 text-sm font-semibold text-white hover:bg-[#2B1B0F] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {disabled ? "Saving…" : "Save"}
-        </button>
-      </div>
-    </form>
-  );
-}
-
-function NowBanner({
-  currentStop,
-  isPending,
-  onMarkDone,
-}: {
-  currentStop: TripOnTripStopSnapshot;
-  isPending: boolean;
-  onMarkDone: () => void;
-}) {
-  const mapsHref = mapsHrefForStop(currentStop);
-  return (
-    <div className="rounded-2xl bg-[#1C1108] px-4 py-4 text-white">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#D7C7B0]">
-            Now
-          </p>
-          <p className="mt-1 text-base font-semibold leading-tight">
-            {currentStop.title ?? "Untitled stop"}
-          </p>
-          <p className="mt-0.5 text-xs text-[#D7C7B0]">
-            {stopSubline(currentStop)}
-          </p>
-        </div>
-        {mapsHref ? (
-          <a
-            href={mapsHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="shrink-0 inline-flex min-h-9 items-center rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-white/20"
-          >
-            Navigate
-          </a>
-        ) : null}
-      </div>
-      {currentStop.stop_ref ? (
-        <button
-          type="button"
-          onClick={onMarkDone}
-          disabled={isPending}
-          className="mt-3 w-full min-h-10 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {isPending ? "Saving…" : "Mark as done"}
-        </button>
-      ) : null}
-    </div>
-  );
-}
-
-function NextUpBanner({ nextStop }: { nextStop: TripOnTripStopSnapshot }) {
-  const mapsHref = mapsHrefForStop(nextStop);
-
-  // Explicit empty state — tell the user nothing is next rather than rendering
-  // nothing at all, which previously made the screen feel stale.
-  if (!nextStop.title) {
-    return (
-      <div className="rounded-2xl border border-dashed border-[#CEBFAA] bg-white/70 px-4 py-4 text-center">
-        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#A39688]">
-          Next up
-        </p>
-        <p className="mt-1 text-sm font-medium text-[#1C1108]">
-          Nothing else planned
-        </p>
-        <p className="mt-0.5 text-xs text-[#6B5E52]">
-          You&apos;re ahead of the plan — log anything unplanned below.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-start justify-between gap-3 rounded-2xl border border-[#EDE7DD] bg-white/80 px-4 py-3">
-      <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#A39688]">
-          Next up
-        </p>
-        <p className="mt-0.5 text-sm font-semibold text-[#1C1108]">
-          {nextStop.title}
-        </p>
-        <p className="mt-0.5 text-xs text-[#6B5E52]">{stopSubline(nextStop)}</p>
-      </div>
-      {mapsHref ? (
-        <a
-          href={mapsHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="shrink-0 inline-flex min-h-9 items-center rounded-full border border-[#1C1108] px-3 py-1 text-xs font-semibold text-[#1C1108] transition-colors hover:bg-[#1C1108] hover:text-white"
-        >
-          Navigate
-        </a>
-      ) : null}
-    </div>
-  );
-}
-
 export function OnTripCompactMode({
   token,
   trip,
@@ -477,19 +110,19 @@ export function OnTripCompactMode({
     onSnapshotRefresh,
   });
 
-  // The component stays presentation-only: Toast renders whatever error the
-  // hook currently exposes. Dismissing the toast dismisses the hook feedback.
   const toastMessage = feedback?.kind === "error" ? feedback.message : null;
 
   const currentSnapshot = viewSnapshot ?? snapshot;
-  const todayStops: StopRow[] = useMemo(
-    () =>
-      currentSnapshot.today_stops.map((stop, index) => ({
-        ...stop,
-        key: stop.stop_ref ?? `row-${index}`,
-      })),
-    [currentSnapshot.today_stops],
-  );
+  const readOnly = currentSnapshot.read_only;
+
+  useEffect(() => {
+    if (!readOnly) return;
+    track({
+      name: "ontrip_readonly_viewed",
+      props: { trip_id: trip.id },
+    });
+  }, [readOnly, trip.id]);
+
   // Tick a local clock once a minute so the "current stop" derivation advances
   // between snapshot fetches. Without this, "Now" only rolls over when the
   // server poll lands (~60s) or on a window focus event — which visibly lags
@@ -502,9 +135,6 @@ export function OnTripCompactMode({
     return () => window.clearInterval(id);
   }, []);
 
-  // The currently-happening stop, derived client-side from today's timed stops.
-  // Falls back to null when nothing is in progress — in which case the
-  // "Next up" banner (which may itself be empty) is the user's only anchor.
   const currentStop = useMemo(
     () => deriveCurrentStop(currentSnapshot.today_stops),
     // clockTick is intentionally a dependency so `new Date()` inside
@@ -512,6 +142,7 @@ export function OnTripCompactMode({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [currentSnapshot.today_stops, clockTick],
   );
+
   const todayUnplanned = currentSnapshot.today_unplanned;
   const blockers = currentSnapshot.blockers;
   const defaultLogDate =
@@ -519,147 +150,371 @@ export function OnTripCompactMode({
     currentSnapshot.today_stops[0]?.day_date ||
     todayLocalISODate();
 
+  const [logOpen, setLogOpen] = useState(false);
+
+  const stopVMs: StopVM[] = useMemo(() => {
+    return currentSnapshot.today_stops.map((stop, index) => {
+      const key = stop.stop_ref ?? `row-${index}`;
+      const stopRef = stop.stop_ref;
+      return {
+        ...stop,
+        key,
+        effectiveStatus: effectiveStatus(stop),
+        isPending: Boolean(stopRef && statusPending[stopRef]),
+        isReadOnly: readOnly,
+      };
+    });
+  }, [currentSnapshot.today_stops, readOnly, statusPending]);
+
+  // Progress derived client-side: confirmed + skipped / total
+  const { progressPct, doneCount, totalCount } = useMemo(() => {
+    const total = stopVMs.length;
+    if (total === 0) return { progressPct: 0, doneCount: 0, totalCount: 0 };
+    const done = stopVMs.filter(
+      (s) => s.effectiveStatus === "confirmed" || s.effectiveStatus === "skipped",
+    ).length;
+    return {
+      progressPct: Math.round((done / total) * 100),
+      doneCount: done,
+      totalCount: total,
+    };
+  }, [stopVMs]);
+
+  const nowKey = currentStop?.stop_ref ?? null;
+  const nextKey = currentSnapshot.next_stop.stop_ref ?? null;
+
+  const timelineRows = useMemo(() => {
+    return stopVMs.map((stop) => {
+      const stopRef = stop.stop_ref;
+      const isNow = Boolean(stopRef && nowKey && stopRef === nowKey);
+      const isNext = Boolean(stopRef && nextKey && stopRef === nextKey);
+
+      const onConfirm = () => {
+        if (!stopRef) return;
+        if (readOnly) return;
+        const next =
+          stop.effectiveStatus === "confirmed" ? "planned" : "confirmed";
+        track({
+          name: next === "planned" ? "ontrip_stop_reverted" : "ontrip_stop_confirmed",
+          props: { trip_id: trip.id, stop_ref: stopRef },
+        });
+        void setStopStatus(stopRef, next);
+      };
+      const onSkip = () => {
+        if (!stopRef) return;
+        if (readOnly) return;
+        const next =
+          stop.effectiveStatus === "skipped" ? "planned" : "skipped";
+        track({
+          name: next === "planned" ? "ontrip_stop_reverted" : "ontrip_stop_skipped",
+          props: { trip_id: trip.id, stop_ref: stopRef },
+        });
+        void setStopStatus(stopRef, next);
+      };
+      const onReset = () => {
+        if (!stopRef) return;
+        if (readOnly) return;
+        track({
+          name: "ontrip_stop_reverted",
+          props: { trip_id: trip.id, stop_ref: stopRef },
+        });
+        void setStopStatus(stopRef, "planned");
+      };
+
+      return deriveStopVisualState({
+        stop,
+        isNow,
+        isNext,
+        blockers,
+        actions: {
+          onNavigate: () => {
+            track({
+              name: "ontrip_navigate_clicked",
+              props: { trip_id: trip.id, stop_ref: stopRef ?? null },
+            });
+          },
+          onConfirm,
+          onSkip,
+          onReset,
+        },
+      });
+    });
+  }, [blockers, nextKey, nowKey, readOnly, setStopStatus, stopVMs, trip.id]);
+
+  const nowVM = useMemo(() => {
+    const stopRef = currentStop?.stop_ref ?? null;
+    if (!stopRef) return null;
+    return stopVMs.find((s) => s.stop_ref === stopRef) ?? null;
+  }, [currentStop?.stop_ref, stopVMs]);
+
+  const unplannedVM = useMemo(
+    () =>
+      todayUnplanned.map((stop) => ({
+        ...stop,
+        isPending: Boolean(unplannedPendingIds[stop.event_id]),
+      })),
+    [todayUnplanned, unplannedPendingIds],
+  );
+
   return (
-    <section className="overflow-hidden rounded-[28px] border border-[#EAE2D6] bg-[#FEFCF9] shadow-[0_18px_55px_rgba(28,17,8,0.08)]">
-      <div className="border-b border-[#EDE7DD] bg-[#FAF8F5]/80 px-5 py-4 sm:px-7">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#A39688]">
-              On-Trip mode
-            </p>
-            <h2 className="mt-1 truncate text-xl font-semibold text-[#1C1108]">
-              {trip.title}
-            </h2>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            {onOpenActivityDrawer ? (
-              <button
-                type="button"
-                onClick={onOpenActivityDrawer}
-                aria-label={
-                  activityUnreadCount > 0
-                    ? `${activityUnreadCount} unread trip updates`
-                    : "Open trip updates"
-                }
-                className="relative inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#EDE7DD] bg-white text-[#6B5E52] transition-colors hover:border-[#1C1108] hover:text-[#1C1108]"
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-                  <path d="M10 21a2 2 0 0 0 4 0" />
-                </svg>
-                {activityUnreadCount > 0 ? (
-                  <span
-                    aria-hidden
-                    className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#FEFCF9] bg-[#B86845]"
-                  />
-                ) : null}
-              </button>
-            ) : null}
+    <section className="overflow-hidden rounded-[28px] border border-[#ece4d7] bg-[#f2ebdd]">
+      {/* ── Header: breadcrumb + progress + title ──────────────────────────── */}
+      <OnTripHeader
+        trip={trip}
+        readOnly={readOnly}
+        dayNumber={currentSnapshot.today.day_number}
+        dayDate={currentSnapshot.today.day_date}
+        progressPct={progressPct}
+        doneCount={doneCount}
+        totalCount={totalCount}
+        leadingActions={
+          onOpenActivityDrawer ? (
             <button
               type="button"
-              onClick={onOpenFullWorkspace}
-              className="rounded-full border border-[#EDE7DD] bg-white px-3 py-1 text-xs font-medium text-[#6B5E52] hover:border-[#1C1108] hover:text-[#1C1108] transition-colors"
+              onClick={onOpenActivityDrawer}
+              aria-label={
+                activityUnreadCount > 0
+                  ? `${activityUnreadCount} unread trip updates`
+                  : "Open trip updates"
+              }
+              className="relative inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#ece4d7] bg-[#fbf7ef] text-[#6b5743] transition-colors hover:border-[#2a1d13] hover:text-[#2a1d13]"
             >
-              Full workspace
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-3 px-5 py-4 sm:px-7">
-        {currentStop ? (
-          <NowBanner
-            currentStop={currentStop}
-            isPending={Boolean(
-              currentStop.stop_ref && statusPending[currentStop.stop_ref],
-            )}
-            onMarkDone={() => {
-              if (!currentStop.stop_ref) return;
-              setStopStatus(currentStop.stop_ref, "confirmed");
-            }}
-          />
-        ) : null}
-        <NextUpBanner nextStop={currentSnapshot.next_stop} />
-
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#A39688]">
-            Today
-          </p>
-          {todayStops.length === 0 ? (
-            <p className="mt-2 text-sm text-[#6B5E52]">
-              No planned stops for today. You can still log what happens below.
-            </p>
-          ) : (
-            <ul className="mt-2 space-y-2">
-              {todayStops.map((stop) => (
-                <StopRowView
-                  key={stop.key}
-                  stop={stop}
-                  isPending={Boolean(stop.stop_ref && statusPending[stop.stop_ref])}
-                  onStatusChange={setStopStatus}
-                />
-              ))}
-            </ul>
-          )}
-        </div>
-
-        {todayUnplanned.length > 0 ? (
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#A39688]">
-              Also today
-            </p>
-            <ul className="mt-2 space-y-2">
-              {todayUnplanned.map((stop) => (
-                <UnplannedRow
-                  key={stop.event_id}
-                  stop={stop}
-                  isPending={Boolean(unplannedPendingIds[stop.event_id])}
-                  onRemove={removeUnplannedStop}
-                />
-              ))}
-            </ul>
-          </div>
-        ) : null}
-
-        <LogStopForm
-          disabled={isLoggingUnplanned}
-          defaultDate={defaultLogDate}
-          onSubmit={async (payload) => {
-            await logUnplannedStop(payload);
-          }}
-        />
-      </div>
-
-      {blockers.length > 0 ? (
-        <div className="border-t border-[#EDE7DD] px-5 py-4 sm:px-7">
-          <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#A39688]">
-            Active blockers
-          </p>
-          <ul className="mt-2 space-y-2">
-            {blockers.map((blocker) => (
-              <li
-                key={blocker.id}
-                className="rounded-xl border border-danger/20 bg-danger/10 px-3 py-2"
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
               >
-                <p className="text-xs font-semibold text-danger">{blocker.title}</p>
-                <p className="mt-0.5 text-xs text-danger/90">{blocker.detail}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+                <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                <path d="M10 21a2 2 0 0 0 4 0" />
+              </svg>
+              {activityUnreadCount > 0 ? (
+                <span
+                  aria-hidden
+                  className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#f2ebdd] bg-[#b4532a]"
+                />
+              ) : null}
+            </button>
+          ) : null
+        }
+      />
 
+      {/* ── Body: single column on mobile, editorial two-column on desktop ─ */}
+      <div className="lg:grid lg:grid-cols-12 lg:gap-8 lg:px-8 lg:pb-2">
+        {/* Main column (left on desktop) */}
+        <div className="lg:col-span-8">
+          {/* Happening Now card — in-flow on mobile, moved to rail on desktop */}
+          {nowVM ? (
+            <div className="px-6 pb-2 sm:px-8 lg:hidden">
+              <HappeningNowCard
+                stop={nowVM}
+                onNavigate={() => {
+                  track({
+                    name: "ontrip_navigate_clicked",
+                    props: { trip_id: trip.id, stop_ref: nowVM.stop_ref },
+                  });
+                }}
+                onConfirm={() => {
+                  if (!nowVM.stop_ref) return;
+                  if (readOnly) return;
+                  const next =
+                    nowVM.effectiveStatus === "confirmed" ? "planned" : "confirmed";
+                  track({
+                    name: next === "planned" ? "ontrip_stop_reverted" : "ontrip_stop_confirmed",
+                    props: { trip_id: trip.id, stop_ref: nowVM.stop_ref },
+                  });
+                  void setStopStatus(nowVM.stop_ref, next);
+                }}
+                onSkip={() => {
+                  if (!nowVM.stop_ref) return;
+                  if (readOnly) return;
+                  const next =
+                    nowVM.effectiveStatus === "skipped" ? "planned" : "skipped";
+                  track({
+                    name: next === "planned" ? "ontrip_stop_reverted" : "ontrip_stop_skipped",
+                    props: { trip_id: trip.id, stop_ref: nowVM.stop_ref },
+                  });
+                  void setStopStatus(nowVM.stop_ref, next);
+                }}
+                onReset={() => {
+                  if (!nowVM.stop_ref) return;
+                  if (readOnly) return;
+                  track({
+                    name: "ontrip_stop_reverted",
+                    props: { trip_id: trip.id, stop_ref: nowVM.stop_ref },
+                  });
+                  void setStopStatus(nowVM.stop_ref, "planned");
+                }}
+              />
+            </div>
+          ) : null}
+
+          {/* Full-day timeline — constrained scroller only on mobile */}
+          <div className="mt-6 max-h-[calc(100dvh-300px)] overflow-y-auto lg:mt-0 lg:max-h-none lg:overflow-visible">
+            {timelineRows.length === 0 ? (
+              <p className="px-6 text-sm text-[#8a7866] sm:px-8 lg:px-0">
+                No planned stops for today. You can still log what happens below.
+              </p>
+            ) : (
+              <DayTimeline rows={timelineRows} />
+            )}
+
+            {/* Along the way — always rendered; in-flow on both layouts */}
+            <div className="mt-8 lg:mt-10">
+              <UnplannedList
+                stops={unplannedVM}
+                onLogStop={() => {
+                  track({ name: "ontrip_log_stop_opened", props: { trip_id: trip.id } });
+                  setLogOpen(true);
+                }}
+                isLoggingDisabled={isLoggingUnplanned || readOnly}
+                onNavigate={(eventId) => {
+                  track({
+                    name: "ontrip_navigate_clicked",
+                    props: { trip_id: trip.id, unplanned_event_id: eventId },
+                  });
+                }}
+                onRemove={(eventId) => {
+                  track({
+                    name: "ontrip_unplanned_removed",
+                    props: { trip_id: trip.id, unplanned_event_id: eventId },
+                  });
+                  void removeUnplannedStop(eventId);
+                }}
+              />
+            </div>
+
+            {/* Needs attention — mobile only; desktop renders in the rail */}
+            {blockers.length > 0 ? (
+              <div className="mt-6 pb-4 lg:hidden">
+                <NeedsAttentionCard blockers={blockers} />
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        {/* Right rail — desktop only */}
+        <aside className="hidden lg:col-span-4 lg:mt-0 lg:flex lg:flex-col lg:gap-5 lg:pb-2">
+          {nowVM ? (
+            <HappeningNowCard
+              stop={nowVM}
+              variant="compact"
+              onNavigate={() => {
+                track({
+                  name: "ontrip_navigate_clicked",
+                  props: { trip_id: trip.id, stop_ref: nowVM.stop_ref },
+                });
+              }}
+              onConfirm={() => {
+                if (!nowVM.stop_ref) return;
+                if (readOnly) return;
+                const next =
+                  nowVM.effectiveStatus === "confirmed" ? "planned" : "confirmed";
+                track({
+                  name: next === "planned" ? "ontrip_stop_reverted" : "ontrip_stop_confirmed",
+                  props: { trip_id: trip.id, stop_ref: nowVM.stop_ref },
+                });
+                void setStopStatus(nowVM.stop_ref, next);
+              }}
+              onSkip={() => {
+                if (!nowVM.stop_ref) return;
+                if (readOnly) return;
+                const next =
+                  nowVM.effectiveStatus === "skipped" ? "planned" : "skipped";
+                track({
+                  name: next === "planned" ? "ontrip_stop_reverted" : "ontrip_stop_skipped",
+                  props: { trip_id: trip.id, stop_ref: nowVM.stop_ref },
+                });
+                void setStopStatus(nowVM.stop_ref, next);
+              }}
+              onReset={() => {
+                if (!nowVM.stop_ref) return;
+                if (readOnly) return;
+                track({
+                  name: "ontrip_stop_reverted",
+                  props: { trip_id: trip.id, stop_ref: nowVM.stop_ref },
+                });
+                void setStopStatus(nowVM.stop_ref, "planned");
+              }}
+            />
+          ) : null}
+
+          {blockers.length > 0 ? (
+            <NeedsAttentionCard blockers={blockers} variant="rail" />
+          ) : null}
+
+          {/* Quiet progress footer — mirrors the header progress, calmer */}
+          {totalCount > 0 ? (
+            <div className="rounded-xl border border-[#e4dbcb] bg-[#fbf7ef]/60 px-4 py-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10.5px] uppercase tracking-[0.2em] text-[#8a7866]">
+                  Today
+                </span>
+                <span className="text-[12px] text-[#6b5743]">
+                  {doneCount} of {totalCount} done
+                </span>
+              </div>
+              <div className="mt-2 h-px w-full overflow-hidden rounded-full bg-[#ece4d7]">
+                <div
+                  className="h-full rounded-full bg-[rgba(180,83,42,0.8)] transition-[width] duration-500"
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
+            </div>
+          ) : null}
+        </aside>
+      </div>
+
+      {/* ── Footer ────────────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between border-t border-[#e4dbcb] px-6 py-5 sm:px-8">
+        <p className="text-[13px] text-[#8a7866]">
+          The saved itinerary remains your plan of record.
+        </p>
+        <button
+          type="button"
+          onClick={onOpenFullWorkspace}
+          className="flex-shrink-0 text-[13px] font-medium text-[#8a7866] transition-colors hover:text-[#2a1d13]"
+        >
+          Open full workspace
+        </button>
+      </div>
+
+      {/* ── Toast ─────────────────────────────────────────────────────────── */}
       <Toast message={toastMessage} onDismiss={dismissFeedback} />
+
+      {/* ── Log Stop button (floating) ─────────────────────────────────────── */}
+      <LogStopFAB
+        disabled={isLoggingUnplanned || readOnly}
+        onClick={() => {
+          track({ name: "ontrip_log_stop_opened", props: { trip_id: trip.id } });
+          setLogOpen(true);
+        }}
+      />
+
+      {/* ── Log Stop sheet / modal ─────────────────────────────────────────── */}
+      <LogStopSheet
+        open={logOpen}
+        disabled={isLoggingUnplanned || readOnly}
+        defaultDate={defaultLogDate}
+        onClose={() => setLogOpen(false)}
+        onSubmit={async (payload) => {
+          await logUnplannedStop(payload);
+          track({
+            name: "ontrip_unplanned_logged",
+            props: {
+              trip_id: trip.id,
+              has_time: Boolean(payload.time),
+              has_location: Boolean(payload.location),
+              has_notes: Boolean(payload.notes),
+            },
+          });
+        }}
+      />
     </section>
   );
 }

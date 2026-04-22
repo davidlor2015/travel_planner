@@ -11,7 +11,6 @@ const FAVICON_SRC = "/favicon.svg";
 export function WaypointLogo({
   variant = "full",
   className = "",
-  theme: _theme = "light",
 }: LogoProps) {
   if (variant === "favicon") {
     return (

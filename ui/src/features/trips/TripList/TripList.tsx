@@ -353,13 +353,15 @@ export const TripList = ({
   return (
     <div>
       <main className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6">
-        <TripPickerBar
-          trips={trips}
-          selectedTripId={selectedTripId}
-          onTripChange={selectTrip}
-          onCreateClick={onCreateClick}
-          leadingAction={returnToOnTripChip}
-        />
+        {!selectedIsOnTripCompactMode ? (
+          <TripPickerBar
+            trips={trips}
+            selectedTripId={selectedTripId}
+            onTripChange={selectTrip}
+            onCreateClick={onCreateClick}
+            leadingAction={returnToOnTripChip}
+          />
+        ) : null}
 
         {showWorkspace && selectedTrip && selectedTripStatus ? (
           selectedIsOnTripPending ? (

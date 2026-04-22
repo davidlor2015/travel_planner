@@ -7,6 +7,8 @@
 
   --color-espresso:       #1C1108;
   --color-espresso-dark:  #2E2216;
+  /* Figma \"ink\" token for mobile On-Trip execution */
+  --color-ink:            #2A1D13;
 
   /* Secondary / supporting text — stone-700 (richer, warmer than the old stone-500) */
   --color-flint:          #6B5E52;
@@ -19,6 +21,11 @@
   --color-ivory:          #FEFCF9;
   --color-parchment:      #FAF8F5;
   --color-smoke:          #EAE2D6;
+  /* Figma frame 1:243 surface + dividers */
+  --color-parchment-soft: #FBF7EF;
+  --color-cream:          #F2EBDD;
+  --color-divider:        #ECE4D7;
+  --color-dot:            #D4C7B1;
   /* Card surfaces */
   --color-white:          #FFFFFF;
 
@@ -27,6 +34,9 @@
 
   --color-amber:          #B86845;
   --color-amber-dark:     #9A5230;
+  /* Figma accent tokens */
+  --color-brass:          #D7B48C;
+  --color-clay-accent:    #B4532A;
 
 
   /* ── Accent — secondary / warmth ── */
@@ -49,6 +59,12 @@
   --color-danger:         #881337;
   /* Deep richness / optional depth accent — orange-900 */
   --color-depth:          #4D6B8A;
+  /* Figma cocoa gradient endpoints (dark \"Happening now\" card) */
+  --color-cocoa-1:        #3A2A1F;
+  --color-cocoa-2:        #2A1D13;
+  /* Figma timeline muted tones */
+  --color-deep-muted:     #A89680;
+  --color-warm-light:     #C9BCA8;
 
 
   /* ── Typography ── */

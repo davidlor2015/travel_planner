@@ -83,15 +83,6 @@ function formatCurrency(amount: number): string {
   return `$${formatAmount(amount)}`;
 }
 
-function CurrencyDisplay({ amount, className }: { amount: number; className?: string }) {
-  return (
-    <span className={className}>
-      <span className="mr-0.5 text-[13px] font-normal opacity-50">$</span>
-      {formatAmount(amount)}
-    </span>
-  );
-}
-
 function progressBarCls(pct: number): string {
   if (pct >= 100) return "bg-danger";
   if (pct >= 75) return "bg-amber";
