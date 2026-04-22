@@ -69,10 +69,8 @@ interface EditableItineraryPanelProps {
   onRegenerate: () => void;
   onRunAiAssist?: (request: DraftAiAssistRequest) => void;
   onAddDay: () => void;
-  /** Last draft publish / assist mutation error (from workspace status). */
+  /** Last draft save / assist mutation error (from workspace status). */
   publishError?: string | null;
-  /** Mobile-oriented stop editing and drag affordances. */
-  isMobileLayout?: boolean;
   /** Group-aware controls (ownership, coordination) shown only when true. */
   showGroupCoordination?: boolean;
 }
@@ -198,7 +196,6 @@ export const EditableItineraryPanel = ({
   onRunAiAssist,
   onAddDay,
   publishError,
-  isMobileLayout = false,
   showGroupCoordination = false,
 }: EditableItineraryPanelProps) => {
   const [dragState, setDragState] = useState<{
@@ -398,8 +395,8 @@ export const EditableItineraryPanel = ({
                     Itinerary assist
                   </h5>
                   <p className="mt-1 text-xs leading-relaxed text-flint">
-                    Suggestions land in this draft only. Publish when the group
-                    is happy with the plan.
+                    Suggestions land in this draft only. Save when the plan is
+                    the one you want to keep.
                   </p>
                 </div>
                 <button
@@ -791,10 +788,21 @@ export const EditableItineraryPanel = ({
 
           const moreMenu = (
             <details className="relative">
-              <summary className="cursor-pointer list-none rounded-full border border-smoke/70 bg-white px-3 py-2 text-[12px] font-semibold text-flint hover:bg-parchment [&::-webkit-details-marker]:hidden">
+              <summary className="cursor-pointer list-none rounded-full border border-smoke/70 bg-white px-3 py-2 text-[12px] font-medium text-flint hover:bg-parchment hover:text-espresso [&::-webkit-details-marker]:hidden">
                 More
               </summary>
-              <div className="absolute right-0 z-20 mt-1 min-w-[10rem] rounded-xl border border-smoke bg-white py-1 shadow-lg">
+              <div className="absolute right-0 z-20 mt-1 min-w-[11rem] rounded-xl border border-smoke bg-white py-1 shadow-lg">
+                <button
+                  type="button"
+                  onClick={() => {
+                    openAssistForDay(day.day_number);
+                    onDayToggle?.(day.day_number, true);
+                  }}
+                  disabled={regenerating}
+                  className="block w-full px-3 py-2 text-left text-sm text-espresso hover:bg-parchment disabled:opacity-40"
+                >
+                  Assist this day
+                </button>
                 <button
                   type="button"
                   onClick={() => onDuplicateDay?.(day.day_number)}
@@ -837,7 +845,6 @@ export const EditableItineraryPanel = ({
                       isLocked={lockedSet.has(item.client_id)}
                       isFavorite={favoriteSet.has(item.client_id)}
                       showOwnershipControls={showGroupCoordination}
-                      useStopEditBottomSheet={isMobileLayout}
                       interactionDisabled={editControlsDisabled}
                       onUpdate={(patch) =>
                         onUpdateStop?.(day.day_number, item.client_id, patch)
@@ -996,11 +1003,6 @@ export const EditableItineraryPanel = ({
               readinessHint={
                 itineraryReadiness.dayIndicators[day.day_number]?.label ?? null
               }
-              onAssistThisDay={() => {
-                openAssistForDay(day.day_number);
-                onDayToggle?.(day.day_number, true);
-              }}
-              assistDisabled={regenerating}
               onToggleEditDetails={() => {
                 setEditingDayDetails((prev) =>
                   prev === day.day_number ? null : day.day_number,
@@ -1028,11 +1030,11 @@ export const EditableItineraryPanel = ({
         className="sticky bottom-0 z-10 border-t border-smoke/60 bg-white/95 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-md scroll-mt-24"
       >
         <p className="mb-2 text-center text-[11px] text-flint/90">
-          Publish when this draft is the plan your group should follow.
+          Save when this is the plan you want to keep.
         </p>
         {draftMutationState === "saved" ? (
           <p className="mb-3 rounded-xl border border-olive/25 bg-olive/10 px-3 py-2 text-center text-[12px] font-medium text-olive">
-            Draft published successfully.
+            Itinerary saved.
           </p>
         ) : null}
         {publishError?.trim() ? (
@@ -1052,7 +1054,7 @@ export const EditableItineraryPanel = ({
           whileTap={!applying ? { scale: 0.97 } : undefined}
           className="w-full rounded-full bg-espresso py-3 text-sm font-bold text-white shadow-sm shadow-espresso/25 transition-colors duration-150 hover:bg-espresso/90 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
         >
-          {applying ? "Publishing…" : "Publish itinerary"}
+          {applying ? "Saving…" : "Save itinerary"}
         </motion.button>
       </div>
     </div>

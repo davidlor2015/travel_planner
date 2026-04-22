@@ -17,6 +17,7 @@ import {
   applyItinerary,
   getSavedItinerary,
   refineItinerary,
+  type ApplySource,
   type Itinerary,
 } from "../../../shared/api/ai";
 import {
@@ -939,9 +940,18 @@ export function useTripWorkspaceModel({
 
     // Phase 1: persist the itinerary. Only this phase can fail the apply.
     let applied = false;
+    const meta = draftPlanMeta[tripId];
+    const applySource: ApplySource | undefined =
+      meta?.source === "ai_stream" || meta?.source === "llm_optional"
+        ? "ai_stream"
+        : meta?.source === "saved_itinerary"
+          ? "re_apply"
+          : meta?.source
+            ? "manual_edit"
+            : undefined;
     try {
       // Backend contract: persist is full-itinerary replace, not granular stop mutations.
-      await applyItinerary(token, tripId, toApiItinerary(itinerary));
+      await applyItinerary(token, tripId, toApiItinerary(itinerary), applySource);
       applied = true;
 
       setSavedItineraries((prev) => ({
@@ -949,7 +959,6 @@ export function useTripWorkspaceModel({
         [tripId]: toApiItinerary(itinerary),
       }));
       setAppliedSuccessIds((prev) => new Set(prev).add(tripId));
-      const meta = draftPlanMeta[tripId];
       track({
         name: "itinerary_applied",
         props: {
@@ -1226,6 +1235,23 @@ export function useTripWorkspaceModel({
     draftMutations.addStop(tripId, dayNumber, insertAfterIndex);
   };
 
+  /**
+   * Drop a pre-filled stop into the *pending draft* of a trip — the callsite
+   * for "pin this booking to the itinerary as a stop." Callers supply the
+   * dayNumber they want to target (matched upstream by date) plus the initial
+   * field patch. This intentionally only writes to the pending draft: if the
+   * user is viewing a saved itinerary, the Bookings tab asks them to click
+   * "Edit itinerary" first, which preserves the explicit-save contract.
+   */
+  const handleAddDraftStopWithInitial = (
+    tripId: number,
+    dayNumber: number,
+    initial: EditableStopPatch,
+  ) => {
+    clearAppliedSuccess(tripId);
+    draftMutations.addStopWithInitial(tripId, dayNumber, initial);
+  };
+
   const handleUpdateDraftStop = (
     tripId: number,
     dayNumber: number,
@@ -1442,6 +1468,11 @@ export function useTripWorkspaceModel({
         isApplyingItinerary: selectedIsApplying,
         unreadActivityCount: selectedUnreadCount,
         activityMuted: selectedTripIsMuted,
+        // Suppress the "Review draft" banner row while the draft editor is
+        // already on screen (Overview tab). The banner is only useful when
+        // the user is somewhere the draft is NOT visible.
+        isDraftReviewVisible:
+          selectedPendingItinerary !== null && activeTab === "overview",
       },
     };
   }, [
@@ -1460,6 +1491,7 @@ export function useTripWorkspaceModel({
     selectedIsApplying,
     selectedUnreadCount,
     selectedTripIsMuted,
+    activeTab,
   ]);
 
   const actionItems = useMemo(
@@ -1560,6 +1592,7 @@ export function useTripWorkspaceModel({
       handleStartManualDraft,
       handleUpdateDraftDay,
       handleAddDraftStop,
+      handleAddDraftStopWithInitial,
       handleUpdateDraftStop,
       handleDeleteDraftStop,
       handleDuplicateDraftStop,
@@ -1570,6 +1603,7 @@ export function useTripWorkspaceModel({
       setRegenerationControls,
       setBudgetSummaries,
       setPackingSummaries,
+      setReservationSummaries,
       setMemberDrafts,
       setLockedItemIds,
       setFavoriteItemIds,

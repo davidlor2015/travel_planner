@@ -34,6 +34,16 @@ class Settings(BaseSettings):
     # Uses slowapi string syntax: "<count>/<period>" e.g. "10/minute", "100/hour".
     AI_RATE_LIMIT: str = "10/minute"
 
+    # Rate limit for the SSE stream endpoint. Streaming holds an Ollama
+    # inference open for up to OLLAMA_TIMEOUT_SECONDS, so a tighter per-IP
+    # cap prevents a single client from saturating the model.
+    AI_STREAM_RATE_LIMIT: str = "5/minute"
+
+    # Rate limit for trip execution mutations (stop status, unplanned stops).
+    # These fire during active trips so must tolerate normal usage patterns
+    # (a user confirming 5–10 stops across a day) without tripping.
+    EXECUTION_RATE_LIMIT: str = "30/minute"
+
     OLLAMA_BASE_URL: str = "http://127.0.0.1:11434"
     OLLAMA_MODEL: str = "qwen2.5:14b"
     OLLAMA_TIMEOUT_SECONDS: int = 60

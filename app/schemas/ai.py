@@ -133,11 +133,16 @@ class AIPlanRequest(BaseModel):
     interests_override: Optional[str] = None
     budget_override: Optional[str] = None
 
+ApplySource = Literal["ai_stream", "manual_edit", "re_apply"]
+
+
 class AIApplyRequest(BaseModel):
 
     trip_id: int
-
     itinerary: ItineraryResponse
+    # Caller-supplied context for server-side analytics; never validated strictly
+    # so that future client variants don't 422 existing integrations.
+    source: Optional[ApplySource] = None
 
 
 RefinementVariant = Literal["faster_pace", "cheaper", "more_local", "less_walking"]

@@ -1,5 +1,6 @@
 import { API_URL } from '../../app/config';
 import { apiFetch } from './client';
+import { ApiError } from './errors';
 
 export interface TripMember {
   user_id: number;
@@ -327,12 +328,8 @@ async function executeWithRetry(
     }
     if (response.ok) return { ok: true, response };
     const retryable = response.status >= 500;
-    const text = await response.text().catch(() => '');
-    return {
-      ok: false,
-      retryable,
-      error: new Error(`Failed to ${label} (${response.status}): ${text}`),
-    };
+    const apiErr = await ApiError.fromResponse(response, `Failed to ${label}`);
+    return { ok: false, retryable, error: apiErr };
   };
 
   const first = await runOnce();

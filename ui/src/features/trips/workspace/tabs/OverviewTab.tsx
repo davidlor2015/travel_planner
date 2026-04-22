@@ -1,4 +1,3 @@
-import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { EditableItineraryPanel } from "../../EditableItineraryPanel";
 import type { Trip } from "../../../../shared/api/trips";
@@ -23,6 +22,7 @@ import type {
 } from "../deriveTripActionItems";
 import { isCollaborationActive } from "../collaborationGate";
 import { OverviewCoordinationPanel } from "./OverviewCoordinationPanel";
+import { SavedItineraryView } from "./SavedItineraryView";
 import { WorkspaceSectionCard } from "../WorkspacePrimitives";
 import { ITINERARY_STREAM_REGION_ID } from "../itineraryEditorAnchors";
 
@@ -54,8 +54,6 @@ interface OverviewTabProps {
   draftMutationState?: "idle" | "saving" | "saved";
   /** Shown on the draft panel when publish/assist fails (draft mutations only). */
   draftPublishError?: string | null;
-  /** Enables compact draft UX (bottom sheet stop edit, larger drag targets). */
-  isMobileLayout?: boolean;
   savedItinerary: Itinerary | null;
   pendingItinerary: EditableItinerary | null;
   draftPlanMeta: DraftPlanMeta | null;
@@ -158,7 +156,6 @@ export function OverviewTab({
   isApplying,
   draftMutationState = "idle",
   draftPublishError,
-  isMobileLayout = false,
   savedItinerary,
   pendingItinerary,
   draftPlanMeta,
@@ -192,37 +189,11 @@ export function OverviewTab({
   onActionCommand,
   onItineraryDayToggle,
 }: OverviewTabProps) {
-  const autoDraftSignatureRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (isStreaming || pendingItinerary || !savedItinerary) return;
-
-    const signature = `${trip.id}:${savedItinerary.title}:${savedItinerary.days
-      .map((day) => `${day.day_number}-${day.date ?? ""}-${day.items.length}`)
-      .join("|")}`;
-
-    if (autoDraftSignatureRef.current === signature) return;
-    autoDraftSignatureRef.current = signature;
-    onEditSavedAsDraft();
-  }, [
-    isStreaming,
-    pendingItinerary,
-    savedItinerary,
-    trip.id,
-    onEditSavedAsDraft,
-  ]);
-
-  useEffect(() => {
-    if (!savedItinerary) {
-      autoDraftSignatureRef.current = null;
-    }
-  }, [savedItinerary]);
-
   return (
     <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
       <section
         aria-label="Trip itinerary"
-        className="order-2 min-w-0 space-y-4 lg:order-1"
+        className="order-1 min-w-0 space-y-4 lg:order-1"
       >
         <div
           id={ITINERARY_STREAM_REGION_ID}
@@ -266,55 +237,10 @@ export function OverviewTab({
         )}
         </div>
 
-        {!isStreaming && !pendingItinerary ? (
-          <WorkspaceSectionCard
-            eyebrow="Shared itinerary"
-            title={
-              savedItinerary
-                ? "Continue shaping the live plan"
-                : "Start the group's working itinerary"
-            }
-            description={
-              savedItinerary
-                ? "Edits here are the draft your group sees. Manual changes stay first; use AI only when you want a nudge."
-                : "Build days and stops by hand so the trip has a real source of truth—then optionally ask AI for ideas."
-            }
-          >
-            <div className="flex flex-wrap gap-2">
-              {onStartManualDraft && (
-                <PillButton
-                  variant="ocean"
-                  onClick={onStartManualDraft}
-                  disabled={isAnyGenerating}
-                >
-                  Start manual draft
-                </PillButton>
-              )}
-              <PillButton
-                variant={onStartManualDraft ? "ghost" : "ocean"}
-                onClick={onStartStream}
-                disabled={isAnyGenerating}
-              >
-                AI suggestions (optional)
-              </PillButton>
-              {savedItinerary && (
-                <PillButton variant="ghost" onClick={onEditSavedAsDraft}>
-                  Open from saved
-                </PillButton>
-              )}
-            </div>
-            <p className="mt-3 text-[11px] text-[#8A7E74]">
-              Assistive AI can be wrong or stale—your group confirms dates,
-              routes, and prices before anyone travels.
-            </p>
-          </WorkspaceSectionCard>
-        ) : null}
-
         {!isStreaming && pendingItinerary ? (
           <div className="space-y-3">
             <EditableItineraryPanel
               itinerary={pendingItinerary}
-              isMobileLayout={isMobileLayout}
               showGroupCoordination={isCollaborationActive(trip)}
               draftSourceLabel={draftPlanMeta?.sourceLabel ?? null}
               draftFallbackUsed={draftPlanMeta?.fallbackUsed ?? null}
@@ -356,20 +282,46 @@ export function OverviewTab({
               onAddDay={onAddDay}
             />
           </div>
-        ) : !savedItinerary && !pendingItinerary && !isStreaming ? (
-          <div className="rounded-3xl border border-dashed border-smoke bg-parchment/40 px-6 py-10 text-center">
-            <p className="text-sm font-semibold text-espresso">
-              No shared itinerary yet
+        ) : !isStreaming && savedItinerary ? (
+          // Post-save calm state: show the owned itinerary, not a draft.
+          // Editing requires an explicit "Edit itinerary" click.
+          <SavedItineraryView
+            itinerary={savedItinerary}
+            onEnterEdit={onEditSavedAsDraft}
+          />
+        ) : !isStreaming ? (
+          <WorkspaceSectionCard
+            eyebrow="Itinerary"
+            title="Start your itinerary"
+            description="Build days and stops by hand, or ask AI for a first draft you can reshape."
+          >
+            <div className="flex flex-wrap gap-2">
+              {onStartManualDraft && (
+                <PillButton
+                  variant="ocean"
+                  onClick={onStartManualDraft}
+                  disabled={isAnyGenerating}
+                >
+                  Start manual draft
+                </PillButton>
+              )}
+              <PillButton
+                variant={onStartManualDraft ? "ghost" : "ocean"}
+                onClick={onStartStream}
+                disabled={isAnyGenerating}
+              >
+                Generate with AI
+              </PillButton>
+            </div>
+            <p className="mt-3 text-[11px] text-[#8A7E74]">
+              AI suggestions are a starting point — you confirm dates, routes,
+              and prices before anyone travels.
             </p>
-            <p className="mt-1 text-sm text-flint">
-              Start with a manual draft the group can edit together, then add AI
-              suggestions if they help—nothing here is placeholder data.
-            </p>
-          </div>
+          </WorkspaceSectionCard>
         ) : null}
       </section>
 
-      <div className="order-1 min-w-0 lg:order-2">
+      <div className="order-2 min-w-0 lg:order-2">
         <OverviewCoordinationPanel
           trip={trip}
           packingSummary={packingSummary}

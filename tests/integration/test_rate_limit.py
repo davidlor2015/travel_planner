@@ -120,10 +120,10 @@ class TestRateLimiting:
         assert statuses[:3] == [200, 200, 200], f"Expected 3 successes, got {statuses}"
         assert statuses[3] == 429, f"Expected 429 on 4th request, got {statuses[3]}"
 
-    def test_apply_endpoint_is_not_rate_limited(
+    def test_apply_endpoint_is_rate_limited(
         self, client: TestClient, auth_headers_user_a, paris_trip: Trip
     ):
-        """/apply is a cheap DB write — it has no rate limit by design."""
+        """/apply now shares the AI_RATE_LIMIT so abuse can't replace itineraries at will."""
         body = {
             "trip_id": paris_trip.id,
             "itinerary": {
@@ -137,9 +137,12 @@ class TestRateLimiting:
                 ],
             },
         }
-        for i in range(4):
-            r = client.post("/v1/ai/apply", json=body, headers=auth_headers_user_a)
-            assert r.status_code == 200, f"Request {i + 1} failed: {r.json()}"
+        statuses = [
+            client.post("/v1/ai/apply", json=body, headers=auth_headers_user_a).status_code
+            for _ in range(4)
+        ]
+        assert statuses[:3] == [200, 200, 200], f"Expected 3 successes, got {statuses}"
+        assert statuses[3] == 429, f"Expected 429 on 4th request, got {statuses[3]}"
 
 
 # ------------------------------------------------------------------

@@ -489,58 +489,29 @@ export const PackingList = ({
   return (
     <div className="space-y-4">
       <section className="rounded-2xl border border-[#EAE2D6] bg-[#FEFCF9] px-4 py-4 shadow-[0_1px_0_rgba(28,17,8,0.03)] sm:px-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#A39688]">
-              My packing list
-            </p>
-            <h4 className="mt-1 text-lg font-semibold text-[#1C1108]">
-              Pack with confidence before departure
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h4 className="font-display text-base font-semibold text-[#1C1108]">
+              Packing
             </h4>
-            <p className="mt-2 text-[13px] text-[#6B5E52]">
-              Your checklist is personal. Shared guidance below can still help
-              the group align on essentials.
+            <p className="mt-0.5 text-[12px] text-[#6B5E52]">
+              {checkedCount} of {checkedCount + remaining} packed
+              <span className="mx-1.5 text-[#C7BCAE]">·</span>
+              {progressPct}%
             </p>
           </div>
           {checkedCount > 0 ? (
             <button
               type="button"
               onClick={() => void handleClearPacked()}
-              className="inline-flex min-h-10 items-center rounded-full border border-[#E5DDD1] bg-[#FAF8F5] px-4 text-[12px] font-semibold text-[#6B5E52] transition-colors hover:bg-[#F3EEE7]"
+              className="inline-flex min-h-9 items-center rounded-full border border-[#E5DDD1] bg-white px-3 text-[12px] font-medium text-[#6B5E52] transition-colors hover:bg-[#FAF8F5] hover:text-[#1C1108]"
             >
               Clear packed
             </button>
           ) : null}
         </div>
 
-        <div className="mt-4 grid gap-2 sm:grid-cols-3">
-          <div className="rounded-xl border border-[#E5DDD1] bg-[#FAF8F5] px-3 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8A7E74]">
-              Completion
-            </p>
-            <p className="mt-1 text-lg font-semibold text-[#1C1108]">
-              {progressPct}%
-            </p>
-          </div>
-          <div className="rounded-xl border border-[#E5DDD1] bg-[#FAF8F5] px-3 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8A7E74]">
-              Packed
-            </p>
-            <p className="mt-1 text-lg font-semibold text-[#1C1108]">
-              {checkedCount} item{checkedCount === 1 ? "" : "s"}
-            </p>
-          </div>
-          <div className="rounded-xl border border-[#E5DDD1] bg-[#FAF8F5] px-3 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8A7E74]">
-              Remaining
-            </p>
-            <p className="mt-1 text-lg font-semibold text-[#1C1108]">
-              {remaining} item{remaining === 1 ? "" : "s"}
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#E5DDD1]">
+        <div className="mt-3 h-[6px] overflow-hidden rounded-full bg-[#EFE8DC]">
           <div
             className="h-full rounded-full bg-[#B86845] transition-[width] duration-300 ease-out"
             style={{ width: `${progressPct}%` }}

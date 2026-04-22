@@ -333,6 +333,7 @@ class TripService:
             day_index=today_day_resolution.get("day_index"),
             source=today_day_resolution["source"],
             confidence=today_day_resolution["confidence"],
+            tz=tz,
         )
         next_stop_resolution = self._pick_next_stop(
             itinerary=itinerary,
@@ -550,6 +551,7 @@ class TripService:
         day_index: int | None,
         source: str,
         confidence: str,
+        tz: str | None = None,
     ) -> dict[str, Any]:
         if day_index is None or day_index < 0 or day_index >= len(itinerary.days):
             return {
@@ -584,7 +586,17 @@ class TripService:
                 "stop_ref": None,
             }
 
-        now = datetime.now()
+        # Resolve current time in the traveler's timezone so the "which stop
+        # is happening now" selection uses local wall-clock time, not the
+        # server's timezone.  Falls back to server local time when tz is absent
+        # or invalid, matching the same guard used in _resolve_today.
+        if tz:
+            try:
+                now = datetime.now(ZoneInfo(tz))
+            except (ZoneInfoNotFoundError, ValueError):
+                now = datetime.now().astimezone()
+        else:
+            now = datetime.now().astimezone()
         now_minutes = now.hour * 60 + now.minute
         time_sorted = sorted(
             enumerate(actionable_items),

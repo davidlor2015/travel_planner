@@ -6,6 +6,7 @@ from datetime import timedelta
 from typing import AsyncGenerator, Optional
 from sqlalchemy.orm import Session
 
+from app.api.middleware.request_metrics import increment
 from app.models.trip import Trip
 from app.schemas.ai import (
     AIDayRefinementResponse,
@@ -165,6 +166,7 @@ def _infer_time_block(item: ItineraryItem, index: int, total_items: int) -> Refi
 
 class ItineraryService:
     def __init__(self, db: Session):
+        self.db = db
         self.trip_repo = TripRepository(db)
         self.itinerary_repo = ItineraryRepository(db)
         self.llm_client = _make_llm_client()
@@ -541,12 +543,14 @@ class ItineraryService:
         sys_prompt = self._build_system_prompt()
         user_prompt = self._build_user_prompt(trip, interests_override, budget_override)
 
+        increment("generation_attempted")
         try:
             raw_response = await self.llm_client.generate_json(sys_prompt, user_prompt)
         except LLMUnavailableError:
             logger.warning(
                 "Ollama unavailable for trip_id=%s — attempting vector DB fallback", trip_id
             )
+            increment("generation_failed")
             return self._annotate_source(
                 self._generate_from_vector_db(trip, interests_override, budget_override),
                 source="knowledge_base_fallback",
@@ -555,12 +559,14 @@ class ItineraryService:
             )
 
         logger.info("LLM raw response length: %d chars", len(raw_response))
+        increment("generation_succeeded")
 
         itinerary = self._parse_or_recover(raw_response)
         if itinerary is None:
             logger.error(
                 "Failed to parse or recover LLM response. Tail: %r", raw_response[-300:]
             )
+            increment("generation_parse_failed")
             raise ValueError("AI generated invalid data. Please try again.")
         return self._annotate_source(
             itinerary,
@@ -667,16 +673,20 @@ class ItineraryService:
         sys_prompt = self._build_system_prompt()
         user_prompt = self._build_user_prompt(trip, interests_override, budget_override)
 
+        increment("stream_started")
         full_text = ""
         try:
             async for token in self.llm_client.stream_json(sys_prompt, user_prompt):
                 full_text += token
                 yield f"event: token\ndata: {json.dumps({'token': token})}\n\n"
-        except LLMUnavailableError:
+        except LLMUnavailableError as llm_err:
+            is_circuit_open = "circuit breaker" in str(llm_err).lower()
+            failure_kind = "circuit_breaker_open" if is_circuit_open else "connection_refused"
             logger.warning(
-                "Ollama unavailable during streaming for trip_id=%s — trying vector DB fallback",
-                trip_id,
+                "stream_error trip_id=%s kind=%s: %s",
+                trip_id, failure_kind, llm_err,
             )
+            increment("stream_error")
             try:
                 fallback = self._annotate_source(
                     self._generate_from_vector_db(trip, interests_override, budget_override),
@@ -684,17 +694,25 @@ class ItineraryService:
                     source_label="Fallback saved itinerary knowledge",
                     fallback_used=True,
                 )
+                increment("stream_completed")
                 yield f"event: complete\ndata: {fallback.model_dump_json()}\n\n"
             except Exception as fallback_err:
                 logger.error("Vector DB fallback failed for trip_id=%s: %s", trip_id, fallback_err)
-                yield f"event: error\ndata: {json.dumps({'message': str(fallback_err)})}\n\n"
+                user_message = (
+                    "AI service is temporarily unavailable. Please try again in a moment."
+                    if is_circuit_open
+                    else "Could not reach the AI service. Make sure Ollama is running and try again."
+                )
+                yield f"event: error\ndata: {json.dumps({'message': user_message, 'kind': failure_kind})}\n\n"
             return
         except Exception as e:
-            logger.error("Streaming LLM error: %s", e)
-            yield f"event: error\ndata: {json.dumps({'message': 'LLM connection failed. Is Ollama running?'})}\n\n"
+            logger.error("Streaming LLM error trip_id=%s: %s", trip_id, e)
+            increment("stream_error")
+            yield f"event: error\ndata: {json.dumps({'message': 'AI connection failed. Is Ollama running?', 'kind': 'unexpected_error'})}\n\n"
             return
 
-        logger.info("Stream complete: %d chars received", len(full_text))
+        logger.info("stream_completed trip_id=%s chars=%d", trip_id, len(full_text))
+        increment("stream_completed")
 
         itinerary = self._parse_or_recover(full_text)
         if itinerary is not None:
@@ -706,33 +724,60 @@ class ItineraryService:
             yield f"event: complete\ndata: {itinerary.model_dump_json()}\n\n"
         else:
             logger.error(
-                "Failed to parse or recover streamed response. Tail: %r",
+                "stream_error trip_id=%s kind=parse_failed tail=%r",
+                trip_id,
                 full_text[-300:],
             )
-            yield f"event: error\ndata: {json.dumps({'message': 'AI generated invalid data. Please try again.'})}\n\n"
+            increment("stream_error")
+            yield f"event: error\ndata: {json.dumps({'message': 'AI generated invalid data. Please try again.', 'kind': 'parse_failed'})}\n\n"
 
     def apply_itinerary_to_db(
-        self, trip_id: int, user_id: int, itinerary: ItineraryResponse
+        self,
+        trip_id: int,
+        user_id: int,
+        itinerary: ItineraryResponse,
+        source: str | None = None,
     ) -> Trip:
         """
-        Persists the approved itinerary in two places:
+        Persist the approved itinerary atomically in two places:
         1. Relational tables (itinerary_days / itinerary_events)
         2. trip.description — JSON fallback for the existing frontend parser
+
+        Both writes share a single transaction: save_itinerary flushes without
+        committing, then trip_repo.update commits everything together.  A
+        rollback is issued if the update step raises so that partially-flushed
+        itinerary rows never survive a failed title/description write.
         """
         try:
             trip = self.access_service.require_membership(trip_id, user_id).trip
         except Exception as exc:
             raise ValueError("Trip not found.") from exc
 
-        self.itinerary_repo.save_itinerary(trip_id, itinerary)
+        try:
+            # Stage the relational rows without committing.
+            self.itinerary_repo.save_itinerary(trip_id, itinerary, commit=False)
 
-        return self.trip_repo.update(trip, {
-            "title": itinerary.title,
-            "description": (
-                f"SUMMARY: {itinerary.summary}\n\n"
-                f"DETAILS (JSON): {itinerary.model_dump_json(indent=2)}"
-            ),
-        })
+            # Commit both the relational rows and the trip metadata in one shot.
+            updated_trip = self.trip_repo.update(trip, {
+                "title": itinerary.title,
+                "description": (
+                    f"SUMMARY: {itinerary.summary}\n\n"
+                    f"DETAILS (JSON): {itinerary.model_dump_json(indent=2)}"
+                ),
+            })
+        except Exception:
+            self.db.rollback()
+            raise
+
+        logger.info(
+            "itinerary_applied trip_id=%s user_id=%s days=%s source=%s",
+            trip_id,
+            user_id,
+            len(itinerary.days),
+            source or "unknown",
+        )
+        increment("itinerary_applied")
+        return updated_trip
 
     def get_saved_itinerary(
         self,
@@ -755,6 +800,18 @@ class ItineraryService:
         )
         if itinerary is None:
             raise ValueError("No saved itinerary found.")
+
+        # Overlay the three optional metadata fields that the relational store
+        # does not persist.  They were written verbatim into trip.description as
+        # part of the DETAILS (JSON) block during apply, so we can recover them
+        # without a schema migration.  Failure to parse is silently ignored so
+        # a corrupted description never breaks the GET path.
+        meta = self._metadata_from_description(trip.description)
+        if meta is not None:
+            itinerary.budget_breakdown = meta.get("budget_breakdown")
+            itinerary.packing_list = meta.get("packing_list")
+            itinerary.tips = meta.get("tips")
+
         return itinerary
 
     def _summary_from_description(self, description: str | None) -> str:
@@ -764,3 +821,24 @@ class ItineraryService:
             if line.startswith("SUMMARY:"):
                 return line.replace("SUMMARY:", "", 1).strip()
         return ""
+
+    @staticmethod
+    def _metadata_from_description(description: str | None) -> dict | None:
+        """Extract the full itinerary JSON stored in trip.description.
+
+        Returns a plain dict on success, or None if the description is absent,
+        unparseable, or does not follow the expected format.  Callers must treat
+        every field in the returned dict as optional.
+        """
+        if not description:
+            return None
+        marker = "DETAILS (JSON): "
+        idx = description.find(marker)
+        if idx == -1:
+            return None
+        raw = description[idx + len(marker):]
+        try:
+            parsed = json.loads(raw)
+            return parsed if isinstance(parsed, dict) else None
+        except (ValueError, TypeError):
+            return None

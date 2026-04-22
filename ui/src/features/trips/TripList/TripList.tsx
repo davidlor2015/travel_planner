@@ -1,4 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import { type Trip } from "../../../shared/api/trips";
 import { EditTripModal } from "../EditTripModal";
@@ -51,6 +53,45 @@ export const TripList = ({
     onTripSelect,
     onTripsChange,
   });
+
+  // Creation → generation should feel like one fluid arc. When the user just
+  // came from `CreateTripForm` (URL carries `?from=create`) and the new trip
+  // has no itinerary yet, auto-start the AI stream once so the draft appears
+  // without a second "Generate" click.
+  //
+  // Hooks must be called unconditionally: this effect lives above the early
+  // loading/error returns and is guarded internally.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const autoStartFiredRef = useRef<Set<number>>(new Set());
+  useEffect(() => {
+    if (model.status.loading) return;
+    if (model.status.error) return;
+    if (searchParams.get("from") !== "create") return;
+
+    const selectedTrip = model.selection.selectedTrip;
+    if (!selectedTrip) return;
+
+    if (autoStartFiredRef.current.has(selectedTrip.id)) return;
+
+    const savedItinerary = model.draft.selectedSavedItinerary;
+    const pendingItinerary = model.draft.selectedPendingItinerary;
+    if (savedItinerary || pendingItinerary) return;
+
+    const isStreaming = model.derived.selectedIsStreaming;
+    const isAnyGenerating = model.derived.selectedIsAnyGenerating;
+    const streamError = model.derived.selectedStreamError;
+    if (isStreaming || isAnyGenerating) return;
+    if (streamError) return;
+
+    autoStartFiredRef.current.add(selectedTrip.id);
+    model.actions.startStream(selectedTrip.id, selectedTrip.notes ?? undefined);
+
+    // Strip the one-shot flag so a reload or back-navigation doesn't retrigger
+    // generation against a trip the user may have since edited by hand.
+    const next = new URLSearchParams(searchParams);
+    next.delete("from");
+    setSearchParams(next, { replace: true });
+  }, [model, searchParams, setSearchParams]);
 
   if (model.status.loading) return <TripListLoadingSkeleton />;
 
@@ -235,6 +276,7 @@ export const TripList = ({
     handleStartManualDraft,
     handleUpdateDraftDay,
     handleAddDraftStop,
+    handleAddDraftStopWithInitial,
     handleUpdateDraftStop,
     handleDeleteDraftStop,
     handleDuplicateDraftStop,
@@ -245,6 +287,7 @@ export const TripList = ({
     setRegenerationControls,
     setBudgetSummaries,
     setPackingSummaries,
+    setReservationSummaries,
     setMemberDrafts,
     setLockedItemIds,
     setFavoriteItemIds,
@@ -416,7 +459,7 @@ export const TripList = ({
                       role="alert"
                     >
                       <span className="block text-[11px] font-bold uppercase tracking-wide text-danger/90">
-                        Draft & publish
+                        Itinerary edits
                       </span>
                       {draftActionError}
                     </motion.div>
@@ -457,7 +500,6 @@ export const TripList = ({
 
                 {activeTab === "overview" && (
                   <OverviewTab
-                    isMobileLayout={isMobileLayout}
                     trip={selectedTrip}
                     packingSummary={selectedPackingSummary}
                     budgetSummary={selectedBudgetSummary}
@@ -611,7 +653,24 @@ export const TripList = ({
                 )}
 
                 {activeTab === "bookings" && (
-                  <BookingsTab token={token} tripId={selectedTrip.id} />
+                  <BookingsTab
+                    token={token}
+                    tripId={selectedTrip.id}
+                    pendingItinerary={selectedPendingItinerary}
+                    onAddStopFromBooking={(dayNumber, initial) =>
+                      handleAddDraftStopWithInitial(
+                        selectedTrip.id,
+                        dayNumber,
+                        initial,
+                      )
+                    }
+                    onSummaryChange={(summary) =>
+                      setReservationSummaries((prev) => ({
+                        ...prev,
+                        [selectedTrip.id]: summary,
+                      }))
+                    }
+                  />
                 )}
 
                 {activeTab === "chat" && (

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type {
   Trip,
@@ -28,13 +28,35 @@ function stopSubline(stop: TripOnTripStopSnapshot): string {
   return `${time} · ${place}`;
 }
 
+/**
+ * Detect iOS-class devices (iPhone, iPad incl. iPadOS "Mac-like" UA, iPod).
+ * Done at module scope via `typeof navigator` so SSR or test envs don't crash.
+ */
+function isAppleMobile(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  if (/iPhone|iPad|iPod/i.test(ua)) return true;
+  // iPadOS 13+ reports "MacIntel" with touch support.
+  const platform = navigator.platform || "";
+  const touchPoints = (navigator as Navigator & { maxTouchPoints?: number })
+    .maxTouchPoints;
+  return platform === "MacIntel" && (touchPoints ?? 0) > 1;
+}
+
 function mapsHrefForStop(stop: {
   location: string | null;
   title?: string | null;
 }): string | null {
   const query = (stop.location || stop.title || "").trim();
   if (!query) return null;
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+  const encoded = encodeURIComponent(query);
+  // On iOS, `maps://` opens Apple Maps directly (and `https://maps.apple.com`
+  // resolves there too on desktop Safari). Android / other browsers stay on
+  // Google Maps, which is the expected default there.
+  if (isAppleMobile()) {
+    return `maps://?q=${encoded}`;
+  }
+  return `https://www.google.com/maps/search/?api=1&query=${encoded}`;
 }
 
 function todayLocalISODate(): string {
@@ -43,6 +65,58 @@ function todayLocalISODate(): string {
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function localTimeHHMM(): string {
+  const now = new Date();
+  return `${String(now.getHours()).padStart(2, "0")}:${String(
+    now.getMinutes(),
+  ).padStart(2, "0")}`;
+}
+
+/**
+ * Parse a stored time string ("HH:MM" or "HH:MM am/pm") into total minutes
+ * from midnight. Returns null when unparseable.
+ */
+function parseTimeToMinutes(time: string | null | undefined): number | null {
+  const raw = time?.trim() ?? "";
+  if (!raw) return null;
+  const m = raw.match(/^(\d{1,2}):(\d{2})\s*(am|pm)?$/i);
+  if (!m) return null;
+  let hour = parseInt(m[1]!, 10);
+  const minute = parseInt(m[2]!, 10);
+  const suffix = m[3]?.toLowerCase();
+  if (Number.isNaN(hour) || Number.isNaN(minute)) return null;
+  if (suffix === "pm" && hour < 12) hour += 12;
+  if (suffix === "am" && hour === 12) hour = 0;
+  return hour * 60 + minute;
+}
+
+/**
+ * Derive the "current" stop client-side. The server returns `today_stops` +
+ * `next_stop` but no explicit "now". Pick the stop whose time has already
+ * started and has not been confirmed or skipped — i.e. the thing the user is
+ * most likely doing right now. Returns null when there is no viable match.
+ *
+ * Intentionally conservative: if nothing has started yet, or everything is
+ * done/skipped, we show no "Now" card and defer to the server's next_stop.
+ */
+function deriveCurrentStop(
+  stops: TripOnTripStopSnapshot[],
+): TripOnTripStopSnapshot | null {
+  const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+  let best: { stop: TripOnTripStopSnapshot; startedAt: number } | null = null;
+  for (const stop of stops) {
+    const status = stop.execution_status ?? stop.status ?? "planned";
+    if (status === "confirmed" || status === "skipped") continue;
+    const startedAt = parseTimeToMinutes(stop.time);
+    if (startedAt == null) continue;
+    if (startedAt > nowMinutes) continue;
+    if (!best || startedAt > best.startedAt) {
+      best = { stop, startedAt };
+    }
+  }
+  return best?.stop ?? null;
 }
 
 type StopRowProps = {
@@ -200,14 +274,21 @@ function LogStopForm({ disabled, defaultDate, onSubmit }: LogStopFormProps) {
     setIsExpanded(false);
   };
 
+  const openForm = () => {
+    // Pre-fill the time so "log where I am right now" is one extra field (title)
+    // instead of three. The user can still edit any of them.
+    setTime((prev) => (prev ? prev : localTimeHHMM()));
+    setIsExpanded(true);
+  };
+
   if (!isExpanded) {
     return (
       <button
         type="button"
-        onClick={() => setIsExpanded(true)}
-        className="w-full min-h-10 rounded-full border border-dashed border-[#CEBFAA] bg-white px-4 py-2 text-sm font-semibold text-[#6B5E52] hover:border-[#1C1108] hover:text-[#1C1108] transition-colors"
+        onClick={openForm}
+        className="w-full min-h-10 rounded-full border border-dashed border-[#CEBFAA] bg-white px-4 py-2 text-sm font-semibold text-[#6B5E52] transition-colors hover:border-[#1C1108] hover:text-[#1C1108]"
       >
-        + Log an unplanned stop
+        + Log where you are
       </button>
     );
   }
@@ -267,24 +348,93 @@ function LogStopForm({ disabled, defaultDate, onSubmit }: LogStopFormProps) {
   );
 }
 
-function NextUpBanner({ nextStop }: { nextStop: TripOnTripStopSnapshot }) {
-  if (!nextStop.title) return null;
-  const mapsHref = mapsHrefForStop(nextStop);
+function NowBanner({
+  currentStop,
+  isPending,
+  onMarkDone,
+}: {
+  currentStop: TripOnTripStopSnapshot;
+  isPending: boolean;
+  onMarkDone: () => void;
+}) {
+  const mapsHref = mapsHrefForStop(currentStop);
   return (
-    <div className="flex items-start justify-between gap-3 rounded-2xl bg-[#1C1108] px-4 py-3 text-white">
-      <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#D7C7B0]">
+    <div className="rounded-2xl bg-[#1C1108] px-4 py-4 text-white">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#D7C7B0]">
+            Now
+          </p>
+          <p className="mt-1 text-base font-semibold leading-tight">
+            {currentStop.title ?? "Untitled stop"}
+          </p>
+          <p className="mt-0.5 text-xs text-[#D7C7B0]">
+            {stopSubline(currentStop)}
+          </p>
+        </div>
+        {mapsHref ? (
+          <a
+            href={mapsHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 inline-flex min-h-9 items-center rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-white/20"
+          >
+            Navigate
+          </a>
+        ) : null}
+      </div>
+      {currentStop.stop_ref ? (
+        <button
+          type="button"
+          onClick={onMarkDone}
+          disabled={isPending}
+          className="mt-3 w-full min-h-10 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isPending ? "Saving…" : "Mark as done"}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function NextUpBanner({ nextStop }: { nextStop: TripOnTripStopSnapshot }) {
+  const mapsHref = mapsHrefForStop(nextStop);
+
+  // Explicit empty state — tell the user nothing is next rather than rendering
+  // nothing at all, which previously made the screen feel stale.
+  if (!nextStop.title) {
+    return (
+      <div className="rounded-2xl border border-dashed border-[#CEBFAA] bg-white/70 px-4 py-4 text-center">
+        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#A39688]">
           Next up
         </p>
-        <p className="mt-0.5 text-sm font-semibold">{nextStop.title}</p>
-        <p className="mt-0.5 text-xs text-[#D7C7B0]">{stopSubline(nextStop)}</p>
+        <p className="mt-1 text-sm font-medium text-[#1C1108]">
+          Nothing else planned
+        </p>
+        <p className="mt-0.5 text-xs text-[#6B5E52]">
+          You&apos;re ahead of the plan — log anything unplanned below.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-2xl border border-[#EDE7DD] bg-white/80 px-4 py-3">
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#A39688]">
+          Next up
+        </p>
+        <p className="mt-0.5 text-sm font-semibold text-[#1C1108]">
+          {nextStop.title}
+        </p>
+        <p className="mt-0.5 text-xs text-[#6B5E52]">{stopSubline(nextStop)}</p>
       </div>
       {mapsHref ? (
         <a
           href={mapsHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="shrink-0 inline-flex min-h-9 items-center rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-semibold text-white hover:bg-white/20 transition-colors"
+          className="shrink-0 inline-flex min-h-9 items-center rounded-full border border-[#1C1108] px-3 py-1 text-xs font-semibold text-[#1C1108] transition-colors hover:bg-[#1C1108] hover:text-white"
         >
           Navigate
         </a>
@@ -339,6 +489,28 @@ export function OnTripCompactMode({
         key: stop.stop_ref ?? `row-${index}`,
       })),
     [currentSnapshot.today_stops],
+  );
+  // Tick a local clock once a minute so the "current stop" derivation advances
+  // between snapshot fetches. Without this, "Now" only rolls over when the
+  // server poll lands (~60s) or on a window focus event — which visibly lags
+  // in practice. The value itself is unused; it's only a re-render trigger.
+  const [clockTick, setClockTick] = useState(0);
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setClockTick((n) => (n + 1) % Number.MAX_SAFE_INTEGER);
+    }, 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  // The currently-happening stop, derived client-side from today's timed stops.
+  // Falls back to null when nothing is in progress — in which case the
+  // "Next up" banner (which may itself be empty) is the user's only anchor.
+  const currentStop = useMemo(
+    () => deriveCurrentStop(currentSnapshot.today_stops),
+    // clockTick is intentionally a dependency so `new Date()` inside
+    // deriveCurrentStop is re-evaluated each minute.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [currentSnapshot.today_stops, clockTick],
   );
   const todayUnplanned = currentSnapshot.today_unplanned;
   const blockers = currentSnapshot.blockers;
@@ -405,6 +577,18 @@ export function OnTripCompactMode({
       </div>
 
       <div className="space-y-3 px-5 py-4 sm:px-7">
+        {currentStop ? (
+          <NowBanner
+            currentStop={currentStop}
+            isPending={Boolean(
+              currentStop.stop_ref && statusPending[currentStop.stop_ref],
+            )}
+            onMarkDone={() => {
+              if (!currentStop.stop_ref) return;
+              setStopStatus(currentStop.stop_ref, "confirmed");
+            }}
+          />
+        ) : null}
         <NextUpBanner nextStop={currentSnapshot.next_stop} />
 
         <div>

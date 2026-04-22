@@ -101,10 +101,13 @@ function friendlyAiErrorMessage(
   return trimmed ? `${fallbackByAction[action]} (${trimmed})` : fallbackByAction[action];
 }
 
+export type ApplySource = 'ai_stream' | 'manual_edit' | 're_apply';
+
 export const applyItinerary = async (
   token: string,
   tripId: number,
   itinerary: Itinerary,
+  source?: ApplySource,
 ): Promise<void> => {
   const response = await apiFetch(`${API_URL}/v1/ai/apply`, {
     method: 'POST',
@@ -112,7 +115,7 @@ export const applyItinerary = async (
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ trip_id: tripId, itinerary }),
+    body: JSON.stringify({ trip_id: tripId, itinerary, source: source ?? null }),
   });
 
   if (!response.ok) {

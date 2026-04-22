@@ -11,6 +11,12 @@ interface BookingRowProps {
   referenceLabel?: string | null;
   priceLabel?: string | null;
   hasBudgetLink?: boolean;
+  /**
+   * When provided, the row shows an inline "Add to itinerary" button that
+   * pins this booking as a stop on the matching day. Omitted when the trip
+   * has no writable draft — reservations should quietly wait, not nag.
+   */
+  onAddToItinerary?: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }
@@ -26,6 +32,7 @@ export function BookingRow({
   referenceLabel,
   priceLabel,
   hasBudgetLink = false,
+  onAddToItinerary,
   onEdit,
   onDelete,
 }: BookingRowProps) {
@@ -90,6 +97,16 @@ export function BookingRow({
           </p>
 
           <div className="flex items-center gap-2">
+            {onAddToItinerary ? (
+              <button
+                type="button"
+                onClick={onAddToItinerary}
+                className="min-h-9 rounded-full border border-[#1C1108]/25 bg-white px-3 py-1.5 text-[12px] font-semibold text-[#1C1108] transition-colors hover:bg-[#1C1108] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1C1108]/35"
+                title="Pin this booking to the matching day in your itinerary"
+              >
+                Add to itinerary
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={onEdit}

@@ -496,7 +496,7 @@ export function OverviewCoordinationPanel({
             </p>
           </>
         ) : (
-          <p className="text-[12px] text-[#B5AA9E]">No group budget set</p>
+          <p className="text-[12px] text-[#B5AA9E]">No budget set yet</p>
         )}
       </div>
 

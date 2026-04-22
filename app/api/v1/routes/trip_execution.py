@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Request, Response
 
 from app.api.deps import CurrentUser, SessionDep
+from app.core.config import settings
+from app.core.limiter import limiter
 from app.schemas.trip import (
     TripExecutionEventResponse,
     TripStopStatusUpdateRequest,
@@ -17,8 +19,10 @@ router = APIRouter()
     response_model=TripExecutionEventResponse,
     status_code=201,
 )
+@limiter.limit(settings.EXECUTION_RATE_LIMIT)
 def post_stop_status(
     trip_id: int,
+    request: Request,
     payload: TripStopStatusUpdateRequest,
     db: SessionDep,
     current_user: CurrentUser,
@@ -31,8 +35,10 @@ def post_stop_status(
     response_model=TripExecutionEventResponse,
     status_code=201,
 )
+@limiter.limit(settings.EXECUTION_RATE_LIMIT)
 def post_unplanned_stop(
     trip_id: int,
+    request: Request,
     payload: TripUnplannedStopRequest,
     db: SessionDep,
     current_user: CurrentUser,
@@ -41,9 +47,11 @@ def post_unplanned_stop(
 
 
 @router.delete("/{trip_id}/execution/events/{event_id}", status_code=204)
+@limiter.limit(settings.EXECUTION_RATE_LIMIT)
 def delete_execution_event(
     trip_id: int,
     event_id: int,
+    request: Request,
     db: SessionDep,
     current_user: CurrentUser,
 ):

@@ -15,13 +15,22 @@ class ItineraryRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def save_itinerary(self, trip_id: int, itinerary: ItineraryResponse) -> List[ItineraryDay]:
+    def save_itinerary(
+        self,
+        trip_id: int,
+        itinerary: ItineraryResponse,
+        commit: bool = True,
+    ) -> List[ItineraryDay]:
         """
-        Atomically replace all itinerary days/events for a trip.
+        Replace all itinerary days/events for a trip.
 
-        Deletes existing rows first, then bulk-inserts the new structure.
-        Uses flush() to obtain PKs for child rows without an intermediate commit,
-        so the entire operation lands in one transaction.
+        When ``commit=True`` (default) the method owns the transaction and
+        commits at the end, which is correct for standalone saves.
+
+        When ``commit=False`` the caller is responsible for committing.  Use
+        this when composing multiple writes into a single atomic transaction
+        (e.g. apply_itinerary_to_db also updates trip.title/description and
+        must not commit until both writes have succeeded).
 
         Events are deleted explicitly before days because bulk DELETE bypasses
         SQLAlchemy's ORM cascade, and SQLite does not enforce FK CASCADE by
@@ -101,9 +110,10 @@ class ItineraryRepository:
 
             saved_days.append(day)
 
-        self.db.commit()
-        for day in saved_days:
-            self.db.refresh(day)
+        if commit:
+            self.db.commit()
+            for day in saved_days:
+                self.db.refresh(day)
         return saved_days
 
     def get_days_by_trip(self, trip_id: int) -> List[ItineraryDay]:

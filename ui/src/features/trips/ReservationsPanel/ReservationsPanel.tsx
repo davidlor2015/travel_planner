@@ -1,16 +1,25 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useReservations } from "./useReservations";
 import type {
+  Reservation,
   ReservationPayload,
   ReservationType,
 } from "../../../shared/api/reservations";
+import type { ReservationSummary } from "../workspace/types";
 import { BookingRow } from "./BookingRow";
 import { track } from "../../../shared/analytics";
 
 interface ReservationsPanelProps {
   token: string;
   tripId: number;
+  onSummaryChange?: (summary: ReservationSummary) => void;
+  /**
+   * When provided, each booking with a matchable date exposes an inline
+   * "Add to itinerary" action. Absent means there's no writable draft to
+   * pin into — BookingRow then omits the button entirely.
+   */
+  onAddToItinerary?: (reservation: Reservation) => void;
 }
 
 const RESERVATION_TYPES: Array<{
@@ -275,6 +284,8 @@ const initialForm = {
 export const ReservationsPanel = ({
   token,
   tripId,
+  onSummaryChange,
+  onAddToItinerary,
 }: ReservationsPanelProps) => {
   const {
     items,
@@ -299,6 +310,10 @@ export const ReservationsPanel = ({
       (item) => item.start_at && new Date(item.start_at).getTime() >= now,
     ).length;
   }, [items]);
+
+  useEffect(() => {
+    onSummaryChange?.({ total: items.length, upcoming: upcomingCount, loading });
+  }, [items.length, upcomingCount, loading, onSummaryChange]);
 
   const handleChange = <K extends keyof typeof form>(
     key: K,
@@ -384,37 +399,45 @@ export const ReservationsPanel = ({
   return (
     <div className="mt-2 overflow-hidden rounded-2xl border border-[#EAE2D6] bg-white">
       <div className="border-b border-[#EAE2D6] bg-[#FAF8F5] px-5 py-5">
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div>
-            <h4 className="text-lg font-bold text-espresso">Trip bookings</h4>
-            <p className="mt-1 text-sm text-flint">
-              Keep flights, stays, transfers, activities, insurance, and
-              reservations in one clear timeline.
-            </p>
-            <p className="mt-1 text-sm text-flint">
-              These booking updates are shared with every trip member.
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
+            <h4 className="font-display text-base font-semibold text-espresso">
+              Bookings
+            </h4>
+            <p className="mt-0.5 text-[12px] text-flint">
+              {items.length === 0
+                ? "Flights, stays, transfers, activities — all in one timeline."
+                : (
+                  <>
+                    <span className="font-medium text-espresso">
+                      {items.length}
+                    </span>{" "}
+                    saved
+                    {upcomingCount > 0 ? (
+                      <>
+                        <span className="mx-1.5 text-[#C7BCAE]">·</span>
+                        <span className="font-medium text-espresso">
+                          {upcomingCount}
+                        </span>{" "}
+                        upcoming
+                      </>
+                    ) : null}
+                  </>
+                )}
             </p>
           </div>
-          <div className="flex items-center gap-2 flex-wrap justify-end">
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full border border-[#4D6B8A]/20 bg-[#EDF0F5] text-[#3D5C7A]">
-              {items.length} saved
+          <motion.button
+            type="button"
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={handleToggleForm}
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[#E5DDD1] bg-white px-3 text-[12px] font-medium text-flint shadow-sm shadow-[#1C1108]/5 transition-colors hover:bg-[#FAF8F5] hover:text-[#1C1108]"
+          >
+            <span aria-hidden="true" className="text-base leading-none">
+              +
             </span>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full border border-amber/30 bg-amber/10 text-amber">
-              {upcomingCount} upcoming
-            </span>
-            <motion.button
-              type="button"
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={handleToggleForm}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#E5DDD1] bg-[#F5EDE7] px-4 py-2 text-sm font-semibold text-[#1C1108] shadow-sm shadow-[#1C1108]/5 transition-colors hover:bg-[#EFE3D8]"
-            >
-              <span aria-hidden="true" className="text-base leading-none">
-                +
-              </span>
-              {showForm ? "Close booking form" : "Add booking"}
-            </motion.button>
-          </div>
+            {showForm ? "Close" : "Add booking"}
+          </motion.button>
         </div>
 
         <AnimatePresence>
@@ -716,6 +739,22 @@ export const ReservationsPanel = ({
                 referenceLabel={item.confirmation_code}
                 priceLabel={moneyLabel}
                 hasBudgetLink={Boolean(item.budget_expense_id)}
+                onAddToItinerary={
+                  onAddToItinerary && item.start_at
+                    ? () => {
+                        track({
+                          name: "booking_added_to_itinerary",
+                          props: {
+                            trip_id: tripId,
+                            reservation_id: item.id,
+                            reservation_type: item.reservation_type,
+                          },
+                        });
+                        onAddToItinerary(item);
+                        setFeedback("Added to itinerary.");
+                      }
+                    : undefined
+                }
                 onEdit={() => {
                   track({
                     name: "booking_edit_opened",

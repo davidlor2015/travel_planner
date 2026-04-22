@@ -244,12 +244,14 @@ export function useOnTripMutations({
     const filteredUnplanned = snapshot.today_unplanned.filter(
       (item) => !optimistic.deletedUnplannedIds[item.event_id],
     );
-    // Optimistic next_stop: mirror the backend eligibility rule in
-    // _pick_next_stop exactly. An item is eligible iff its plan-level status
-    // is not "skipped" AND its execution_status (plan-level overlay, possibly
-    // overridden by an in-flight optimistic tap) is not "confirmed" / "skipped".
-    // When nothing on today is eligible, fall through to snapshot.next_stop,
-    // which may legitimately point at a future day the frontend can't see.
+    // Optimistic next_stop: apply the same eligibility rule the server uses
+    // inside _pick_next_stop for individual stops — eligible iff the plan-level
+    // status is not "skipped" AND the execution_status (possibly overridden by
+    // an in-flight tap) is not "confirmed" / "skipped".
+    //
+    // This scan covers only today_stops. When nothing on today is eligible we
+    // fall through to snapshot.next_stop, which is the server-computed value
+    // and may point to a stop on a future day the client cannot evaluate.
     const optimisticNextStop =
       overriddenStops.find((stop) => {
         const planStatus = (stop.status ?? "planned").trim().toLowerCase();
