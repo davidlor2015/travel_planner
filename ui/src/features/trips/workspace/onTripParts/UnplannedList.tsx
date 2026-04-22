@@ -55,8 +55,8 @@ function LogStopButton({
     "inline-flex min-h-10 items-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50";
   const toneClass =
     tone === "solid"
-      ? "bg-[#2a1d13] text-[#f2ebdd] hover:bg-[#3a2a1f]"
-      : "border border-[#c9b99a] bg-[#fbf7ef] text-[#2a1d13] hover:border-[#6b5743] hover:bg-[#ece4d7]";
+      ? "bg-surface-exec text-on-dark hover:bg-surface-exec-top"
+      : "border border-border-ontrip-strong bg-surface-ontrip-raised text-ontrip hover:border-border-exec hover:bg-surface-ontrip-sunken";
   return (
     <button
       type="button"
@@ -100,10 +100,10 @@ export function UnplannedList({
     <div className="px-6 sm:px-8 lg:px-0">
       {/* Section header */}
       <div className="flex items-baseline justify-between">
-        <h3 className="font-display text-[22px] font-medium text-[#2a1d13]">
+        <h3 className="font-display text-[22px] font-medium text-ontrip">
           Along the way
         </h3>
-        <span className="text-[11px] uppercase tracking-[0.18em] text-[#8a7866]">
+        <span className="text-[11px] uppercase tracking-[0.18em] text-ontrip-muted">
           Unplanned
         </span>
       </div>
@@ -111,15 +111,15 @@ export function UnplannedList({
       {/* Empty state: designed card with soft icon, two-line copy, inline trigger.
           Non-empty state: brief supporting line + rows + inline trigger below. */}
       {isEmpty ? (
-        <div className="mt-4 flex flex-col items-start gap-4 rounded-2xl border border-dashed border-[#d7c9b0] bg-[rgba(236,228,215,0.35)] px-5 py-6 sm:flex-row sm:items-center sm:gap-5">
-          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-[#fbf7ef] text-[#8a7866]">
+        <div className="mt-4 flex flex-col items-start gap-4 rounded-2xl border border-dashed border-border-ontrip-strong bg-surface-ontrip-sunken/35 px-5 py-6 sm:flex-row sm:items-center sm:gap-5">
+          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-surface-ontrip-raised text-ontrip-muted">
             <MapPinIcon />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[14px] font-medium text-[#3a2a1f]">
+            <p className="text-[14px] font-medium text-ontrip">
               Nothing logged yet
             </p>
-            <p className="mt-1 text-[12.5px] leading-snug text-[#8a7866]">
+            <p className="mt-1 text-[12.5px] leading-snug text-ontrip-muted">
               Capture a detour, coffee break, or photo op as it happens — we'll keep it with the day.
             </p>
           </div>
@@ -135,7 +135,7 @@ export function UnplannedList({
         </div>
       ) : (
         <>
-          <p className="mt-1 text-[12px] text-[#8a7866]">
+          <p className="mt-1 text-[12px] text-ontrip-muted">
             Little detours worth remembering.
           </p>
           <ul className="list-none p-0" style={{ margin: 0, marginTop: "1rem" }}>
@@ -150,27 +150,27 @@ export function UnplannedList({
                   key={stop.event_id}
                   className={`flex items-center gap-3 py-3.5 ${
                     index < stops.length - 1
-                      ? "border-b border-[#e4dbcb]"
+                      ? "border-b border-border-ontrip"
                       : ""
                   }`}
                 >
                   {/* Icon circle */}
-                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[rgba(236,228,215,0.7)] text-[#6b5743]">
+                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-surface-ontrip-sunken/70 text-ontrip-strong">
                     <MapPinIcon />
                   </div>
 
                   {/* Text */}
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[14px] text-[#3a2a1f]">
+                    <p className="truncate text-[14px] text-ontrip">
                       {stop.title}
                     </p>
                     {meta ? (
-                      <p className="mt-0.5 truncate text-[12px] text-[#8a7866]">
+                      <p className="mt-0.5 truncate text-[12px] text-ontrip-muted">
                         {meta}
                       </p>
                     ) : null}
                     {stop.notes ? (
-                      <p className="mt-0.5 truncate text-[12px] italic text-[#8a7866]">
+                      <p className="mt-0.5 truncate text-[12px] italic text-ontrip-muted">
                         {stop.notes}
                       </p>
                     ) : null}
@@ -183,7 +183,7 @@ export function UnplannedList({
                       disabled={stop.isPending}
                       onClick={() => onRemove(stop.event_id)}
                       aria-label={`Remove ${stop.title}`}
-                      className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#8a7866] opacity-60 transition-opacity hover:opacity-100 disabled:cursor-not-allowed"
+                      className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-ontrip-muted opacity-60 transition-opacity hover:opacity-100 disabled:cursor-not-allowed"
                     >
                       <TrashIcon />
                     </button>

@@ -13,7 +13,7 @@ function formatDayDate(dayDate: string | null): string {
 function ReadOnlyBadge() {
   return (
     <span
-      className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full border border-[#e4dbcb] bg-[#fbf7ef] px-2.5 py-0.5 text-[10.5px] font-medium uppercase tracking-[0.16em] text-[#6b5743]"
+      className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full border border-border-ontrip bg-surface-ontrip-raised px-2.5 py-0.5 text-[10.5px] font-medium uppercase tracking-[0.16em] text-ontrip-strong"
       title="Execution updates are disabled for this trip."
       aria-label="Read-only mode: execution updates are disabled"
     >
@@ -63,16 +63,16 @@ export function OnTripHeader({
       {/* Breadcrumb row */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="whitespace-nowrap text-[11px] font-normal uppercase tracking-[0.22em] text-[#b4532a]">
+          <span className="whitespace-nowrap text-[11px] font-normal uppercase tracking-[0.22em] text-accent-ontrip">
             On-Trip
           </span>
           {dayNumber != null || dayLabel ? (
             <>
               <span
                 aria-hidden
-                className="h-1 w-1 flex-shrink-0 rounded-full bg-[#c9bca8]"
+                className="h-1 w-1 flex-shrink-0 rounded-full bg-on-dark-muted"
               />
-              <span className="truncate text-[11px] font-normal uppercase tracking-[0.22em] text-[#8a7866]">
+              <span className="truncate text-[11px] font-normal uppercase tracking-[0.22em] text-ontrip-muted">
                 {dayNumber != null ? `Day ${dayNumber}` : ""}
                 {dayNumber != null && dayLabel ? " · " : ""}
                 {dayLabel}
@@ -87,13 +87,13 @@ export function OnTripHeader({
           {leadingActions}
           {hasProgress ? (
             <div className="flex items-center gap-2">
-              <div className="h-[3px] w-16 overflow-hidden rounded-full bg-[#ece4d7]">
+              <div className="h-[3px] w-16 overflow-hidden rounded-full bg-surface-ontrip-sunken">
                 <div
-                  className="h-full rounded-full bg-[rgba(180,83,42,0.8)] transition-[width] duration-500"
+                  className="h-full rounded-full bg-accent-ontrip/80 transition-[width] duration-500"
                   style={{ width: `${progressPct}%` }}
                 />
               </div>
-              <span className="whitespace-nowrap text-[11px] font-normal uppercase tracking-[0.14em] text-[#8a7866]">
+              <span className="whitespace-nowrap text-[11px] font-normal uppercase tracking-[0.14em] text-ontrip-muted">
                 {doneCount} of {totalCount} done
               </span>
             </div>
@@ -102,7 +102,7 @@ export function OnTripHeader({
       </div>
 
       {/* Trip display title */}
-      <h2 className="mt-1.5 font-display text-[1.6rem] font-medium leading-[1.1] tracking-[-0.01em] text-[#2a1d13] sm:text-[1.75rem]">
+      <h2 className="mt-1.5 font-display text-[1.6rem] font-medium leading-[1.1] tracking-[-0.01em] text-ontrip sm:text-[1.75rem]">
         {trip.title}
       </h2>
     </div>

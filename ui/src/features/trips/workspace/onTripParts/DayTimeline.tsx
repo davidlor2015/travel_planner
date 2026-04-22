@@ -24,11 +24,11 @@ export function DayTimeline({ rows }: { rows: TimelineRowVM[] }) {
     <div>
       {/* Section header: "Today" + stop count */}
       <div className="flex items-baseline justify-between px-6 sm:px-8 lg:px-0">
-        <h3 className="font-display text-[22px] font-medium text-[#2a1d13]">
+        <h3 className="font-display text-[22px] font-medium text-ontrip">
           Today
         </h3>
         {rows.length > 0 ? (
-          <span className="text-[11px] uppercase tracking-[0.18em] text-[#8a7866]">
+          <span className="text-[11px] uppercase tracking-[0.18em] text-ontrip-muted">
             {rows.length} {rows.length === 1 ? "stop" : "stops"}
           </span>
         ) : null}

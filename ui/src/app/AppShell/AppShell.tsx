@@ -132,10 +132,19 @@ export const AppShell = ({
 
   return (
     <div
-      className={`flex min-h-screen flex-col font-sans ${isTrips ? "bg-[#F3EEE7] text-espresso" : "bg-ivory"}`}
+      className={`flex min-h-screen flex-col font-sans ${isTrips ? "bg-parchment-soft text-text" : "bg-bg-app"}`}
     >
-      {/* ── Top Navbar ── */}
-      <header className="sticky top-0 z-50 hidden border-b border-smoke bg-white/95 backdrop-blur-md sm:block">
+      {/* ── Top Navbar ──
+          Warmed from pure white to ivory so it reads as quiet chrome within the
+          same editorial palette, while staying clearly lighter than the cream
+          On-Trip container and the espresso "Happening now" focal card. */}
+      <header
+        className={`sticky top-0 z-50 hidden border-b backdrop-blur-md sm:block ${
+          isTrips
+            ? "border-border-ontrip bg-ivory/92"
+            : "border-smoke bg-white/95"
+        }`}
+      >
         <div
           className={`${isTrips ? "max-w-7xl" : shellWidth} mx-auto flex h-16 items-center justify-between gap-4 px-4 sm:px-6`}
         >
@@ -188,7 +197,7 @@ export const AppShell = ({
               <button
                 type="button"
                 onClick={() => setAvatarMenuOpen((prev) => !prev)}
-                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-[#1C1108] text-[13px] font-semibold text-white transition-colors hover:bg-[#2E2216] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B86845]/35"
+                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-espresso text-[13px] font-semibold text-white transition-colors hover:bg-espresso-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/35"
                 aria-label="Open user menu"
                 title={userEmail}
               >
@@ -201,16 +210,16 @@ export const AppShell = ({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -6, scale: 0.96 }}
                     transition={{ duration: 0.14 }}
-                    className="absolute right-0 top-full z-50 mt-2 w-48 overflow-hidden rounded-2xl border border-[#EAE2D6] bg-[#FEFCF9] shadow-[0_8px_30px_rgba(28,17,8,0.1)]"
+                    className="absolute right-0 top-full z-50 mt-2 w-48 overflow-hidden rounded-2xl border border-border bg-bg-app shadow-[0_8px_30px_rgba(28,17,8,0.1)]"
                   >
                     <div className="px-3 py-2.5">
-                      <p className="truncate text-[11px] text-[#A39688]">{userEmail}</p>
+                      <p className="truncate text-[11px] text-text-soft">{userEmail}</p>
                     </div>
-                    <div className="border-t border-[#EAE2D6]">
+                    <div className="border-t border-border">
                       <button
                         type="button"
                         onClick={() => { onViewChange("profile"); setAvatarMenuOpen(false); }}
-                        className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-[#1C1108] transition-colors hover:bg-[#F5EDE7]"
+                        className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-text transition-colors hover:bg-surface-sunken"
                       >
                         <ProfileIcon />
                         Profile
@@ -218,7 +227,7 @@ export const AppShell = ({
                       <button
                         type="button"
                         onClick={() => { onLogout(); setAvatarMenuOpen(false); }}
-                        className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-[#6B5E52] transition-colors hover:bg-[#F5EDE7]"
+                        className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-text-muted transition-colors hover:bg-surface-sunken"
                       >
                         <svg viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor" aria-hidden="true">
                           <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
@@ -261,7 +270,7 @@ export const AppShell = ({
 
       <nav
         aria-label="Primary"
-        className="fixed inset-x-0 bottom-0 z-50 border-t border-smoke bg-[#FEFCF9]/98 px-2 pb-[calc(env(safe-area-inset-bottom)+0.25rem)] pt-2 backdrop-blur-md sm:hidden"
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-bg-app/98 px-2 pb-[calc(env(safe-area-inset-bottom)+0.25rem)] pt-2 backdrop-blur-md sm:hidden"
       >
         <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
           {NAV_TABS.map((tab) => {
@@ -273,7 +282,7 @@ export const AppShell = ({
                 onClick={() => onViewChange(tab.id)}
                 aria-current={isActive ? "page" : undefined}
                 className={`flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl px-1.5 py-2 text-[9px] font-semibold uppercase tracking-[0.04em] transition-colors min-[380px]:text-[10px] min-[380px]:tracking-[0.08em] ${
-                  isActive ? "bg-[#F5EDE7]" : "hover:bg-[#FAF8F5]"
+                  isActive ? "bg-surface-sunken" : "hover:bg-surface-muted"
                 }`}
               >
                 <span className={isActive ? "text-amber" : "text-muted"}>

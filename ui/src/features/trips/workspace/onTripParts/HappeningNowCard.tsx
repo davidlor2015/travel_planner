@@ -27,14 +27,14 @@ export function HappeningNowCard({
   const compact = variant === "compact";
 
   const containerClass = compact
-    ? "rounded-[22px] border border-[#3a2a1f] bg-gradient-to-b from-[#3a2a1f] to-[#2a1d13] px-5 py-5"
-    : "rounded-[26px] bg-gradient-to-b from-[#3a2a1f] to-[#2a1d13] px-7 py-7 shadow-[0px_20px_40px_0px_rgba(58,42,31,0.4)]";
+    ? "rounded-[22px] border border-surface-exec-top bg-gradient-to-b from-surface-exec-top to-surface-exec px-5 py-5"
+    : "rounded-[26px] bg-gradient-to-b from-surface-exec-top to-surface-exec px-7 py-7 shadow-[0px_20px_40px_0px_rgba(58,42,31,0.4)]";
   const titleClass = compact
-    ? "mt-3 font-display text-[1.2rem] font-medium leading-[1.2] text-[#f2ebdd]"
-    : "mt-4 font-display text-[1.75rem] font-medium leading-[1.1] text-[#f2ebdd]";
+    ? "mt-3 font-display text-[1.2rem] font-medium leading-[1.2] text-on-dark"
+    : "mt-4 font-display text-[1.75rem] font-medium leading-[1.1] text-on-dark";
   const navigateClass = compact
-    ? "mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-[#f2ebdd] px-4 py-2.5 text-[14px] font-medium text-[#2a1d13] transition-opacity hover:opacity-90"
-    : "mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-[#f2ebdd] px-4 py-3 text-[16px] font-medium text-[#2a1d13] shadow-[0_6px_14px_rgba(0,0,0,0.4)] transition-opacity hover:opacity-90";
+    ? "mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-on-dark px-4 py-2.5 text-[14px] font-medium text-ontrip transition-opacity hover:opacity-90"
+    : "mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-on-dark px-4 py-3 text-[16px] font-medium text-ontrip shadow-[0_6px_14px_rgba(0,0,0,0.4)] transition-opacity hover:opacity-90";
   const actionBtnClass = compact
     ? "flex flex-1 items-center justify-center gap-1.5 rounded-full border px-3 py-2 text-[13px] font-medium transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
     : "flex flex-1 items-center justify-center gap-2 rounded-full border px-3 py-2.5 text-[14px] font-medium transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50";
@@ -47,14 +47,14 @@ export function HappeningNowCard({
         <div className="flex items-center gap-2.5">
           <span
             aria-hidden
-            className="h-1 w-1 flex-shrink-0 rounded-full bg-[#b4532a]"
+            className="h-1 w-1 flex-shrink-0 rounded-full bg-accent-ontrip"
             style={{ opacity: 0.84 }}
           />
-          <span className="text-[11px] font-normal uppercase tracking-[0.22em] text-[#d7b48c]">
+          <span className="text-[11px] font-normal uppercase tracking-[0.22em] text-on-dark-soft">
             Happening now
           </span>
         </div>
-        <span className="text-xs text-[#c9bca8]">{localTimeHHMM()}</span>
+        <span className="text-xs text-on-dark-muted">{localTimeHHMM()}</span>
       </div>
 
       {/* Stop title */}
@@ -80,7 +80,7 @@ export function HappeningNowCard({
             <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
             <circle cx="12" cy="10" r="3" />
           </svg>
-          <span className="truncate text-[13px] text-[#c9bca8]">
+          <span className="truncate text-[13px] text-on-dark-muted">
             {stop.location.trim()}
             {stop.time?.trim() ? ` · ${stop.time.trim()}` : ""}
           </span>
@@ -125,7 +125,7 @@ export function HappeningNowCard({
             disabled={!canMutate}
             onClick={onConfirm}
             aria-pressed={status === "confirmed"}
-            className={`${actionBtnClass} border-[#f2ebdd] bg-[#f2ebdd] text-[#2a1d13]`}
+            className={`${actionBtnClass} border-on-dark bg-on-dark text-ontrip`}
           >
             <svg
               width="14"
@@ -148,7 +148,7 @@ export function HappeningNowCard({
             disabled={!canMutate}
             onClick={onSkip}
             aria-pressed={status === "skipped"}
-            className={`${actionBtnClass} border-[#6b5743] text-[#d7b48c]`}
+            className={`${actionBtnClass} border-exec text-on-dark-soft`}
           >
             <svg
               width="14"
@@ -174,7 +174,7 @@ export function HappeningNowCard({
               disabled={!canMutate}
               onClick={onReset}
               aria-label="Reset to planned"
-              className={`flex ${resetSize} flex-shrink-0 items-center justify-center rounded-full border border-[#6b5743] text-[#c9bca8] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50`}
+              className={`flex ${resetSize} flex-shrink-0 items-center justify-center rounded-full border border-exec text-on-dark-muted transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50`}
             >
               <svg
                 width="14"

@@ -38,33 +38,33 @@ export function NeedsAttentionCard({
         {blockers.map((blocker) => (
           <li
             key={blocker.id}
-            className="rounded-xl border border-[#d7c9b0] bg-[rgba(236,228,215,0.5)] px-4 py-3.5"
+            className="rounded-xl border border-border-ontrip-strong bg-surface-ontrip-sunken/50 px-4 py-3.5"
           >
             <div className="flex items-center gap-2">
               <span
                 aria-hidden
-                className="h-1 w-1 flex-shrink-0 rounded-full bg-[#b4532a]"
+                className="h-1 w-1 flex-shrink-0 rounded-full bg-accent-ontrip"
               />
-              <span className="text-[10.5px] uppercase tracking-[0.18em] text-[#b4532a]">
+              <span className="text-[10.5px] uppercase tracking-[0.18em] text-accent-ontrip">
                 Needs attention
               </span>
               {blocker.severity === "watch" ? (
                 <>
                   <span
                     aria-hidden
-                    className="h-1 w-1 rounded-full bg-[#c9bca8]"
+                    className="h-1 w-1 rounded-full bg-on-dark-muted"
                   />
-                  <span className="text-[10.5px] uppercase tracking-[0.18em] text-[#8a7866]">
+                  <span className="text-[10.5px] uppercase tracking-[0.18em] text-ontrip-muted">
                     Watch
                   </span>
                 </>
               ) : null}
             </div>
-            <p className="mt-1 text-[13.5px] font-medium leading-snug text-[#3a2a1f]">
+            <p className="mt-1 text-[13.5px] font-medium leading-snug text-ontrip">
               {blocker.title}
             </p>
             {blocker.detail ? (
-              <p className="mt-0.5 text-[12px] leading-snug text-[#6b5743]">
+              <p className="mt-0.5 text-[12px] leading-snug text-ontrip-strong">
                 {blocker.detail}
               </p>
             ) : null}
@@ -73,7 +73,7 @@ export function NeedsAttentionCard({
                 <button
                   type="button"
                   onClick={() => onDismiss(blocker.id)}
-                  className="rounded-full px-2 py-1 text-[12px] font-medium text-[#6b5743] transition-colors hover:text-[#2a1d13]"
+                  className="rounded-full px-2 py-1 text-[12px] font-medium text-ontrip-strong transition-colors hover:text-ontrip"
                 >
                   Later
                 </button>
@@ -91,11 +91,11 @@ export function NeedsAttentionCard({
         {blockers.map((blocker) => (
           <li
             key={blocker.id}
-            className="rounded-2xl border border-[#d7c9b0] bg-[rgba(236,228,215,0.5)] px-5 py-5"
+            className="rounded-2xl border border-border-ontrip-strong bg-surface-ontrip-sunken/50 px-5 py-5"
           >
             <div className="flex items-start gap-3">
               {/* Icon circle */}
-              <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#fbf7ef] text-[#b4532a]">
+              <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-surface-ontrip-raised text-accent-ontrip">
                 <AlertIcon />
               </div>
 
@@ -103,16 +103,16 @@ export function NeedsAttentionCard({
               <div className="min-w-0 flex-1">
                 {/* Label row */}
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] uppercase tracking-[0.18em] text-[#b4532a]">
+                  <span className="text-[11px] uppercase tracking-[0.18em] text-accent-ontrip">
                     Needs attention
                   </span>
                   {blocker.severity === "watch" ? (
                     <>
                       <span
                         aria-hidden
-                        className="h-1 w-1 rounded-full bg-[#c9bca8]"
+                        className="h-1 w-1 rounded-full bg-on-dark-muted"
                       />
-                      <span className="text-[11px] uppercase tracking-[0.18em] text-[#8a7866]">
+                      <span className="text-[11px] uppercase tracking-[0.18em] text-ontrip-muted">
                         Watch
                       </span>
                     </>
@@ -120,13 +120,13 @@ export function NeedsAttentionCard({
                 </div>
 
                 {/* Blocker title */}
-                <p className="mt-1.5 text-[14.5px] font-medium leading-snug text-[#3a2a1f]">
+                <p className="mt-1.5 text-[14.5px] font-medium leading-snug text-ontrip">
                   {blocker.title}
                 </p>
 
                 {/* Detail */}
                 {blocker.detail ? (
-                  <p className="mt-1 text-[13px] leading-snug text-[#6b5743]">
+                  <p className="mt-1 text-[13px] leading-snug text-ontrip-strong">
                     {blocker.detail}
                   </p>
                 ) : null}
@@ -138,7 +138,7 @@ export function NeedsAttentionCard({
                     <button
                       type="button"
                       onClick={() => onDismiss(blocker.id)}
-                      className="rounded-full px-4 py-2 text-[13px] font-medium text-[#6b5743] transition-colors hover:text-[#2a1d13]"
+                      className="rounded-full px-4 py-2 text-[13px] font-medium text-ontrip-strong transition-colors hover:text-ontrip"
                     >
                       Later
                     </button>

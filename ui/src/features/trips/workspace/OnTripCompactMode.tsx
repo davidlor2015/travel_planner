@@ -235,7 +235,9 @@ export function OnTripCompactMode({
   );
 
   return (
-    <section className="overflow-hidden rounded-[28px] border border-[#ece4d7] bg-[#f2ebdd]">
+    <section
+      className="overflow-hidden rounded-[28px] border border-border-ontrip-strong bg-surface-ontrip shadow-[inset_0_1px_0_rgba(255,255,255,0.55),0_22px_60px_-32px_rgba(58,42,31,0.28)]"
+    >
       {/* ── Header: breadcrumb + progress + title ──────────────────────────── */}
       <OnTripHeader
         trip={trip}
@@ -255,7 +257,7 @@ export function OnTripCompactMode({
                   ? `${activityUnreadCount} unread trip updates`
                   : "Open trip updates"
               }
-              className="relative inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#ece4d7] bg-[#fbf7ef] text-[#6b5743] transition-colors hover:border-[#2a1d13] hover:text-[#2a1d13]"
+              className="relative inline-flex h-8 w-8 items-center justify-center rounded-full border border-border-ontrip bg-surface-ontrip-raised text-ontrip-strong transition-colors hover:border-ink hover:text-ontrip"
             >
               <svg
                 width="14"
@@ -274,7 +276,7 @@ export function OnTripCompactMode({
               {activityUnreadCount > 0 ? (
                 <span
                   aria-hidden
-                  className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#f2ebdd] bg-[#b4532a]"
+                  className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-surface-ontrip bg-accent-ontrip"
                 />
               ) : null}
             </button>
@@ -296,7 +298,7 @@ export function OnTripCompactMode({
           {/* Full-day timeline — constrained scroller only on mobile */}
           <div className="mt-6 max-h-[calc(100dvh-300px)] overflow-y-auto lg:mt-0 lg:max-h-none lg:overflow-visible">
             {timelineRows.length === 0 ? (
-              <p className="px-6 text-sm text-[#8a7866] sm:px-8 lg:px-0">
+              <p className="px-6 text-sm text-ontrip-muted sm:px-8 lg:px-0">
                 No planned stops for today. You can still log what happens below.
               </p>
             ) : (
@@ -355,14 +357,14 @@ export function OnTripCompactMode({
       </div>
 
       {/* ── Footer ────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between border-t border-[#e4dbcb] px-6 py-5 sm:px-8">
-        <p className="text-[13px] text-[#8a7866]">
+      <div className="flex items-center justify-between border-t border-border-ontrip px-6 py-5 sm:px-8">
+        <p className="text-[13px] text-ontrip-muted">
           The saved itinerary remains your plan of record.
         </p>
         <button
           type="button"
           onClick={onOpenFullWorkspace}
-          className="flex-shrink-0 text-[13px] font-medium text-[#8a7866] transition-colors hover:text-[#2a1d13]"
+          className="flex-shrink-0 text-[13px] font-medium text-ontrip-muted transition-colors hover:text-ontrip"
         >
           Open full workspace
         </button>

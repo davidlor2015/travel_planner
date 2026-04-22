@@ -30,7 +30,7 @@ export function AppTopNav({
   return (
     <header
       className={[
-        "sticky top-0 z-40 border-b border-smoke bg-[#FEFCF9]/95 backdrop-blur-md",
+        "sticky top-0 z-40 border-b border-border bg-bg-app/95 backdrop-blur-md",
         className,
       ].join(" ")}
     >
@@ -70,7 +70,7 @@ export function AppTopNav({
                   ? `${notificationCount} unread updates`
                   : "Trip activity"
               }
-              className="relative inline-flex min-h-10 min-w-10 items-center justify-center rounded-full border border-smoke bg-white text-flint transition-colors hover:text-espresso focus:outline-none focus-visible:ring-2 focus-visible:ring-amber/35"
+              className="relative inline-flex min-h-10 min-w-10 items-center justify-center rounded-full border border-border bg-surface text-text-muted transition-colors hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/35"
             >
               <svg
                 viewBox="0 0 20 20"
@@ -84,7 +84,7 @@ export function AppTopNav({
                 <path d="M11.8 16a2 2 0 0 1-3.6 0" />
               </svg>
               {notificationCount > 0 ? (
-                <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[#C0392B] px-1 text-[10px] font-bold text-white">
+                <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white">
                   {notificationCount}
                 </span>
               ) : null}
@@ -103,7 +103,7 @@ export function AppTopNav({
 
           {avatarLabel ? (
             <span
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#B86845] text-xs font-semibold uppercase text-white"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-accent text-xs font-semibold uppercase text-white"
               title={avatarLabel}
               aria-label={avatarLabel}
             >
@@ -283,7 +283,7 @@ export function AvatarStack({
       {shown.map((item, index) => (
         <span
           key={item.id}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#FEFCF9] bg-[#B86845] text-[10px] font-semibold text-white"
+          className="inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-bg-app bg-accent text-[10px] font-semibold text-white"
           style={{ marginLeft: index === 0 ? 0 : -8 }}
           title={item.label}
         >
@@ -309,14 +309,14 @@ export function ActionButton({
     variant === "primary"
       ? "bg-espresso text-white hover:bg-espresso-dark"
       : variant === "ghost"
-        ? "border-transparent bg-transparent text-flint hover:text-espresso"
-        : "border-smoke bg-parchment text-flint hover:bg-[#F5EDE7]";
+        ? "border-transparent bg-transparent text-text-muted hover:text-text"
+        : "border-border bg-surface-muted text-text-muted hover:bg-surface-sunken";
 
   return (
     <button
       type="button"
       className={[
-        "inline-flex min-h-11 items-center justify-center rounded-full border px-4 py-2 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber/35",
+        "inline-flex min-h-11 items-center justify-center rounded-full border px-4 py-2 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/35",
         variantClass,
         className,
       ].join(" ")}

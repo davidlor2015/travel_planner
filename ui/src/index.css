@@ -1,7 +1,28 @@
 @import "tailwindcss";
 
-/* ── "Desert Editorial" design tokens ── */
+/* ── "Desert Editorial" design tokens ──
+ *
+ * Two-tier token system:
+ *
+ *   Tier 1 — Palette primitives (named by material: espresso, amber, clay…).
+ *           These are the ground truth values and the raw Tailwind color utilities
+ *           (bg-espresso, text-flint, border-smoke, bg-amber) consumed across the
+ *           existing codebase. Keep them stable.
+ *
+ *   Tier 2 — Semantic aliases (named by role: bg, surface, text, accent,
+ *           surface-ontrip, on-dark…). All Waypoint/On-Trip surfaces are
+ *           authored against these. Primitives can be retuned without rewriting
+ *           components.
+ *
+ * One palette family, two semantic roles:
+ *   - Base role  → planning/workspace screens (light, calm).
+ *   - Execution  → On-Trip screens (richer contrast, stronger emphasis).
+ */
 @theme {
+
+  /* ══════════════════════════════════════════════════════════════════════
+   *  Tier 1 — Palette primitives
+   * ══════════════════════════════════════════════════════════════════════ */
 
   /* ── Text ── */
 
@@ -67,6 +88,75 @@
   --color-warm-light:     #C9BCA8;
 
 
+  /* ══════════════════════════════════════════════════════════════════════
+   *  Tier 2 — Semantic tokens (aliases onto the primitives above)
+   * ══════════════════════════════════════════════════════════════════════ */
+
+  /* ── Base role — planning / workspace (light, calm) ── */
+
+  /* Surfaces */
+  --color-bg:                   var(--color-parchment-soft); /* page */
+  --color-bg-app:               var(--color-ivory);          /* AppShell non-trips */
+  --color-surface:              var(--color-white);          /* card */
+  --color-surface-muted:        var(--color-parchment);      /* panel */
+  --color-surface-strong:       var(--color-cream);          /* emphasized muted panel */
+  --color-surface-sunken:       #F5EDE7;                     /* hover / active well */
+
+  /* Borders */
+  --color-border:               var(--color-smoke);          /* default divider */
+  --color-border-strong:        var(--color-dot);            /* stronger divider */
+
+  /* Text ramp */
+  --color-text:                 var(--color-espresso);       /* primary */
+  --color-text-muted:           var(--color-flint);          /* secondary */
+  --color-text-soft:            var(--color-muted);          /* tertiary */
+
+  /* Accents */
+  --color-accent:               var(--color-amber);          /* primary CTA */
+  --color-accent-strong:        var(--color-amber-dark);
+  --color-accent-muted:         var(--color-brass);
+
+  /* States */
+  --color-success:              var(--color-olive);
+  --color-warning:              var(--color-amber);
+  /* --color-danger is already defined above as a primitive and doubles as the
+   * semantic "danger" role — keeping one declaration avoids a duplicate var. */
+
+
+  /* ── Execution role — On-Trip (richer contrast, stronger emphasis) ── */
+
+  /* Layered On-Trip surfaces */
+  --color-surface-ontrip:         var(--color-cream);         /* shell */
+  --color-surface-ontrip-raised:  var(--color-parchment-soft);/* card on cream */
+  --color-surface-ontrip-sunken:  var(--color-divider);       /* hover / progress track */
+
+  /* Dark execution surfaces (Happening Now) */
+  --color-surface-exec:           var(--color-ink);           /* solid dark */
+  --color-surface-exec-top:       var(--color-cocoa-1);       /* gradient top */
+
+  /* On-Trip borders */
+  --color-border-ontrip:          #E4DBCB;
+  --color-border-ontrip-strong:   #C9B99A;
+  --color-border-exec:            #6B5743;
+
+  /* On-Trip accent */
+  --color-accent-ontrip:          var(--color-clay-accent);
+
+  /* On-Trip text ramp (light surfaces) */
+  --color-text-ontrip:            var(--color-ink);
+  /* "Strong" sits between ontrip text and ontrip-muted — warm mid-brown used
+   * for secondary copy that still needs to read firmly on parchment surfaces.
+   * Shares its value with --color-border-exec (one primitive, two roles). */
+  --color-text-ontrip-strong:     #6B5743;
+  --color-text-ontrip-muted:      #8A7866;
+  --color-text-ontrip-soft:       var(--color-deep-muted);
+
+  /* Text/bg for light content sitting on dark execution surfaces */
+  --color-on-dark:                var(--color-cream);
+  --color-on-dark-muted:          var(--color-warm-light);
+  --color-on-dark-soft:           var(--color-brass);
+
+
   /* ── Typography ── */
 
   --font-sans:            'Inter', ui-sans-serif, system-ui, sans-serif;
@@ -95,8 +185,8 @@
     font-family:              var(--font-sans);
     font-size:                0.84375rem;
     line-height:              1.6;         /* generous body rhythm */
-    color:                    theme(--color-espresso);
-    background-color:         theme(--color-ivory);
+    color:                    var(--color-text);
+    background-color:         var(--color-bg);
     -webkit-font-smoothing:   antialiased;
     -moz-osx-font-smoothing:  grayscale;
     text-rendering:           optimizeLegibility;
@@ -113,7 +203,7 @@
       font-weight:      600;
       letter-spacing:   -0.02em;
       line-height:      1.1;
-    color:            theme(--color-espresso);
+    color:            var(--color-text);
   }
 
   p {
