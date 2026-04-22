@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useMemo, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { WaypointLogo } from "../../../shared/ui/WaypointLogo";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -69,6 +69,22 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   onBack,
   forgotPasswordHref,
 }) => {
+  // Preserve any ?returnTo= query param across the register -> verification
+  // step so that the resend-verification link (and any post-verify login)
+  // still lands the user back on the original destination (e.g. an invite
+  // acceptance page). Without this, verifying email drops the user into the
+  // default post-login flow and the invite context is lost.
+  const location = useLocation();
+  const returnTo = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get("returnTo") ?? "";
+  }, [location.search]);
+
+  const buildVerifyEmailHref = (emailAddress: string) => {
+    const base = `/verify-email/request?email=${encodeURIComponent(emailAddress)}`;
+    return returnTo ? `${base}&returnTo=${encodeURIComponent(returnTo)}` : base;
+  };
+
   const [mode, setMode] = useState<Mode>(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -203,7 +219,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
             </div>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <Link
-                to={`/verify-email/request?email=${encodeURIComponent(verificationEmail)}`}
+                to={buildVerifyEmailHref(verificationEmail)}
                 className="text-sm font-semibold text-amber hover:underline"
               >
                 Send another verification link
@@ -296,7 +312,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   {error === "Email not verified" ? (
                     <span className="mt-2 block">
                       <Link
-                        to={`/verify-email/request?email=${encodeURIComponent(email)}`}
+                        to={buildVerifyEmailHref(email)}
                         className="font-semibold text-amber hover:underline"
                       >
                         Resend verification link

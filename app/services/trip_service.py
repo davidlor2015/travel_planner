@@ -1,6 +1,7 @@
 from datetime import date, datetime, timedelta, timezone
 import json
 from typing import Any
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
@@ -256,10 +257,15 @@ class TripService:
             members=items,
         )
 
-    def get_on_trip_snapshot(self, trip_id: int, user_id: int) -> TripOnTripSnapshotResponse:
+    def get_on_trip_snapshot(
+        self,
+        trip_id: int,
+        user_id: int,
+        tz: str | None = None,
+    ) -> TripOnTripSnapshotResponse:
         context = self.access_service.require_membership(trip_id, user_id)
         trip = context.trip
-        today = date.today()
+        today = self._resolve_today(tz)
         is_active = trip.start_date <= today <= trip.end_date
 
         itinerary = self.itinerary_repo.to_itinerary_response(
@@ -384,6 +390,23 @@ class TripService:
             stop_ref=stop_ref,
             execution_status=execution_status,
         )
+
+    @staticmethod
+    def _resolve_today(tz: str | None) -> date:
+        """Return the traveler's current date.
+
+        When the client supplies a valid IANA timezone, compute today in that
+        zone so a user whose device tz differs from the server sees the correct
+        day for today_stops, next_stop, and blockers. Fall back silently to the
+        server date when the parameter is missing or invalid; we never want a
+        bad tz string to 500 the snapshot endpoint.
+        """
+        if tz:
+            try:
+                return datetime.now(ZoneInfo(tz)).date()
+            except (ZoneInfoNotFoundError, ValueError):
+                pass
+        return date.today()
 
     @staticmethod
     def _item_stop_ref(item: Any) -> str | None:
@@ -832,6 +855,7 @@ class TripService:
         self.invite_repo.expire_stale_invite(invite)
         self.db.commit()
         trip = invite.trip
+        inviter = getattr(invite, "invited_by", None)
         return TripInviteDetailResponse(
             trip_id=trip.id,
             trip_title=trip.title,
@@ -841,6 +865,7 @@ class TripService:
             email=invite.email,
             status=invite.resolved_status,
             expires_at=invite.expires_at,
+            invited_by_email=getattr(inviter, "email", None),
         )
 
     def accept_invite(self, token: str, actor_user_id: int) -> TripInviteAcceptResponse:

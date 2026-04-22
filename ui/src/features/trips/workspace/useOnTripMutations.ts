@@ -79,10 +79,15 @@ export function useOnTripMutations({
     }
   }
 
+  // Track the last refresh timestamp so coalescing visibility + focus events
+  // does not fire two fetches back-to-back when a tab resume triggers both.
+  const lastRefreshAtRef = useRef<number>(0);
+
   const refreshSnapshot = useCallback(async () => {
     if (!tripId) return;
     try {
       const next = await getTripOnTripSnapshot(token, tripId);
+      lastRefreshAtRef.current = Date.now();
       onSnapshotRefresh(next);
       // A successful server read clears all local overrides for this trip; the
       // server is now the source of truth.
@@ -103,6 +108,35 @@ export function useOnTripMutations({
       void refreshSnapshot();
     }, 60_000);
     return () => clearInterval(intervalId);
+  }, [tripId, refreshSnapshot]);
+
+  // Foreground refresh: when the user returns to the app (tab becomes visible
+  // again, window regains focus), treat that as a strong signal that any cached
+  // snapshot may be stale and re-fetch immediately. A 2s debounce via
+  // lastRefreshAtRef prevents double-fetching when both events fire on resume.
+  useEffect(() => {
+    if (!tripId) return;
+    if (typeof document === "undefined" || typeof window === "undefined") return;
+
+    const maybeRefresh = () => {
+      if (Date.now() - lastRefreshAtRef.current < 2_000) return;
+      void refreshSnapshot();
+    };
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        maybeRefresh();
+      }
+    };
+    const handleFocus = () => {
+      maybeRefresh();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("focus", handleFocus);
+    };
   }, [tripId, refreshSnapshot]);
 
   const setStopStatus = useCallback<UseOnTripMutationsResult["setStopStatus"]>(

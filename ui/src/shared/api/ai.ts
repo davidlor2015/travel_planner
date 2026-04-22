@@ -1,6 +1,8 @@
 import { API_URL } from '../../app/config';
 import { apiFetch } from './client';
 
+type ActionKey = 'apply' | 'refine' | 'fetch';
+
 /** Group coordination for a stop (persisted with itinerary JSON). */
 export type ItineraryStopStatus = 'planned' | 'confirmed' | 'skipped';
 
@@ -66,6 +68,39 @@ export interface ItineraryItemReference {
 export const AI_REQUEST_TIMEOUT_MS = 180_000;
 export const AI_SLOW_THRESHOLD_MS = 30_000;
 
+/**
+ * Maps AI endpoint HTTP failures to user-friendly copy. The raw server body
+ * is still emitted to the dev console so developers can debug without the
+ * UI exposing stack traces or raw provider errors to end users.
+ */
+function friendlyAiErrorMessage(
+  action: ActionKey,
+  status: number,
+  rawBody: string,
+): string {
+  if (import.meta.env?.DEV) {
+    console.error(`[ai.${action}] ${status}:`, rawBody);
+  }
+
+  if (status === 429) {
+    return "Our AI is busy right now. Please try again in a moment.";
+  }
+  if (status >= 500 && status < 600) {
+    return "The AI service is having trouble. Please try again shortly.";
+  }
+  if (status === 408 || status === 504) {
+    return "The AI took too long to respond. Please try again.";
+  }
+
+  const fallbackByAction: Record<ActionKey, string> = {
+    apply: 'Failed to apply itinerary.',
+    refine: 'Failed to refine itinerary.',
+    fetch: 'Failed to fetch itinerary.',
+  };
+  const trimmed = rawBody.trim();
+  return trimmed ? `${fallbackByAction[action]} (${trimmed})` : fallbackByAction[action];
+}
+
 export const applyItinerary = async (
   token: string,
   tripId: number,
@@ -82,7 +117,7 @@ export const applyItinerary = async (
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`Failed to apply itinerary (${response.status}): ${text}`);
+    throw new Error(friendlyAiErrorMessage('apply', response.status, text));
   }
 };
 
@@ -107,11 +142,14 @@ export const refineItinerary = async (
     },
     body: JSON.stringify({ trip_id: tripId, ...payload }),
     signal,
+    // LLM refinement can legitimately take longer than the default 45s
+    // client timeout; use the AI-specific budget instead.
+    timeoutMs: AI_REQUEST_TIMEOUT_MS,
   });
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`Failed to refine itinerary (${response.status}): ${text}`);
+    throw new Error(friendlyAiErrorMessage('refine', response.status, text));
   }
 
   return response.json();
@@ -128,7 +166,7 @@ export const getSavedItinerary = async (
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`Failed to fetch itinerary (${response.status}): ${text}`);
+    throw new Error(friendlyAiErrorMessage('fetch', response.status, text));
   }
 
   return response.json();

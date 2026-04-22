@@ -26,6 +26,25 @@ class TripExecutionRepository:
         stop_ref: str,
         status: str,
     ) -> TripExecutionEvent:
+        # Idempotency: if the latest status for this stop_ref already matches,
+        # return the existing event instead of appending a duplicate. This keeps
+        # the append-only log clean under double-taps and retry-on-transient
+        # failures, while still recording every genuine status transition
+        # (planned -> confirmed -> planned still produces three distinct rows).
+        latest = self.db.scalars(
+            select(TripExecutionEvent)
+            .where(
+                TripExecutionEvent.trip_id == trip_id,
+                TripExecutionEvent.kind == self.STOP_STATUS,
+                TripExecutionEvent.stop_ref == stop_ref,
+                TripExecutionEvent.status.isnot(None),
+            )
+            .order_by(TripExecutionEvent.id.desc())
+            .limit(1)
+        ).first()
+        if latest is not None and latest.status == status:
+            return latest
+
         event = TripExecutionEvent(
             trip_id=trip_id,
             created_by_user_id=user_id,

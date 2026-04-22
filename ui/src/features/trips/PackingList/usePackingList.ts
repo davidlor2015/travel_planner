@@ -107,13 +107,34 @@ export function usePackingList(token: string, tripId: number): UsePackingListRet
   const clearChecked = useCallback(async () => {
     const checked = items.filter((i) => i.checked);
     if (checked.length === 0) return;
-    const snapshot = items;
-    try {
-      dispatch({ type: 'checked/clear' });
-      await Promise.all(checked.map((i) => deletePackingItem(token, tripId, i.id)));
-    } catch (error) {
-      dispatch({ type: 'fetch/done', items: snapshot });
-      throw error;
+
+    // Optimistically remove all checked items.
+    dispatch({ type: 'checked/clear' });
+
+    // Track per-item result so we only restore the ones whose server delete
+    // failed; on partial failure the UI stays in sync with the DB.
+    const results = await Promise.allSettled(
+      checked.map((i) =>
+        deletePackingItem(token, tripId, i.id).then(() => i.id),
+      ),
+    );
+
+    const failedItems: PackingItem[] = [];
+    let firstReason: unknown = null;
+    for (let index = 0; index < results.length; index++) {
+      const outcome = results[index];
+      if (outcome.status === 'rejected') {
+        failedItems.push(checked[index]);
+        if (firstReason === null) firstReason = outcome.reason;
+      }
+    }
+
+    if (failedItems.length > 0) {
+      for (const item of failedItems) {
+        dispatch({ type: 'item/add', item });
+      }
+      if (firstReason instanceof Error) throw firstReason;
+      throw new Error('Failed to clear some packed items.');
     }
   }, [token, tripId, items]);
 

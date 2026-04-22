@@ -121,6 +121,7 @@ class TripInviteDetailResponse(BaseModel):
     email: EmailStr
     status: str
     expires_at: datetime
+    invited_by_email: EmailStr | None = None
 
 
 class TripResponse(TripBase):

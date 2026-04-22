@@ -230,10 +230,14 @@ export const PackingList = ({
   const [suggestions, setSuggestions] = useState<PackingSuggestion[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [categoryOverrides, setCategoryOverrides] = useState<
     Record<number, PackingCategoryKey>
   >({});
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const toErrorMessage = (err: unknown, fallback: string): string =>
+    err instanceof Error && err.message ? err.message : fallback;
 
   const checkedCount = items.filter((item) => item.checked).length;
   const total = items.length;
@@ -334,6 +338,7 @@ export const PackingList = ({
     if (!trimmed) return;
 
     setFeedback(null);
+    setActionError(null);
 
     try {
       const created = await addItem(trimmed);
@@ -358,14 +363,15 @@ export const PackingList = ({
       });
 
       inputRef.current?.focus();
-    } catch {
-      // Hook already handles rollback, so only stop here.
+    } catch (err) {
+      setActionError(toErrorMessage(err, "Couldn't add packing item. Try again."));
     }
   }, [addItem, draft, draftCategory, tripId]);
 
   const handleAddSuggestion = useCallback(
     async (suggestion: PackingSuggestion) => {
       setFeedback(null);
+      setActionError(null);
 
       const category = detectCategory(suggestion.label);
 
@@ -389,8 +395,10 @@ export const PackingList = ({
             essential: isEssential(suggestion.label),
           },
         });
-      } catch {
-        // Hook already handles rollback, so only stop here.
+      } catch (err) {
+        setActionError(
+          toErrorMessage(err, "Couldn't add suggested item. Try again."),
+        );
       }
     },
     [addItem, tripId],
@@ -398,6 +406,7 @@ export const PackingList = ({
 
   const handleToggle = useCallback(
     async (item: PackingItem) => {
+      setActionError(null);
       try {
         await toggleItem(item.id);
 
@@ -414,8 +423,10 @@ export const PackingList = ({
             essential: isEssential(item.label),
           },
         });
-      } catch {
-        // Hook already handles rollback, so only stop here.
+      } catch (err) {
+        setActionError(
+          toErrorMessage(err, "Couldn't update item. Try again."),
+        );
       }
     },
     [categoryOverrides, toggleItem, tripId],
@@ -423,6 +434,7 @@ export const PackingList = ({
 
   const handleRemove = useCallback(
     async (item: PackingItem) => {
+      setActionError(null);
       try {
         await removeItem(item.id);
         setFeedback("Packing item removed.");
@@ -436,8 +448,10 @@ export const PackingList = ({
             essential: isEssential(item.label),
           },
         });
-      } catch {
-        // Hook already handles rollback, so only stop here.
+      } catch (err) {
+        setActionError(
+          toErrorMessage(err, "Couldn't remove item. Try again."),
+        );
       }
     },
     [categoryOverrides, removeItem, tripId],
@@ -446,6 +460,7 @@ export const PackingList = ({
   const handleClearPacked = useCallback(async () => {
     if (checkedCount === 0) return;
 
+    setActionError(null);
     try {
       await clearChecked();
       setFeedback("Packed items cleared.");
@@ -457,8 +472,13 @@ export const PackingList = ({
           cleared_count: checkedCount,
         },
       });
-    } catch {
-      // Hook already handles rollback, so only stop here.
+    } catch (err) {
+      setActionError(
+        toErrorMessage(
+          err,
+          "Some packed items couldn't be cleared. The list shows what's still saved.",
+        ),
+      );
     }
   }, [checkedCount, clearChecked, tripId]);
 
@@ -594,6 +614,22 @@ export const PackingList = ({
         >
           {error}
         </p>
+      ) : null}
+
+      {actionError ? (
+        <div
+          className="flex items-start justify-between gap-3 rounded-xl border border-danger/25 bg-danger/10 px-4 py-3 text-sm text-danger"
+          role="alert"
+        >
+          <span className="flex-1">{actionError}</span>
+          <button
+            type="button"
+            onClick={() => setActionError(null)}
+            className="shrink-0 text-[12px] font-semibold text-danger underline-offset-2 hover:underline"
+          >
+            Dismiss
+          </button>
+        </div>
       ) : null}
 
       <section className="rounded-2xl border border-[#EAE2D6] bg-[#FEFCF9] px-4 py-4 shadow-[0_1px_0_rgba(28,17,8,0.03)] sm:px-5">

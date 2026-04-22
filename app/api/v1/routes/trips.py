@@ -52,8 +52,13 @@ def read_trip_member_readiness(trip_id: int, db: SessionDep, current_user: Curre
 
 
 @router.get("/{trip_id}/on-trip-snapshot", response_model=TripOnTripSnapshotResponse)
-def read_trip_on_trip_snapshot(trip_id: int, db: SessionDep, current_user: CurrentUser):
-    return TripService(db).get_on_trip_snapshot(trip_id, current_user.id)
+def read_trip_on_trip_snapshot(
+    trip_id: int,
+    db: SessionDep,
+    current_user: CurrentUser,
+    tz: str | None = None,
+):
+    return TripService(db).get_on_trip_snapshot(trip_id, current_user.id, tz=tz)
 
 
 @router.post("/{trip_id}/members", response_model=TripMemberResponse, status_code=201)

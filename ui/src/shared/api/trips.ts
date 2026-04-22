@@ -33,6 +33,7 @@ export interface TripInviteDetail {
   email: string;
   status: string;
   expires_at: string;
+  invited_by_email: string | null;
 }
 
 export interface TripInviteAcceptResponse {
@@ -296,11 +297,68 @@ export const getTripMemberReadiness = async (
   return response.json();
 };
 
+/**
+ * Run an execution-log request and retry once (500ms backoff) on transient
+ * failures. A transient failure is either a network error (fetch itself
+ * throws) or a 5xx response from the server. 4xx responses are user-facing
+ * errors that would never succeed on retry, so they surface immediately.
+ *
+ * Callers that rollback optimistic UI should only do so after this helper
+ * rejects, which means both attempts failed.
+ */
+async function executeWithRetry(
+  perform: () => Promise<Response>,
+  label: string,
+): Promise<Response> {
+  type Outcome =
+    | { ok: true; response: Response }
+    | { ok: false; retryable: boolean; error: Error };
+
+  const runOnce = async (): Promise<Outcome> => {
+    let response: Response;
+    try {
+      response = await perform();
+    } catch (err) {
+      return {
+        ok: false,
+        retryable: true,
+        error: err instanceof Error ? err : new Error(String(err)),
+      };
+    }
+    if (response.ok) return { ok: true, response };
+    const retryable = response.status >= 500;
+    const text = await response.text().catch(() => '');
+    return {
+      ok: false,
+      retryable,
+      error: new Error(`Failed to ${label} (${response.status}): ${text}`),
+    };
+  };
+
+  const first = await runOnce();
+  if (first.ok) return first.response;
+  if (!first.retryable) throw first.error;
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  const second = await runOnce();
+  if (second.ok) return second.response;
+  throw second.error;
+}
+
+const resolveClientTimezone = (): string | null => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+  } catch {
+    return null;
+  }
+};
+
 export const getTripOnTripSnapshot = async (
   token: string,
   tripId: number,
 ): Promise<TripOnTripSnapshot> => {
-  const response = await apiFetch(`${API_URL}/v1/trips/${tripId}/on-trip-snapshot`, {
+  const tz = resolveClientTimezone();
+  const query = tz ? `?tz=${encodeURIComponent(tz)}` : '';
+  const response = await apiFetch(`${API_URL}/v1/trips/${tripId}/on-trip-snapshot${query}`, {
     method: 'GET',
     token,
   });
@@ -364,18 +422,16 @@ export const postStopStatus = async (
   tripId: number,
   payload: { stop_ref: string; status: TripExecutionStatus },
 ): Promise<TripExecutionEvent> => {
-  const response = await apiFetch(`${API_URL}/v1/trips/${tripId}/execution/stop-status`, {
-    method: 'POST',
-    token,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Failed to update stop status (${response.status}): ${text}`);
-  }
-
+  const response = await executeWithRetry(
+    () =>
+      apiFetch(`${API_URL}/v1/trips/${tripId}/execution/stop-status`, {
+        method: 'POST',
+        token,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }),
+    'update stop status',
+  );
   return response.json();
 };
 
@@ -384,18 +440,16 @@ export const postUnplannedStop = async (
   tripId: number,
   payload: UnplannedStopPayload,
 ): Promise<TripExecutionEvent> => {
-  const response = await apiFetch(`${API_URL}/v1/trips/${tripId}/execution/unplanned-stop`, {
-    method: 'POST',
-    token,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Failed to log stop (${response.status}): ${text}`);
-  }
-
+  const response = await executeWithRetry(
+    () =>
+      apiFetch(`${API_URL}/v1/trips/${tripId}/execution/unplanned-stop`, {
+        method: 'POST',
+        token,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }),
+    'log stop',
+  );
   return response.json();
 };
 
@@ -404,13 +458,12 @@ export const deleteExecutionEvent = async (
   tripId: number,
   eventId: number,
 ): Promise<void> => {
-  const response = await apiFetch(
-    `${API_URL}/v1/trips/${tripId}/execution/events/${eventId}`,
-    { method: 'DELETE', token },
+  await executeWithRetry(
+    () =>
+      apiFetch(`${API_URL}/v1/trips/${tripId}/execution/events/${eventId}`, {
+        method: 'DELETE',
+        token,
+      }),
+    'delete event',
   );
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Failed to delete event (${response.status}): ${text}`);
-  }
 };

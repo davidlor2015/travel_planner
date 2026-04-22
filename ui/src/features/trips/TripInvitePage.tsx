@@ -117,6 +117,23 @@ export const TripInvitePage = ({ token, user }: TripInvitePageProps) => {
                 {invite.status === 'pending' ? 'Pending acceptance' : invite.status}
               </p>
               <p className="mt-2 text-sm text-flint">This invite is for {invite.email}.</p>
+              {invite.invited_by_email ? (
+                <p className="mt-1 text-sm text-flint">
+                  Invited by <span className="font-semibold text-espresso">{invite.invited_by_email}</span>.
+                </p>
+              ) : null}
+              {invite.expires_at ? (
+                <p className="mt-1 text-sm text-flint">
+                  {(() => {
+                    const expiresAtMs = new Date(invite.expires_at).getTime();
+                    const hasExpired = Number.isFinite(expiresAtMs) && expiresAtMs <= Date.now();
+                    const label = new Date(invite.expires_at).toLocaleString();
+                    return hasExpired
+                      ? `Expired on ${label}.`
+                      : `Expires on ${label}.`;
+                  })()}
+                </p>
+              ) : null}
             </div>
 
             {invite.status !== 'pending' ? (

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { Trip } from "../../../../shared/api/trips";
 import { track } from "../../../../shared/analytics";
 import { MemberAvatarStack } from "../WorkspacePrimitives";
@@ -49,12 +49,29 @@ function InviteFeedback({
   tripId: number;
 }) {
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
+  const linkElementRef = useRef<HTMLSpanElement | null>(null);
 
   const urlMatch = feedback.match(/(https?:\/\/\S+)/);
   const inviteUrl = urlMatch?.[1] ?? null;
 
+  const selectInviteLink = () => {
+    const node = linkElementRef.current;
+    if (!node || typeof window === "undefined") return;
+    const selection = window.getSelection();
+    if (!selection) return;
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  };
+
   const handleCopy = () => {
     if (!inviteUrl) return;
+    setCopyFailed(false);
+    // navigator.clipboard can reject (permission denied, insecure context,
+    // headless browsers). Surface a visible fallback so the user knows to
+    // copy manually rather than leaving them guessing.
     navigator.clipboard
       .writeText(inviteUrl)
       .then(() => {
@@ -65,7 +82,14 @@ function InviteFeedback({
         setCopied(true);
         window.setTimeout(() => setCopied(false), 2000);
       })
-      .catch(() => undefined);
+      .catch(() => {
+        setCopyFailed(true);
+        selectInviteLink();
+        track({
+          name: "trip_invite_link_copy_failed",
+          props: { source: "members_tab", trip_id: tripId },
+        });
+      });
   };
 
   return (
@@ -73,7 +97,10 @@ function InviteFeedback({
       <p className="font-semibold">Invite created</p>
       {inviteUrl ? (
         <div className="mt-2 flex items-center gap-2">
-          <span className="break-all flex-1 rounded-lg border border-smoke bg-white px-2 py-1.5 text-xs font-mono text-flint">
+          <span
+            ref={linkElementRef}
+            className="break-all flex-1 rounded-lg border border-smoke bg-white px-2 py-1.5 text-xs font-mono text-flint"
+          >
             {inviteUrl}
           </span>
           <button
@@ -88,6 +115,12 @@ function InviteFeedback({
       ) : (
         <p className="mt-1 break-all text-xs text-flint">{feedback}</p>
       )}
+      {copyFailed ? (
+        <p className="mt-2 text-xs font-medium text-danger" role="alert">
+          Copy failed. The invite link is selected — press Ctrl/Cmd + C to copy
+          it manually.
+        </p>
+      ) : null}
     </div>
   );
 }

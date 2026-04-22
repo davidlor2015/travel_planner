@@ -183,12 +183,63 @@ export function useTripWorkspaceModel({
   const trackedStreamCompletions = useRef<Set<number>>(new Set());
   const viewedSavedItineraryIds = useRef<Set<number>>(new Set());
 
+  // Holds meta for the most recent pending draft per tripId so it stays
+  // readable from callbacks after the pending state has already been cleared.
+  // Used to attach `source`/`source_label`/`fallback_used` to
+  // itinerary_rejected events without depending on closure-captured state.
+  const draftPlanMetaRef = useRef<Record<number, DraftPlanMeta>>({});
+
+  const fireItineraryRejected = useCallback(
+    (
+      tripId: number,
+      reason:
+        | "user_dismissed"
+        | "regenerate_discarded"
+        | "apply_failed",
+    ) => {
+      const meta = draftPlanMetaRef.current[tripId] ?? null;
+      track({
+        name: "itinerary_rejected",
+        props: {
+          trip_id: tripId,
+          source: meta?.source ?? "unknown",
+          source_label: meta?.sourceLabel ?? "Unknown",
+          fallback_used: meta?.fallbackUsed ?? false,
+          reason,
+        },
+      });
+    },
+    [],
+  );
+
+  // `silent` is used by the apply handler: a successful apply clears the
+  // stream state, but that is not a rejection and must not fire analytics
+  // or unset any apply-success bookkeeping.
   const resetStream = useCallback(
-    (tripId: number) => {
+    (tripId: number, options: { silent?: boolean } = {}) => {
+      if (!options.silent) {
+        let hadPendingDraft = false;
+        setPendingItineraries((prev) => {
+          if (!prev[tripId]) return prev;
+          hadPendingDraft = true;
+          const next = { ...prev };
+          delete next[tripId];
+          return next;
+        });
+        if (hadPendingDraft) {
+          fireItineraryRejected(tripId, "user_dismissed");
+          setDraftPlanMeta((prev) => {
+            if (!prev[tripId]) return prev;
+            const next = { ...prev };
+            delete next[tripId];
+            return next;
+          });
+        }
+      }
       trackedStreamCompletions.current.delete(tripId);
       resetStreamBase(tripId);
     },
-    [resetStreamBase],
+    [fireItineraryRejected, resetStreamBase],
   );
   const draftMutations = useMemo(
     () => createItineraryDraftMutations(setPendingItineraries),
@@ -217,6 +268,10 @@ export function useTripWorkspaceModel({
   useEffect(() => {
     onTripsChange?.(trips);
   }, [onTripsChange, trips]);
+
+  useEffect(() => {
+    draftPlanMetaRef.current = draftPlanMeta;
+  }, [draftPlanMeta]);
 
   useEffect(() => {
     saveMutedTripIds(mutedTripIds);
@@ -308,42 +363,55 @@ export function useTripWorkspaceModel({
     };
   }, [token]);
 
-  useEffect(() => {
-    if (!selectedTripId) return;
-    let cancelled = false;
-
-    const loadOnTripSignals = async () => {
+  // Extracted so the effect (on trip switch) and the Apply handler can both
+  // refresh On-Trip readiness/snapshot on demand. Without this, applying an
+  // itinerary on the currently selected trip left the Track view stale until
+  // a trip switch or a full page reload.
+  const loadOnTripSignals = useCallback(
+    async (tripId: number) => {
       const [readinessResult, onTripResult] = await Promise.allSettled([
-        getTripMemberReadiness(token, selectedTripId),
-        getTripOnTripSnapshot(token, selectedTripId),
+        getTripMemberReadiness(token, tripId),
+        getTripOnTripSnapshot(token, tripId),
       ]);
-      if (cancelled) return;
 
       if (readinessResult.status === "fulfilled") {
         setMemberReadinessByTripId((prev) => ({
           ...prev,
-          [selectedTripId]: readinessResult.value.members,
+          [tripId]: readinessResult.value.members,
         }));
       }
       if (onTripResult.status === "fulfilled") {
         setOnTripSnapshotByTripId((prev) => ({
           ...prev,
-          [selectedTripId]: onTripResult.value,
+          [tripId]: onTripResult.value,
         }));
       }
       // Mark settled regardless of fulfilled/rejected so the placeholder
       // does not linger if the snapshot request failed; a failed fetch
       // behaves like "not on-trip" instead of a stuck spinner.
       setOnTripSnapshotSettledByTripId((prev) =>
-        prev[selectedTripId] ? prev : { ...prev, [selectedTripId]: true },
+        prev[tripId] ? prev : { ...prev, [tripId]: true },
       );
-    };
+    },
+    [token],
+  );
 
-    void loadOnTripSignals();
+  useEffect(() => {
+    if (!selectedTripId) return;
+    let cancelled = false;
+
+    void (async () => {
+      await loadOnTripSignals(selectedTripId);
+      // Effect-scoped cancel is intentionally advisory: state setters inside
+      // loadOnTripSignals are safe post-unmount (React 18 drops them), and
+      // loadOnTripSignals is shared with the apply handler below.
+      if (cancelled) return;
+    })();
+
     return () => {
       cancelled = true;
     };
-  }, [selectedTripId, token]);
+  }, [selectedTripId, loadOnTripSignals]);
 
   useEffect(() => {
     if (trips.length === 0) {
@@ -721,6 +789,14 @@ export function useTripWorkspaceModel({
     itinerary: Itinerary,
     previous?: EditableItinerary,
   ) => {
+    // Replacing an existing pending draft (regenerate / run AI assist /
+    // edit-from-saved / start-manual-from-existing-draft) discards the
+    // prior draft. Fire analytics BEFORE overwriting state so the meta
+    // associated with the discarded draft is the one we attribute.
+    if (previous) {
+      fireItineraryRejected(tripId, "regenerate_discarded");
+    }
+
     const editable = toEditableItinerary(itinerary, previous);
     setPendingItineraries((prev) => ({ ...prev, [tripId]: editable }));
     setDraftPlanMeta((prev) => ({
@@ -769,6 +845,19 @@ export function useTripWorkspaceModel({
   const handleAddMember = async (tripId: number) => {
     const email = (memberDrafts[tripId] ?? "").trim();
     if (!email) return;
+
+    // Client-side email format check. Keep intentionally permissive so we
+    // block clearly malformed strings without overreaching beyond RFC 5322.
+    // The backend is still the source of truth.
+    const emailFormat = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailFormat.test(email)) {
+      setMemberFeedback((prev) => ({ ...prev, [tripId]: null }));
+      setMemberErrors((prev) => ({
+        ...prev,
+        [tripId]: "Enter a valid email address (e.g. name@example.com).",
+      }));
+      return;
+    }
 
     setMemberErrors((prev) => ({ ...prev, [tripId]: null }));
     setMemberFeedback((prev) => ({ ...prev, [tripId]: null }));
@@ -848,16 +937,18 @@ export function useTripWorkspaceModel({
     clearAppliedSuccess(tripId);
     setApplyingIds((prev) => new Set(prev).add(tripId));
 
+    // Phase 1: persist the itinerary. Only this phase can fail the apply.
+    let applied = false;
     try {
       // Backend contract: persist is full-itinerary replace, not granular stop mutations.
       await applyItinerary(token, tripId, toApiItinerary(itinerary));
+      applied = true;
+
       setSavedItineraries((prev) => ({
         ...prev,
         [tripId]: toApiItinerary(itinerary),
       }));
       setAppliedSuccessIds((prev) => new Set(prev).add(tripId));
-      const freshTrips = await getTrips(token);
-      setTrips(freshTrips);
       const meta = draftPlanMeta[tripId];
       track({
         name: "itinerary_applied",
@@ -868,7 +959,10 @@ export function useTripWorkspaceModel({
           fallback_used: meta?.fallbackUsed ?? false,
         },
       });
-      resetStream(tripId);
+      // Silent: applying is not a rejection. It also clears the pending
+      // draft + meta below, so resetStream must not try to re-clear them
+      // and must not fire itinerary_rejected.
+      resetStream(tripId, { silent: true });
       setPendingItineraries((prev) => {
         const next = { ...prev };
         delete next[tripId];
@@ -894,6 +988,7 @@ export function useTripWorkspaceModel({
       setDraftActionError(
         err instanceof Error ? err.message : "Failed to apply itinerary.",
       );
+      fireItineraryRejected(tripId, "apply_failed");
     } finally {
       setApplyingIds((prev) => {
         const next = new Set(prev);
@@ -901,6 +996,20 @@ export function useTripWorkspaceModel({
         return next;
       });
     }
+
+    if (!applied) return;
+
+    // Phase 2: best-effort refresh of the trip list and On-Trip signals so
+    // the Track view reflects the applied itinerary immediately. A transient
+    // network hiccup here must NOT roll back the apply success banner — the
+    // DB already committed in phase 1.
+    try {
+      const freshTrips = await getTrips(token);
+      setTrips(freshTrips);
+    } catch {
+      // Next foreground/interval refresh will reconcile.
+    }
+    void loadOnTripSignals(tripId);
   };
 
   const handleRegenerateDraft = async (tripId: number) => {
