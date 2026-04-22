@@ -139,6 +139,12 @@ export function useTripWorkspaceModel({
   const [onTripSnapshotByTripId, setOnTripSnapshotByTripId] = useState<
     Record<number, TripOnTripSnapshot>
   >({});
+  // Tracks per-trip whether the first on-trip snapshot fetch has settled
+  // (fulfilled OR rejected). Keeps "never fetched yet" distinct from
+  // "fetched, returned inactive" so the initial render can show a neutral
+  // placeholder instead of flashing the full workspace.
+  const [onTripSnapshotSettledByTripId, setOnTripSnapshotSettledByTripId] =
+    useState<Record<number, boolean>>({});
   const [onTripCompactDismissedByTripId, setOnTripCompactDismissedByTripId] =
     useState<Record<number, boolean>>({});
 
@@ -227,6 +233,7 @@ export function useTripWorkspaceModel({
       setReservationSummaries({});
       setMemberReadinessByTripId({});
       setOnTripSnapshotByTripId({});
+      setOnTripSnapshotSettledByTripId({});
 
       try {
         const tripRows = await getTrips(token);
@@ -324,6 +331,12 @@ export function useTripWorkspaceModel({
           [selectedTripId]: onTripResult.value,
         }));
       }
+      // Mark settled regardless of fulfilled/rejected so the placeholder
+      // does not linger if the snapshot request failed; a failed fetch
+      // behaves like "not on-trip" instead of a stuck spinner.
+      setOnTripSnapshotSettledByTripId((prev) =>
+        prev[selectedTripId] ? prev : { ...prev, [selectedTripId]: true },
+      );
     };
 
     void loadOnTripSignals();
@@ -1176,6 +1189,15 @@ export function useTripWorkspaceModel({
   const selectedIsOnTripCompactMode = Boolean(
     selectedOnTripSnapshot?.mode === "active" && !selectedOnTripCompactDismissed,
   );
+  // Pending = a trip is selected, no snapshot has been cached yet, and the
+  // first fetch has not settled. This is the only case where we must NOT
+  // render the full workspace, since it would flash for a frame or two
+  // before the snapshot arrives and we swap to compact mode.
+  const selectedIsOnTripPending = Boolean(
+    selectedTrip &&
+      selectedOnTripSnapshot === null &&
+      !onTripSnapshotSettledByTripId[selectedTrip.id],
+  );
   const selectedMemberDraft = selectedTrip
     ? (memberDrafts[selectedTrip.id] ?? "")
     : "";
@@ -1390,6 +1412,7 @@ export function useTripWorkspaceModel({
       selectedOnTripSnapshot,
       selectedIsOnTripCompactMode,
       selectedOnTripCompactDismissed,
+      selectedIsOnTripPending,
       actionInputs,
       actionItems,
       actionability,

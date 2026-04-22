@@ -196,6 +196,7 @@ export const TripList = ({
     selectedOnTripSnapshot,
     selectedIsOnTripCompactMode,
     selectedOnTripCompactDismissed,
+    selectedIsOnTripPending,
   } = model.derived;
 
   const {
@@ -288,21 +289,61 @@ export const TripList = ({
     }
   };
 
+  const showReturnToOnTripChip =
+    Boolean(selectedTrip) &&
+    selectedOnTripSnapshot?.mode === "active" &&
+    selectedOnTripCompactDismissed &&
+    !selectedIsOnTripCompactMode;
+
+  const returnToOnTripChip = showReturnToOnTripChip ? (
+    <button
+      type="button"
+      onClick={() => selectedTrip && restoreOnTripCompactMode(selectedTrip.id)}
+      className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#1C1108] bg-[#1C1108] px-3 text-[12px] font-semibold text-white transition-colors hover:bg-[#2B1B0F] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B86845]/35"
+      aria-label="Return to On-Trip mode"
+    >
+      <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[#F5C14D]" />
+      On-Trip
+    </button>
+  ) : null;
+
   return (
     <div>
       <main className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6">
-        {/* Trip picker bar */}
         <TripPickerBar
           trips={trips}
           selectedTripId={selectedTripId}
-          unreadCount={selectedUnreadCount}
           onTripChange={selectTrip}
-          onOpenActivityDrawer={openActivityDrawer}
           onCreateClick={onCreateClick}
+          leadingAction={returnToOnTripChip}
         />
 
         {showWorkspace && selectedTrip && selectedTripStatus ? (
-          selectedIsOnTripCompactMode && selectedOnTripSnapshot ? (
+          selectedIsOnTripPending ? (
+            <section
+              aria-busy="true"
+              aria-label="Loading trip view"
+              className="overflow-hidden rounded-[28px] border border-[#EAE2D6] bg-[#FEFCF9] shadow-[0_18px_55px_rgba(28,17,8,0.08)]"
+            >
+              <div className="border-b border-[#EDE7DD] bg-[#FAF8F5]/80 px-5 py-4 sm:px-7">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#A39688]">
+                      Trip workspace
+                    </p>
+                    <h2 className="mt-1 truncate text-xl font-semibold text-[#1C1108]">
+                      {selectedTrip.title}
+                    </h2>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-3 px-5 py-4 sm:px-7">
+                <div className="h-20 animate-pulse rounded-2xl bg-[#EDE7DD]/60" />
+                <div className="h-14 animate-pulse rounded-2xl bg-[#EDE7DD]/60" />
+                <div className="h-14 animate-pulse rounded-2xl bg-[#EDE7DD]/60" />
+              </div>
+            </section>
+          ) : selectedIsOnTripCompactMode && selectedOnTripSnapshot ? (
             <OnTripCompactMode
               token={token}
               trip={selectedTrip}
@@ -314,26 +355,10 @@ export const TripList = ({
                 dismissOnTripCompactMode(selectedTrip.id);
                 openWorkspaceTab("overview");
               }}
+              activityUnreadCount={selectedUnreadCount}
+              onOpenActivityDrawer={openActivityDrawer}
             />
           ) : (
-          <>
-            {selectedOnTripSnapshot?.mode === "active" &&
-            selectedOnTripCompactDismissed ? (
-              <div className="mb-3 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => restoreOnTripCompactMode(selectedTrip.id)}
-                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[#1C1108] bg-[#1C1108] px-3.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#2B1B0F]"
-                  aria-label="Return to On-Trip mode"
-                >
-                  <span
-                    aria-hidden
-                    className="h-1.5 w-1.5 rounded-full bg-[#F5C14D]"
-                  />
-                  Return to On-Trip
-                </button>
-              </div>
-            ) : null}
           <TripWorkspaceSection
             trip={selectedTrip}
             packingSummary={selectedPackingSummary}
@@ -648,7 +673,6 @@ export const TripList = ({
                   />
                 )}
           </TripWorkspaceSection>
-          </>
           )
         ) : null}
       </main>

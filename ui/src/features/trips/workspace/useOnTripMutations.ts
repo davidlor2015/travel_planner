@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   deleteExecutionEvent,
@@ -91,6 +91,19 @@ export function useOnTripMutations({
       // Non-fatal: keep any existing overrides so the UI doesn't flash.
     }
   }, [onSnapshotRefresh, token, tripId]);
+
+  // Background refresh: while a trip is selected, re-fetch the snapshot every
+  // 60s so state converges across devices (group trips, or one user on two
+  // devices) without requiring a manual reload. refreshSnapshot already
+  // swallows errors and no-ops when tripId is null, so a flaky network does
+  // not surface toasts here.
+  useEffect(() => {
+    if (!tripId) return;
+    const intervalId = setInterval(() => {
+      void refreshSnapshot();
+    }, 60_000);
+    return () => clearInterval(intervalId);
+  }, [tripId, refreshSnapshot]);
 
   const setStopStatus = useCallback<UseOnTripMutationsResult["setStopStatus"]>(
     async (stopRef, nextStatus) => {
@@ -197,10 +210,25 @@ export function useOnTripMutations({
     const filteredUnplanned = snapshot.today_unplanned.filter(
       (item) => !optimistic.deletedUnplannedIds[item.event_id],
     );
+    // Optimistic next_stop: mirror the backend eligibility rule in
+    // _pick_next_stop exactly. An item is eligible iff its plan-level status
+    // is not "skipped" AND its execution_status (plan-level overlay, possibly
+    // overridden by an in-flight optimistic tap) is not "confirmed" / "skipped".
+    // When nothing on today is eligible, fall through to snapshot.next_stop,
+    // which may legitimately point at a future day the frontend can't see.
+    const optimisticNextStop =
+      overriddenStops.find((stop) => {
+        const planStatus = (stop.status ?? "planned").trim().toLowerCase();
+        if (planStatus === "skipped") return false;
+        const execStatus = stop.execution_status;
+        if (execStatus === "confirmed" || execStatus === "skipped") return false;
+        return true;
+      }) ?? null;
     return {
       ...snapshot,
       today_stops: overriddenStops,
       today_unplanned: filteredUnplanned,
+      next_stop: optimisticNextStop ?? snapshot.next_stop,
     };
   }, [snapshot, optimistic.statusByRef, optimistic.deletedUnplannedIds]);
 

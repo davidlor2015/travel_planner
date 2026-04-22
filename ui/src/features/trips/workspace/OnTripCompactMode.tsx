@@ -299,12 +299,16 @@ export function OnTripCompactMode({
   snapshot,
   onOpenFullWorkspace,
   onSnapshotRefresh,
+  activityUnreadCount = 0,
+  onOpenActivityDrawer,
 }: {
   token: string;
   trip: Trip;
   snapshot: TripOnTripSnapshot;
   onOpenFullWorkspace: () => void;
   onSnapshotRefresh: (snapshot: TripOnTripSnapshot) => void;
+  activityUnreadCount?: number;
+  onOpenActivityDrawer?: () => void;
 }) {
   const {
     viewSnapshot,
@@ -355,13 +359,48 @@ export function OnTripCompactMode({
               {trip.title}
             </h2>
           </div>
-          <button
-            type="button"
-            onClick={onOpenFullWorkspace}
-            className="shrink-0 rounded-full border border-[#EDE7DD] bg-white px-3 py-1 text-xs font-medium text-[#6B5E52] hover:border-[#1C1108] hover:text-[#1C1108] transition-colors"
-          >
-            Full workspace
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            {onOpenActivityDrawer ? (
+              <button
+                type="button"
+                onClick={onOpenActivityDrawer}
+                aria-label={
+                  activityUnreadCount > 0
+                    ? `${activityUnreadCount} unread trip updates`
+                    : "Open trip updates"
+                }
+                className="relative inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#EDE7DD] bg-white text-[#6B5E52] transition-colors hover:border-[#1C1108] hover:text-[#1C1108]"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                  <path d="M10 21a2 2 0 0 0 4 0" />
+                </svg>
+                {activityUnreadCount > 0 ? (
+                  <span
+                    aria-hidden
+                    className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#FEFCF9] bg-[#B86845]"
+                  />
+                ) : null}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={onOpenFullWorkspace}
+              className="rounded-full border border-[#EDE7DD] bg-white px-3 py-1 text-xs font-medium text-[#6B5E52] hover:border-[#1C1108] hover:text-[#1C1108] transition-colors"
+            >
+              Full workspace
+            </button>
+          </div>
         </div>
       </div>
 

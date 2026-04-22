@@ -312,6 +312,7 @@ class TripService:
                     actor_email=context.membership.user.email,
                     is_group_trip=len(trip.memberships) > 1,
                     is_active=is_active,
+                    execution_statuses=execution_statuses,
                 ),
             )
 
@@ -330,6 +331,7 @@ class TripService:
         next_stop_resolution = self._pick_next_stop(
             itinerary=itinerary,
             today_day_index=today_day_resolution.get("day_index"),
+            execution_statuses=execution_statuses,
         )
         today_stops = self._build_today_stops(
             itinerary=itinerary,
@@ -346,6 +348,7 @@ class TripService:
             actor_email=context.membership.user.email,
             is_group_trip=len(trip.memberships) > 1,
             is_active=is_active,
+            execution_statuses=execution_statuses,
         )
 
         today_single = self._to_stop_response(today_stop_resolution, execution_statuses)
@@ -382,6 +385,16 @@ class TripService:
             execution_status=execution_status,
         )
 
+    @staticmethod
+    def _item_stop_ref(item: Any) -> str | None:
+        """Single source of truth for deriving a stop_ref from an itinerary item.
+
+        All snapshot methods (build_today_stops, pick_today_stop, pick_next_stop)
+        must go through here so the execution-log lookup key always matches the
+        key that was written by the execution service.
+        """
+        return str(item.id) if item.id is not None else None
+
     def _build_today_stops(
         self,
         itinerary: ItineraryResponse,
@@ -396,7 +409,7 @@ class TripService:
         parsed_day_date = self._parse_itinerary_day_date(day.date)
         rows: list[TripOnTripStopSnapshotResponse] = []
         for item in day.items:
-            stop_ref = str(item.id) if item.id is not None else None
+            stop_ref = self._item_stop_ref(item)
             execution_status = execution_statuses.get(stop_ref) if stop_ref else None
             rows.append(
                 TripOnTripStopSnapshotResponse(
@@ -576,21 +589,25 @@ class TripService:
             "status": selected_item.status,
             "source": source,
             "confidence": confidence,
-            "stop_ref": str(selected_item.id) if selected_item.id is not None else None,
+            "stop_ref": self._item_stop_ref(selected_item),
         }
 
     def _pick_next_stop(
         self,
         itinerary: ItineraryResponse,
         today_day_index: int | None,
+        execution_statuses: dict[str, str] | None = None,
     ) -> dict[str, Any]:
+        _exec = execution_statuses or {}
         start_index = today_day_index if today_day_index is not None else 0
         for day_offset in range(start_index, len(itinerary.days)):
             day = itinerary.days[day_offset]
             parsed_day_date = self._parse_itinerary_day_date(day.date)
             for item in day.items:
-                status = (item.status or "planned").strip().lower()
-                if status == "skipped":
+                plan_status = (item.status or "planned").strip().lower()
+                stop_ref = self._item_stop_ref(item)
+                exec_status = _exec.get(stop_ref) if stop_ref else None
+                if plan_status == "skipped" or exec_status in ("confirmed", "skipped"):
                     continue
                 source = "itinerary_sequence"
                 confidence = "medium"
@@ -606,7 +623,7 @@ class TripService:
                     "status": item.status,
                     "source": source,
                     "confidence": confidence,
-                    "stop_ref": str(item.id) if item.id is not None else None,
+                    "stop_ref": stop_ref,
                 }
         return {
             "day_number": None,
@@ -629,7 +646,9 @@ class TripService:
         actor_email: str,
         is_group_trip: bool,
         is_active: bool,
+        execution_statuses: dict[str, str] | None = None,
     ) -> list[TripOnTripBlockerResponse]:
+        _exec = execution_statuses or {}
         if not is_active:
             return []
 
@@ -660,11 +679,20 @@ class TripService:
             return blockers
 
         day = itinerary.days[day_index]
-        planned_items = [
-            item
-            for item in day.items
-            if (item.status or "planned").strip().lower() == "planned"
-        ]
+
+        def _is_open(item: Any) -> bool:
+            """Open = plan-level planned AND no confirmed/skipped event in the log.
+
+            Mirrors the inverse of the eligibility rule used in _pick_next_stop
+            so that "Today still has unconfirmed stops" drops to zero exactly
+            when the next-stop selector has no more items to pick on this day.
+            """
+            if (item.status or "planned").strip().lower() != "planned":
+                return False
+            exec_status = _exec.get(self._item_stop_ref(item)) if item is not None else None
+            return exec_status not in ("confirmed", "skipped")
+
+        planned_items = [item for item in day.items if _is_open(item)]
         if len(planned_items) > 0:
             blockers.append(
                 TripOnTripBlockerResponse(
@@ -695,8 +723,7 @@ class TripService:
             unassigned = [
                 item
                 for item in day.items
-                if (item.status or "planned").strip().lower() == "planned"
-                and not (item.handled_by or "").strip()
+                if _is_open(item) and not (item.handled_by or "").strip()
             ]
             if ownership_signals_used and len(unassigned) > 0:
                 blockers.append(
@@ -711,7 +738,7 @@ class TripService:
             normalized_actor = actor_email.strip().lower()
             waiting_on: dict[str, int] = {}
             for item in day.items:
-                if (item.status or "planned").strip().lower() != "planned":
+                if not _is_open(item):
                     continue
                 owner = (item.handled_by or "").strip().lower()
                 if not owner or owner == normalized_actor:
