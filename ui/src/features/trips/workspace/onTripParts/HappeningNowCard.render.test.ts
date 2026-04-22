@@ -65,4 +65,27 @@ describe("HappeningNowCard (render)", () => {
     );
     expect(html).toContain("Alfama");
   });
+
+  it("omits Confirm / Skip / Reset in read-only mode but keeps Navigate", () => {
+    // Use a confirmed stop so the Reset affordance would normally render;
+    // that way we cover all three execution controls in one case.
+    const html = renderToStaticMarkup(
+      React.createElement(HappeningNowCard, {
+        stop: { ...stop, isReadOnly: true, effectiveStatus: "confirmed" },
+        onConfirm: () => {},
+        onSkip: () => {},
+        onReset: () => {},
+      }),
+    );
+    expect(html).toContain("Happening now");
+    expect(html).toContain("Breakfast");
+    // Navigate stays — it's informational and safe in read-only.
+    expect(html).toContain("Navigate");
+    // Execution controls are hidden outright, not disabled.
+    expect(html).not.toContain("Confirm");
+    expect(html).not.toContain("Confirmed");
+    expect(html).not.toContain("Skip");
+    expect(html).not.toContain("Skipped");
+    expect(html).not.toContain('aria-label="Reset to planned"');
+  });
 });

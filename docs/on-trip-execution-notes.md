@@ -56,13 +56,24 @@ This document captures **current** behavior before refactoring the On-Trip UI in
 
 ## `read_only` behavior
 
-- Snapshot schema includes `read_only: bool`, defaulting to `True`.
+- Snapshot schema includes `read_only: bool` (schema default `True` is a safe
+  fallback for any caller that omits the flag; the service always sets it).
   - File: `app/schemas/trip.py`
-- `TripService.get_on_trip_snapshot` currently returns `read_only=True` in both active and inactive cases.
-  - File: `app/services/trip_service.py`
-- UI currently **does not** check `read_only` when enabling/disabling interactions.
-  - File: `OnTripCompactMode.tsx`
-- Implication: until the UI honors `read_only`, the effective gating is “has stop_ref” + “not pending”.
+- `TripService.get_on_trip_snapshot` derives `read_only` from the access
+  context: `read_only = not access_service.can_execute_on_trip(context)`.
+  Any accepted membership (owner or member) is writable; future viewer /
+  archived / locked states extend `TripAccessService.can_execute_on_trip`.
+  - Files: `app/services/trip_service.py`, `app/services/trip_access_service.py`
+- UI honors `read_only` by **hiding** execution affordances, not disabling
+  them: Confirm / Skip / Reset in `HappeningNowCard` and the `next` row of
+  `TimelineRow`, the `LogStopFAB`, and the Log-a-stop CTA + per-row Remove
+  in `UnplannedList` are all omitted. Navigate (Go) and the informational
+  Read-only badge in the header remain.
+  - Files: `OnTripCompactMode.tsx`, `onTripParts/HappeningNowCard.tsx`,
+    `onTripParts/TimelineRow.tsx`, `onTripParts/UnplannedList.tsx`,
+    `onTripParts/OnTripHeader.tsx`
+- `buildStopActions` in `OnTripCompactMode` still returns no-op handlers when
+  `readOnly` — kept as defense-in-depth behind the render-side gating.
 
 ## Optimistic update behavior + race risks
 

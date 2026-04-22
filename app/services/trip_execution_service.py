@@ -61,6 +61,7 @@ class TripExecutionService:
             time_value=payload.time,
             location=payload.location,
             notes=payload.notes,
+            client_request_id=payload.client_request_id,
         )
         return TripExecutionEventResponse.model_validate(event)
 

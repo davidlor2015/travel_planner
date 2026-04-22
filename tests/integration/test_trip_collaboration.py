@@ -249,7 +249,9 @@ def test_on_trip_snapshot_resolves_today_and_next_stop_conservatively(
     payload = snapshot_res.json()
 
     assert payload["mode"] == "active"
-    assert payload["read_only"] is True
+    # Trip owner has normal collaboration/write access; read_only must be
+    # derived from permissions, not hardcoded.
+    assert payload["read_only"] is False
     assert payload["today"]["title"] == "Asakusa walk"
     assert payload["today"]["source"] == "day_date_exact"
     assert payload["today"]["confidence"] == "high"
@@ -323,3 +325,24 @@ def test_on_trip_snapshot_blockers_use_execution_bucket(
     blocker_ids = {blocker["id"] for blocker in payload["blockers"]}
     assert "today-planned-open" in blocker_ids
     assert "today-anchor-time-missing" in blocker_ids
+
+
+def test_on_trip_snapshot_is_not_read_only_for_accepted_member(
+    client,
+    user_b,
+    auth_headers_user_a,
+    auth_headers_user_b,
+):
+    """An accepted collaborator has the same execution permission as the owner.
+
+    On-Trip is the execution surface, so `read_only` must reflect actual
+    permission, not membership vs ownership.
+    """
+    trip_id = _create_shared_trip(client, auth_headers_user_a, user_b)
+
+    snapshot_res = client.get(
+        f"/v1/trips/{trip_id}/on-trip-snapshot",
+        headers=auth_headers_user_b,
+    )
+    assert snapshot_res.status_code == 200, snapshot_res.text
+    assert snapshot_res.json()["read_only"] is False

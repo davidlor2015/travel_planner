@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Date, DateTime, ForeignKey, Index, Integer, String, Text, func, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base
@@ -46,5 +46,25 @@ class TripExecutionEvent(Base):
     location: Mapped[str | None] = mapped_column(String(255), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # Opaque idempotency token supplied by the client. When present, a second
+    # POST carrying the same value (within the same trip) must collapse to the
+    # originally-persisted row instead of inserting a duplicate — see the
+    # partial unique index `ux_trip_execution_events_trip_client_request`.
+    client_request_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
     trip = relationship("Trip")
     created_by = relationship("User")
+
+    # Partial unique index mirrored here so `Base.metadata.create_all` (used by
+    # the test DB) builds the same schema the Alembic migration does in prod.
+    # NULL client_request_id rows are excluded so legacy callers still append.
+    __table_args__ = (
+        Index(
+            "ux_trip_execution_events_trip_client_request",
+            "trip_id",
+            "client_request_id",
+            unique=True,
+            postgresql_where=text("client_request_id IS NOT NULL"),
+            sqlite_where=text("client_request_id IS NOT NULL"),
+        ),
+    )

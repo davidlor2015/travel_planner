@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type {
   Trip,
@@ -18,62 +18,14 @@ import { LogStopFAB } from "./onTripParts/LogStopFAB";
 import { LogStopSheet } from "./onTripParts/LogStopSheet";
 import type { StopVM } from "./onTripParts/types";
 import { deriveStopVisualState } from "./onTripParts/deriveStopVisualState";
+import {
+  currentLocalMinutes,
+  deriveCurrentStop,
+  todayLocalISODate,
+} from "./onTripParts/deriveCurrentStop";
 
 function effectiveStatus(stop: TripOnTripStopSnapshot): TripExecutionStatus {
   return stop.execution_status ?? stop.status ?? "planned";
-}
-
-function todayLocalISODate(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-/**
- * Parse a stored time string ("HH:MM" or "HH:MM am/pm") into total minutes
- * from midnight. Returns null when unparseable.
- */
-function parseTimeToMinutes(time: string | null | undefined): number | null {
-  const raw = time?.trim() ?? "";
-  if (!raw) return null;
-  const m = raw.match(/^(\d{1,2}):(\d{2})\s*(am|pm)?$/i);
-  if (!m) return null;
-  let hour = parseInt(m[1]!, 10);
-  const minute = parseInt(m[2]!, 10);
-  const suffix = m[3]?.toLowerCase();
-  if (Number.isNaN(hour) || Number.isNaN(minute)) return null;
-  if (suffix === "pm" && hour < 12) hour += 12;
-  if (suffix === "am" && hour === 12) hour = 0;
-  return hour * 60 + minute;
-}
-
-/**
- * Derive the "current" stop client-side. The server returns `today_stops` +
- * `next_stop` but no explicit "now". Pick the stop whose time has already
- * started and has not been confirmed or skipped — i.e. the thing the user is
- * most likely doing right now. Returns null when there is no viable match.
- *
- * Intentionally conservative: if nothing has started yet, or everything is
- * done/skipped, we show no "Now" card and defer to the server's next_stop.
- */
-function deriveCurrentStop(
-  stops: TripOnTripStopSnapshot[],
-): TripOnTripStopSnapshot | null {
-  const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
-  let best: { stop: TripOnTripStopSnapshot; startedAt: number } | null = null;
-  for (const stop of stops) {
-    const status = stop.execution_status ?? stop.status ?? "planned";
-    if (status === "confirmed" || status === "skipped") continue;
-    const startedAt = parseTimeToMinutes(stop.time);
-    if (startedAt == null) continue;
-    if (startedAt > nowMinutes) continue;
-    if (!best || startedAt > best.startedAt) {
-      best = { stop, startedAt };
-    }
-  }
-  return best?.stop ?? null;
 }
 
 export function OnTripCompactMode({
@@ -136,9 +88,10 @@ export function OnTripCompactMode({
   }, []);
 
   const currentStop = useMemo(
-    () => deriveCurrentStop(currentSnapshot.today_stops),
-    // clockTick is intentionally a dependency so `new Date()` inside
-    // deriveCurrentStop is re-evaluated each minute.
+    () =>
+      deriveCurrentStop(currentSnapshot.today_stops, currentLocalMinutes()),
+    // clockTick is intentionally a dependency so `currentLocalMinutes()` is
+    // re-evaluated each minute; `deriveCurrentStop` itself is pure.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [currentSnapshot.today_stops, clockTick],
   );
@@ -183,63 +136,88 @@ export function OnTripCompactMode({
   const nowKey = currentStop?.stop_ref ?? null;
   const nextKey = currentSnapshot.next_stop.stop_ref ?? null;
 
-  const timelineRows = useMemo(() => {
-    return stopVMs.map((stop) => {
+  /**
+   * Build the Confirm/Skip/Reset/Navigate handlers for a single stop.
+   *
+   * Three callers need this exact surface: each TimelineRow, the mobile
+   * HappeningNowCard, and the desktop-rail HappeningNowCard. Centralising the
+   * closures here keeps mutation + telemetry semantics in one place and
+   * removes the previous three-way duplication.
+   */
+  const buildStopActions = useCallback(
+    (stop: StopVM) => {
       const stopRef = stop.stop_ref;
-      const isNow = Boolean(stopRef && nowKey && stopRef === nowKey);
-      const isNext = Boolean(stopRef && nextKey && stopRef === nextKey);
-
-      const onConfirm = () => {
-        if (!stopRef) return;
-        if (readOnly) return;
-        const next =
-          stop.effectiveStatus === "confirmed" ? "planned" : "confirmed";
-        track({
-          name: next === "planned" ? "ontrip_stop_reverted" : "ontrip_stop_confirmed",
-          props: { trip_id: trip.id, stop_ref: stopRef },
-        });
-        void setStopStatus(stopRef, next);
-      };
-      const onSkip = () => {
-        if (!stopRef) return;
-        if (readOnly) return;
-        const next =
-          stop.effectiveStatus === "skipped" ? "planned" : "skipped";
-        track({
-          name: next === "planned" ? "ontrip_stop_reverted" : "ontrip_stop_skipped",
-          props: { trip_id: trip.id, stop_ref: stopRef },
-        });
-        void setStopStatus(stopRef, next);
-      };
-      const onReset = () => {
-        if (!stopRef) return;
-        if (readOnly) return;
-        track({
-          name: "ontrip_stop_reverted",
-          props: { trip_id: trip.id, stop_ref: stopRef },
-        });
-        void setStopStatus(stopRef, "planned");
-      };
-
-      return deriveStopVisualState({
-        stop,
-        isNow,
-        isNext,
-        blockers,
-        actions: {
+      const noop = () => {};
+      if (!stopRef || readOnly) {
+        return {
           onNavigate: () => {
             track({
               name: "ontrip_navigate_clicked",
               props: { trip_id: trip.id, stop_ref: stopRef ?? null },
             });
           },
-          onConfirm,
-          onSkip,
-          onReset,
+          onConfirm: noop,
+          onSkip: noop,
+          onReset: noop,
+        };
+      }
+      return {
+        onNavigate: () => {
+          track({
+            name: "ontrip_navigate_clicked",
+            props: { trip_id: trip.id, stop_ref: stopRef },
+          });
         },
+        onConfirm: () => {
+          const next =
+            stop.effectiveStatus === "confirmed" ? "planned" : "confirmed";
+          track({
+            name:
+              next === "planned"
+                ? "ontrip_stop_reverted"
+                : "ontrip_stop_confirmed",
+            props: { trip_id: trip.id, stop_ref: stopRef },
+          });
+          void setStopStatus(stopRef, next);
+        },
+        onSkip: () => {
+          const next =
+            stop.effectiveStatus === "skipped" ? "planned" : "skipped";
+          track({
+            name:
+              next === "planned"
+                ? "ontrip_stop_reverted"
+                : "ontrip_stop_skipped",
+            props: { trip_id: trip.id, stop_ref: stopRef },
+          });
+          void setStopStatus(stopRef, next);
+        },
+        onReset: () => {
+          track({
+            name: "ontrip_stop_reverted",
+            props: { trip_id: trip.id, stop_ref: stopRef },
+          });
+          void setStopStatus(stopRef, "planned");
+        },
+      };
+    },
+    [readOnly, setStopStatus, trip.id],
+  );
+
+  const timelineRows = useMemo(() => {
+    return stopVMs.map((stop) => {
+      const stopRef = stop.stop_ref;
+      const isNow = Boolean(stopRef && nowKey && stopRef === nowKey);
+      const isNext = Boolean(stopRef && nextKey && stopRef === nextKey);
+      return deriveStopVisualState({
+        stop,
+        isNow,
+        isNext,
+        blockers,
+        actions: buildStopActions(stop),
       });
     });
-  }, [blockers, nextKey, nowKey, readOnly, setStopStatus, stopVMs, trip.id]);
+  }, [blockers, buildStopActions, nextKey, nowKey, stopVMs]);
 
   const nowVM = useMemo(() => {
     const stopRef = currentStop?.stop_ref ?? null;
@@ -311,46 +289,7 @@ export function OnTripCompactMode({
           {/* Happening Now card — in-flow on mobile, moved to rail on desktop */}
           {nowVM ? (
             <div className="px-6 pb-2 sm:px-8 lg:hidden">
-              <HappeningNowCard
-                stop={nowVM}
-                onNavigate={() => {
-                  track({
-                    name: "ontrip_navigate_clicked",
-                    props: { trip_id: trip.id, stop_ref: nowVM.stop_ref },
-                  });
-                }}
-                onConfirm={() => {
-                  if (!nowVM.stop_ref) return;
-                  if (readOnly) return;
-                  const next =
-                    nowVM.effectiveStatus === "confirmed" ? "planned" : "confirmed";
-                  track({
-                    name: next === "planned" ? "ontrip_stop_reverted" : "ontrip_stop_confirmed",
-                    props: { trip_id: trip.id, stop_ref: nowVM.stop_ref },
-                  });
-                  void setStopStatus(nowVM.stop_ref, next);
-                }}
-                onSkip={() => {
-                  if (!nowVM.stop_ref) return;
-                  if (readOnly) return;
-                  const next =
-                    nowVM.effectiveStatus === "skipped" ? "planned" : "skipped";
-                  track({
-                    name: next === "planned" ? "ontrip_stop_reverted" : "ontrip_stop_skipped",
-                    props: { trip_id: trip.id, stop_ref: nowVM.stop_ref },
-                  });
-                  void setStopStatus(nowVM.stop_ref, next);
-                }}
-                onReset={() => {
-                  if (!nowVM.stop_ref) return;
-                  if (readOnly) return;
-                  track({
-                    name: "ontrip_stop_reverted",
-                    props: { trip_id: trip.id, stop_ref: nowVM.stop_ref },
-                  });
-                  void setStopStatus(nowVM.stop_ref, "planned");
-                }}
-              />
+              <HappeningNowCard stop={nowVM} {...buildStopActions(nowVM)} />
             </div>
           ) : null}
 
@@ -368,11 +307,12 @@ export function OnTripCompactMode({
             <div className="mt-8 lg:mt-10">
               <UnplannedList
                 stops={unplannedVM}
+                readOnly={readOnly}
                 onLogStop={() => {
                   track({ name: "ontrip_log_stop_opened", props: { trip_id: trip.id } });
                   setLogOpen(true);
                 }}
-                isLoggingDisabled={isLoggingUnplanned || readOnly}
+                isLoggingDisabled={isLoggingUnplanned}
                 onNavigate={(eventId) => {
                   track({
                     name: "ontrip_navigate_clicked",
@@ -404,68 +344,12 @@ export function OnTripCompactMode({
             <HappeningNowCard
               stop={nowVM}
               variant="compact"
-              onNavigate={() => {
-                track({
-                  name: "ontrip_navigate_clicked",
-                  props: { trip_id: trip.id, stop_ref: nowVM.stop_ref },
-                });
-              }}
-              onConfirm={() => {
-                if (!nowVM.stop_ref) return;
-                if (readOnly) return;
-                const next =
-                  nowVM.effectiveStatus === "confirmed" ? "planned" : "confirmed";
-                track({
-                  name: next === "planned" ? "ontrip_stop_reverted" : "ontrip_stop_confirmed",
-                  props: { trip_id: trip.id, stop_ref: nowVM.stop_ref },
-                });
-                void setStopStatus(nowVM.stop_ref, next);
-              }}
-              onSkip={() => {
-                if (!nowVM.stop_ref) return;
-                if (readOnly) return;
-                const next =
-                  nowVM.effectiveStatus === "skipped" ? "planned" : "skipped";
-                track({
-                  name: next === "planned" ? "ontrip_stop_reverted" : "ontrip_stop_skipped",
-                  props: { trip_id: trip.id, stop_ref: nowVM.stop_ref },
-                });
-                void setStopStatus(nowVM.stop_ref, next);
-              }}
-              onReset={() => {
-                if (!nowVM.stop_ref) return;
-                if (readOnly) return;
-                track({
-                  name: "ontrip_stop_reverted",
-                  props: { trip_id: trip.id, stop_ref: nowVM.stop_ref },
-                });
-                void setStopStatus(nowVM.stop_ref, "planned");
-              }}
+              {...buildStopActions(nowVM)}
             />
           ) : null}
 
           {blockers.length > 0 ? (
             <NeedsAttentionCard blockers={blockers} variant="rail" />
-          ) : null}
-
-          {/* Quiet progress footer — mirrors the header progress, calmer */}
-          {totalCount > 0 ? (
-            <div className="rounded-xl border border-[#e4dbcb] bg-[#fbf7ef]/60 px-4 py-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[10.5px] uppercase tracking-[0.2em] text-[#8a7866]">
-                  Today
-                </span>
-                <span className="text-[12px] text-[#6b5743]">
-                  {doneCount} of {totalCount} done
-                </span>
-              </div>
-              <div className="mt-2 h-px w-full overflow-hidden rounded-full bg-[#ece4d7]">
-                <div
-                  className="h-full rounded-full bg-[rgba(180,83,42,0.8)] transition-[width] duration-500"
-                  style={{ width: `${progressPct}%` }}
-                />
-              </div>
-            </div>
           ) : null}
         </aside>
       </div>
@@ -487,19 +371,22 @@ export function OnTripCompactMode({
       {/* ── Toast ─────────────────────────────────────────────────────────── */}
       <Toast message={toastMessage} onDismiss={dismissFeedback} />
 
-      {/* ── Log Stop button (floating) ─────────────────────────────────────── */}
-      <LogStopFAB
-        disabled={isLoggingUnplanned || readOnly}
-        onClick={() => {
-          track({ name: "ontrip_log_stop_opened", props: { trip_id: trip.id } });
-          setLogOpen(true);
-        }}
-      />
+      {/* ── Log Stop button (floating) ──────────────────────────────────────
+          Omitted entirely in read-only; execution affordances never render. */}
+      {readOnly ? null : (
+        <LogStopFAB
+          disabled={isLoggingUnplanned}
+          onClick={() => {
+            track({ name: "ontrip_log_stop_opened", props: { trip_id: trip.id } });
+            setLogOpen(true);
+          }}
+        />
+      )}
 
       {/* ── Log Stop sheet / modal ─────────────────────────────────────────── */}
       <LogStopSheet
-        open={logOpen}
-        disabled={isLoggingUnplanned || readOnly}
+        open={logOpen && !readOnly}
+        disabled={isLoggingUnplanned}
         defaultDate={defaultLogDate}
         onClose={() => setLogOpen(false)}
         onSubmit={async (payload) => {

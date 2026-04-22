@@ -75,6 +75,8 @@ export function TimelineRow({
 
   // ── Row wrapper opacity for done rows ─────────────────────────────────────
   const rowOpacity = isDone ? "opacity-75" : "";
+  const isNow = row.variant === "now";
+  const contentPadding = isNow ? "pb-6" : "pb-5";
 
   return (
     <li
@@ -90,16 +92,27 @@ export function TimelineRow({
 
       {/* Center: dot + connector line */}
       <div className="flex w-3 flex-shrink-0 flex-col items-center pt-1.5">
-        <span
-          className={`flex-shrink-0 rounded-full ${dot.size} ${dot.bg} ${dot.border ?? ""}`}
-        />
+        {isNow ? (
+          <span
+            data-now-halo
+            className="flex flex-shrink-0 items-center justify-center rounded-full bg-[rgba(180,83,42,0.14)] p-1"
+          >
+            <span
+              className={`flex-shrink-0 rounded-full ${dot.size} ${dot.bg} ${dot.border ?? ""}`}
+            />
+          </span>
+        ) : (
+          <span
+            className={`flex-shrink-0 rounded-full ${dot.size} ${dot.bg} ${dot.border ?? ""}`}
+          />
+        )}
         {!isLast ? (
           <span className="mt-1 w-px flex-1 bg-[#ece4d7]" style={{ minHeight: "24px" }} />
         ) : null}
       </div>
 
       {/* Right: content (variant-specific) */}
-      <div className="min-w-0 flex-1 pb-5">
+      <div className={`min-w-0 flex-1 ${contentPadding}`}>
         {row.variant === "done" && <DoneContent stop={stop} />}
         {row.variant === "now" && <NowContent stop={stop} />}
         {row.variant === "next" && (
@@ -148,15 +161,15 @@ function NowContent({ stop }: { stop: TimelineRowVM["stop"] }) {
           className="h-1 w-1 flex-shrink-0 rounded-full bg-[#b4532a]"
           style={{ opacity: 0.84 }}
         />
-        <span className="text-[11px] uppercase tracking-[0.16em] text-[#b4532a]">
+        <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#b4532a]">
           Now
         </span>
       </div>
-      <p className="mt-1 text-[18px] font-medium leading-[1.375] text-[#2a1d13]">
+      <p className="mt-1.5 font-display text-[19px] font-semibold leading-[1.3] text-[#2a1d13]">
         {stop.title ?? "Untitled stop"}
       </p>
       {stop.location?.trim() ? (
-        <p className="mt-0.5 truncate text-[13px] text-[#8a7866]">
+        <p className="mt-1 truncate text-[13px] text-[#6b5743]">
           {stop.location.trim()}
         </p>
       ) : null}
@@ -202,7 +215,7 @@ function NextContent({
             target="_blank"
             rel="noopener noreferrer"
             onClick={onNavigate}
-            className="flex flex-shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-medium text-[#3a2a1f] transition-colors hover:bg-[#ece4d7]"
+            className="inline-flex min-h-8 flex-shrink-0 items-center gap-1.5 rounded-full border border-[#d7c9b0] bg-[#fbf7ef] px-3 py-1.5 text-[13px] font-medium text-[#3a2a1f] transition-colors hover:border-[#6b5743] hover:bg-[#ece4d7]"
             aria-label={`Navigate to ${stop.title ?? "stop"}`}
           >
             <NavigateIcon />
@@ -211,38 +224,41 @@ function NextContent({
         ) : null}
       </div>
 
-      {/* Compact inline Confirm + Skip — no more full-width bar */}
-      <div
-        className="mt-2 flex items-center gap-4 text-[12.5px]"
-        role="group"
-        aria-label="Update status"
-      >
-        <button
-          type="button"
-          disabled={!canMutate}
-          onClick={onConfirm}
-          aria-pressed={stop.effectiveStatus === "confirmed"}
-          className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[#3a2a1f] transition-colors hover:bg-[#ece4d7] hover:text-[#2a1d13] disabled:cursor-not-allowed disabled:opacity-50"
+      {/* Mid-weight Confirm / Skip pills — unified cluster with Go.
+          Hidden entirely in read-only mode; the Go link remains above. */}
+      {stop.isReadOnly ? null : (
+        <div
+          className="mt-3 flex items-center gap-2 text-[13px]"
+          role="group"
+          aria-label="Update status"
         >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-          Confirm
-        </button>
-        <button
-          type="button"
-          disabled={!canMutate}
-          onClick={onSkip}
-          aria-pressed={stop.effectiveStatus === "skipped"}
-          className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[#6b5743] transition-colors hover:bg-[#ece4d7] hover:text-[#2a1d13] disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-          Skip
-        </button>
-      </div>
+          <button
+            type="button"
+            disabled={!canMutate}
+            onClick={onConfirm}
+            aria-pressed={stop.effectiveStatus === "confirmed"}
+            className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-[#c9b99a] bg-[#fbf7ef] px-3 py-1.5 font-medium text-[#2a1d13] transition-colors hover:border-[#6b5743] hover:bg-[#ece4d7] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            Confirm
+          </button>
+          <button
+            type="button"
+            disabled={!canMutate}
+            onClick={onSkip}
+            aria-pressed={stop.effectiveStatus === "skipped"}
+            className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-[#e4dbcb] bg-transparent px-3 py-1.5 font-medium text-[#6b5743] transition-colors hover:border-[#c9bca8] hover:bg-[#ece4d7] hover:text-[#2a1d13] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+            Skip
+          </button>
+        </div>
+      )}
     </div>
   );
 }

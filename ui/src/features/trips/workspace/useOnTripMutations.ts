@@ -58,6 +58,20 @@ const emptyOptimisticState = (): OptimisticState => ({
   deletedUnplannedIds: {},
 });
 
+/**
+ * Generate an opaque per-submission idempotency token used by the server to
+ * collapse a retried POST onto the originally-persisted row. Prefer the
+ * platform UUID when available; fall back to a time+random string when the
+ * page is loaded in a non-secure context where `crypto.randomUUID` is not
+ * exposed. Kept at module scope so the hook remains pure for tests that only
+ * need to assert an `id` is present on the wire payload.
+ */
+function generateClientRequestId(): string {
+  const maybeUuid = globalThis.crypto?.randomUUID;
+  if (typeof maybeUuid === "function") return maybeUuid.call(globalThis.crypto);
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 export function useOnTripMutations({
   token,
   tripId,
@@ -65,10 +79,19 @@ export function useOnTripMutations({
   onSnapshotRefresh,
 }: UseOnTripMutationsOptions): UseOnTripMutationsResult {
   const [optimistic, setOptimistic] = useState<OptimisticState>(emptyOptimisticState());
-  const [statusPending, setStatusPending] = useState<Record<string, boolean>>({});
+  // A counter, not a boolean map, so overlapping writes for the same stop_ref
+  // do not visibly flicker off when an earlier tap's finally runs while a
+  // later tap is still queued behind it.
+  const [pendingCountByRef, setPendingCountByRef] = useState<Record<string, number>>({});
   const [unplannedPendingIds, setUnplannedPendingIds] = useState<Record<number, boolean>>({});
   const [isLoggingUnplanned, setIsLoggingUnplanned] = useState(false);
   const [feedback, setFeedback] = useState<MutationFeedback | null>(null);
+  // Per-`stop_ref` promise chain that serializes network writes without
+  // blocking other stops. Rapid Confirm->Skip taps on the same stop would
+  // otherwise race on the wire and the server's "latest row wins" rule could
+  // promote the wrong terminal state if the later POST happened to arrive
+  // first. Cleared when the trailing promise for a ref settles.
+  const statusQueueRef = useRef<Map<string, Promise<unknown>>>(new Map());
 
   // Track trip changes so stale overrides from a previous selection never leak
   // into a different trip's render. Mutations are always local to the current trip.
@@ -120,14 +143,18 @@ export function useOnTripMutations({
           continue;
         }
 
-        // committed: clear once server agrees; otherwise notify and clear
+        // committed: clear once server agrees; otherwise surface an error and
+        // clear. The user's change did NOT stick (another device may have
+        // overridden it, or the server applied a different rule), so the UI
+        // must not claim success — the override snaps back to the server
+        // state and the toast copy matches that reality.
         if (serverStatus === entry.target) {
           continue;
         }
 
         setFeedback({
-          kind: "success",
-          message: `Synced: server shows ${serverStatus ?? "planned"}.`,
+          kind: "error",
+          message: `Update was reverted by server (now: ${serverStatus ?? "planned"}).`,
           at: Date.now(),
         });
       }
@@ -201,6 +228,10 @@ export function useOnTripMutations({
       if (!tripId) return;
       const requestId = ++requestIdRef.current;
       const previousOverride = optimistic.statusByRef[stopRef] ?? null;
+
+      // Optimistic UI update is synchronous so the latest tap always wins
+      // what the user sees; the network write below is serialized per-ref so
+      // the server observes taps in submission order.
       setOptimistic((prev) => ({
         ...prev,
         statusByRef: {
@@ -208,47 +239,74 @@ export function useOnTripMutations({
           [stopRef]: { kind: "pending", requestId, target: nextStatus },
         },
       }));
-      setStatusPending((prev) => ({ ...prev, [stopRef]: true }));
-      try {
-        await postStopStatus(token, tripId, { stop_ref: stopRef, status: nextStatus });
-        setOptimistic((prev) => {
-          const current = prev.statusByRef[stopRef];
-          if (!current || current.requestId !== requestId) return prev;
-          return {
-            ...prev,
-            statusByRef: {
-              ...prev.statusByRef,
-              [stopRef]: { kind: "committed", requestId, target: nextStatus },
-            },
-          };
-        });
-        await refreshSnapshot();
-      } catch (error) {
-        setOptimistic((prev) => {
-          const nextMap = { ...prev.statusByRef };
-          const current = nextMap[stopRef];
-          if (current && current.requestId !== requestId) {
-            return prev;
-          }
+      setPendingCountByRef((prev) => ({
+        ...prev,
+        [stopRef]: (prev[stopRef] ?? 0) + 1,
+      }));
 
-          if (previousOverride) {
-            nextMap[stopRef] = previousOverride;
-          } else {
-            delete nextMap[stopRef];
-          }
-          return { ...prev, statusByRef: nextMap };
-        });
-        setFeedback({
-          kind: "error",
-          message: error instanceof Error ? error.message : "Could not update status.",
-          at: Date.now(),
-        });
+      const performWrite = async () => {
+        try {
+          await postStopStatus(token, tripId, {
+            stop_ref: stopRef,
+            status: nextStatus,
+          });
+          setOptimistic((prev) => {
+            const current = prev.statusByRef[stopRef];
+            // A newer tap already replaced our pending entry — don't clobber
+            // its optimistic state with our committed one.
+            if (!current || current.requestId !== requestId) return prev;
+            return {
+              ...prev,
+              statusByRef: {
+                ...prev.statusByRef,
+                [stopRef]: { kind: "committed", requestId, target: nextStatus },
+              },
+            };
+          });
+          await refreshSnapshot();
+        } catch (error) {
+          setOptimistic((prev) => {
+            const nextMap = { ...prev.statusByRef };
+            const current = nextMap[stopRef];
+            // A newer tap has moved on — leave its optimistic state alone.
+            if (current && current.requestId !== requestId) {
+              return prev;
+            }
+            if (previousOverride) {
+              nextMap[stopRef] = previousOverride;
+            } else {
+              delete nextMap[stopRef];
+            }
+            return { ...prev, statusByRef: nextMap };
+          });
+          setFeedback({
+            kind: "error",
+            message:
+              error instanceof Error ? error.message : "Could not update status.",
+            at: Date.now(),
+          });
+        }
+      };
+
+      const queue = statusQueueRef.current;
+      const prior = queue.get(stopRef) ?? Promise.resolve();
+      // `.then(fn, fn)` so a prior failure does NOT poison the chain and
+      // block later taps from reaching the server.
+      const thisRun = prior.then(performWrite, performWrite);
+      queue.set(stopRef, thisRun);
+
+      try {
+        await thisRun;
       } finally {
-        setStatusPending((prev) => {
+        setPendingCountByRef((prev) => {
+          const current = prev[stopRef] ?? 0;
+          const nextCount = current - 1;
           const next = { ...prev };
-          delete next[stopRef];
+          if (nextCount <= 0) delete next[stopRef];
+          else next[stopRef] = nextCount;
           return next;
         });
+        if (queue.get(stopRef) === thisRun) queue.delete(stopRef);
       }
     },
     [optimistic.statusByRef, refreshSnapshot, token, tripId],
@@ -261,8 +319,20 @@ export function useOnTripMutations({
       // We do not optimistically insert unplanned stops. The server assigns the
       // event_id, and showing a placeholder with no id would make delete-on-failure
       // ambiguous. The round-trip is quick; users see the entry after the POST.
+      //
+      // The client-side retry wrapper (`executeWithRetry`) will replay this
+      // POST on a transient failure, so we attach a stable per-submission
+      // idempotency token. The server collapses a replay onto the original
+      // row instead of creating a duplicate — only generated here so callers
+      // that pass an explicit id (tests, future external callers) can
+      // override it.
+      const clientRequestId =
+        payload.client_request_id ?? generateClientRequestId();
       try {
-        await postUnplannedStop(token, tripId, payload);
+        await postUnplannedStop(token, tripId, {
+          ...payload,
+          client_request_id: clientRequestId,
+        });
         await refreshSnapshot();
       } catch (error) {
         setFeedback({
@@ -345,6 +415,17 @@ export function useOnTripMutations({
   }, [snapshot, optimistic.statusByRef, optimistic.deletedUnplannedIds]);
 
   const dismissFeedback = useCallback(() => setFeedback(null), []);
+
+  // Public pending map stays a Record<string, boolean> — consumers only need
+  // to know whether a write is in flight for a given stop_ref. Derived from
+  // the internal counter so two overlapping taps don't flicker the flag off.
+  const statusPending = useMemo<Record<string, boolean>>(() => {
+    const out: Record<string, boolean> = {};
+    for (const [ref, count] of Object.entries(pendingCountByRef)) {
+      if (count > 0) out[ref] = true;
+    }
+    return out;
+  }, [pendingCountByRef]);
 
   return {
     viewSnapshot,

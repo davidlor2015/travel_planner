@@ -447,3 +447,165 @@ def test_plan_skipped_and_exec_confirmed_both_excluded_from_next_stop(
 
     after = _snapshot(client, auth_headers_user_a, trip_id)
     assert after["next_stop"]["stop_ref"] == initial["today_stops"][2]["stop_ref"]
+
+
+# --- Idempotency invariants: replays of the same write must not produce
+# duplicate rows, and clients that omit an idempotency key must keep the
+# legacy append-only behavior. These tests lock the contract the client-side
+# `executeWithRetry` relies on when it replays a POST on flaky networks.
+
+
+def _count_execution_events(db, trip_id, *, kind=None, stop_ref=None):
+    from app.models.trip_execution_event import TripExecutionEvent
+
+    query = db.query(TripExecutionEvent).filter(TripExecutionEvent.trip_id == trip_id)
+    if kind is not None:
+        query = query.filter(TripExecutionEvent.kind == kind)
+    if stop_ref is not None:
+        query = query.filter(TripExecutionEvent.stop_ref == stop_ref)
+    return query.count()
+
+
+def test_stop_status_replay_is_noop(client, auth_headers_user_a, db):
+    """The repository's idempotency shortcut collapses a same-status replay onto
+    the existing row instead of appending. A retried POST after a dropped 201
+    must therefore leave exactly one stop_status row for that stop_ref."""
+    trip_id = _create_active_trip(client, auth_headers_user_a)
+    _apply_basic_itinerary(client, auth_headers_user_a, trip_id)
+    target_ref = _snapshot(client, auth_headers_user_a, trip_id)["today_stops"][0]["stop_ref"]
+
+    first = client.post(
+        f"/v1/trips/{trip_id}/execution/stop-status",
+        json={"stop_ref": target_ref, "status": "confirmed"},
+        headers=auth_headers_user_a,
+    )
+    assert first.status_code == 201, first.text
+    replay = client.post(
+        f"/v1/trips/{trip_id}/execution/stop-status",
+        json={"stop_ref": target_ref, "status": "confirmed"},
+        headers=auth_headers_user_a,
+    )
+    assert replay.status_code == 201, replay.text
+    assert replay.json()["id"] == first.json()["id"]
+
+    count = _count_execution_events(
+        db, trip_id, kind="stop_status", stop_ref=target_ref
+    )
+    assert count == 1
+
+
+def test_unplanned_stop_replay_with_client_request_id_is_idempotent(
+    client, auth_headers_user_a, db
+):
+    """Two POSTs carrying the same client_request_id must collapse to the row
+    persisted by the first — this is the guarantee the client-side retry on a
+    dropped 201 depends on to avoid duplicate unplanned stops."""
+    trip_id = _create_active_trip(client, auth_headers_user_a)
+    today = date.today()
+    request_id = "rid-abc-123"
+    payload = {
+        "day_date": today.isoformat(),
+        "title": "Pasteis de Belem detour",
+        "time": "16:30",
+        "client_request_id": request_id,
+    }
+
+    first = client.post(
+        f"/v1/trips/{trip_id}/execution/unplanned-stop",
+        json=payload,
+        headers=auth_headers_user_a,
+    )
+    assert first.status_code == 201, first.text
+    replay = client.post(
+        f"/v1/trips/{trip_id}/execution/unplanned-stop",
+        json=payload,
+        headers=auth_headers_user_a,
+    )
+    assert replay.status_code == 201, replay.text
+    assert replay.json()["id"] == first.json()["id"]
+
+    snapshot = _snapshot(client, auth_headers_user_a, trip_id)
+    assert len(snapshot["today_unplanned"]) == 1
+    assert (
+        _count_execution_events(db, trip_id, kind="unplanned_stop") == 1
+    )
+
+
+def test_unplanned_stop_replay_without_client_request_id_still_appends(
+    client, auth_headers_user_a, db
+):
+    """Legacy clients that don't send an idempotency key must keep today's
+    append-only behavior so we don't silently break them."""
+    trip_id = _create_active_trip(client, auth_headers_user_a)
+    today = date.today()
+    payload = {"day_date": today.isoformat(), "title": "Legacy detour"}
+
+    first = client.post(
+        f"/v1/trips/{trip_id}/execution/unplanned-stop",
+        json=payload,
+        headers=auth_headers_user_a,
+    )
+    assert first.status_code == 201, first.text
+    second = client.post(
+        f"/v1/trips/{trip_id}/execution/unplanned-stop",
+        json=payload,
+        headers=auth_headers_user_a,
+    )
+    assert second.status_code == 201, second.text
+    assert first.json()["id"] != second.json()["id"]
+
+    assert _count_execution_events(db, trip_id, kind="unplanned_stop") == 2
+
+
+def test_unplanned_stop_replay_with_blank_client_request_id_is_appended(
+    client, auth_headers_user_a, db
+):
+    """Empty/whitespace-only request ids are normalized to None so they do not
+    collide across unrelated submissions. Two such posts must create two rows."""
+    trip_id = _create_active_trip(client, auth_headers_user_a)
+    today = date.today()
+    payload = {
+        "day_date": today.isoformat(),
+        "title": "Whitespace rid",
+        "client_request_id": "   ",
+    }
+
+    first = client.post(
+        f"/v1/trips/{trip_id}/execution/unplanned-stop",
+        json=payload,
+        headers=auth_headers_user_a,
+    )
+    second = client.post(
+        f"/v1/trips/{trip_id}/execution/unplanned-stop",
+        json=payload,
+        headers=auth_headers_user_a,
+    )
+    assert first.status_code == 201
+    assert second.status_code == 201
+    assert first.json()["id"] != second.json()["id"]
+    assert _count_execution_events(db, trip_id, kind="unplanned_stop") == 2
+
+
+def test_delete_execution_event_twice_second_is_404(client, auth_headers_user_a):
+    """Documents the server-side behavior the client-side `treat404AsSuccess`
+    flag relies on: a second DELETE of an already-removed event returns 404,
+    which the client treats as success because DELETE is idempotent."""
+    trip_id = _create_active_trip(client, auth_headers_user_a)
+    today = date.today()
+    post_res = client.post(
+        f"/v1/trips/{trip_id}/execution/unplanned-stop",
+        json={"day_date": today.isoformat(), "title": "Will be removed"},
+        headers=auth_headers_user_a,
+    )
+    event_id = post_res.json()["id"]
+
+    first = client.delete(
+        f"/v1/trips/{trip_id}/execution/events/{event_id}",
+        headers=auth_headers_user_a,
+    )
+    assert first.status_code == 204
+    second = client.delete(
+        f"/v1/trips/{trip_id}/execution/events/{event_id}",
+        headers=auth_headers_user_a,
+    )
+    assert second.status_code == 404

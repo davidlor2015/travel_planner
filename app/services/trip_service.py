@@ -267,6 +267,7 @@ class TripService:
         trip = context.trip
         today = self._resolve_today(tz)
         is_active = trip.start_date <= today <= trip.end_date
+        read_only = not self.access_service.can_execute_on_trip(context)
 
         itinerary = self.itinerary_repo.to_itinerary_response(
             trip_id=trip_id,
@@ -305,7 +306,7 @@ class TripService:
             return TripOnTripSnapshotResponse(
                 generated_at=datetime.now(timezone.utc),
                 mode="active" if is_active else "inactive",
-                read_only=True,
+                read_only=read_only,
                 today=self._empty_on_trip_stop(),
                 next_stop=self._empty_on_trip_stop(),
                 today_stops=[],
@@ -364,7 +365,7 @@ class TripService:
         return TripOnTripSnapshotResponse(
             generated_at=datetime.now(timezone.utc),
             mode="active" if is_active else "inactive",
-            read_only=True,
+            read_only=read_only,
             today=today_single,
             next_stop=next_single,
             today_stops=today_stops,

@@ -249,6 +249,11 @@ class TripUnplannedStopRequest(BaseModel):
     time: str | None = None
     location: str | None = None
     notes: str | None = None
+    # Opaque per-submission idempotency token. When the client supplies one,
+    # a replayed POST (retry after a dropped response) must return the
+    # originally-persisted row instead of creating a duplicate. Leaving this
+    # optional preserves the append-only path for clients that don't send it.
+    client_request_id: str | None = None
 
     @field_validator("title")
     @classmethod
@@ -256,6 +261,20 @@ class TripUnplannedStopRequest(BaseModel):
         cleaned = value.strip()
         if not cleaned:
             raise ValueError("title must not be blank")
+        return cleaned
+
+    @field_validator("client_request_id", mode="before")
+    @classmethod
+    def normalize_client_request_id(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            raise TypeError("client_request_id must be a string")
+        cleaned = value.strip()
+        if not cleaned:
+            return None
+        if len(cleaned) > 64:
+            raise ValueError("client_request_id must be at most 64 characters")
         return cleaned
 
 

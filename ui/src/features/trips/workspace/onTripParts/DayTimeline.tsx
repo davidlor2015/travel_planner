@@ -37,8 +37,8 @@ export function DayTimeline({ rows }: { rows: TimelineRowVM[] }) {
       {/* Flat timeline list */}
       <ul
         ref={containerRef}
-        className="mt-6 list-none p-0 pl-6 sm:pl-8 lg:pl-0"
-        style={{ margin: 0 }}
+        className="list-none p-0 pl-6 sm:pl-8 lg:pl-0"
+        style={{ margin: 0, marginTop: "1rem" }}
       >
         {rows.map((row, index) => (
           <TimelineRow

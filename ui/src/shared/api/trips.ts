@@ -1,6 +1,6 @@
 import { API_URL } from '../../app/config';
 import { apiFetch } from './client';
-import { ApiError } from './errors';
+import { executeWithRetry } from './executeWithRetry';
 
 export interface TripMember {
   user_id: number;
@@ -194,6 +194,13 @@ export interface UnplannedStopPayload {
   time?: string | null;
   location?: string | null;
   notes?: string | null;
+  /**
+   * Opaque per-submission idempotency token. When present, a retried POST
+   * (after a dropped response on a flaky network) must collapse to the
+   * originally-persisted row on the server instead of creating a duplicate.
+   * Omit for legacy callers; the server still appends in that case.
+   */
+  client_request_id?: string;
 }
 
 export const getTrips = async (token?: string): Promise<Trip[]> => {
@@ -299,49 +306,6 @@ export const getTripMemberReadiness = async (
 
   return response.json();
 };
-
-/**
- * Run an execution-log request and retry once (500ms backoff) on transient
- * failures. A transient failure is either a network error (fetch itself
- * throws) or a 5xx response from the server. 4xx responses are user-facing
- * errors that would never succeed on retry, so they surface immediately.
- *
- * Callers that rollback optimistic UI should only do so after this helper
- * rejects, which means both attempts failed.
- */
-async function executeWithRetry(
-  perform: () => Promise<Response>,
-  label: string,
-): Promise<Response> {
-  type Outcome =
-    | { ok: true; response: Response }
-    | { ok: false; retryable: boolean; error: Error };
-
-  const runOnce = async (): Promise<Outcome> => {
-    let response: Response;
-    try {
-      response = await perform();
-    } catch (err) {
-      return {
-        ok: false,
-        retryable: true,
-        error: err instanceof Error ? err : new Error(String(err)),
-      };
-    }
-    if (response.ok) return { ok: true, response };
-    const retryable = response.status >= 500;
-    const apiErr = await ApiError.fromResponse(response, `Failed to ${label}`);
-    return { ok: false, retryable, error: apiErr };
-  };
-
-  const first = await runOnce();
-  if (first.ok) return first.response;
-  if (!first.retryable) throw first.error;
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  const second = await runOnce();
-  if (second.ok) return second.response;
-  throw second.error;
-}
 
 const resolveClientTimezone = (): string | null => {
   try {
@@ -457,6 +421,10 @@ export const deleteExecutionEvent = async (
   tripId: number,
   eventId: number,
 ): Promise<void> => {
+  // DELETE is idempotent by HTTP contract: a 404 on a retry after a dropped
+  // 204 means the row is already gone — the desired end state. Treat it as
+  // success so the optimistic removal is not rolled back and the user is not
+  // shown a misleading "could not remove" error.
   await executeWithRetry(
     () =>
       apiFetch(`${API_URL}/v1/trips/${tripId}/execution/events/${eventId}`, {
@@ -464,5 +432,6 @@ export const deleteExecutionEvent = async (
         token,
       }),
     'delete event',
+    { treat404AsSuccess: true },
   );
 };

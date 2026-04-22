@@ -35,7 +35,7 @@ describe("TimelineRow (render)", () => {
     expect(html).not.toContain("line-through");
   });
 
-  it("renders now variant with 'Now' label (actions live in HappeningNowCard, not the timeline row)", () => {
+  it("renders now variant with 'Now' label and a halo marker (actions live in HappeningNowCard)", () => {
     const row: TimelineRowVM = {
       variant: "now",
       stop: stop(),
@@ -48,12 +48,14 @@ describe("TimelineRow (render)", () => {
     const html = renderToStaticMarkup(React.createElement(TimelineRow, { row }));
     expect(html).toContain("Now");
     expect(html).toContain("Tram 28");
+    // Now row carries a halo marker around the dot for stronger visual anchor.
+    expect(html).toContain("data-now-halo");
     // Action buttons are intentionally in HappeningNowCard, not the inline timeline row
     expect(html).not.toContain("Confirm");
     expect(html).not.toContain("Reset to planned");
   });
 
-  it("renders next variant with Confirm + Skip buttons and Go navigate link", () => {
+  it("renders next variant with mid-weight Confirm/Skip buttons and a Go navigate pill", () => {
     const row: TimelineRowVM = {
       variant: "next",
       stop: stop(),
@@ -68,7 +70,12 @@ describe("TimelineRow (render)", () => {
     expect(html).toContain("Confirm");
     expect(html).toContain("Skip");
     expect(html).toContain("Go");
+    // Confirm/Skip are real buttons (not ghost text links).
+    // Expect two <button ... type="button"> occurrences inside the row.
+    const buttonCount = (html.match(/<button[^>]*type="button"/g) ?? []).length;
+    expect(buttonCount).toBeGreaterThanOrEqual(2);
   });
+
 
   it("renders upcoming without any action buttons", () => {
     const row: TimelineRowVM = { variant: "upcoming", stop: stop() };
@@ -76,5 +83,25 @@ describe("TimelineRow (render)", () => {
     expect(html).toContain("Tram 28");
     expect(html).not.toContain("Confirm");
     expect(html).not.toContain("Reset to planned");
+  });
+
+  it("omits Confirm / Skip in the next variant when the stop is read-only, but keeps the Go link", () => {
+    const row: TimelineRowVM = {
+      variant: "next",
+      stop: stop({ isReadOnly: true }),
+      pending: false,
+      onNavigate: () => {},
+      onConfirm: () => {},
+      onSkip: () => {},
+    };
+    const html = renderToStaticMarkup(React.createElement(TimelineRow, { row }));
+    expect(html).toContain("Next");
+    expect(html).toContain("Tram 28");
+    // Go remains — navigation is always safe.
+    expect(html).toContain("Go");
+    // Execution controls are hidden outright, not disabled.
+    expect(html).not.toContain("Confirm");
+    expect(html).not.toContain("Skip");
+    expect(html).not.toContain('aria-label="Update status"');
   });
 });

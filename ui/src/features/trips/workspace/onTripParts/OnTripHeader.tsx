@@ -10,6 +10,32 @@ function formatDayDate(dayDate: string | null): string {
   return `${weekday} ${day} ${month}`;
 }
 
+function ReadOnlyBadge() {
+  return (
+    <span
+      className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full border border-[#e4dbcb] bg-[#fbf7ef] px-2.5 py-0.5 text-[10.5px] font-medium uppercase tracking-[0.16em] text-[#6b5743]"
+      title="Execution updates are disabled for this trip."
+      aria-label="Read-only mode: execution updates are disabled"
+    >
+      <svg
+        width="10"
+        height="10"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <rect x="4" y="11" width="16" height="9" rx="2" />
+        <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+      </svg>
+      Read-only
+    </span>
+  );
+}
+
 export function OnTripHeader({
   trip,
   readOnly,
@@ -33,7 +59,7 @@ export function OnTripHeader({
   const hasProgress = totalCount > 0;
 
   return (
-    <div className="px-6 pt-6 pb-4 sm:px-8">
+    <div className="px-6 pt-5 pb-3 sm:px-8">
       {/* Breadcrumb row */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
@@ -53,6 +79,7 @@ export function OnTripHeader({
               </span>
             </>
           ) : null}
+          {readOnly ? <ReadOnlyBadge /> : null}
         </div>
 
         {/* Right: optional activity button + progress */}
@@ -75,15 +102,9 @@ export function OnTripHeader({
       </div>
 
       {/* Trip display title */}
-      <h2 className="mt-2 font-display text-[2rem] font-medium leading-[1.05] tracking-[-0.01em] text-[#2a1d13]">
+      <h2 className="mt-1.5 font-display text-[1.6rem] font-medium leading-[1.1] tracking-[-0.01em] text-[#2a1d13] sm:text-[1.75rem]">
         {trip.title}
       </h2>
-
-      {readOnly ? (
-        <p className="mt-1 text-xs text-[#8a7866]">
-          Read-only · execution updates are disabled.
-        </p>
-      ) : null}
     </div>
   );
 }

@@ -4,6 +4,7 @@ from datetime import date
 from typing import Any
 
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.trip_execution_event import TripExecutionEvent
@@ -67,7 +68,19 @@ class TripExecutionRepository:
         time_value: str | None = None,
         location: str | None = None,
         notes: str | None = None,
+        client_request_id: str | None = None,
     ) -> TripExecutionEvent:
+        # Idempotent replay: when the client supplies an opaque request id,
+        # a second POST carrying the same value must collapse to the original
+        # row. This protects against the retry path in `executeWithRetry`
+        # duplicating an unplanned stop when the first POST landed but the
+        # response was lost on a flaky network. Legacy clients without an id
+        # fall through to the plain insert.
+        if client_request_id:
+            existing = self._find_by_client_request_id(trip_id, client_request_id)
+            if existing is not None:
+                return existing
+
         event = TripExecutionEvent(
             trip_id=trip_id,
             created_by_user_id=user_id,
@@ -77,11 +90,36 @@ class TripExecutionRepository:
             time=time_value,
             location=location,
             notes=notes,
+            client_request_id=client_request_id,
         )
         self.db.add(event)
-        self.db.commit()
+        try:
+            self.db.commit()
+        except IntegrityError:
+            # Race with a concurrent retry of the same request id — the
+            # partial unique index did its job. Re-read and return the row
+            # the other request committed so both callers see the same event.
+            self.db.rollback()
+            if client_request_id:
+                existing = self._find_by_client_request_id(trip_id, client_request_id)
+                if existing is not None:
+                    return existing
+            raise
         self.db.refresh(event)
         return event
+
+    def _find_by_client_request_id(
+        self, trip_id: int, client_request_id: str
+    ) -> TripExecutionEvent | None:
+        return self.db.scalars(
+            select(TripExecutionEvent)
+            .where(
+                TripExecutionEvent.trip_id == trip_id,
+                TripExecutionEvent.kind == self.UNPLANNED_STOP,
+                TripExecutionEvent.client_request_id == client_request_id,
+            )
+            .limit(1)
+        ).first()
 
     def get_event(self, event_id: int) -> TripExecutionEvent | None:
         return self.db.get(TripExecutionEvent, event_id)

@@ -114,63 +114,18 @@ export function HappeningNowCard({
         </a>
       ) : null}
 
-      {/* Action row: Confirm | Skip | Reset (optional) */}
-      <div className="mt-3 flex items-center gap-2">
-        <button
-          type="button"
-          disabled={!canMutate}
-          onClick={onConfirm}
-          aria-pressed={status === "confirmed"}
-          className={`${actionBtnClass} border-[#f2ebdd] bg-[#f2ebdd] text-[#2a1d13]`}
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-          {status === "confirmed" ? "Confirmed" : "Confirm"}
-        </button>
-
-        <button
-          type="button"
-          disabled={!canMutate}
-          onClick={onSkip}
-          aria-pressed={status === "skipped"}
-          className={`${actionBtnClass} border-[#6b5743] text-[#d7b48c]`}
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-          {status === "skipped" ? "Skipped" : "Skip"}
-        </button>
-
-        {/* Reset circle — only when already actioned */}
-        {stop.stop_ref && (status === "confirmed" || status === "skipped") ? (
+      {/* Action row: Confirm | Skip | Reset (optional).
+          In read-only mode, execution affordances are omitted entirely — the
+          informational Read-only badge in the header is the single source of
+          that state. */}
+      {stop.isReadOnly ? null : (
+        <div className="mt-3 flex items-center gap-2">
           <button
             type="button"
             disabled={!canMutate}
-            onClick={onReset}
-            aria-label="Reset to planned"
-            className={`flex ${resetSize} flex-shrink-0 items-center justify-center rounded-full border border-[#6b5743] text-[#c9bca8] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50`}
+            onClick={onConfirm}
+            aria-pressed={status === "confirmed"}
+            className={`${actionBtnClass} border-[#f2ebdd] bg-[#f2ebdd] text-[#2a1d13]`}
           >
             <svg
               width="14"
@@ -178,17 +133,67 @@ export function HappeningNowCard({
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
               aria-hidden="true"
             >
-              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-              <path d="M3 3v5h5" />
+              <polyline points="20 6 9 17 4 12" />
             </svg>
+            {status === "confirmed" ? "Confirmed" : "Confirm"}
           </button>
-        ) : null}
-      </div>
+
+          <button
+            type="button"
+            disabled={!canMutate}
+            onClick={onSkip}
+            aria-pressed={status === "skipped"}
+            className={`${actionBtnClass} border-[#6b5743] text-[#d7b48c]`}
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+            {status === "skipped" ? "Skipped" : "Skip"}
+          </button>
+
+          {/* Reset circle — only when already actioned */}
+          {stop.stop_ref && (status === "confirmed" || status === "skipped") ? (
+            <button
+              type="button"
+              disabled={!canMutate}
+              onClick={onReset}
+              aria-label="Reset to planned"
+              className={`flex ${resetSize} flex-shrink-0 items-center justify-center rounded-full border border-[#6b5743] text-[#c9bca8] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50`}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+              </svg>
+            </button>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }
