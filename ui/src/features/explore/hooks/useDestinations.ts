@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import type {
   Destination,
   DestinationMood,
-} from "../../shared/types/destination.types";
+} from "../types";
 import {
   getDestinations,
   getEditorsPicks,

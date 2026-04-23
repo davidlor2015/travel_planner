@@ -1,10 +1,10 @@
 import type { Trip } from "../../../shared/api/trips";
-import { getTripImageUrl } from "../../trips/workspace/tripVisuals";
+import { getTripImageUrl } from "../../trips/workspace/helpers/tripVisuals";
 import type {
   ArchiveSummaryLine,
   ArchiveTripItem,
   ArchiveYearGroup,
-} from "../../shared/types/archive.types";
+} from "../types";
 
 function getTripDurationDays(startDate: Date, endDate: Date): number {
   return Math.max(

@@ -8,21 +8,21 @@ import type {
 } from "../../../shared/api/trips";
 import { track } from "../../../shared/analytics";
 import { Toast } from "../../../shared/ui/Toast";
-import { useOnTripMutations } from "./useOnTripMutations";
-import { OnTripHeader } from "./onTripParts/OnTripHeader";
-import { HappeningNowCard } from "./onTripParts/HappeningNowCard";
-import { DayTimeline } from "./onTripParts/DayTimeline";
-import { UnplannedList } from "./onTripParts/UnplannedList";
-import { NeedsAttentionCard } from "./onTripParts/NeedsAttentionCard";
-import { LogStopFAB } from "./onTripParts/LogStopFAB";
-import { LogStopSheet } from "./onTripParts/LogStopSheet";
-import type { StopVM } from "./onTripParts/types";
-import { deriveStopVisualState } from "./onTripParts/deriveStopVisualState";
+import { useOnTripMutations } from "./onTrip/hooks/useOnTripMutations";
+import { OnTripHeader } from "./onTrip/OnTripHeader";
+import { HappeningNowCard } from "./onTrip/HappeningNowCard";
+import { DayTimeline } from "./onTrip/DayTimeline";
+import { UnplannedList } from "./onTrip/UnplannedList";
+import { NeedsAttentionCard } from "./onTrip/NeedsAttentionCard";
+import { LogStopFAB } from "./onTrip/LogStopFAB";
+import { LogStopSheet } from "./onTrip/LogStopSheet";
+import type { StopVM } from "./onTrip/types";
+import { deriveStopVisualState } from "./onTrip/deriveStopVisualState";
 import {
   currentLocalMinutes,
   deriveCurrentStop,
   todayLocalISODate,
-} from "./onTripParts/deriveCurrentStop";
+} from "./onTrip/deriveCurrentStop";
 
 function effectiveStatus(stop: TripOnTripStopSnapshot): TripExecutionStatus {
   return stop.execution_status ?? stop.status ?? "planned";

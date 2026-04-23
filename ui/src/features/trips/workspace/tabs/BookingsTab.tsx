@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
-import { ReservationsPanel } from "../../ReservationsPanel";
+import { ReservationsPanel } from "../../logistics/reservations";
 import type { ReservationSummary } from "../types";
-import type { EditableItinerary, EditableStopPatch } from "../../itineraryDraft";
+import type { EditableItinerary, EditableStopPatch } from "../../itinerary/itineraryDraft";
 import type { Reservation } from "../../../../shared/api/reservations";
 
 interface BookingsTabProps {

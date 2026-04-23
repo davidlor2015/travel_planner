@@ -6,15 +6,15 @@ import {
   getDestinationLabel,
   getTripImageUrl,
   getTripTagline,
-} from "./tripVisuals";
+} from "./helpers/tripVisuals";
 import type {
   BudgetSummary,
   PackingSummary,
   ReservationSummary,
 } from "./types";
-import type { TripReadinessSnapshot } from "./tripOverviewViewModel";
+import type { TripReadinessSnapshot } from "./models/tripOverviewViewModel";
 import { MemberAvatarStack, TripHeroMetadataRow } from "./WorkspacePrimitives";
-import { isCollaborationActive } from "./collaborationGate";
+import { isCollaborationActive } from "./helpers/collaborationGate";
 
 interface TripHeroProps {
   trip: Trip;

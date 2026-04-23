@@ -1,4 +1,4 @@
-import type { Destination } from "../../shared/types/destination.types";
+import type { Destination } from "../types";
 
 interface EditorialPickCardProps {
   destination: Destination;

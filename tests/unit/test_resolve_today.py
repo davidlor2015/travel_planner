@@ -59,9 +59,9 @@ def test_resolves_utc_at_crossover():
     """Sanity check the test harness: UTC itself should report 2026-04-22."""
     patched = _patched_datetime_class(CROSSOVER_UTC)
     with patch("app.services.trip_service.datetime", patched):
-        assert datetime.now(ZoneInfo("UTC")).date() == date(2026, 4, 22)
+        assert patched.now(ZoneInfo("UTC")).date() == date(2026, 4, 22)
         assert TripService._resolve_today("UTC") == date(2026, 4, 22)
-
+       
 
 def test_resolves_none_to_server_today():
     with patch("app.services.trip_service.date") as date_mod:

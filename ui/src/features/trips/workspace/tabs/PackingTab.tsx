@@ -1,4 +1,4 @@
-import { PackingList } from "../../PackingList";
+import { PackingList } from "../../logistics/packing";
 import type { PackingSummary } from "../types";
 
 interface PackingTabProps {

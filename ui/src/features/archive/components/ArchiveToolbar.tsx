@@ -1,5 +1,5 @@
 import { SearchInput, ViewToggle } from "../../../shared/ui";
-import type { ArchiveViewMode } from "../../shared/types/archive.types";
+import type { ArchiveViewMode } from "../types";
 
 interface ArchiveToolbarProps {
   query: string;

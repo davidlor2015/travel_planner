@@ -51,10 +51,10 @@ import {
 } from "./shared/auth/session";
 
 const TripList = lazy(() =>
-  import("./features/trips/TripList").then((m) => ({ default: m.TripList })),
+  import("./features/trips/list").then((m) => ({ default: m.TripList })),
 );
 const CreateTripForm = lazy(() =>
-  import("./features/trips/CreateTripForm").then((m) => ({
+  import("./features/trips/create").then((m) => ({
     default: m.CreateTripForm,
   })),
 );
@@ -62,10 +62,10 @@ const ExplorePage = lazy(() =>
   import("./features/explore").then((m) => ({ default: m.ExplorePage })),
 );
 const MatchingPage = lazy(() =>
-  import("./features/profile").then((m) => ({ default: m.MatchingPage })),
+  import("./features/matching/MatchingPage").then((m) => ({ default: m.MatchingPage })),
 );
 const ProfilePage = lazy(() =>
-  import("./features/profile").then((m) => ({ default: m.ProfilePage })),
+  import("./features/profile/ProfilePage").then((m) => ({ default: m.ProfilePage })),
 );
 
 const EXPLORE_ENABLED = import.meta.env.VITE_ENABLE_EXPLORE === "true";

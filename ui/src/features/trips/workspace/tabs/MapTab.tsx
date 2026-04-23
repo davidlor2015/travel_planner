@@ -1,4 +1,4 @@
-import { ItineraryMap } from "../../ItineraryMap";
+import { ItineraryMap } from "../../map";
 import type { Itinerary, ItineraryItem } from "../../../../shared/api/ai";
 
 interface MapTabProps {

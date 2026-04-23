@@ -2,8 +2,8 @@ import type {
   TripActionCommand,
   TripActionabilityModel,
   TripWorkspaceActionItem,
-} from "./deriveTripActionItems";
-import type { AttentionSeverity } from "./tripOverviewViewModel";
+} from "./models/deriveTripActionItems";
+import type { AttentionSeverity } from "./models/tripOverviewViewModel";
 
 function severityBarClass(severity: AttentionSeverity): string {
   if (severity === "blocker") {
