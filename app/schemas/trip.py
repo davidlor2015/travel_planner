@@ -121,6 +121,7 @@ class TripInviteDetailResponse(BaseModel):
     email: EmailStr
     status: str
     expires_at: datetime
+    invited_by_email: EmailStr | None = None
 
 
 class TripResponse(TripBase):
@@ -189,15 +190,32 @@ OnTripResolutionConfidence = Literal["high", "medium", "low"]
 OnTripBlockerSeverity = Literal["blocker", "watch"]
 
 
+ExecutionStatus = Literal["planned", "confirmed", "skipped"]
+
+
 class TripOnTripStopSnapshotResponse(BaseModel):
     day_number: int | None = None
     day_date: date | None = None
     title: str | None = None
     time: str | None = None
     location: str | None = None
+    lat: float | None = None
+    lon: float | None = None
     status: Literal["planned", "confirmed", "skipped"] | None = None
     source: OnTripResolutionSource
     confidence: OnTripResolutionConfidence
+    stop_ref: str | None = None
+    execution_status: ExecutionStatus | None = None
+
+
+class TripOnTripUnplannedStopResponse(BaseModel):
+    event_id: int
+    day_date: date
+    time: str | None = None
+    title: str
+    location: str | None = None
+    notes: str | None = None
+    created_by_email: EmailStr | None = None
 
 
 class TripOnTripBlockerResponse(BaseModel):
@@ -215,4 +233,62 @@ class TripOnTripSnapshotResponse(BaseModel):
     read_only: bool = True
     today: TripOnTripStopSnapshotResponse
     next_stop: TripOnTripStopSnapshotResponse
+    today_stops: list[TripOnTripStopSnapshotResponse] = []
+    today_unplanned: list[TripOnTripUnplannedStopResponse] = []
     blockers: list[TripOnTripBlockerResponse]
+
+
+class TripStopStatusUpdateRequest(BaseModel):
+    stop_ref: str
+    status: ExecutionStatus
+
+
+class TripUnplannedStopRequest(BaseModel):
+    day_date: date
+    title: str
+    time: str | None = None
+    location: str | None = None
+    notes: str | None = None
+    # Opaque per-submission idempotency token. When the client supplies one,
+    # a replayed POST (retry after a dropped response) must return the
+    # originally-persisted row instead of creating a duplicate. Leaving this
+    # optional preserves the append-only path for clients that don't send it.
+    client_request_id: str | None = None
+
+    @field_validator("title")
+    @classmethod
+    def title_not_blank(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("title must not be blank")
+        return cleaned
+
+    @field_validator("client_request_id", mode="before")
+    @classmethod
+    def normalize_client_request_id(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            raise TypeError("client_request_id must be a string")
+        cleaned = value.strip()
+        if not cleaned:
+            return None
+        if len(cleaned) > 64:
+            raise ValueError("client_request_id must be at most 64 characters")
+        return cleaned
+
+
+class TripExecutionEventResponse(BaseModel):
+    id: int
+    kind: Literal["stop_status", "unplanned_stop"]
+    stop_ref: str | None = None
+    status: ExecutionStatus | None = None
+    day_date: date | None = None
+    time: str | None = None
+    title: str | None = None
+    location: str | None = None
+    notes: str | None = None
+    created_by_user_id: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)

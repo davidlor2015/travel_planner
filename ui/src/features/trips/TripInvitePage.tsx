@@ -85,7 +85,7 @@ export const TripInvitePage = ({ token, user }: TripInvitePageProps) => {
         className="relative w-full max-w-[520px] bg-white rounded-2xl shadow-xl border border-smoke/60 p-8"
       >
         <div className="text-center mb-7">
-          <WaypointLogo variant="mark" className="w-12 h-12 mx-auto mb-3" />
+          <WaypointLogo variant="mark" className="mb-4" />
           <h1 className="text-2xl sm:text-3xl font-bold text-espresso font-display">Trip invitation</h1>
           <p className="text-sm text-flint mt-1.5">
             Review the invite details before joining the shared trip workspace.
@@ -117,6 +117,23 @@ export const TripInvitePage = ({ token, user }: TripInvitePageProps) => {
                 {invite.status === 'pending' ? 'Pending acceptance' : invite.status}
               </p>
               <p className="mt-2 text-sm text-flint">This invite is for {invite.email}.</p>
+              {invite.invited_by_email ? (
+                <p className="mt-1 text-sm text-flint">
+                  Invited by <span className="font-semibold text-espresso">{invite.invited_by_email}</span>.
+                </p>
+              ) : null}
+              {invite.expires_at ? (
+                <p className="mt-1 text-sm text-flint">
+                  {(() => {
+                    const expiresAtMs = new Date(invite.expires_at).getTime();
+                    const hasExpired = Number.isFinite(expiresAtMs) && expiresAtMs <= Date.now();
+                    const label = new Date(invite.expires_at).toLocaleString();
+                    return hasExpired
+                      ? `Expired on ${label}.`
+                      : `Expires on ${label}.`;
+                  })()}
+                </p>
+              ) : null}
             </div>
 
             {invite.status !== 'pending' ? (

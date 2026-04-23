@@ -62,6 +62,24 @@ export function createItineraryDraftMutations(
         addEditableItineraryStop(current, dayNumber, { insertAfterIndex }),
       );
     },
+    /**
+     * Insert a pre-filled stop — used when something external (e.g. a
+     * reservation being pinned) already knows the title/time/location and
+     * wants the new stop to appear ready, not as an empty "New stop".
+     */
+    addStopWithInitial(
+      tripId: number,
+      dayNumber: number,
+      initial: EditableStopPatch,
+      insertAfterIndex?: number,
+    ) {
+      mutateTripDraft(setPendingItineraries, tripId, (current) =>
+        addEditableItineraryStop(current, dayNumber, {
+          insertAfterIndex,
+          initial,
+        }),
+      );
+    },
     updateStop(
       tripId: number,
       dayNumber: number,

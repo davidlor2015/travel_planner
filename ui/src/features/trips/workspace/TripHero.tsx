@@ -65,7 +65,9 @@ export function TripHero({
   durationDays,
   readiness,
   summariesLoaded = true,
+  activityUnreadCount = 0,
   onManageGroup,
+  onOpenActivityDrawer,
   onShareTrip,
 }: TripHeroProps) {
   const imageUrl = useMemo(() => getTripImageUrl(trip), [trip]);
@@ -201,6 +203,46 @@ export function TripHero({
           </div>
 
           <div className="flex flex-shrink-0 items-center gap-2">
+            {onOpenActivityDrawer ? (
+              <motion.button
+                type="button"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={onOpenActivityDrawer}
+                aria-label={
+                  activityUnreadCount > 0
+                    ? `${activityUnreadCount} unread trip updates`
+                    : "Open trip updates"
+                }
+                className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl backdrop-blur-sm"
+                style={{
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                }}
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.85)"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                  <path d="M10 21a2 2 0 0 0 4 0" />
+                </svg>
+                {activityUnreadCount > 0 ? (
+                  <span
+                    aria-hidden
+                    className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-[#B86845]"
+                    style={{ border: "2px solid rgba(18,10,4,0.6)" }}
+                  />
+                ) : null}
+              </motion.button>
+            ) : null}
             <motion.button
               type="button"
               whileHover={{ scale: 1.05 }}

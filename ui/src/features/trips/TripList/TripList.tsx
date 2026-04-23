@@ -1,4 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import { type Trip } from "../../../shared/api/trips";
 import { EditTripModal } from "../EditTripModal";
@@ -51,6 +53,45 @@ export const TripList = ({
     onTripSelect,
     onTripsChange,
   });
+
+  // Creation → generation should feel like one fluid arc. When the user just
+  // came from `CreateTripForm` (URL carries `?from=create`) and the new trip
+  // has no itinerary yet, auto-start the AI stream once so the draft appears
+  // without a second "Generate" click.
+  //
+  // Hooks must be called unconditionally: this effect lives above the early
+  // loading/error returns and is guarded internally.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const autoStartFiredRef = useRef<Set<number>>(new Set());
+  useEffect(() => {
+    if (model.status.loading) return;
+    if (model.status.error) return;
+    if (searchParams.get("from") !== "create") return;
+
+    const selectedTrip = model.selection.selectedTrip;
+    if (!selectedTrip) return;
+
+    if (autoStartFiredRef.current.has(selectedTrip.id)) return;
+
+    const savedItinerary = model.draft.selectedSavedItinerary;
+    const pendingItinerary = model.draft.selectedPendingItinerary;
+    if (savedItinerary || pendingItinerary) return;
+
+    const isStreaming = model.derived.selectedIsStreaming;
+    const isAnyGenerating = model.derived.selectedIsAnyGenerating;
+    const streamError = model.derived.selectedStreamError;
+    if (isStreaming || isAnyGenerating) return;
+    if (streamError) return;
+
+    autoStartFiredRef.current.add(selectedTrip.id);
+    model.actions.startStream(selectedTrip.id, selectedTrip.notes ?? undefined);
+
+    // Strip the one-shot flag so a reload or back-navigation doesn't retrigger
+    // generation against a trip the user may have since edited by hand.
+    const next = new URLSearchParams(searchParams);
+    next.delete("from");
+    setSearchParams(next, { replace: true });
+  }, [model, searchParams, setSearchParams]);
 
   if (model.status.loading) return <TripListLoadingSkeleton />;
 
@@ -195,6 +236,8 @@ export const TripList = ({
     selectedIsAnyGenerating,
     selectedOnTripSnapshot,
     selectedIsOnTripCompactMode,
+    selectedOnTripCompactDismissed,
+    selectedIsOnTripPending,
   } = model.derived;
 
   const {
@@ -233,6 +276,7 @@ export const TripList = ({
     handleStartManualDraft,
     handleUpdateDraftDay,
     handleAddDraftStop,
+    handleAddDraftStopWithInitial,
     handleUpdateDraftStop,
     handleDeleteDraftStop,
     handleDuplicateDraftStop,
@@ -243,6 +287,7 @@ export const TripList = ({
     setRegenerationControls,
     setBudgetSummaries,
     setPackingSummaries,
+    setReservationSummaries,
     setMemberDrafts,
     setLockedItemIds,
     setFavoriteItemIds,
@@ -252,6 +297,8 @@ export const TripList = ({
     handleEditSavedAsDraft,
     handleShareTrip,
     dismissOnTripCompactMode,
+    restoreOnTripCompactMode,
+    updateOnTripSnapshot,
   } = model.actions;
 
   const { isMobileLayout, confirmDelete, editingTrip } = model.ui;
@@ -285,28 +332,76 @@ export const TripList = ({
     }
   };
 
+  const showReturnToOnTripChip =
+    Boolean(selectedTrip) &&
+    selectedOnTripSnapshot?.mode === "active" &&
+    selectedOnTripCompactDismissed &&
+    !selectedIsOnTripCompactMode;
+
+  const returnToOnTripChip = showReturnToOnTripChip ? (
+    <button
+      type="button"
+      onClick={() => selectedTrip && restoreOnTripCompactMode(selectedTrip.id)}
+      className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#1C1108] bg-[#1C1108] px-3 text-[12px] font-semibold text-white transition-colors hover:bg-[#2B1B0F] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B86845]/35"
+      aria-label="Return to On-Trip mode"
+    >
+      <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[#F5C14D]" />
+      On-Trip
+    </button>
+  ) : null;
+
   return (
     <div>
       <main className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6">
-        {/* Trip picker bar */}
-        <TripPickerBar
-          trips={trips}
-          selectedTripId={selectedTripId}
-          unreadCount={selectedUnreadCount}
-          onTripChange={selectTrip}
-          onOpenActivityDrawer={openActivityDrawer}
-          onCreateClick={onCreateClick}
-        />
+        {!selectedIsOnTripCompactMode ? (
+          <TripPickerBar
+            trips={trips}
+            selectedTripId={selectedTripId}
+            onTripChange={selectTrip}
+            onCreateClick={onCreateClick}
+            leadingAction={returnToOnTripChip}
+          />
+        ) : null}
 
         {showWorkspace && selectedTrip && selectedTripStatus ? (
-          selectedIsOnTripCompactMode && selectedOnTripSnapshot ? (
+          selectedIsOnTripPending ? (
+            <section
+              aria-busy="true"
+              aria-label="Loading trip view"
+              className="overflow-hidden rounded-[28px] border border-[#EAE2D6] bg-[#FEFCF9] shadow-[0_18px_55px_rgba(28,17,8,0.08)]"
+            >
+              <div className="border-b border-[#EDE7DD] bg-[#FAF8F5]/80 px-5 py-4 sm:px-7">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#A39688]">
+                      Trip workspace
+                    </p>
+                    <h2 className="mt-1 truncate text-xl font-semibold text-[#1C1108]">
+                      {selectedTrip.title}
+                    </h2>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-3 px-5 py-4 sm:px-7">
+                <div className="h-20 animate-pulse rounded-2xl bg-[#EDE7DD]/60" />
+                <div className="h-14 animate-pulse rounded-2xl bg-[#EDE7DD]/60" />
+                <div className="h-14 animate-pulse rounded-2xl bg-[#EDE7DD]/60" />
+              </div>
+            </section>
+          ) : selectedIsOnTripCompactMode && selectedOnTripSnapshot ? (
             <OnTripCompactMode
+              token={token}
               trip={selectedTrip}
               snapshot={selectedOnTripSnapshot}
+              onSnapshotRefresh={(snapshot) =>
+                updateOnTripSnapshot(selectedTrip.id, snapshot)
+              }
               onOpenFullWorkspace={() => {
                 dismissOnTripCompactMode(selectedTrip.id);
                 openWorkspaceTab("overview");
               }}
+              activityUnreadCount={selectedUnreadCount}
+              onOpenActivityDrawer={openActivityDrawer}
             />
           ) : (
           <TripWorkspaceSection
@@ -366,7 +461,7 @@ export const TripList = ({
                       role="alert"
                     >
                       <span className="block text-[11px] font-bold uppercase tracking-wide text-danger/90">
-                        Draft & publish
+                        Itinerary edits
                       </span>
                       {draftActionError}
                     </motion.div>
@@ -407,7 +502,6 @@ export const TripList = ({
 
                 {activeTab === "overview" && (
                   <OverviewTab
-                    isMobileLayout={isMobileLayout}
                     trip={selectedTrip}
                     packingSummary={selectedPackingSummary}
                     budgetSummary={selectedBudgetSummary}
@@ -561,7 +655,24 @@ export const TripList = ({
                 )}
 
                 {activeTab === "bookings" && (
-                  <BookingsTab token={token} tripId={selectedTrip.id} />
+                  <BookingsTab
+                    token={token}
+                    tripId={selectedTrip.id}
+                    pendingItinerary={selectedPendingItinerary}
+                    onAddStopFromBooking={(dayNumber, initial) =>
+                      handleAddDraftStopWithInitial(
+                        selectedTrip.id,
+                        dayNumber,
+                        initial,
+                      )
+                    }
+                    onSummaryChange={(summary) =>
+                      setReservationSummaries((prev) => ({
+                        ...prev,
+                        [selectedTrip.id]: summary,
+                      }))
+                    }
+                  />
                 )}
 
                 {activeTab === "chat" && (

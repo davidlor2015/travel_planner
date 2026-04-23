@@ -20,6 +20,19 @@ interface SSEMessage {
 
 
 /**
+ * Lightweight runtime check on a parsed complete-event payload. Protects
+ * downstream consumers from JSON that parsed successfully but is missing
+ * fields they assume are present (e.g. a non-empty `days` array).
+ */
+function isValidItinerary(value: unknown): value is Itinerary {
+  if (!value || typeof value !== 'object') return false;
+  const record = value as Record<string, unknown>;
+  const days = record.days;
+  if (!Array.isArray(days) || days.length === 0) return false;
+  return days.every((day) => day && typeof day === 'object');
+}
+
+/**
  * Reads raw bytes from a fetch ReadableStream and yields parsed SSE messages.
  * Handles chunked delivery — a single read() call may contain partial or
  * multiple messages; the buffer ensures correct assembly.
@@ -90,6 +103,9 @@ export function useStreamingItinerary(token: string): {
           const response = await apiFetch(`${API_URL}/v1/ai/stream/${tripId}${query}`, {
             token,
             signal: controller.signal,
+            // Disable the default apiFetch timeout: SSE streams are long-lived
+            // by design and must not be aborted on the default 45s schedule.
+            timeoutMs: 0,
           });
 
           if (!response.ok || !response.body) {
@@ -111,7 +127,35 @@ export function useStreamingItinerary(token: string): {
                 },
               }));
             } else if (event === 'complete') {
-              const itinerary = JSON.parse(data) as Itinerary;
+              let itinerary: Itinerary;
+              try {
+                itinerary = JSON.parse(data) as Itinerary;
+              } catch {
+                setStreams((prev) => ({
+                  ...prev,
+                  [tripId]: {
+                    ...prev[tripId],
+                    error: "Couldn't read the itinerary response. Please try again.",
+                    streaming: false,
+                  },
+                }));
+                continue;
+              }
+
+              // Runtime shape guard: a malformed-but-parseable payload must not
+              // reach downstream toEditableItinerary/render.
+              if (!isValidItinerary(itinerary)) {
+                setStreams((prev) => ({
+                  ...prev,
+                  [tripId]: {
+                    ...prev[tripId],
+                    error: "The itinerary response was incomplete. Please try again.",
+                    streaming: false,
+                  },
+                }));
+                continue;
+              }
+
               setStreams((prev) => ({
                 ...prev,
                 [tripId]: { ...prev[tripId], itinerary, streaming: false },
@@ -134,6 +178,26 @@ export function useStreamingItinerary(token: string): {
           }
         } finally {
           delete controllers.current[tripId];
+          // Safety net: if the stream ended (proxy/network drop) without a
+          // terminal `complete` or `error` event, ensure `streaming` clears
+          // so the UI does not hang with an indefinite spinner. Leave any
+          // itinerary/error already recorded in place.
+          if (!controller.signal.aborted) {
+            setStreams((prev) => {
+              const current = prev[tripId];
+              if (!current || !current.streaming) return prev;
+              return {
+                ...prev,
+                [tripId]: {
+                  ...current,
+                  streaming: false,
+                  error:
+                    current.error ??
+                    (current.itinerary ? null : 'The itinerary stream ended before it finished. Please try again.'),
+                },
+              };
+            });
+          }
         }
       })();
     },

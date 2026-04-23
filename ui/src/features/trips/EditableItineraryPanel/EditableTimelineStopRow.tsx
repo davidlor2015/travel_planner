@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { inputCls } from "../../../shared/ui/inputCls";
 import type { ItineraryStopStatus } from "../../../shared/api/ai";
@@ -27,8 +26,6 @@ export interface EditableTimelineStopRowProps {
   isLocked: boolean;
   isFavorite: boolean;
   showOwnershipControls?: boolean;
-  /** When true, full stop edit opens in a bottom sheet (mobile). */
-  useStopEditBottomSheet?: boolean;
   /** Disable manual edit controls while draft publish is in-flight. */
   interactionDisabled?: boolean;
   onUpdate: (patch: Partial<Omit<EditableItineraryItem, "client_id">>) => void;
@@ -425,7 +422,6 @@ export function EditableTimelineStopRow({
   isLocked,
   isFavorite,
   showOwnershipControls = false,
-  useStopEditBottomSheet = false,
   interactionDisabled = false,
   onUpdate,
   onDelete,
@@ -469,92 +465,10 @@ export function EditableTimelineStopRow({
     return () => window.removeEventListener("keydown", onKey);
   }, [isEditing]);
 
-  useEffect(() => {
-    if (!isEditing || !useStopEditBottomSheet) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [isEditing, useStopEditBottomSheet]);
-
-  const closeEdit = () => setIsEditing(false);
-
-  const sheet =
-    isEditing &&
-    useStopEditBottomSheet &&
-    typeof document !== "undefined" ? (
-      createPortal(
-        <div className="fixed inset-0 z-[80]" role="presentation">
-          <button
-            type="button"
-            aria-label="Close stop editor"
-            className="absolute inset-0 bg-espresso/35 backdrop-blur-[1px]"
-            onClick={closeEdit}
-          />
-          <motion.div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={`stop-edit-${item.client_id}`}
-            initial={{ y: "105%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "105%" }}
-            transition={{ type: "spring", damping: 28, stiffness: 320 }}
-            className="absolute bottom-0 left-0 right-0 max-h-[90vh] overflow-y-auto rounded-t-2xl border border-smoke/80 bg-[#FEFCF9] px-4 pt-3 shadow-[0_-12px_40px_rgba(28,17,8,0.12)] pb-[max(1rem,env(safe-area-inset-bottom))]"
-          >
-            <div
-              className="mx-auto mb-3 h-1 w-10 shrink-0 rounded-full bg-smoke/70"
-              aria-hidden
-            />
-            <h4
-              id={`stop-edit-${item.client_id}`}
-              className="text-sm font-semibold text-espresso"
-            >
-              Edit stop
-            </h4>
-            <StopEditFormBody
-              item={item}
-              useHtmlTime={useHtmlTime}
-              htmlTimeValue={htmlTimeValue}
-                  onUpdate={onUpdate}
-                  isLocked={isLocked}
-                  isFavorite={isFavorite}
-                  showOwnershipControls={showOwnershipControls}
-              onToggleLock={onToggleLock}
-              onToggleFavorite={onToggleFavorite}
-              onAddAfter={() => {
-                onAddAfter();
-                closeEdit();
-              }}
-              onDuplicate={onDuplicate}
-              onDelete={() => {
-                onDelete();
-                closeEdit();
-              }}
-              onMoveUp={onMoveUp}
-              onMoveDown={onMoveDown}
-              onMoveToPreviousDay={onMoveToPreviousDay}
-              onMoveToNextDay={onMoveToNextDay}
-              onMoveToDay={onMoveToDay}
-              index={index}
-              totalStops={totalStops}
-              showMobileReorder
-              disabled={interactionDisabled}
-              dayNumber={dayNumber}
-              availableDayNumbers={availableDayNumbers}
-            />
-            <button
-              type="button"
-              onClick={closeEdit}
-              className="mt-4 w-full min-h-11 rounded-full bg-espresso py-2.5 text-sm font-semibold text-white shadow-sm"
-            >
-              Done
-            </button>
-          </motion.div>
-        </div>,
-        document.body,
-      )
-    ) : null;
+  // The mobile stop edit previously opened in a portal-mounted bottom sheet.
+  // Modals made every edit feel ceremonial and reinforced "draft = AI output
+  // you review." Now the row expands inline at every breakpoint — editing the
+  // trip is indistinguishable from reading it.
 
   return (
     <div
@@ -589,7 +503,7 @@ export function EditableTimelineStopRow({
         <div
           className={[
             "rounded-xl px-2 py-2 transition-colors",
-            isEditing && !useStopEditBottomSheet
+            isEditing
               ? "bg-parchment/50 ring-1 ring-smoke/60"
               : "hover:bg-parchment/35",
           ].join(" ")}
@@ -681,7 +595,14 @@ export function EditableTimelineStopRow({
             </div>
 
             <div className="flex shrink-0 items-center gap-1">
-              <div className="hidden items-center gap-0.5 opacity-0 transition-opacity group-hover/stop:opacity-100 sm:flex">
+              {/*
+                Reorder + delete controls are always visible at every
+                breakpoint. The prior pattern hid them behind hover on desktop
+                and behind the mobile edit sheet on mobile — both signalled
+                "editing is a mode you enter," which breaks the manual-first
+                feel we want.
+               */}
+              <div className="flex items-center gap-0.5">
                 <button
                   type="button"
                   onClick={onMoveUp}
@@ -731,7 +652,7 @@ export function EditableTimelineStopRow({
                   onClick={onMoveToPreviousDay}
                   disabled={interactionDisabled || !onMoveToPreviousDay}
                   aria-label="Move stop to previous day"
-                  className="rounded-md border border-transparent p-1.5 text-flint hover:border-smoke hover:bg-white disabled:opacity-25"
+                  className="hidden rounded-md border border-transparent p-1.5 text-flint hover:border-smoke hover:bg-white disabled:opacity-25 sm:inline-flex"
                 >
                   <svg
                     width="10"
@@ -753,7 +674,7 @@ export function EditableTimelineStopRow({
                   onClick={onMoveToNextDay}
                   disabled={interactionDisabled || !onMoveToNextDay}
                   aria-label="Move stop to next day"
-                  className="rounded-md border border-transparent p-1.5 text-flint hover:border-smoke hover:bg-white disabled:opacity-25"
+                  className="hidden rounded-md border border-transparent p-1.5 text-flint hover:border-smoke hover:bg-white disabled:opacity-25 sm:inline-flex"
                 >
                   <svg
                     width="10"
@@ -809,7 +730,7 @@ export function EditableTimelineStopRow({
           </div>
 
           <AnimatePresence>
-            {isEditing && !useStopEditBottomSheet ? (
+            {isEditing ? (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
@@ -830,7 +751,7 @@ export function EditableTimelineStopRow({
                     onToggleFavorite={onToggleFavorite}
                     onAddAfter={() => {
                       onAddAfter();
-                      closeEdit();
+                      setIsEditing(false);
                     }}
                     onDuplicate={onDuplicate}
                     onDelete={onDelete}
@@ -852,7 +773,6 @@ export function EditableTimelineStopRow({
           </AnimatePresence>
         </div>
       </div>
-      {sheet}
     </div>
   );
 }

@@ -11,13 +11,10 @@ export function LandingNavBar({ onGetStarted, onSignIn }: LandingNavBarProps) {
       <div className="mx-auto flex h-[68px] max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
         <div className="flex items-center gap-8">
           <WaypointLogo variant="full" theme="light" className="select-none" />
-          <nav className="hidden items-center gap-6 sm:flex" aria-label="Page navigation">
-            <a
-              href="#why-waypoint"
-              className="text-sm font-medium text-flint transition-colors hover:text-espresso focus:outline-none focus-visible:ring-2 focus-visible:ring-amber/35 rounded"
-            >
-              Why Waypoint
-            </a>
+          <nav
+            className="hidden items-center gap-6 sm:flex"
+            aria-label="Page navigation"
+          >
             <a
               href="#product"
               className="text-sm font-medium text-flint transition-colors hover:text-espresso focus:outline-none focus-visible:ring-2 focus-visible:ring-amber/35 rounded"

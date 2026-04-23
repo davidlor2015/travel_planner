@@ -47,9 +47,18 @@ export function WorkspaceTabBar({
   onTabChange,
   bookingsBadge,
   groupBadge,
+  hasItinerary,
   showChat = false,
 }: WorkspaceTabBarProps) {
-  const visibleTabs = showChat ? TABS : TABS.filter((t) => t.id !== "chat");
+  // Before there is a saved itinerary, hide the support tabs entirely so the
+  // user has exactly one place to go: the itinerary. They come back after the
+  // first save. Overview + Members + Map + (optional) Chat still show so the
+  // user can still see the trip shell and invite collaborators.
+  const supportIds = new Set<WorkspaceTab>(["bookings", "budget", "packing"]);
+  const baseTabs = hasItinerary
+    ? TABS
+    : TABS.filter((t) => !supportIds.has(t.id));
+  const visibleTabs = showChat ? baseTabs : baseTabs.filter((t) => t.id !== "chat");
   const tabRefs = useRef<Partial<Record<WorkspaceTab, HTMLButtonElement | null>>>({});
 
   const badges: Partial<Record<WorkspaceTab, number>> = {
@@ -107,7 +116,18 @@ export function WorkspaceTabBar({
             {tab.icon}
             {tab.label}
             {badge > 0 && (
-              <span className="flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-[#C0392B] px-1 text-[10px] font-bold leading-none text-white">
+              // Neutral counts, not alert badges. The support tabs are
+              // quietly informative — a red pill reads as "something is wrong"
+              // when it really means "there are N items here".
+              <span
+                className={[
+                  "flex h-[17px] min-w-[17px] items-center justify-center rounded-full px-1 text-[10px] font-semibold leading-none tabular-nums",
+                  isActive
+                    ? "bg-[#1C1108]/10 text-[#1C1108]"
+                    : "bg-[#EAE2D6] text-[#6B5E52]",
+                ].join(" ")}
+                aria-label={`${badge} ${badge === 1 ? "item" : "items"}`}
+              >
                 {badge}
               </span>
             )}

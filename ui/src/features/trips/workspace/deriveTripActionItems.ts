@@ -22,13 +22,12 @@ const INTENT_ORDER: Record<TripActionIntent, number> = {
   workspace_error: 0,
   draft_publish: 1,
   itinerary_setup: 2,
-  first_day_timing: 3,
-  ownership: 4,
-  bookings: 5,
-  budget: 6,
-  packing: 7,
-  readiness: 8,
-  activity: 9,
+  ownership: 3,
+  bookings: 4,
+  budget: 5,
+  packing: 6,
+  readiness: 7,
+  activity: 8,
 };
 
 /** Workspace-only signals (no UI, no handlers). */
@@ -42,6 +41,13 @@ export interface TripWorkspaceSignals {
   isApplyingItinerary: boolean;
   unreadActivityCount: number;
   activityMuted: boolean;
+  /**
+   * True when the draft editor is currently visible to the user (e.g. on the
+   * Overview tab). When true, the "Draft itinerary in progress / Review draft"
+   * banner row is suppressed to avoid telling the user to review something
+   * that is already on their screen.
+   */
+  isDraftReviewVisible?: boolean;
 }
 
 /** Full payload when a trip is selected (summaries + workspace signals). */
@@ -76,7 +82,6 @@ export type TripActionReason =
   | "draft_pending_publish"
   | "unread_activity"
   | "itinerary_missing"
-  | "first_day_timing_missing"
   | "ownership_assigned_to_you"
   | "ownership_waiting_on_other"
   | "ownership_unassigned"
@@ -94,7 +99,6 @@ export type TripActionIntent =
   | "workspace_error"
   | "draft_publish"
   | "itinerary_setup"
-  | "first_day_timing"
   | "ownership"
   | "bookings"
   | "budget"
@@ -149,7 +153,6 @@ function intentForReason(reason: TripActionReason): TripActionIntent {
   }
   if (reason === "draft_pending_publish") return "draft_publish";
   if (reason === "itinerary_missing") return "itinerary_setup";
-  if (reason === "first_day_timing_missing") return "first_day_timing";
   if (
     reason === "ownership_assigned_to_you" ||
     reason === "ownership_waiting_on_other" ||
@@ -205,7 +208,7 @@ function deriveSystemFailureItems(input: TripActionInputs): TripWorkspaceActionI
       severity: "blocker",
       title: "Draft couldn’t update",
       detail: draftErr,
-      actionLabel: "Go to publish",
+      actionLabel: "Go to save",
       command: { kind: "focus_draft_publish" },
     });
   }
@@ -255,14 +258,18 @@ function deriveOperationalActionItems(input: TripActionInputs): TripWorkspaceAct
   } = input;
   const operationals: TripWorkspaceActionItem[] = [];
 
-  if (ws.hasPendingDraft && !ws.isApplyingItinerary) {
+  if (
+    ws.hasPendingDraft &&
+    !ws.isApplyingItinerary &&
+    !ws.isDraftReviewVisible
+  ) {
     operationals.push({
       id: "workspace-draft-pending",
       reason: "draft_pending_publish",
       intent: "draft_publish",
       severity: "watch",
       title: "Draft itinerary in progress",
-      detail: "Review edits and apply when the group is ready.",
+      detail: "Review edits and save when this is the plan you want to keep.",
       actionLabel: "Review draft",
       command: { kind: "focus_draft_publish" },
     });
@@ -299,7 +306,12 @@ function deriveOperationalActionItems(input: TripActionInputs): TripWorkspaceAct
     ...attention.filter((item) => !seen.has(item.id)),
   ];
 
-  if (!ws.activityMuted && ws.unreadActivityCount > 0 && merged.length === 0) {
+  // Always surface the unread-activity nudge when there is activity to review,
+  // regardless of how many other operational items exist.  The sortDeterministic
+  // call below places it last (intent "activity" = rank 9) and the
+  // MAX_OPERATIONAL_ITEMS cap trims the list if it is already full, so the
+  // nudge only crowds out lower-priority items when the list is saturated.
+  if (!ws.activityMuted && ws.unreadActivityCount > 0) {
     merged.push({
       id: "workspace-unread-activity",
       reason: "unread_activity",

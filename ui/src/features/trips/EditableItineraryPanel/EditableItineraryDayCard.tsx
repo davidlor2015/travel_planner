@@ -11,8 +11,6 @@ export interface EditableItineraryDayCardProps {
   anchorSummary?: string | null;
   advisoryHint?: string | null;
   readinessHint?: string | null;
-  onAssistThisDay: () => void;
-  assistDisabled?: boolean;
   onToggleEditDetails: () => void;
   editingDetails: boolean;
   dayDetailsSummary: ReactNode;
@@ -34,8 +32,6 @@ export function EditableItineraryDayCard({
   anchorSummary,
   advisoryHint,
   readinessHint,
-  onAssistThisDay,
-  assistDisabled,
   onToggleEditDetails,
   editingDetails,
   dayDetailsSummary,
@@ -101,17 +97,9 @@ export function EditableItineraryDayCard({
         <div className="flex flex-shrink-0 flex-wrap items-center justify-end gap-2 sm:max-w-[min(100%,20rem)]">
           <button
             type="button"
-            onClick={onAssistThisDay}
-            disabled={assistDisabled}
-            className="inline-flex min-h-9 items-center rounded-full border border-amber/35 bg-amber/10 px-3 text-[12px] font-semibold text-espresso transition-colors hover:bg-amber/18 disabled:cursor-not-allowed disabled:opacity-45"
-          >
-            Assist this day
-          </button>
-          <button
-            type="button"
             onClick={onToggleEditDetails}
             aria-expanded={editingDetails}
-            className="inline-flex min-h-9 items-center rounded-full border border-smoke/80 bg-white px-3 text-[12px] font-semibold text-flint hover:bg-parchment"
+            className="inline-flex min-h-9 items-center rounded-full border border-smoke/80 bg-white px-3 text-[12px] font-medium text-flint transition-colors hover:bg-parchment hover:text-espresso"
           >
             {editingDetails ? "Close details" : "Day details"}
           </button>

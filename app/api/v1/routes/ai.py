@@ -66,6 +66,7 @@ async def generate_trip_plan_smart(
 
 
 @router.get("/stream/{trip_id}")
+@limiter.limit(settings.AI_STREAM_RATE_LIMIT)
 async def stream_trip_plan(
     trip_id: int,
     request: Request,
@@ -101,8 +102,10 @@ async def stream_trip_plan(
 
 
 @router.post("/apply", status_code=200)
+@limiter.limit(settings.AI_RATE_LIMIT)
 async def apply_trip_plan(
-    request: AIApplyRequest,
+    request: Request,
+    body: AIApplyRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Any:
@@ -110,9 +113,10 @@ async def apply_trip_plan(
     service = ItineraryService(db)
     try:
         updated_trip = service.apply_itinerary_to_db(
-            trip_id=request.trip_id,
+            trip_id=body.trip_id,
             user_id=current_user.id,
-            itinerary=request.itinerary,
+            itinerary=body.itinerary,
+            source=body.source,
         )
         return {"message": "Itinerary applied successfully", "trip_id": updated_trip.id}
     except ValueError as e:

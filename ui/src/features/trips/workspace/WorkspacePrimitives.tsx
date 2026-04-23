@@ -11,6 +11,11 @@ function getMemberInitials(email: string): string {
   ).toUpperCase();
 }
 
+/**
+ * Data-driven avatar seed tones. These are intentionally left as literals —
+ * they are not chrome but a deterministic mapping from member index to a
+ * distinguishable tone, sourced from the warm palette family.
+ */
 function getAvatarTone(index: number): string {
   const tones = [
     "#B86845",
@@ -41,24 +46,24 @@ export function WorkspaceSectionCard({
   return (
     <section
       className={[
-        "rounded-2xl border border-[#EAE2D6] bg-[#FEFCF9] px-4 py-4 shadow-[0_1px_0_rgba(28,17,8,0.03)] sm:px-5",
+        "rounded-2xl border border-border bg-bg-app px-4 py-4 shadow-[0_1px_0_rgba(28,17,8,0.03)] sm:px-5",
         className,
       ].join(" ")}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           {eyebrow ? (
-            <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#A39688]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-text-soft">
               {eyebrow}
             </p>
           ) : null}
           {title ? (
-            <h3 className="mt-1 text-lg font-semibold text-[#1C1108]">
+            <h3 className="mt-1 text-lg font-semibold text-text">
               {title}
             </h3>
           ) : null}
           {description ? (
-            <p className="mt-2 max-w-2xl text-[13.5px] leading-[1.65] text-[#6B5E52]">
+            <p className="mt-2 max-w-2xl text-[13.5px] leading-[1.65] text-text-muted">
               {description}
             </p>
           ) : null}
@@ -142,7 +147,7 @@ export function MemberAvatarStack({
         ))}
         {extraMembers > 0 ? (
           <span
-            className={`inline-flex shrink-0 items-center justify-center rounded-full bg-[#1C1108] px-1.5 font-semibold text-white ${avatarClass}`}
+            className={`inline-flex shrink-0 items-center justify-center rounded-full bg-espresso px-1.5 font-semibold text-white ${avatarClass}`}
             style={{
               marginLeft: "-9px",
               border: "2px solid rgba(254,252,249,0.82)",

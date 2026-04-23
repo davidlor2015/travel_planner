@@ -102,15 +102,27 @@ export function useReservations(token: string, tripId: number) {
   }, [token, tripId]);
 
   const removeReservation = useCallback(async (reservationId: number) => {
+    // Snapshot the item before optimistic removal so we can restore it if
+    // BOTH the delete call AND the recovery getReservations call fail. Without
+    // this guarantee the UI could silently drift from the DB until reload.
+    const removed = items.find((item) => item.id === reservationId) ?? null;
     dispatch({ type: 'item/remove', id: reservationId });
     try {
       await deleteReservation(token, tripId, reservationId);
     } catch (error) {
-      const fresh = await getReservations(token, tripId);
-      dispatch({ type: 'fetch/done', items: fresh });
+      try {
+        const fresh = await getReservations(token, tripId);
+        dispatch({ type: 'fetch/done', items: fresh });
+      } catch {
+        // Recovery fetch also failed: re-insert the optimistically removed
+        // item so the list still reflects server reality as we knew it.
+        if (removed) {
+          dispatch({ type: 'item/add', item: removed });
+        }
+      }
       throw error;
     }
-  }, [token, tripId]);
+  }, [items, token, tripId]);
 
   const editReservation = useCallback(async (reservationId: number, payload: Partial<ReservationPayload>) => {
     const current = items.find((item) => item.id === reservationId);

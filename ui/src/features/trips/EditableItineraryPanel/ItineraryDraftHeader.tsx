@@ -80,16 +80,11 @@ export function ItineraryDraftHeader({
           type="button"
           onClick={onOpenGlobalAiAssist}
           disabled={globalAiDisabled}
-          className="inline-flex min-h-10 items-center rounded-full border border-transparent bg-espresso/90 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-espresso disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber/35"
+          className="inline-flex min-h-10 items-center rounded-full border border-smoke bg-white px-4 text-sm font-medium text-flint transition-colors hover:bg-parchment hover:text-espresso disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber/30"
         >
           Assist ideas
         </button>
       </div>
-
-      <p className="mt-3 text-[11px] leading-relaxed text-flint/90">
-        Manual edits stay first; optional assists only reshape this draft until
-        you publish.
-      </p>
 
       <button
         type="button"
@@ -97,9 +92,9 @@ export function ItineraryDraftHeader({
         aria-expanded={aboutOpen}
         aria-controls={`${aboutId}-panel`}
         onClick={() => setAboutOpen((o) => !o)}
-        className="mt-2 text-[11px] font-semibold text-amber hover:text-amber-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-amber/35"
+        className="mt-3 text-[11px] font-medium text-flint hover:text-espresso focus:outline-none focus-visible:ring-2 focus-visible:ring-amber/35"
       >
-        {aboutOpen ? "Hide" : "About this draft"}
+        {aboutOpen ? "Hide details" : "About this draft"}
       </button>
       {aboutOpen ? (
         <div
@@ -108,8 +103,8 @@ export function ItineraryDraftHeader({
           aria-labelledby={aboutId}
           className="mt-2 rounded-lg border border-smoke/50 bg-parchment/30 px-3 py-2.5 text-[11px] leading-relaxed text-flint"
         >
-          Your edits are the source of truth. Use assists to fill gaps or tune
-          pacing, then review before publishing the shared itinerary.
+          Edits are yours. Assists only shape this draft — save when the plan
+          is the one you want to keep.
         </div>
       ) : null}
     </div>

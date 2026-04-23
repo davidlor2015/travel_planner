@@ -514,7 +514,7 @@ describe("deriveTripActionItems", () => {
       );
     });
 
-    it("suppresses unread activity when there is a stronger actionable item", () => {
+    it("keeps unread activity as a low-priority nudge even when stronger items exist", () => {
       const items = deriveTripActionItems(
         fullInput(
           {
@@ -536,7 +536,7 @@ describe("deriveTripActionItems", () => {
         ),
       );
       expect(items.find((i) => i.id === "budget-over")).toBeDefined();
-      expect(items.find((i) => i.id === "workspace-unread-activity")).toBeUndefined();
+      expect(items.find((i) => i.id === "workspace-unread-activity")).toBeDefined();
     });
   });
 

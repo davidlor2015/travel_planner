@@ -40,3 +40,17 @@ class TripAccessService:
             membership=membership,
             member_state=membership.member_state,
         )
+
+    @staticmethod
+    def can_execute_on_trip(context: TripAccessContext) -> bool:
+        """
+        Whether the caller is allowed to record on-trip execution events
+        (stop status changes, unplanned stop logging) against this trip.
+
+        Today every accepted membership in the codebase is a write role
+        (owner, member). This predicate exists so that viewer / archived /
+        locked states added later extend here — keeping permission rules
+        co-located with the access service instead of being re-derived by
+        each caller.
+        """
+        return context.membership.role in {"owner", "member"}

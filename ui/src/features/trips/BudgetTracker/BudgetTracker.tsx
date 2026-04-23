@@ -83,15 +83,6 @@ function formatCurrency(amount: number): string {
   return `$${formatAmount(amount)}`;
 }
 
-function CurrencyDisplay({ amount, className }: { amount: number; className?: string }) {
-  return (
-    <span className={className}>
-      <span className="mr-0.5 text-[13px] font-normal opacity-50">$</span>
-      {formatAmount(amount)}
-    </span>
-  );
-}
-
 function progressBarCls(pct: number): string {
   if (pct >= 100) return "bg-danger";
   if (pct >= 75) return "bg-amber";
@@ -280,29 +271,40 @@ export const BudgetTracker = ({
   return (
     <div className="mt-2 overflow-hidden rounded-2xl border border-[#E6DED1] bg-[#FBF8F4]">
       <div className="border-b border-[#EFE6DB] px-5 pb-5 pt-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h4 className="text-base font-bold text-espresso">Trip budget</h4>
-            <p className="mt-0.5 text-xs text-flint">
-              A simple spending view for this trip.
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h4 className="font-display text-base font-semibold text-espresso">
+              Your trip spending
+            </h4>
+            <p className="mt-0.5 text-[12px] text-flint">
+              {loading
+                ? "Loading…"
+                : limit !== null && !editingLimit
+                  ? (
+                    <>
+                      <span className="tabular-nums">
+                        {formatCurrency(totalSpent)}
+                      </span>{" "}
+                      of{" "}
+                      <span className="tabular-nums">
+                        {formatCurrency(limit)}
+                      </span>
+                      <span className="mx-1.5 text-[#C7BCAE]">·</span>
+                      <span
+                        className={
+                          isOverBudget
+                            ? "font-semibold text-danger"
+                            : "font-medium text-[#4A5A47]"
+                        }
+                      >
+                        {isOverBudget
+                          ? `${formatCurrency(Math.abs(remaining ?? 0))} over`
+                          : `${formatCurrency(remaining ?? 0)} remaining`}
+                      </span>
+                    </>
+                  )
+                  : "Private to you — bookings stay shared in the trip workspace."}
             </p>
-            <p className="mt-1 text-xs text-flint">
-              Personal to you. Bookings stay shared in the trip workspace.
-            </p>
-            {loading ? (
-              <p className="mt-1 text-xs text-flint">Loading…</p>
-            ) : limit !== null && !editingLimit ? (
-              <p
-                className={[
-                  "mt-1 text-xs font-semibold",
-                  isOverBudget ? "text-danger" : "text-[#4A5A47]",
-                ].join(" ")}
-              >
-                {isOverBudget
-                  ? `${formatCurrency(Math.abs(remaining ?? 0))} over budget`
-                  : `${formatCurrency(remaining ?? 0)} remaining`}
-              </p>
-            ) : null}
           </div>
 
           {editingLimit ? (
@@ -368,50 +370,6 @@ export const BudgetTracker = ({
           )}
         </div>
 
-        <div
-          className="mt-4 grid gap-2 sm:grid-cols-3"
-          aria-label="Budget summary"
-        >
-          <div className="rounded-2xl border border-[#E9DFD3] bg-white px-3 py-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#A39688]">
-              Total spent
-            </p>
-            <CurrencyDisplay
-              amount={totalSpent}
-              className="mt-1 block font-display text-[22px] font-semibold leading-none text-espresso tabular-nums"
-            />
-          </div>
-          <div className="rounded-2xl border border-[#E9DFD3] bg-white px-3 py-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#A39688]">
-              Total budget
-            </p>
-            {limit !== null ? (
-              <CurrencyDisplay
-                amount={limit}
-                className="mt-1 block font-display text-[22px] font-semibold leading-none text-espresso tabular-nums"
-              />
-            ) : (
-              <p className="mt-1 font-display text-[22px] font-semibold leading-none text-espresso">—</p>
-            )}
-          </div>
-          <div className="rounded-2xl border border-[#E9DFD3] bg-white px-3 py-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#A39688]">
-              Remaining
-            </p>
-            {remaining !== null ? (
-              <CurrencyDisplay
-                amount={remaining}
-                className={[
-                  "mt-1 block font-display text-[22px] font-semibold leading-none tabular-nums",
-                  remaining < 0 ? "text-danger" : "text-olive",
-                ].join(" ")}
-              />
-            ) : (
-              <p className="mt-1 font-display text-[22px] font-semibold leading-none text-[#A39688]">Set budget</p>
-            )}
-          </div>
-        </div>
-
         {limit !== null && !editingLimit ? (
           <div className="mt-3" aria-label="Budget progress">
             <div className="h-1.5 overflow-hidden rounded-full bg-[#EDE4D8]">
@@ -423,6 +381,13 @@ export const BudgetTracker = ({
               />
             </div>
           </div>
+        ) : limit === null && !editingLimit && !loading ? (
+          <p className="mt-3 text-[12px] text-flint/90">
+            <span className="font-medium text-espresso">
+              {formatCurrency(totalSpent)}
+            </span>{" "}
+            spent so far.
+          </p>
         ) : null}
 
         {categoryBreakdown.length > 0 ? (

@@ -14,3 +14,4 @@ from app.models.reservation import Reservation  # noqa: F401
 from app.models.prep_item import PrepItem  # noqa: F401
 from app.models.explore_destination import ExploreDestination  # noqa: F401
 from app.models.trip_invite import TripInvite  # noqa: F401
+from app.models.trip_execution_event import TripExecutionEvent  # noqa: F401

@@ -23,7 +23,6 @@ function reasonSummary(reason: TripWorkspaceActionItem["reason"]): string {
   if (reason.startsWith("packing_")) return "Packing signal";
   if (reason.startsWith("readiness_")) return "Readiness coverage";
   if (reason === "itinerary_missing") return "Itinerary baseline";
-  if (reason === "first_day_timing_missing") return "First-day timing";
   if (reason === "draft_pending_publish") return "Draft status";
   if (reason === "unread_activity") return "Recent activity";
   return "Trip signal";

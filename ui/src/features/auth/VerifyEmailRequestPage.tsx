@@ -51,7 +51,7 @@ export const VerifyEmailRequestPage = () => {
         </Link>
 
         <div className="mb-7 mt-5 text-center">
-          <WaypointLogo variant="mark" className="mx-auto mb-3 h-12 w-12" />
+          <WaypointLogo variant="mark" className="mb-4" />
           <h1 className="font-display text-2xl font-bold text-espresso sm:text-3xl">Verify your email</h1>
           <p className="mt-1.5 text-sm text-flint">
             Enter your account email and we&apos;ll prepare a fresh verification link.

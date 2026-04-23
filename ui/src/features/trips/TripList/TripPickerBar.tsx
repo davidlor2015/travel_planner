@@ -1,27 +1,30 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 import type { Trip } from "../../../shared/api/trips";
 import { getTripImageUrl } from "../workspace/tripVisuals";
 import { getTripStatus } from "../workspace/tripDateUtils";
-import { BellIcon, PlusIcon } from "./tripListIcons";
+import { PlusIcon } from "./tripListIcons";
 
 export interface TripPickerBarProps {
   trips: Trip[];
   selectedTripId: number | null;
-  unreadCount: number;
   onTripChange: (id: number) => void;
-  onOpenActivityDrawer: () => void;
   onCreateClick: () => void;
+  /**
+   * Optional contextual action slot rendered at the left of the
+   * right-hand cluster (before the primary action). Used to host
+   * ephemeral indicators like "Return to On-Trip" without taking a new row.
+   */
+  leadingAction?: ReactNode;
 }
 
 export function TripPickerBar({
   trips,
   selectedTripId,
-  unreadCount,
   onTripChange,
-  onOpenActivityDrawer,
   onCreateClick,
+  leadingAction,
 }: TripPickerBarProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
@@ -135,21 +138,7 @@ export function TripPickerBar({
       </div>
 
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={onOpenActivityDrawer}
-          className="relative inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#E5DDD1] bg-[#F0EBE4] text-[#6B5E52] transition-colors hover:bg-[#F5EDE7] hover:text-[#1C1108] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B86845]/35"
-          aria-label={
-            unreadCount > 0
-              ? `${unreadCount} unread trip updates`
-              : "Open trip updates"
-          }
-        >
-          <BellIcon size={15} strokeWidth={2} />
-          {unreadCount > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#F3EEE7] bg-[#B86845]" />
-          )}
-        </button>
+        {leadingAction}
         <motion.button
           type="button"
           whileHover={{ scale: 1.03 }}

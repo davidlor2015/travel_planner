@@ -9,6 +9,14 @@ DayAnchorType = Literal["flight", "hotel_checkin"]
 class ItineraryItem(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
+    id: Optional[int] = Field(
+        None,
+        description=(
+            "Persisted ItineraryEvent primary key. Populated when the item is read "
+            "from the saved itinerary; absent on AI-generated items. Used as the "
+            "stable stop_ref for execution events."
+        ),
+    )
     time: Optional[str] = Field(None, description="Approximate time, e.g., '09:00AM' or 'Morning'")
     title: str = Field(..., description="Name of the activity")
     location: Optional[str] = None
@@ -125,11 +133,16 @@ class AIPlanRequest(BaseModel):
     interests_override: Optional[str] = None
     budget_override: Optional[str] = None
 
+ApplySource = Literal["ai_stream", "manual_edit", "re_apply"]
+
+
 class AIApplyRequest(BaseModel):
 
     trip_id: int
-
     itinerary: ItineraryResponse
+    # Caller-supplied context for server-side analytics; never validated strictly
+    # so that future client variants don't 422 existing integrations.
+    source: Optional[ApplySource] = None
 
 
 RefinementVariant = Literal["faster_pace", "cheaper", "more_local", "less_walking"]
