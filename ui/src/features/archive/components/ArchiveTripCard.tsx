@@ -1,6 +1,6 @@
 import { AvatarStack, StatusPill } from "../../../shared/ui";
 import { formatArchiveDateRange } from "../adapters/archiveAdapter";
-import type { ArchiveTripItem } from "../../shared/types/archive.types";
+import type { ArchiveTripItem } from "../types";
 
 interface ArchiveTripCardProps {
   trip: ArchiveTripItem;

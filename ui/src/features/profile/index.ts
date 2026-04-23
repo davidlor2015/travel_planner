@@ -1,12 +1,2 @@
 export { ProfilePage } from './ProfilePage';
-export { MatchingPage } from './MatchingPage';
-export { MatchRequestCard } from './MatchRequestCard';
-export { MatchRequestList } from './MatchRequestList';
-export { MatchResultCard } from './MatchResultCard';
-export { MatchResultList } from './MatchResultList';
-export { ScoreBar } from './ScoreBar';
-export { TravelProfileForm } from './TravelProfileForm';
 export type { ProfileStats, TravelStats, Badge } from './useProfileStats';
-export { useMatchingProfile } from './useMatchingProfile';
-export { useMatchRequests } from './useMatchRequests';
-export { useMatchResults } from './useMatchResults';

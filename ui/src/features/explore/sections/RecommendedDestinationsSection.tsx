@@ -1,5 +1,5 @@
 import { PageSection } from "../../../shared/ui";
-import type { Destination } from "../../shared/types/destination.types";
+import type { Destination } from "../types";
 import { DestinationCard } from "../components/DestinationCard";
 
 interface RecommendedDestinationsSectionProps {

@@ -1,8 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { EditableItineraryPanel } from "../../EditableItineraryPanel";
+import { EditableItineraryPanel } from "../../itinerary/components";
 import type { Trip } from "../../../../shared/api/trips";
 import type { Itinerary } from "../../../../shared/api/ai";
-import type { TripActivityItem } from "../../TripActivity";
+import type { TripActivityItem } from "../../logistics/activity";
 import type {
   DraftAiAssistRequest,
   EditableItinerary,
@@ -10,7 +10,7 @@ import type {
   MoveEditableItineraryItemIntent,
   RefinementTimeBlock,
   RefinementVariant,
-} from "../../itineraryDraft";
+} from "../../itinerary/itineraryDraft";
 import type {
   BudgetSummary,
   PackingSummary,
@@ -19,12 +19,12 @@ import type {
 import type {
   TripActionabilityModel,
   TripActionCommand,
-} from "../deriveTripActionItems";
-import { isCollaborationActive } from "../collaborationGate";
+} from "../models/deriveTripActionItems";
+import { isCollaborationActive } from "../helpers/collaborationGate";
 import { OverviewCoordinationPanel } from "./OverviewCoordinationPanel";
 import { SavedItineraryView } from "./SavedItineraryView";
 import { WorkspaceSectionCard } from "../WorkspacePrimitives";
-import { ITINERARY_STREAM_REGION_ID } from "../itineraryEditorAnchors";
+import { ITINERARY_STREAM_REGION_ID } from "../../itinerary/itineraryEditorAnchors";
 
 interface DraftPlanMeta {
   source: string;

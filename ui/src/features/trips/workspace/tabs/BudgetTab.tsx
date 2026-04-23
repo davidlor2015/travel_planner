@@ -1,4 +1,4 @@
-import { BudgetTracker } from "../../BudgetTracker";
+import { BudgetTracker } from "../../logistics/budget";
 import type { BudgetSummary } from "../types";
 
 interface BudgetTabProps {

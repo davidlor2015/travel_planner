@@ -10,7 +10,7 @@ import {
   ErrorState,
   LoadingSkeleton,
 } from "../../shared/ui";
-import type { ArchiveViewMode } from "../shared/types/archive.types";
+import type { ArchiveViewMode } from "./types";
 import {
   ArchiveHeader,
   ArchiveToolbar,

@@ -1,7 +1,7 @@
 import type {
   ArchiveViewMode,
   ArchiveYearGroup,
-} from "../../shared/types/archive.types";
+} from "../types";
 import { ArchiveTripCard } from "./ArchiveTripCard";
 import { ArchiveTripRow } from "./ArchiveTripRow";
 

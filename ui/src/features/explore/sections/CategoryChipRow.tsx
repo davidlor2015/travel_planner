@@ -1,5 +1,5 @@
 import { CategoryChip } from "../../../shared/ui";
-import type { DestinationMood } from "../../shared/types/destination.types";
+import type { DestinationMood } from "../types";
 
 interface CategoryChipRowProps {
   moods: DestinationMood[];

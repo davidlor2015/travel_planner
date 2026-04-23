@@ -1,6 +1,6 @@
 import type { DayPlan } from "../../../../shared/api/ai";
 import type { TripMember } from "../../../../shared/api/trips";
-import { TripChatPanel } from "../../TripChat/TripChatPanel";
+import { TripChatPanel } from "../../logistics/chat/TripChatPanel";
 import type { WorkspaceTab } from "../WorkspaceTabBar";
 
 interface ChatTabProps {

@@ -4,7 +4,7 @@ import type {
   ArchiveSummaryLine,
   ArchiveTripItem,
   ArchiveYearGroup,
-} from "../../shared/types/archive.types";
+} from "../types";
 import {
   buildArchiveSummaryLine,
   filterArchiveTrips,

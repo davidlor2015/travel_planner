@@ -1,4 +1,4 @@
-import type { WorkspaceActivityStripItem } from "./workspaceActivityModel";
+import type { WorkspaceActivityStripItem } from "./models/workspaceActivityModel";
 
 interface WorkspaceActivityStripProps {
   hasUnseenChanges: boolean;

@@ -2,7 +2,7 @@ import type {
   Destination,
   DestinationFilters,
   DestinationMood,
-} from "../../shared/types/destination.types";
+} from "../types";
 
 const CATALOG: Destination[] = [
   {

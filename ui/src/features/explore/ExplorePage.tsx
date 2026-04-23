@@ -7,7 +7,7 @@ import {
   ErrorState,
   LoadingSkeleton,
 } from "../../shared/ui";
-import type { DestinationMood } from "../shared/types/destination.types";
+import type { DestinationMood } from "./types";
 import { useDestinations } from "./hooks/useDestinations";
 import {
   CategoryChipRow,

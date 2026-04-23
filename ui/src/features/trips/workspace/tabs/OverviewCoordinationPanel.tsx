@@ -2,11 +2,11 @@ import { motion } from "framer-motion";
 
 import type { Trip } from "../../../../shared/api/trips";
 import type { Itinerary } from "../../../../shared/api/ai";
-import type { TripActivityItem } from "../../TripActivity";
+import type { TripActivityItem } from "../../logistics/activity";
 import type {
   TripActionabilityModel,
   TripActionCommand,
-} from "../deriveTripActionItems";
+} from "../models/deriveTripActionItems";
 import type {
   BudgetSummary,
   PackingSummary,
@@ -15,8 +15,8 @@ import type {
 import {
   buildItineraryOpsSnapshot,
   buildTripReadinessSnapshot,
-} from "../tripOverviewViewModel";
-import { isCollaborationActive } from "../collaborationGate";
+} from "../models/tripOverviewViewModel";
+import { isCollaborationActive } from "../helpers/collaborationGate";
 
 interface OverviewCoordinationPanelProps {
   trip: Trip;
