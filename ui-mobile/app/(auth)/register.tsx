@@ -102,8 +102,15 @@ export default function RegisterPage() {
               </View>
             ) : null}
             {successMessage ? (
-              <View className="rounded-2xl border border-olive/20 bg-olive/10 px-4 py-3">
+              <View className="gap-3 rounded-2xl border border-olive/20 bg-olive/10 px-4 py-3">
                 <Text className="text-sm font-medium text-olive">{successMessage}</Text>
+                <Pressable
+                  onPress={() => router.push("./verify-email-request")}
+                >
+                  <Text className="text-sm font-semibold text-accent">
+                    Request verification link
+                  </Text>
+                </Pressable>
               </View>
             ) : null}
 

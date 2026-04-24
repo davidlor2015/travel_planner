@@ -1,13 +1,30 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Redirect, Tabs } from "expo-router";
+import { Redirect, Tabs, useSegments } from "expo-router";
 
 import { useAuth } from "@/providers/AuthProvider";
 
-const ENABLE_EXPLORE = process.env.EXPO_PUBLIC_ENABLE_EXPLORE === "true";
+function shouldHideTabBar(segments: string[]): boolean {
+  const tripsIndex = segments.findIndex((segment) => segment === "trips");
+  if (tripsIndex === -1) return false;
+
+  const childSegments = segments
+    .slice(tripsIndex + 1)
+    .filter((segment) => segment !== "index");
+
+  return childSegments.length > 0;
+}
 
 function TabsLayoutInner() {
+  const segments = useSegments();
+  const tabBarHidden = shouldHideTabBar(segments);
+
   return (
-    <Tabs screenOptions={{ headerShown: false }}>
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: tabBarHidden ? { display: "none" } : undefined,
+      }}
+    >
       <Tabs.Screen
         name="trips"
         options={{
@@ -44,15 +61,10 @@ function TabsLayoutInner() {
           ),
         }}
       />
-      {/* Explore: hidden by default, enabled via EXPO_PUBLIC_ENABLE_EXPLORE=true */}
+      {/* Explore stays routed but hidden until the mobile slice is ready. */}
       <Tabs.Screen
         name="explore"
-        options={ENABLE_EXPLORE ? {
-          title: "Explore",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="compass-outline" size={size} color={color} />
-          ),
-        } : { href: null }}
+        options={{ href: null }}
       />
     </Tabs>
   );

@@ -11,8 +11,12 @@ function parseTripId(value: string | string[] | undefined): number | null {
 }
 
 export default function TripDetailPage() {
-  const params = useLocalSearchParams<{ tripId?: string | string[] }>();
+  const params = useLocalSearchParams<{
+    tripId?: string | string[];
+    from?: string | string[];
+  }>();
   const tripId = parseTripId(params.tripId);
+  const from = Array.isArray(params.from) ? params.from[0] : params.from;
 
   if (tripId === null) {
     return (
@@ -22,5 +26,10 @@ export default function TripDetailPage() {
     );
   }
 
-  return <WorkspaceScreen tripId={tripId} />;
+  return (
+    <WorkspaceScreen
+      tripId={tripId}
+      autoStartFromCreate={from === "create"}
+    />
+  );
 }

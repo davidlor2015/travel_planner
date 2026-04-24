@@ -1,37 +1,37 @@
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, Text, View } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 
+import { useRequestEmailVerificationMutation } from "@/features/auth/hooks";
 import { friendlyError } from "@/shared/api/friendlyError";
-import { useAuth } from "@/providers/AuthProvider";
 import { PrimaryButton } from "@/shared/ui/Button";
 import { ScreenHeader } from "@/shared/ui/ScreenHeader";
 import { SectionCard } from "@/shared/ui/SectionCard";
 import { TextInputField } from "@/shared/ui/TextInputField";
 
-export default function LoginPage() {
-  const { signIn } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+export default function VerifyEmailRequestPage() {
+  const params = useLocalSearchParams<{ email?: string | string[] }>();
+  const initialEmail = Array.isArray(params.email) ? params.email[0] : params.email;
+  const requestEmailVerificationMutation = useRequestEmailVerificationMutation();
+  const [email, setEmail] = useState(initialEmail ?? "");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   async function handleSubmit() {
-    if (!email.trim() || !password) {
-      setErrorMessage("Email and password are required.");
+    const trimmedEmail = email.trim().toLowerCase();
+
+    if (!trimmedEmail) {
+      setErrorMessage("Email is required.");
       return;
     }
 
-    setIsSubmitting(true);
     setErrorMessage(null);
 
     try {
-      await signIn({ email: email.trim(), password });
-      router.replace("/(tabs)/trips");
+      await requestEmailVerificationMutation.mutateAsync(trimmedEmail);
+      setSubmitted(true);
     } catch (error) {
       setErrorMessage(friendlyError(error, "auth"));
-    } finally {
-      setIsSubmitting(false);
     }
   }
 
@@ -43,13 +43,13 @@ export default function LoginPage() {
       <View className="gap-4">
         <ScreenHeader
           title="Waypoint"
-          subtitle="Sign in to manage trips, logistics, and on-trip execution."
+          subtitle="Request a fresh email verification link."
         />
 
         <SectionCard
           eyebrow="Account"
-          title="Sign in"
-          description="Use the same account you already use on web."
+          title="Verify your email"
+          description="Enter the email address tied to your account."
         >
           <View className="gap-4">
             <TextInputField
@@ -62,34 +62,33 @@ export default function LoginPage() {
               placeholder="you@example.com"
             />
 
-            <TextInputField
-              label="Password"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Password"
-            />
-
             {errorMessage ? (
               <View className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3">
                 <Text className="text-sm font-medium text-danger">{errorMessage}</Text>
               </View>
             ) : null}
 
+            {submitted ? (
+              <View className="rounded-2xl border border-olive/20 bg-olive/10 px-4 py-3">
+                <Text className="text-sm font-medium text-olive">
+                  If that email exists and still needs verification, a link is ready.
+                </Text>
+              </View>
+            ) : null}
+
             <PrimaryButton
-              label={isSubmitting ? "Signing In…" : "Sign In"}
+              label={
+                requestEmailVerificationMutation.isPending
+                  ? "Requesting..."
+                  : "Request verification link"
+              }
               onPress={() => void handleSubmit()}
-              disabled={isSubmitting}
+              disabled={requestEmailVerificationMutation.isPending}
               fullWidth
             />
-            <Pressable onPress={() => router.push("./forgot-password")}>
+            <Pressable onPress={() => router.replace("/(auth)/login")}>
               <Text className="text-center text-sm font-semibold text-accent">
-                Forgot password?
-              </Text>
-            </Pressable>
-            <Pressable onPress={() => router.push("./register")}>
-              <Text className="text-center text-sm font-semibold text-accent">
-                Create account
+                Back to sign in
               </Text>
             </Pressable>
           </View>

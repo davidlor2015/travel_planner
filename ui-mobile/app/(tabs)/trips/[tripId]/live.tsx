@@ -1,15 +1,35 @@
+import { Text, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
 import { useTripDetailQuery } from "@/features/trips/hooks";
 import { OnTripScreen } from "@/features/trips/onTrip/OnTripScreen";
 import { ScreenLoading } from "@/shared/ui/ScreenLoading";
 
+function parseTripId(value: string | string[] | undefined): number | null {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (!raw) return null;
+  const n = Number(raw);
+  return Number.isInteger(n) && n > 0 ? n : null;
+}
+
 export default function LiveViewPage() {
-  const { tripId: tripIdParam } = useLocalSearchParams<{ tripId: string }>();
-  const tripId = parseInt(tripIdParam ?? "0", 10);
+  const { tripId: tripIdParam } = useLocalSearchParams<{
+    tripId?: string | string[];
+  }>();
+  const tripId = parseTripId(tripIdParam);
 
   const tripQuery = useTripDetailQuery(tripId);
   const title = tripQuery.data?.title ?? "Trip";
+
+  if (tripId === null) {
+    return (
+      <View className="flex-1 items-center justify-center bg-bg px-6">
+        <Text className="text-center text-sm text-text-muted">
+          We could not open that trip.
+        </Text>
+      </View>
+    );
+  }
 
   if (tripQuery.isLoading) {
     return <ScreenLoading label="Loading your trip…" />;

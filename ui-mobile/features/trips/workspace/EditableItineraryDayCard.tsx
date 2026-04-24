@@ -1,0 +1,95 @@
+import { useState } from "react";
+import { Pressable, Text, View } from "react-native";
+
+import type { DayPlan } from "@/features/ai/api";
+
+type Props = {
+  day: DayPlan;
+  onAddStop: () => void;
+  onEditStop: (stopIndex: number) => void;
+};
+
+export function EditableItineraryDayCard({
+  day,
+  onAddStop,
+  onEditStop,
+}: Props) {
+  const [expanded, setExpanded] = useState(true);
+  const title = day.day_title?.trim() || `Day ${day.day_number}`;
+  const stopCount = day.items.length;
+
+  return (
+    <View className="rounded-[24px] border border-border bg-surface-muted px-4 py-4">
+      <Pressable
+        onPress={() => setExpanded((current) => !current)}
+        accessibilityRole="button"
+        accessibilityLabel={`${expanded ? "Collapse" : "Expand"} ${title}`}
+        className="flex-row items-start gap-3 active:opacity-70"
+      >
+        <View className="h-9 w-9 items-center justify-center rounded-full bg-text">
+          <Text className="text-xs font-bold text-ivory">{day.day_number}</Text>
+        </View>
+        <View className="flex-1">
+          <Text className="text-base font-semibold text-text">{title}</Text>
+          <Text className="mt-1 text-sm text-text-muted">
+            {[day.date, `${stopCount} ${stopCount === 1 ? "stop" : "stops"}`]
+              .filter(Boolean)
+              .join(" · ")}
+          </Text>
+        </View>
+        <Text className="text-xl leading-6 text-text-muted">
+          {expanded ? "−" : "+"}
+        </Text>
+      </Pressable>
+
+      {expanded ? (
+        <View className="mt-4 gap-2">
+          {day.items.length > 0 ? (
+            day.items.map((item, index) => (
+              <Pressable
+                key={`${day.day_number}-${index}-${item.title}`}
+                onPress={() => onEditStop(index)}
+                accessibilityRole="button"
+                accessibilityLabel={`Edit ${item.title || "stop"}`}
+                className="flex-row gap-3 py-1 active:opacity-70"
+              >
+                <View className="w-16 pt-3">
+                  <Text className="text-xs uppercase tracking-[0.4px] text-text-soft">
+                    {item.time?.trim() || "TBD"}
+                  </Text>
+                </View>
+                <View className="flex-1 rounded-2xl border border-border bg-white px-3 py-3">
+                  <Text className="text-sm font-semibold text-text">
+                    {item.title?.trim() || "Untitled stop"}
+                  </Text>
+                  {item.location?.trim() ? (
+                    <Text className="mt-1 text-sm text-text-muted">
+                      {item.location.trim()}
+                    </Text>
+                  ) : null}
+                  {item.notes?.trim() ? (
+                    <Text className="mt-1 text-xs text-text-soft">
+                      {item.notes.trim()}
+                    </Text>
+                  ) : null}
+                </View>
+              </Pressable>
+            ))
+          ) : (
+            <Text className="rounded-2xl border border-border bg-white px-4 py-4 text-sm text-text-muted">
+              Nothing scheduled for this day.
+            </Text>
+          )}
+
+          <Pressable
+            onPress={onAddStop}
+            accessibilityRole="button"
+            className="mt-2 flex-row items-center justify-center rounded-full border border-border-strong py-2.5 active:opacity-70"
+          >
+            <Text className="text-xs font-semibold text-text-muted">Add stop</Text>
+          </Pressable>
+        </View>
+      ) : null}
+    </View>
+  );
+}

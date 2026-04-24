@@ -5,8 +5,13 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useOnTripSnapshotQuery } from "@/features/trips/hooks";
+import {
+  hasResolvedTodayStop,
+  isResolvedStop,
+} from "@/features/trips/onTrip/eligibility";
 import { ScreenError } from "@/shared/ui/ScreenError";
 import { ScreenLoading } from "@/shared/ui/ScreenLoading";
+import { PrimaryButton } from "@/shared/ui/Button";
 
 import type { TripOnTripSnapshot } from "../types";
 import { deriveOnTripViewModel, stopVariant } from "./adapters";
@@ -86,6 +91,11 @@ export function OnTripScreen({ tripId, tripTitle }: Props) {
   const totalCount = vm.timeline.length;
   const progressLabel =
     totalCount > 0 ? `${doneCount} of ${totalCount} done` : undefined;
+  const showNoStopsToday =
+    rawSnapshot.mode === "active" &&
+    !hasResolvedTodayStop(rawSnapshot) &&
+    !isResolvedStop(vm.now) &&
+    !isResolvedStop(rawSnapshot.next_stop);
 
   const dayLabel = buildDayLabel(rawSnapshot);
 
@@ -134,54 +144,60 @@ export function OnTripScreen({ tripId, tripTitle }: Props) {
       />
 
       <ScrollView contentContainerClassName="gap-6 p-4 pb-32">
-        <NeedsAttentionCard blockers={vm.blockers} />
-
-        {vm.now ? (
-          <HappeningNowCard
-            stop={vm.now}
-            onNavigate={navigateAction(vm.now.key)}
-            onConfirm={() =>
-              toggleStatus(vm.now?.stop_ref ?? null, vm.now!.effectiveStatus, "confirmed")
-            }
-            onSkip={() =>
-              toggleStatus(vm.now?.stop_ref ?? null, vm.now!.effectiveStatus, "skipped")
-            }
-          />
-        ) : null}
-
-        <SectionLabel label="Today" />
-        {vm.timeline.length === 0 ? (
-          <Text className="text-sm text-ontrip-muted">
-            No planned stops for today. You can still log what happens below.
-          </Text>
+        {showNoStopsToday ? (
+          <NoStopsTodayCard onOpenWorkspace={openFullWorkspace} />
         ) : (
-          <View>
-            {vm.timeline.map((stop, idx) => (
-              <TimelineRow
-                key={stop.key}
-                stop={stop}
-                variant={stopVariant(stop, nowKey, nextKey)}
-                isLast={idx === vm.timeline.length - 1}
-                onNavigate={navigateAction(stop.key)}
-                onConfirm={
-                  stop.stop_ref
-                    ? () =>
-                        toggleStatus(
-                          stop.stop_ref,
-                          stop.effectiveStatus,
-                          "confirmed",
-                        )
-                    : undefined
+          <>
+            <NeedsAttentionCard blockers={vm.blockers} />
+
+            {vm.now ? (
+              <HappeningNowCard
+                stop={vm.now}
+                onNavigate={navigateAction(vm.now.key)}
+                onConfirm={() =>
+                  toggleStatus(vm.now?.stop_ref ?? null, vm.now!.effectiveStatus, "confirmed")
                 }
-                onSkip={
-                  stop.stop_ref
-                    ? () =>
-                        toggleStatus(stop.stop_ref, stop.effectiveStatus, "skipped")
-                    : undefined
+                onSkip={() =>
+                  toggleStatus(vm.now?.stop_ref ?? null, vm.now!.effectiveStatus, "skipped")
                 }
               />
-            ))}
-          </View>
+            ) : null}
+
+            <SectionLabel label="Today" />
+            {vm.timeline.length === 0 ? (
+              <Text className="text-sm text-ontrip-muted">
+                No planned stops for today. You can still log what happens below.
+              </Text>
+            ) : (
+              <View>
+                {vm.timeline.map((stop, idx) => (
+                  <TimelineRow
+                    key={stop.key}
+                    stop={stop}
+                    variant={stopVariant(stop, nowKey, nextKey)}
+                    isLast={idx === vm.timeline.length - 1}
+                    onNavigate={navigateAction(stop.key)}
+                    onConfirm={
+                      stop.stop_ref
+                        ? () =>
+                            toggleStatus(
+                              stop.stop_ref,
+                              stop.effectiveStatus,
+                              "confirmed",
+                            )
+                        : undefined
+                    }
+                    onSkip={
+                      stop.stop_ref
+                        ? () =>
+                            toggleStatus(stop.stop_ref, stop.effectiveStatus, "skipped")
+                        : undefined
+                    }
+                  />
+                ))}
+              </View>
+            )}
+          </>
         )}
 
         {vm.unplanned.length > 0 ? (
@@ -252,6 +268,23 @@ function SectionLabel({ label }: { label: string }) {
     <Text className="text-[11px] font-semibold uppercase tracking-[0.5px] text-ontrip-muted">
       {label}
     </Text>
+  );
+}
+
+function NoStopsTodayCard({ onOpenWorkspace }: { onOpenWorkspace: () => void }) {
+  return (
+    <View className="gap-4 rounded-[24px] border border-border-ontrip bg-surface-ontrip-raised px-5 py-6">
+      <View>
+        <Text className="text-xl font-semibold text-ontrip">
+          No stops are planned for today.
+        </Text>
+        <Text className="mt-2 text-sm leading-6 text-ontrip-muted">
+          Your saved itinerary does not have resolved stops for today yet. Open the
+          workspace to review the trip plan or adjust the itinerary.
+        </Text>
+      </View>
+      <PrimaryButton label="Open full workspace" onPress={onOpenWorkspace} fullWidth />
+    </View>
   );
 }
 

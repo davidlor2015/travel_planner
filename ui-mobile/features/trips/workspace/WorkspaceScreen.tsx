@@ -1,12 +1,15 @@
 import { type Href, useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useSavedItineraryQuery } from "@/features/ai/hooks";
+import { useStreamingItinerary } from "@/features/ai/useStreamingItinerary";
 import { ApiError } from "@/shared/api/client";
 import { TripFormSheet, type TripFormValue } from "@/features/trips/TripFormSheet";
 import { TripSwitcherSheet } from "@/features/trips/TripSwitcherSheet";
+import { useOnTripSnapshotQuery } from "@/features/trips/hooks";
+import { canOpenOnTrip } from "@/features/trips/onTrip/eligibility";
 import { useAuth } from "@/providers/AuthProvider";
 import { ScreenError } from "@/shared/ui/ScreenError";
 import { ScreenLoading } from "@/shared/ui/ScreenLoading";
@@ -23,9 +26,9 @@ import { useTripWorkspaceModel } from "./useTripWorkspaceModel";
 
 const ENABLE_MAP = process.env.EXPO_PUBLIC_ENABLE_MAP === "true";
 
-type Props = { tripId: number };
+type Props = { tripId: number; autoStartFromCreate?: boolean };
 
-export function WorkspaceScreen({ tripId }: Props) {
+export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) {
   const router = useRouter();
   const { user } = useAuth();
   const [switcherOpen, setSwitcherOpen] = useState(false);
@@ -33,12 +36,46 @@ export function WorkspaceScreen({ tripId }: Props) {
   const [editError, setEditError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("overview");
 
+  useEffect(() => {
+    setActiveTab("overview");
+  }, [tripId]);
+
   const workspace = useTripWorkspaceModel({
     tripId,
     currentUserEmail: user?.email ?? "",
   });
 
+  const { streams, start, reset } = useStreamingItinerary();
+  const streamState = streams[tripId];
+  const handleStartStream = useCallback(() => { void start(tripId); }, [start, tripId]);
+  const handleCancelStream = useCallback(() => reset(tripId), [reset, tripId]);
+
   const itineraryQuery = useSavedItineraryQuery(tripId);
+  const onTripSnapshotQuery = useOnTripSnapshotQuery(tripId, {
+    enabled: workspace.trip?.status === "active",
+  });
+  const canOpenLiveView = canOpenOnTrip(
+    workspace.trip?.status ?? "upcoming",
+    onTripSnapshotQuery.data ?? null,
+  );
+
+  // Mirror web's ?from=create: auto-start AI stream once when a freshly created
+  // trip has no itinerary yet, so creation → draft is one uninterrupted arc.
+  const autoStartFiredRef = useRef(false);
+  const is404ForAutoStart =
+    itineraryQuery.isError &&
+    itineraryQuery.error instanceof ApiError &&
+    (itineraryQuery.error as ApiError).status === 404;
+
+  useEffect(() => {
+    if (!autoStartFromCreate)         return;
+    if (autoStartFiredRef.current)    return;
+    if (!is404ForAutoStart)           return;
+    if (streamState?.streaming)       return;
+    autoStartFiredRef.current = true;
+    handleStartStream();
+  }, [autoStartFromCreate, is404ForAutoStart, streamState?.streaming, handleStartStream]);
+
   const hasSavedItinerary = Boolean(
     itineraryQuery.data ||
       (itineraryQuery.isError &&
@@ -109,7 +146,7 @@ export function WorkspaceScreen({ tripId }: Props) {
         onEditPress={() => setEditOpen(true)}
       />
 
-      {trip.status === "active" ? (
+      {canOpenLiveView ? (
         <Pressable
           onPress={() => router.push(`/(tabs)/trips/${tripId}/live` as Href)}
           className="mx-4 mt-3 flex-row items-center justify-between rounded-2xl border border-border-ontrip-strong bg-surface-ontrip-raised px-4 py-3 active:opacity-75"
@@ -120,7 +157,7 @@ export function WorkspaceScreen({ tripId }: Props) {
               <Text className="text-sm font-semibold text-ontrip">Trip in progress</Text>
             </View>
             <Text className="mt-0.5 text-xs text-ontrip-muted">
-              Today's stops, status updates, and unplanned moments.
+              Today: stops, status updates, and unplanned moments.
             </Text>
           </View>
           <Text className="ml-3 text-sm font-semibold text-accent-ontrip">Live →</Text>
@@ -134,7 +171,13 @@ export function WorkspaceScreen({ tripId }: Props) {
       />
 
       {resolvedTab === "overview" && (
-        <OverviewTab trip={trip} summary={workspace.summary} />
+        <OverviewTab
+          trip={trip}
+          summary={workspace.summary}
+          streamState={streamState}
+          onStartStream={handleStartStream}
+          onCancelStream={handleCancelStream}
+        />
       )}
       {resolvedTab === "bookings" && <BookingsTab tripId={tripId} />}
       {resolvedTab === "budget" && <BudgetTab tripId={tripId} />}

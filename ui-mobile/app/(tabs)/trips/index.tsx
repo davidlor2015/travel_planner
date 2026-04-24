@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useQueries } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useMemo, useState } from "react";
 import { FlatList, Pressable, RefreshControl, Text, View } from "react-native";
@@ -14,12 +15,15 @@ import {
 import { TripSwitcherSheet } from "@/features/trips/TripSwitcherSheet";
 import { toTripListItem } from "@/features/trips/adapters";
 import {
+  tripKeys,
   useCreateTripMutation,
   useTripSummariesQuery,
   useTripsQuery,
 } from "@/features/trips/hooks";
+import { getTripOnTripSnapshot } from "@/features/trips/api";
+import { canOpenOnTrip } from "@/features/trips/onTrip/eligibility";
+import type { TripOnTripSnapshot, TripSummary } from "@/features/trips/types";
 import { getTripImageUrl } from "@/features/trips/workspace/helpers/tripVisuals";
-import type { TripSummary } from "@/features/trips/types";
 import { PrimaryButton } from "@/shared/ui/Button";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { ScreenHeader } from "@/shared/ui/ScreenHeader";
@@ -64,6 +68,38 @@ export default function TripsPage() {
 
   // The "featured" trip shown in the picker row — prefer the active trip, then the first in list.
   const featuredTrip = activeTrip ?? tripItems[0] ?? null;
+  const activeTripIds = useMemo(
+    () => tripItems.filter((trip) => trip.status === "active").map((trip) => trip.id),
+    [tripItems],
+  );
+  const onTripSnapshotQueries = useQueries({
+    queries: activeTripIds.map((tripId) => ({
+      queryKey: tripKeys.onTripSnapshot(tripId),
+      queryFn: () => getTripOnTripSnapshot(tripId),
+      staleTime: 30_000,
+      refetchInterval: false,
+      retry: false,
+    })),
+  });
+  const onTripSnapshotByTripId = useMemo(() => {
+    const map = new Map<number, TripOnTripSnapshot>();
+    activeTripIds.forEach((tripId, index) => {
+      const snapshot = onTripSnapshotQueries[index]?.data;
+      if (snapshot) map.set(tripId, snapshot);
+    });
+    return map;
+  }, [activeTripIds, onTripSnapshotQueries]);
+  const liveTripIds = useMemo(() => {
+    const ids = new Set<number>();
+    for (const trip of tripItems) {
+      if (canOpenOnTrip(trip.status, onTripSnapshotByTripId.get(trip.id) ?? null)) {
+        ids.add(trip.id);
+      }
+    }
+    return ids;
+  }, [onTripSnapshotByTripId, tripItems]);
+  const featuredLiveTrip =
+    featuredTrip && liveTripIds.has(featuredTrip.id) ? featuredTrip : null;
 
   if (tripsQuery.isLoading) {
     return <ScreenLoading label="Loading your trips…" />;
@@ -86,7 +122,7 @@ export default function TripsPage() {
             buildCreateTripPayload(value),
           );
           setCreateOpen(false);
-          router.push(`/(tabs)/trips/${created.id}` as Href);
+          router.push(`/(tabs)/trips/${created.id}?from=create` as Href);
         } catch {
           setCreateError("We couldn't create that trip. Try again.");
         }
@@ -172,9 +208,9 @@ export default function TripsPage() {
 
         {/* Right: optional On-Trip chip + New Trip */}
         <View className="flex-row items-center gap-2">
-          {activeTrip ? (
+          {featuredLiveTrip ? (
             <Pressable
-              onPress={() => router.push(`/(tabs)/trips/${activeTrip.id}/live` as Href)}
+              onPress={() => router.push(`/(tabs)/trips/${featuredLiveTrip.id}/live` as Href)}
               className="flex-row items-center gap-1.5 rounded-xl border border-espresso bg-espresso px-3 py-2 active:opacity-80"
             >
               <View className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: "#F5C14D" }} />
@@ -203,7 +239,7 @@ export default function TripsPage() {
             trip={item}
             onPress={() => router.push(`/(tabs)/trips/${item.id}` as Href)}
             onOpenLiveView={
-              item.status === "active"
+              liveTripIds.has(item.id)
                 ? () => router.push(`/(tabs)/trips/${item.id}/live` as Href)
                 : undefined
             }
