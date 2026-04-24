@@ -1,0 +1,31 @@
+import type { SessionTokens } from "@/shared/auth/tokenStorage";
+
+export type LoginRequest = {
+  email: string;
+  password: string;
+};
+
+export type LoginResponse = {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in_seconds: number;
+};
+
+export type MeResponse = {
+  id: number;
+  email: string;
+  is_active: boolean;
+  email_verified: boolean;
+};
+
+export type AuthStatus =
+  | "hydrating"
+  | "provisional"
+  | "authenticated"
+  | "unauthenticated";
+
+export type AuthSession = {
+  tokens: SessionTokens;
+  user: MeResponse;
+};
