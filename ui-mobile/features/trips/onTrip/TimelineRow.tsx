@@ -23,10 +23,19 @@ export function TimelineRow({
     variant === "now"
       ? "h-3 w-3 bg-accent-ontrip"
       : variant === "next"
-        ? "h-2.5 w-2.5 border border-on-dark-muted bg-transparent"
+        ? "h-2.5 w-2.5 border-2 border-accent-ontrip bg-surface-ontrip-raised"
         : variant === "done"
           ? "h-2 w-2 bg-border-ontrip-strong"
-          : "h-2 w-2 border border-on-dark-muted bg-transparent";
+          : "h-2 w-2 border border-border-ontrip-strong bg-surface-ontrip";
+
+  const titleClass =
+    variant === "done"
+      ? "text-ontrip-muted line-through"
+      : variant === "upcoming"
+        ? "text-ontrip-strong"
+        : "text-ontrip";
+
+  const metaClass = variant === "done" ? "text-ontrip-soft" : "text-ontrip-muted";
 
   return (
     <View className="flex-row gap-4">
@@ -37,18 +46,36 @@ export function TimelineRow({
       </View>
       <View className="items-center">
         <View className={`rounded-full ${dotClass}`} />
-        {!isLast ? <View className="mt-1 w-px flex-1 bg-white/10" /> : null}
+        {!isLast ? (
+          <View className="mt-1 w-px flex-1 bg-border-ontrip" />
+        ) : null}
       </View>
       <View className="flex-1 pb-5">
-        <Text className="text-base font-semibold text-on-dark">{stop.title ?? "Untitled stop"}</Text>
+        <Text className={`text-base font-semibold ${titleClass}`}>
+          {stop.title ?? "Untitled stop"}
+        </Text>
         {stop.location ? (
-          <Text className="mt-1 text-sm text-on-dark-muted">{stop.location}</Text>
+          <Text className={`mt-1 text-sm ${metaClass}`}>{stop.location}</Text>
         ) : null}
         {variant === "next" ? (
-          <View className="mt-3 flex-row gap-2">
-            {onNavigate ? <MiniAction label="Navigate" onPress={onNavigate} /> : null}
-            {!stop.isReadOnly ? <MiniAction label="Confirm" onPress={onConfirm} /> : null}
-            {!stop.isReadOnly ? <MiniAction label="Skip" onPress={onSkip} /> : null}
+          <View className="mt-3 flex-row flex-wrap gap-2">
+            {onNavigate ? (
+              <MiniAction label="Navigate" onPress={onNavigate} />
+            ) : null}
+            {!stop.isReadOnly && onConfirm ? (
+              <MiniAction
+                label={stop.effectiveStatus === "confirmed" ? "Confirmed" : "Confirm"}
+                onPress={onConfirm}
+                disabled={stop.isPending}
+              />
+            ) : null}
+            {!stop.isReadOnly && onSkip ? (
+              <MiniAction
+                label={stop.effectiveStatus === "skipped" ? "Skipped" : "Skip"}
+                onPress={onSkip}
+                disabled={stop.isPending}
+              />
+            ) : null}
           </View>
         ) : null}
       </View>
@@ -56,14 +83,25 @@ export function TimelineRow({
   );
 }
 
-function MiniAction({ label, onPress }: { label: string; onPress?: () => void }) {
+function MiniAction({
+  label,
+  onPress,
+  disabled,
+}: {
+  label: string;
+  onPress?: () => void;
+  disabled?: boolean;
+}) {
   return (
     <Pressable
       onPress={onPress}
-      disabled={!onPress}
-      className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5"
+      disabled={!onPress || disabled}
+      className={[
+        "rounded-full border border-border-ontrip-strong bg-surface-ontrip px-3 py-1.5",
+        disabled ? "opacity-50" : "",
+      ].join(" ")}
     >
-      <Text className="text-xs font-semibold text-on-dark">{label}</Text>
+      <Text className="text-xs font-semibold text-ontrip-strong">{label}</Text>
     </Pressable>
   );
 }

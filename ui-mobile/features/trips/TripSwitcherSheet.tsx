@@ -13,10 +13,10 @@ type Props = {
   onSelect: (tripId: number) => void;
 };
 
-function statusVariant(status: TripListItemViewModel["status"]) {
-  if (status === "active") return "success";
-  if (status === "upcoming") return "warning";
-  return "default";
+function statusDotColor(status: TripListItemViewModel["status"]): string {
+  if (status === "active") return "#4ADE80";
+  if (status === "upcoming") return "#FCD34D";
+  return "#B0A498";
 }
 
 export function TripSwitcherSheet({
@@ -39,7 +39,7 @@ export function TripSwitcherSheet({
           </Text>
           <ScrollView contentContainerClassName="gap-3 py-4">
             {trips.map((trip) => {
-              const isActive = trip.id === activeTripId;
+              const isCurrent = trip.id === activeTripId;
               return (
                 <Pressable
                   key={trip.id}
@@ -49,19 +49,28 @@ export function TripSwitcherSheet({
                   }}
                   className={[
                     "rounded-[22px] border px-4 py-4",
-                    isActive ? "border-accent bg-amber/5" : "border-border bg-white",
+                    isCurrent ? "border-accent bg-amber/5" : "border-border bg-white",
                   ].join(" ")}
                 >
                   <View className="flex-row items-start justify-between gap-3">
                     <View className="flex-1">
-                      <Text className="text-base font-semibold text-text">{trip.title}</Text>
+                      {/* Title row with status dot */}
+                      <View className="flex-row items-center gap-2">
+                        <View
+                          className="h-1.5 w-1.5 flex-shrink-0 rounded-full"
+                          style={{ backgroundColor: statusDotColor(trip.status) }}
+                        />
+                        <Text className="flex-1 text-base font-semibold text-text" numberOfLines={1}>
+                          {trip.title}
+                        </Text>
+                      </View>
                       <Text className="mt-1 text-sm text-text-muted">{trip.destination}</Text>
-                      <Text className="mt-2 text-sm text-text-muted">{trip.dateRange}</Text>
+                      <Text className="mt-1 text-sm text-text-muted">{trip.dateRange}</Text>
                     </View>
-                    <StatusPill
-                      label={isActive ? "Current" : trip.statusLabel}
-                      variant={isActive ? "info" : statusVariant(trip.status)}
-                    />
+                    {/* StatusPill only for the current/selected trip */}
+                    {isCurrent ? (
+                      <StatusPill label="Current" variant="info" />
+                    ) : null}
                   </View>
                 </Pressable>
               );

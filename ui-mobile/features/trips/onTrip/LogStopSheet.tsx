@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { Modal, Text, View } from "react-native";
+import { Modal, Pressable, Text, View } from "react-native";
 
-import { PrimaryButton, SecondaryButton } from "@/shared/ui/Button";
 import { TextInputField } from "@/shared/ui/TextInputField";
 
 type Props = {
@@ -43,24 +42,47 @@ export function LogStopSheet({
     setNotes("");
   }, [visible]);
 
+  const canSubmit = !disabled && title.trim().length > 0;
+
   return (
     <Modal animationType="slide" transparent visible={visible} onRequestClose={onClose}>
       <View className="flex-1 justify-end bg-black/35">
-        <View className="rounded-t-[28px] bg-bg-app px-4 pb-8 pt-4">
+        <View className="rounded-t-[28px] bg-surface-ontrip-raised px-4 pb-8 pt-4">
           <View className="mb-4 items-center">
-            <View className="h-1.5 w-12 rounded-full bg-border" />
+            <View className="h-1.5 w-12 rounded-full bg-border-ontrip-strong" />
           </View>
-          <Text className="text-xl font-semibold text-text">Log a stop</Text>
-          <Text className="mt-1 text-sm text-text-muted">
-            Capture an unplanned stop without leaving execution mode. Logged for {defaultDate}.
+          <Text className="text-xl font-semibold text-ontrip">Log a stop</Text>
+          <Text className="mt-1 text-sm text-ontrip-muted">
+            Capture something that actually happened. Logged for {defaultDate}.
           </Text>
           <View className="mt-4 gap-3">
-            <TextInputField label="Title" value={title} onChangeText={setTitle} placeholder="Coffee break" />
-            <TextInputField label="Time" value={time} onChangeText={setTime} placeholder="16:30" />
-            <TextInputField label="Location" value={location} onChangeText={setLocation} placeholder="Nearby cafe" />
-            <TextInputField label="Notes" value={notes} onChangeText={setNotes} placeholder="Optional" multiline />
-            <PrimaryButton
-              label={disabled ? "Saving…" : "Save stop"}
+            <TextInputField
+              label="Title"
+              value={title}
+              onChangeText={setTitle}
+              placeholder="Coffee break"
+            />
+            <TextInputField
+              label="Time"
+              value={time}
+              onChangeText={setTime}
+              placeholder="16:30"
+            />
+            <TextInputField
+              label="Location"
+              value={location}
+              onChangeText={setLocation}
+              placeholder="Nearby cafe"
+            />
+            <TextInputField
+              label="Notes"
+              value={notes}
+              onChangeText={setNotes}
+              placeholder="Optional"
+              multiline
+            />
+
+            <Pressable
               onPress={() =>
                 void onSubmit({
                   day_date: defaultDate,
@@ -70,10 +92,22 @@ export function LogStopSheet({
                   notes: notes.trim() || null,
                 })
               }
-              disabled={disabled || !title.trim()}
-              fullWidth
-            />
-            <SecondaryButton label="Cancel" onPress={onClose} fullWidth />
+              disabled={!canSubmit}
+              className={[
+                "min-h-11 items-center justify-center rounded-full bg-accent-ontrip px-4 py-3",
+                canSubmit ? "active:opacity-90" : "opacity-50",
+              ].join(" ")}
+            >
+              <Text className="text-sm font-semibold text-white">
+                {disabled ? "Saving…" : "Save stop"}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={onClose}
+              className="min-h-11 items-center justify-center rounded-full border border-border-ontrip-strong bg-surface-ontrip px-4 py-3"
+            >
+              <Text className="text-sm font-semibold text-ontrip-strong">Cancel</Text>
+            </Pressable>
           </View>
         </View>
       </View>

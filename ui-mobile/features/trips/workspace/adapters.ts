@@ -1,3 +1,4 @@
+import { getTripStatus } from "../adapters";
 import type {
   TripMemberReadiness,
   TripResponse,
@@ -62,16 +63,6 @@ function formatDate(iso: string): string {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
-export function getTripStatus(startDate: string, endDate: string): TripStatus {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  if (today < start) return "upcoming";
-  if (today > end) return "past";
-  return "active";
-}
-
 function tripStatusLabel(status: TripStatus): string {
   if (status === "active") return "In Progress";
   if (status === "upcoming") return "Upcoming";
@@ -82,12 +73,12 @@ function roleLabel(role: string): string {
   return role === "owner" ? "Owner" : "Member";
 }
 
-function statusLabel(status: string): string {
-  return status
-    .split("_")
-    .filter(Boolean)
-    .map((part) => part.slice(0, 1).toUpperCase() + part.slice(1))
-    .join(" ");
+function inviteStatusLabel(status: string): string {
+  if (status === "pending") return "Invite pending";
+  if (status === "accepted") return "Accepted";
+  if (status === "declined") return "Declined";
+  if (status === "expired") return "Expired";
+  return "Invite sent";
 }
 
 export function toTripWorkspaceViewModel(
@@ -135,8 +126,8 @@ export function toTripWorkspaceCollaborationViewModel(args: {
   return {
     canInvite,
     groupDescription: canInvite
-      ? "See who is ready, track pending invites, and add travelers without leaving mobile."
-      : "See who is in this trip and how ready the group looks from the workspace.",
+      ? "Track readiness, manage invites, and add travelers to the group."
+      : "See who's joined and how ready the group looks from here.",
     members: trip.members.map((member) => {
       const readinessItem = readinessByUserId.get(member.user_id);
       const isCurrentUser =
@@ -148,11 +139,11 @@ export function toTripWorkspaceCollaborationViewModel(args: {
           email: member.email,
           roleLabel: roleLabel(member.role),
           isCurrentUser,
-          readinessLabel: readinessLoading ? "Checking readiness…" : "Readiness unavailable",
+          readinessLabel: readinessLoading ? "Checking…" : "Unavailable",
           readinessVariant: "default",
           readinessDetail: readinessLoading
-            ? "Syncing the latest planning state for this traveler."
-            : "Readiness could not be loaded for this traveler.",
+            ? "Still syncing — check back in a moment."
+            : "We couldn't load readiness for this traveler right now.",
         };
       }
 
@@ -170,16 +161,12 @@ export function toTripWorkspaceCollaborationViewModel(args: {
             : "default";
       const readinessDetail =
         readinessItem.status === "ready"
-          ? readinessItem.readiness_score != null
-            ? `Readiness score ${readinessItem.readiness_score}%`
-            : "No open blockers."
+          ? "You're on track — no open blockers."
           : readinessItem.status === "needs_attention"
             ? readinessItem.blocker_count > 0
-              ? `${readinessItem.blocker_count} itinerary blocker${readinessItem.blocker_count === 1 ? "" : "s"} need attention.`
-              : readinessItem.readiness_score != null
-                ? `Readiness score ${readinessItem.readiness_score}%`
-                : "Operational details still need work."
-            : "Not enough trip prep data yet.";
+              ? `${readinessItem.blocker_count} thing${readinessItem.blocker_count === 1 ? "" : "s"} still need attention before this trip is ready.`
+              : "Still lining things up — a few details need work."
+            : "Ready when you are — waiting on a bit more prep data.";
 
       return {
         userId: member.user_id,
@@ -194,7 +181,7 @@ export function toTripWorkspaceCollaborationViewModel(args: {
     pendingInvites: trip.pending_invites.map((invite) => ({
       id: invite.id,
       email: invite.email,
-      statusLabel: statusLabel(invite.status),
+      statusLabel: inviteStatusLabel(invite.status),
       expiresAtLabel: formatDate(invite.expires_at),
     })),
   };
@@ -205,8 +192,8 @@ export function toTripSummaryViewModel(summary: TripSummary): TripSummaryViewMod
     summary.reservation_count > 0 ||
     summary.packing_total > 0 ||
     summary.budget_expense_count > 0
-      ? "Operational details in progress"
-      : "Add logistics to make this trip usable on mobile";
+      ? "You're making progress — keep adding the details."
+      : "Trip shell ready. Add bookings, budget, and packing items next.";
   return {
     packingProgress: summary.packing_progress_pct,
     packingTotal: summary.packing_total,

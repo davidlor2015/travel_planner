@@ -9,6 +9,7 @@ import { PackingItemRow } from "@/features/trips/packing/PackingItemRow";
 import { usePackingList } from "@/features/trips/packing/hooks";
 import { PrimaryButton, SecondaryButton } from "@/shared/ui/Button";
 import { EmptyState } from "@/shared/ui/EmptyState";
+import { ScreenError } from "@/shared/ui/ScreenError";
 import { ScreenLoading } from "@/shared/ui/ScreenLoading";
 import { SectionCard } from "@/shared/ui/SectionCard";
 import { TextInputField } from "@/shared/ui/TextInputField";
@@ -18,6 +19,7 @@ type Props = { tripId: number };
 export function PackingTab({ tripId }: Props) {
   const packing = usePackingList(tripId);
   const [draft, setDraft] = useState("");
+  const [mutationError, setMutationError] = useState<string | null>(null);
 
   if (packing.loading) {
     return <ScreenLoading label="Loading packing list…" />;
@@ -25,9 +27,10 @@ export function PackingTab({ tripId }: Props) {
 
   if (packing.error) {
     return (
-      <View className="flex-1 items-center justify-center">
-        <Text className="text-center text-[#c62828]">{packing.error}</Text>
-      </View>
+      <ScreenError
+        message="We couldn't load the packing list. Try again in a moment."
+        onRetry={() => void packing.reload?.()}
+      />
     );
   }
 
@@ -37,13 +40,48 @@ export function PackingTab({ tripId }: Props) {
   const handleAdd = async () => {
     if (!draft.trim()) return;
     try {
+      setMutationError(null);
       await packing.addItem(draft.trim());
       setDraft("");
-    } catch {}
+    } catch {
+      setMutationError("We couldn't add that item. Try again.");
+    }
+  };
+
+  const handleClearChecked = async () => {
+    try {
+      setMutationError(null);
+      await packing.clearChecked();
+    } catch {
+      setMutationError("We couldn't clear your checked items. Try again.");
+    }
+  };
+
+  const handleToggleItem = async (itemId: number) => {
+    try {
+      setMutationError(null);
+      await packing.toggleItem(itemId);
+    } catch {
+      setMutationError("We couldn't update that item. Try again.");
+    }
+  };
+
+  const handleRemoveItem = async (itemId: number) => {
+    try {
+      setMutationError(null);
+      await packing.removeItem(itemId);
+    } catch {
+      setMutationError("We couldn't remove that item. Try again.");
+    }
   };
 
   return (
     <ScrollView contentContainerClassName="gap-4 px-4 pb-8 pt-4">
+      {mutationError ? (
+        <View className="rounded-xl border border-danger/25 bg-danger/10 px-3.5 py-3">
+          <Text className="text-sm text-danger">{mutationError}</Text>
+        </View>
+      ) : null}
       {total > 0 && (
         <SectionCard eyebrow="Progress" title="Packing status">
           <View className="flex-row items-center justify-between">
@@ -56,7 +94,10 @@ export function PackingTab({ tripId }: Props) {
               </View>
             </View>
             {checked > 0 ? (
-              <SecondaryButton label="Clear checked" onPress={() => void packing.clearChecked()} />
+              <SecondaryButton
+                label="Clear checked"
+                onPress={() => void handleClearChecked()}
+              />
             ) : null}
           </View>
         </SectionCard>
@@ -92,8 +133,8 @@ export function PackingTab({ tripId }: Props) {
           <PackingItemRow
             key={item.id}
             item={item}
-            onToggle={() => void packing.toggleItem(item.id)}
-            onDelete={() => void packing.removeItem(item.id)}
+            onToggle={() => void handleToggleItem(item.id)}
+            onDelete={() => void handleRemoveItem(item.id)}
           />
         ))}
       </View>

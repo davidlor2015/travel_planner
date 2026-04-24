@@ -1,9 +1,5 @@
 import { useState } from "react";
-import {
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
+import { ScrollView, Text, View } from "react-native";
 
 import type { ReservationType } from "@/features/trips/reservations/api";
 import { BookingRow } from "@/features/trips/reservations/BookingRow";
@@ -11,6 +7,7 @@ import { toReservationViewModel } from "@/features/trips/reservations/adapters";
 import { useReservations } from "@/features/trips/reservations/hooks";
 import { PrimaryButton } from "@/shared/ui/Button";
 import { EmptyState } from "@/shared/ui/EmptyState";
+import { ScreenError } from "@/shared/ui/ScreenError";
 import { ScreenLoading } from "@/shared/ui/ScreenLoading";
 import { SectionCard } from "@/shared/ui/SectionCard";
 import { TextInputField } from "@/shared/ui/TextInputField";
@@ -37,24 +34,13 @@ const TYPE_ICONS: Record<ReservationType, string> = {
   other: "📌",
 };
 
-function formatDateTime(iso: string | null): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 type Props = { tripId: number };
 
-export function ReservationsTab({ tripId }: Props) {
+export function BookingsTab({ tripId }: Props) {
   const reservations = useReservations(tripId);
   const [title, setTitle] = useState("");
   const [type, setType] = useState<ReservationType>("other");
+  const [mutationError, setMutationError] = useState<string | null>(null);
 
   if (reservations.loading) {
     return <ScreenLoading label="Loading bookings…" />;
@@ -62,25 +48,43 @@ export function ReservationsTab({ tripId }: Props) {
 
   if (reservations.error) {
     return (
-      <View className="flex-1 items-center justify-center">
-        <Text className="text-center text-[#c62828]">{reservations.error}</Text>
-      </View>
+      <ScreenError
+        message="We couldn't load your bookings. Try again in a moment."
+        onRetry={() => void reservations.reload?.()}
+      />
     );
   }
 
   const handleAdd = async () => {
     if (!title.trim()) return;
     try {
+      setMutationError(null);
       await reservations.addReservation({
         title: title.trim(),
         reservation_type: type,
       });
       setTitle("");
-    } catch {}
+    } catch {
+      setMutationError("We couldn't add that booking. Try again.");
+    }
+  };
+
+  const handleRemoveReservation = async (reservationId: number) => {
+    try {
+      setMutationError(null);
+      await reservations.removeReservation(reservationId);
+    } catch {
+      setMutationError("We couldn't remove that booking. Try again.");
+    }
   };
 
   return (
     <ScrollView contentContainerClassName="gap-4 px-4 pb-8 pt-4">
+      {mutationError ? (
+        <View className="rounded-xl border border-danger/25 bg-danger/10 px-3.5 py-3">
+          <Text className="text-sm text-danger">{mutationError}</Text>
+        </View>
+      ) : null}
       <SectionCard
         eyebrow="Add booking"
         title="Reservations"
@@ -127,7 +131,7 @@ export function ReservationsTab({ tripId }: Props) {
             <BookingRow
               key={r.id}
               reservation={toReservationViewModel(r)}
-              onDelete={() => void reservations.removeReservation(r.id)}
+              onDelete={() => void handleRemoveReservation(r.id)}
             />
           ))}
         </SectionCard>

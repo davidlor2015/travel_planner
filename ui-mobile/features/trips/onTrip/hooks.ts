@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppState, type AppStateStatus } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
 
+import { ApiError } from "@/shared/api/client";
+
 import { tripKeys } from "../hooks";
 
 import {
@@ -43,6 +45,36 @@ function generateClientRequestId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+// Traveler-facing copy; intentionally avoids HTTP codes, server payloads, and
+// field-level error strings so nothing leaks technical language into the UI.
+export function toFriendlyOnTripError(
+  err: unknown,
+  fallback: string,
+): string {
+  if (err instanceof ApiError) {
+    if (err.status === 401 || err.status === 403) {
+      return "You don't have access to update this trip right now.";
+    }
+    if (err.status === 404) {
+      return "That stop is no longer on this trip.";
+    }
+    if (err.status === 409) {
+      return "Someone else just updated this. We refreshed it — try again.";
+    }
+    if (err.status >= 500) {
+      return "We couldn't reach the server. Try again in a moment.";
+    }
+  }
+  return fallback;
+}
+
+// Polling cadence matches the web OnTripCompactMode: fast when the user has
+// interacted recently, slower when idle so background battery is reasonable.
+const ACTIVE_POLL_MS = 20_000;
+const IDLE_POLL_MS = 60_000;
+const ACTIVE_WINDOW_MS = 60_000;
+const FOREGROUND_REFRESH_DEBOUNCE_MS = 2_000;
+
 export type UseOnTripMutationsOptions = {
   tripId: number | null;
   snapshot: TripOnTripSnapshot | null;
@@ -76,6 +108,11 @@ export function useOnTripMutations({
   const statusQueueRef = useRef<Map<string, Promise<unknown>>>(new Map());
   const requestIdRef = useRef(0);
   const lastRefreshAtRef = useRef(0);
+  const lastInteractionAtRef = useRef(0);
+
+  const markInteraction = useCallback(() => {
+    lastInteractionAtRef.current = Date.now();
+  }, []);
 
   // Clear stale overrides when the trip changes.
   const lastTripIdRef = useRef<number | null>(tripId);
@@ -102,7 +139,7 @@ export function useOnTripMutations({
         if (serverStatus !== entry.target) {
           setFeedback({
             kind: "error",
-            message: `Update was reverted by server (now: ${serverStatus ?? "planned"}).`,
+            message: "That update was reverted. Try again.",
             at: Date.now(),
           });
         }
@@ -117,32 +154,40 @@ export function useOnTripMutations({
     try {
       const next = await getTripOnTripSnapshot(tripId);
       lastRefreshAtRef.current = Date.now();
-      // Keep the React Query cache in sync so useOnTripSnapshotQuery
-      // callers see the same data without issuing a separate fetch.
       queryClient.setQueryData(tripKeys.onTripSnapshot(tripId), next);
       onSnapshotRefresh(next);
       setOptimistic((prev) => reconcileOptimistic(prev, next));
     } catch {
-      // Non-fatal: keep existing overrides.
+      // Non-fatal: retry happens on the next poll tick or foreground event.
     }
   }, [tripId, queryClient, onSnapshotRefresh, reconcileOptimistic]);
 
-  // Background polling: every 30s when app is foregrounded.
+  // Adaptive polling: the interval always ticks every ACTIVE_POLL_MS so we pick
+  // up recent user activity promptly, but a refetch only fires if the last
+  // refresh is older than the window that matches the user's current state
+  // (active vs idle). This mirrors the web compact-mode cadence.
   useEffect(() => {
     if (!tripId) return;
     const intervalId = setInterval(() => {
-      if (Date.now() - lastRefreshAtRef.current >= 30_000) {
+      const now = Date.now();
+      const isActive = now - lastInteractionAtRef.current < ACTIVE_WINDOW_MS;
+      const threshold = isActive ? ACTIVE_POLL_MS : IDLE_POLL_MS;
+      if (now - lastRefreshAtRef.current >= threshold) {
         void refreshSnapshot();
       }
-    }, 30_000);
+    }, ACTIVE_POLL_MS);
     return () => clearInterval(intervalId);
   }, [tripId, refreshSnapshot]);
 
-  // Foreground refresh: re-fetch when the app comes back to the foreground.
+  // Foreground refresh: re-fetch when the app comes back to the foreground,
+  // debounced so brief focus blips don't spam the backend.
   useEffect(() => {
     if (!tripId) return;
     const handleAppStateChange = (nextState: AppStateStatus) => {
-      if (nextState === "active" && Date.now() - lastRefreshAtRef.current > 2_000) {
+      if (
+        nextState === "active" &&
+        Date.now() - lastRefreshAtRef.current > FOREGROUND_REFRESH_DEBOUNCE_MS
+      ) {
         void refreshSnapshot();
       }
     };
@@ -153,6 +198,7 @@ export function useOnTripMutations({
   const setStopStatus = useCallback(
     async (stopRef: string, nextStatus: TripExecutionStatus) => {
       if (!tripId) return;
+      markInteraction();
       const requestId = ++requestIdRef.current;
       const previousOverride = optimistic.statusByRef[stopRef] ?? null;
 
@@ -197,12 +243,14 @@ export function useOnTripMutations({
           });
           setFeedback({
             kind: "error",
-            message: err instanceof Error ? err.message : "Could not update status.",
+            message: toFriendlyOnTripError(err, "Couldn't save that update. Try again."),
             at: Date.now(),
           });
         }
       };
 
+      // Serialize writes per stop_ref so rapid taps land in order and the final
+      // server state matches the final tap.
       const queue = statusQueueRef.current;
       const prior = queue.get(stopRef) ?? Promise.resolve();
       const thisRun = prior.then(performWrite, performWrite);
@@ -221,12 +269,13 @@ export function useOnTripMutations({
         if (queue.get(stopRef) === thisRun) queue.delete(stopRef);
       }
     },
-    [optimistic.statusByRef, refreshSnapshot, tripId],
+    [optimistic.statusByRef, refreshSnapshot, tripId, markInteraction],
   );
 
   const logUnplannedStop = useCallback(
     async (payload: UnplannedStopPayload) => {
       if (!tripId) return;
+      markInteraction();
       setIsLoggingUnplanned(true);
       const clientRequestId = payload.client_request_id ?? generateClientRequestId();
       try {
@@ -235,19 +284,20 @@ export function useOnTripMutations({
       } catch (err) {
         setFeedback({
           kind: "error",
-          message: err instanceof Error ? err.message : "Could not log stop.",
+          message: toFriendlyOnTripError(err, "Couldn't log that stop. Try again."),
           at: Date.now(),
         });
       } finally {
         setIsLoggingUnplanned(false);
       }
     },
-    [tripId, refreshSnapshot],
+    [tripId, refreshSnapshot, markInteraction],
   );
 
   const removeUnplannedStop = useCallback(
     async (eventId: number) => {
       if (!tripId) return;
+      markInteraction();
       setOptimistic((prev) => ({
         ...prev,
         deletedUnplannedIds: { ...prev.deletedUnplannedIds, [eventId]: true },
@@ -264,7 +314,7 @@ export function useOnTripMutations({
         });
         setFeedback({
           kind: "error",
-          message: err instanceof Error ? err.message : "Could not remove stop.",
+          message: toFriendlyOnTripError(err, "Couldn't remove that stop. Try again."),
           at: Date.now(),
         });
       } finally {
@@ -275,7 +325,7 @@ export function useOnTripMutations({
         });
       }
     },
-    [tripId, refreshSnapshot],
+    [tripId, refreshSnapshot, markInteraction],
   );
 
   const viewSnapshot = useMemo<TripOnTripSnapshot | null>(() => {
@@ -288,6 +338,9 @@ export function useOnTripMutations({
     const filteredUnplanned = snapshot.today_unplanned.filter(
       (item) => !optimistic.deletedUnplannedIds[item.event_id],
     );
+    // Keep "next stop" honest under optimistic state: if the user just
+    // confirmed/skipped the server's next_stop, pick the first remaining
+    // planned stop so the UI doesn't keep surfacing a completed stop.
     const optimisticNextStop =
       overriddenStops.find((stop) => {
         const planStatus = (stop.status ?? "planned").trim().toLowerCase();

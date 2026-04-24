@@ -69,10 +69,14 @@ export function useTripWorkspaceModel({
     return raw ? toTripSummaryViewModel(raw) : null;
   }, [summariesQuery.data, tripId]);
 
-  const switcherTrips = useMemo(
-    () => (tripsQuery.data ?? []).map(toTripListItem),
-    [tripsQuery.data],
-  );
+  const switcherTrips = useMemo(() => {
+    const summariesById = new Map(
+      (summariesQuery.data ?? []).map((item) => [item.trip_id, item]),
+    );
+    return (tripsQuery.data ?? []).map((trip) =>
+      toTripListItem(trip, summariesById.get(trip.id)),
+    );
+  }, [tripsQuery.data, summariesQuery.data]);
 
   // Adaptive display flags
   const isSolo = (trip?.memberCount ?? 1) <= 1;

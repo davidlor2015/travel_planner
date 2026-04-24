@@ -8,18 +8,19 @@ type Props = {
 };
 
 export function UnplannedStopRow({ stop, onDelete }: Props) {
+  const meta = [stop.location, stop.time].filter(Boolean).join(" · ");
   return (
-    <View className="flex-row items-center gap-3 rounded-[22px] border border-white/10 bg-white/5 px-4 py-4">
+    <View className="flex-row items-center gap-3 rounded-[22px] border border-border-ontrip bg-surface-ontrip-raised px-4 py-4">
       <View className="flex-1">
-        <Text className="text-sm font-semibold text-on-dark">{stop.title}</Text>
-        <Text className="mt-1 text-sm text-on-dark-muted">
-          {[stop.location, stop.time].filter(Boolean).join(" · ")}
-        </Text>
+        <Text className="text-sm font-semibold text-ontrip">{stop.title}</Text>
+        {meta ? (
+          <Text className="mt-1 text-sm text-ontrip-muted">{meta}</Text>
+        ) : null}
       </View>
       {onDelete ? (
-        <Pressable onPress={onDelete} disabled={stop.isPending}>
-          <Text className="text-sm font-semibold text-on-dark-soft">
-            {stop.isPending ? "…" : "Delete"}
+        <Pressable onPress={onDelete} disabled={stop.isPending} hitSlop={8}>
+          <Text className="text-sm font-semibold text-ontrip-muted">
+            {stop.isPending ? "…" : "Remove"}
           </Text>
         </Pressable>
       ) : null}

@@ -3,7 +3,7 @@ import { KeyboardAvoidingView, Platform, Pressable, Text, View } from "react-nat
 import { router } from "expo-router";
 
 import { useRegisterMutation } from "@/features/auth/hooks";
-import { ApiError } from "@/shared/api/client";
+import { friendlyError } from "@/shared/api/friendlyError";
 import { PrimaryButton } from "@/shared/ui/Button";
 import { ScreenHeader } from "@/shared/ui/ScreenHeader";
 import { SectionCard } from "@/shared/ui/SectionCard";
@@ -42,13 +42,7 @@ export default function RegisterPage() {
       });
       setSuccessMessage("Account created. Verify your email before signing in.");
     } catch (error) {
-      if (error instanceof ApiError) {
-        setErrorMessage(error.message);
-      } else if (error instanceof Error) {
-        setErrorMessage(error.message);
-      } else {
-        setErrorMessage("Could not create account.");
-      }
+      setErrorMessage(friendlyError(error, "auth"));
     }
   }
 

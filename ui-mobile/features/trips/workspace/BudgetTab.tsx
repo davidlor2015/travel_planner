@@ -13,6 +13,7 @@ import {
 } from "@/features/trips/budget/hooks";
 import { PrimaryButton } from "@/shared/ui/Button";
 import { EmptyState } from "@/shared/ui/EmptyState";
+import { ScreenError } from "@/shared/ui/ScreenError";
 import { ScreenLoading } from "@/shared/ui/ScreenLoading";
 import { SectionCard } from "@/shared/ui/SectionCard";
 import { TextInputField } from "@/shared/ui/TextInputField";
@@ -33,6 +34,7 @@ export function BudgetTab({ tripId }: Props) {
   const [limitDraft, setLimitDraft] = useState("");
   const [expenseLabel, setExpenseLabel] = useState("");
   const [expenseAmount, setExpenseAmount] = useState("");
+  const [mutationError, setMutationError] = useState<string | null>(null);
   const [expenseCategory, setExpenseCategory] =
     useState<ExpenseCategory>("other");
 
@@ -42,9 +44,10 @@ export function BudgetTab({ tripId }: Props) {
 
   if (budget.error) {
     return (
-      <View className="flex-1 items-center justify-center">
-        <Text className="text-center text-[#c62828]">{budget.error}</Text>
-      </View>
+      <ScreenError
+        message="We couldn't load the budget. Try again in a moment."
+        onRetry={() => void budget.reload?.()}
+      />
     );
   }
 
@@ -52,19 +55,34 @@ export function BudgetTab({ tripId }: Props) {
     const parsed = parseFloat(limitDraft);
     if (Number.isNaN(parsed)) return;
     try {
+      setMutationError(null);
       await budget.setLimit(parsed);
       setLimitDraft("");
-    } catch {}
+    } catch {
+      setMutationError("We couldn't update the budget limit. Try again.");
+    }
   };
 
   const handleAddExpense = async () => {
     const amount = parseFloat(expenseAmount);
     if (!expenseLabel.trim() || Number.isNaN(amount) || amount <= 0) return;
     try {
+      setMutationError(null);
       await budget.addExpense(expenseLabel.trim(), amount, expenseCategory);
       setExpenseLabel("");
       setExpenseAmount("");
-    } catch {}
+    } catch {
+      setMutationError("We couldn't add that expense. Try again.");
+    }
+  };
+
+  const handleRemoveExpense = async (expenseId: number) => {
+    try {
+      setMutationError(null);
+      await budget.removeExpense(expenseId);
+    } catch {
+      setMutationError("We couldn't remove that expense. Try again.");
+    }
   };
 
   const remaining = budget.remaining;
@@ -72,6 +90,11 @@ export function BudgetTab({ tripId }: Props) {
 
   return (
     <ScrollView contentContainerClassName="gap-4 px-4 pb-8 pt-4">
+      {mutationError ? (
+        <View className="rounded-xl border border-danger/25 bg-danger/10 px-3.5 py-3">
+          <Text className="text-sm text-danger">{mutationError}</Text>
+        </View>
+      ) : null}
       <SectionCard eyebrow="Budget" title="Spending summary">
       <View className="gap-2 rounded-xl border border-border bg-surface-muted p-4">
         <View className="flex-row justify-between">
@@ -166,7 +189,7 @@ export function BudgetTab({ tripId }: Props) {
             <ExpenseRow
               key={expense.id}
               expense={expense}
-              onDelete={() => void budget.removeExpense(expense.id)}
+              onDelete={() => void handleRemoveExpense(expense.id)}
             />
           ))}
         </SectionCard>

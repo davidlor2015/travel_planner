@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   applyItinerary,
   getSavedItinerary,
+  planItinerary,
   refineItinerary,
   type ApplySource,
   type Itinerary,
@@ -40,6 +41,24 @@ export function useApplyItineraryMutation() {
       source?: ApplySource;
     }) => applyItinerary(tripId, itinerary, source),
     onSuccess: (_data, { tripId, itinerary }) => {
+      queryClient.setQueryData(aiKeys.savedItinerary(tripId), itinerary);
+    },
+  });
+}
+
+/**
+ * Generates a draft itinerary via POST /v1/ai/plan, then immediately saves it
+ * via POST /v1/ai/apply. The saved-itinerary cache is updated on success.
+ */
+export function usePlanAndSaveItineraryMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ tripId }: { tripId: number }) => {
+      const itinerary = await planItinerary(tripId);
+      await applyItinerary(tripId, itinerary, "ai_stream");
+      return itinerary;
+    },
+    onSuccess: (itinerary, { tripId }) => {
       queryClient.setQueryData(aiKeys.savedItinerary(tripId), itinerary);
     },
   });

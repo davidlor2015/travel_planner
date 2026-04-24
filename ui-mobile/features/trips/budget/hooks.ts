@@ -1,4 +1,9 @@
-import { useCallback, useEffect, useReducer } from "react";
+import { useCallback } from "react";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 import {
   createExpense,
@@ -8,143 +13,146 @@ import {
   type BudgetData,
   type BudgetExpense,
 } from "./api";
+import { tripKeys } from "../hooks";
 
-type BudgetState = {
-  loading: boolean;
-  error: string | null;
-  limit: number | null;
-  expenses: BudgetExpense[];
+export const budgetKeys = {
+  detail: (tripId: number) => ["trips", tripId, "budget"] as const,
 };
-
-type BudgetAction =
-  | { type: "fetch/start" }
-  | { type: "fetch/done"; limit: number | null; expenses: BudgetExpense[] }
-  | { type: "fetch/error"; message: string }
-  | { type: "limit/set"; data: BudgetData }
-  | { type: "expense/add"; expense: BudgetExpense }
-  | { type: "expense/replace"; previousId: number; expense: BudgetExpense }
-  | { type: "expense/remove"; id: number };
-
-function budgetReducer(state: BudgetState, action: BudgetAction): BudgetState {
-  switch (action.type) {
-    case "fetch/start":
-      return { ...state, loading: true, error: null };
-    case "fetch/done":
-      return { loading: false, error: null, limit: action.limit, expenses: action.expenses };
-    case "fetch/error":
-      return { ...state, loading: false, error: action.message };
-    case "limit/set":
-      return { ...state, limit: action.data.limit, expenses: action.data.expenses };
-    case "expense/add":
-      return { ...state, expenses: [...state.expenses, action.expense] };
-    case "expense/replace":
-      return {
-        ...state,
-        expenses: state.expenses.map((e) =>
-          e.id === action.previousId ? action.expense : e,
-        ),
-      };
-    case "expense/remove":
-      return { ...state, expenses: state.expenses.filter((e) => e.id !== action.id) };
-  }
-}
 
 export type ExpenseCategory = "food" | "transport" | "stay" | "activities" | "other";
 
 export function useBudgetTracker(tripId: number) {
-  const [{ loading, error, limit, expenses }, dispatch] = useReducer(
-    budgetReducer,
-    { loading: true, error: null, limit: null, expenses: [] },
-  );
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    let cancelled = false;
-    dispatch({ type: "fetch/start" });
-    getBudget(tripId)
-      .then((data) => {
-        if (!cancelled)
-          dispatch({ type: "fetch/done", limit: data.limit, expenses: data.expenses });
-      })
-      .catch((err: unknown) => {
-        if (!cancelled)
-          dispatch({
-            type: "fetch/error",
-            message: err instanceof Error ? err.message : "Failed to load budget",
-          });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [tripId]);
+  const query = useQuery({
+    queryKey: budgetKeys.detail(tripId),
+    queryFn: () => getBudget(tripId),
+  });
 
-  const totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
-  const remaining = limit !== null ? limit - totalSpent : null;
-  const isOverBudget = remaining !== null && remaining < 0;
+  const data: BudgetData = query.data ?? { limit: null, expenses: [] };
+  const totalSpent = data.expenses.reduce((sum, e) => sum + e.amount, 0);
+  const remaining = data.limit !== null ? data.limit - totalSpent : null;
 
-  const setLimit = useCallback(
-    async (amount: number | null) => {
-      const snapshot = { limit, expenses };
-      dispatch({ type: "limit/set", data: { limit: amount, expenses } });
-      try {
-        const data = await updateBudgetLimit(tripId, amount);
-        dispatch({ type: "limit/set", data });
-      } catch (err) {
-        dispatch({ type: "limit/set", data: snapshot });
-        throw err;
-      }
+  const invalidateSummaries = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: tripKeys.detail(tripId) }),
+      queryClient.invalidateQueries({ queryKey: tripKeys.summaries }),
+    ]);
+  };
+
+  const setLimitMutation = useMutation({
+    mutationFn: (amount: number | null) => updateBudgetLimit(tripId, amount),
+    onMutate: async (amount) => {
+      await queryClient.cancelQueries({ queryKey: budgetKeys.detail(tripId) });
+      const prev = queryClient.getQueryData<BudgetData>(budgetKeys.detail(tripId));
+      queryClient.setQueryData<BudgetData>(budgetKeys.detail(tripId), (old) =>
+        old ? { ...old, limit: amount } : { limit: amount, expenses: [] },
+      );
+      return { prev };
     },
-    [tripId, limit, expenses],
-  );
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(budgetKeys.detail(tripId), ctx.prev);
+    },
+    onSuccess: (updated) => {
+      queryClient.setQueryData<BudgetData>(budgetKeys.detail(tripId), updated);
+      void invalidateSummaries();
+    },
+  });
 
-  const addExpense = useCallback(
-    async (label: string, amount: number, category: ExpenseCategory) => {
-      const trimmed = label.trim();
-      if (!trimmed || amount <= 0) return;
+  const addExpenseMutation = useMutation({
+    mutationFn: ({
+      label,
+      amount,
+      category,
+    }: {
+      label: string;
+      amount: number;
+      category: string;
+    }) => createExpense(tripId, { label, amount, category }),
+    onMutate: async ({ label, amount, category }) => {
+      await queryClient.cancelQueries({ queryKey: budgetKeys.detail(tripId) });
+      const prev = queryClient.getQueryData<BudgetData>(budgetKeys.detail(tripId));
       const tempId = -Date.now();
       const optimistic: BudgetExpense = {
         id: tempId,
         trip_id: tripId,
-        label: trimmed,
+        label,
         amount,
         category,
         created_at: new Date().toISOString(),
       };
-      dispatch({ type: "expense/add", expense: optimistic });
-      try {
-        const expense = await createExpense(tripId, { label: trimmed, amount, category });
-        dispatch({ type: "expense/replace", previousId: tempId, expense });
-      } catch (err) {
-        dispatch({ type: "expense/remove", id: tempId });
-        throw err;
-      }
+      queryClient.setQueryData<BudgetData>(budgetKeys.detail(tripId), (old) =>
+        old
+          ? { ...old, expenses: [...old.expenses, optimistic] }
+          : { limit: null, expenses: [optimistic] },
+      );
+      return { prev, tempId };
     },
-    [tripId],
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(budgetKeys.detail(tripId), ctx.prev);
+    },
+    onSuccess: (expense, _vars, ctx) => {
+      queryClient.setQueryData<BudgetData>(budgetKeys.detail(tripId), (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          expenses: old.expenses.map((e) => (e.id === ctx?.tempId ? expense : e)),
+        };
+      });
+      void invalidateSummaries();
+    },
+  });
+
+  const removeExpenseMutation = useMutation({
+    mutationFn: (expenseId: number) => deleteExpense(tripId, expenseId),
+    onMutate: async (expenseId) => {
+      await queryClient.cancelQueries({ queryKey: budgetKeys.detail(tripId) });
+      const prev = queryClient.getQueryData<BudgetData>(budgetKeys.detail(tripId));
+      queryClient.setQueryData<BudgetData>(budgetKeys.detail(tripId), (old) =>
+        old ? { ...old, expenses: old.expenses.filter((e) => e.id !== expenseId) } : old,
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(budgetKeys.detail(tripId), ctx.prev);
+    },
+    onSuccess: () => {
+      void invalidateSummaries();
+    },
+  });
+
+  const setLimit = useCallback(
+    (amount: number | null) => setLimitMutation.mutateAsync(amount),
+    [setLimitMutation],
+  );
+
+  const addExpense = useCallback(
+    (label: string, amount: number, category: ExpenseCategory) =>
+      addExpenseMutation.mutateAsync({ label, amount, category }),
+    [addExpenseMutation],
   );
 
   const removeExpense = useCallback(
-    async (id: number) => {
-      const removed = expenses.find((e) => e.id === id);
-      dispatch({ type: "expense/remove", id });
-      try {
-        await deleteExpense(tripId, id);
-      } catch (err) {
-        if (removed) dispatch({ type: "expense/add", expense: removed });
-        throw err;
-      }
-    },
-    [tripId, expenses],
+    (id: number) => removeExpenseMutation.mutateAsync(id),
+    [removeExpenseMutation],
+  );
+
+  const reload = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: budgetKeys.detail(tripId) }),
+    [queryClient, tripId],
   );
 
   return {
-    limit,
-    expenses,
+    limit: data.limit,
+    expenses: data.expenses,
     totalSpent,
     remaining,
-    isOverBudget,
-    loading,
-    error,
+    isOverBudget: remaining !== null && remaining < 0,
+    loading: query.isLoading,
+    error: query.isError ? "We couldn't load the budget. Try again in a moment." : null,
     setLimit,
     addExpense,
     removeExpense,
+    reload,
   };
 }

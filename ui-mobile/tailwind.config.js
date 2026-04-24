@@ -71,6 +71,7 @@ module.exports = {
       borderRadius: {
         xl2: "20px",
         xl3: "24px",
+        pill: "9999px",
       },
       boxShadow: {
         card: "0 12px 40px rgba(28,17,8,0.08)",

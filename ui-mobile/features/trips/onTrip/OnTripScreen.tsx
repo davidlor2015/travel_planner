@@ -1,7 +1,7 @@
-import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as Linking from "expo-linking";
-import { Pressable, ScrollView, Text } from "react-native";
+import { type Href, useRouter } from "expo-router";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useOnTripSnapshotQuery } from "@/features/trips/hooks";
@@ -25,11 +25,22 @@ type Props = {
   tripTitle: string;
 };
 
+const NOW_TICK_INTERVAL_MS = 60_000;
+
 export function OnTripScreen({ tripId, tripTitle }: Props) {
   const router = useRouter();
   const snapshotQuery = useOnTripSnapshotQuery(tripId);
   const [liveSnapshot, setLiveSnapshot] = useState<TripOnTripSnapshot | null>(null);
   const [logModalOpen, setLogModalOpen] = useState(false);
+
+  // The "Happening now" stop is derived from the current local time, so we
+  // re-render every minute to move past-due stops out of the Now slot without
+  // waiting for the next snapshot refetch.
+  const [, setMinuteTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setMinuteTick((v) => v + 1), NOW_TICK_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, []);
 
   const mutations = useOnTripMutations({
     tripId,
@@ -37,33 +48,46 @@ export function OnTripScreen({ tripId, tripTitle }: Props) {
     onSnapshotRefresh: setLiveSnapshot,
   });
 
+  const rawSnapshot = mutations.viewSnapshot ?? snapshotQuery.data ?? null;
+
+  const vm = useMemo(
+    () =>
+      rawSnapshot
+        ? deriveOnTripViewModel(
+            rawSnapshot,
+            mutations.statusPending,
+            mutations.unplannedPendingIds,
+          )
+        : null,
+    [rawSnapshot, mutations.statusPending, mutations.unplannedPendingIds],
+  );
+
   if (snapshotQuery.isLoading) {
-    return <ScreenLoading label="Loading on-trip view…" />;
+    return <ScreenLoading label="Loading your trip…" />;
   }
 
   if (snapshotQuery.isError) {
     return (
       <ScreenError
-        message="Could not load trip data."
+        message="We couldn't load your live trip view. Try again in a moment."
         onRetry={() => void snapshotQuery.refetch()}
       />
     );
   }
 
-  const rawSnapshot = mutations.viewSnapshot ?? snapshotQuery.data ?? null;
-  if (!rawSnapshot) return null;
-
-  const vm = deriveOnTripViewModel(
-    rawSnapshot,
-    mutations.statusPending,
-    mutations.unplannedPendingIds,
-  );
+  if (!rawSnapshot || !vm) return null;
 
   const nowKey = vm.now?.key ?? null;
   const nextKey = vm.next?.key ?? null;
   const doneCount = vm.timeline.filter(
-    (stop) => stop.effectiveStatus === "confirmed" || stop.effectiveStatus === "skipped",
+    (stop) =>
+      stop.effectiveStatus === "confirmed" || stop.effectiveStatus === "skipped",
   ).length;
+  const totalCount = vm.timeline.length;
+  const progressLabel =
+    totalCount > 0 ? `${doneCount} of ${totalCount} done` : undefined;
+
+  const dayLabel = buildDayLabel(rawSnapshot);
 
   const navigateToStop = async (key: string) => {
     const stop =
@@ -83,104 +107,129 @@ export function OnTripScreen({ tripId, tripTitle }: Props) {
     return () => void navigateToStop(key);
   };
 
+  const toggleStatus = (
+    stopRef: string | null,
+    current: "planned" | "confirmed" | "skipped",
+    target: "confirmed" | "skipped",
+  ) => {
+    if (!stopRef || vm.isReadOnly) return;
+    const next = current === target ? "planned" : target;
+    void mutations.setStopStatus(stopRef, next);
+  };
+
+  const openFullWorkspace = () => {
+    router.push(`/(tabs)/trips/${tripId}` as Href);
+  };
+
   return (
-    <SafeAreaView className="flex-1 bg-surface-exec" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-surface-ontrip" edges={["top"]}>
       <OnTripHeader
         title={tripTitle}
         readOnly={vm.isReadOnly}
-        progressLabel={
-          vm.timeline.length > 0 ? `${doneCount} of ${vm.timeline.length} done` : undefined
+        dayLabel={dayLabel}
+        progressLabel={progressLabel}
+        onBack={() =>
+          router.canGoBack() ? router.back() : router.replace("/(tabs)/trips")
         }
-        onBack={() => router.back()}
       />
 
-      <ScrollView contentContainerClassName="gap-6 p-4 pb-24">
+      <ScrollView contentContainerClassName="gap-6 p-4 pb-32">
         <NeedsAttentionCard blockers={vm.blockers} />
 
         {vm.now ? (
           <HappeningNowCard
             stop={vm.now}
             onNavigate={navigateAction(vm.now.key)}
-            onConfirm={() => {
-              if (!vm.now?.stop_ref) return;
-              void mutations.setStopStatus(
-                vm.now.stop_ref,
-                vm.now.effectiveStatus === "confirmed" ? "planned" : "confirmed",
-              );
-            }}
-            onSkip={() => {
-              if (!vm.now?.stop_ref) return;
-              void mutations.setStopStatus(
-                vm.now.stop_ref,
-                vm.now.effectiveStatus === "skipped" ? "planned" : "skipped",
-              );
-            }}
+            onConfirm={() =>
+              toggleStatus(vm.now?.stop_ref ?? null, vm.now!.effectiveStatus, "confirmed")
+            }
+            onSkip={() =>
+              toggleStatus(vm.now?.stop_ref ?? null, vm.now!.effectiveStatus, "skipped")
+            }
           />
         ) : null}
 
-        <ScrollSectionLabel label="Today" />
+        <SectionLabel label="Today" />
         {vm.timeline.length === 0 ? (
-          <Text className="text-sm text-on-dark-muted">No stops planned for today.</Text>
+          <Text className="text-sm text-ontrip-muted">
+            No planned stops for today. You can still log what happens below.
+          </Text>
         ) : (
-          <ScrollView scrollEnabled={false}>
+          <View>
             {vm.timeline.map((stop, idx) => (
-              (() => {
-                const stopRef =
-                  typeof stop.stop_ref === "string" ? stop.stop_ref : null;
-                return (
-                  <TimelineRow
-                    key={stop.key}
-                    stop={stop}
-                    variant={stopVariant(stop, nowKey, nextKey)}
-                    isLast={idx === vm.timeline.length - 1}
-                    onNavigate={navigateAction(stop.key)}
-                    onConfirm={
-                      stopRef
-                        ? () =>
-                            void mutations.setStopStatus(
-                              stopRef,
-                              stop.effectiveStatus === "confirmed"
-                                ? "planned"
-                                : "confirmed",
-                            )
-                        : undefined
-                    }
-                    onSkip={
-                      stopRef
-                        ? () =>
-                            void mutations.setStopStatus(
-                              stopRef,
-                              stop.effectiveStatus === "skipped" ? "planned" : "skipped",
-                            )
-                        : undefined
-                    }
-                  />
-                );
-              })()
+              <TimelineRow
+                key={stop.key}
+                stop={stop}
+                variant={stopVariant(stop, nowKey, nextKey)}
+                isLast={idx === vm.timeline.length - 1}
+                onNavigate={navigateAction(stop.key)}
+                onConfirm={
+                  stop.stop_ref
+                    ? () =>
+                        toggleStatus(
+                          stop.stop_ref,
+                          stop.effectiveStatus,
+                          "confirmed",
+                        )
+                    : undefined
+                }
+                onSkip={
+                  stop.stop_ref
+                    ? () =>
+                        toggleStatus(stop.stop_ref, stop.effectiveStatus, "skipped")
+                    : undefined
+                }
+              />
             ))}
-          </ScrollView>
+          </View>
         )}
 
-        {vm.unplanned.length > 0 ? <ScrollSectionLabel label="Unplanned" /> : null}
-        {vm.unplanned.map((stop) => (
-          <UnplannedStopRow
-            key={stop.event_id}
-            stop={stop}
-            onDelete={
-              vm.isReadOnly ? undefined : () => void mutations.removeUnplannedStop(stop.event_id)
-            }
-          />
-        ))}
+        {vm.unplanned.length > 0 ? (
+          <>
+            <SectionLabel label="Along the way" />
+            <View className="gap-3">
+              {vm.unplanned.map((stop) => (
+                <UnplannedStopRow
+                  key={stop.event_id}
+                  stop={stop}
+                  onDelete={
+                    vm.isReadOnly
+                      ? undefined
+                      : () => void mutations.removeUnplannedStop(stop.event_id)
+                  }
+                />
+              ))}
+            </View>
+          </>
+        ) : null}
+
+        <View className="mt-2 flex-row items-center justify-between border-t border-border-ontrip pt-4">
+          <Text className="flex-1 pr-3 text-[13px] text-ontrip-muted">
+            The saved itinerary remains your plan of record.
+          </Text>
+          <Pressable onPress={openFullWorkspace} hitSlop={8}>
+            <Text className="text-[13px] font-medium text-ontrip-strong">
+              Open full workspace
+            </Text>
+          </Pressable>
+        </View>
       </ScrollView>
 
       {!vm.isReadOnly ? <LogStopFab onPress={() => setLogModalOpen(true)} /> : null}
 
       {mutations.feedback ? (
         <Pressable
-          className={`absolute bottom-[90px] left-4 right-4 rounded-[16px] px-4 py-3 ${mutations.feedback.kind === "error" ? "bg-danger" : "bg-olive"}`}
           onPress={mutations.dismissFeedback}
+          className={[
+            "absolute bottom-[90px] left-4 right-4 rounded-[16px] px-4 py-3",
+            mutations.feedback.kind === "error"
+              ? "bg-danger"
+              : "bg-olive",
+          ].join(" ")}
         >
-          <Text className="text-center text-sm text-white">{mutations.feedback.message}</Text>
+          <Text className="text-center text-sm font-semibold text-white">
+            {mutations.feedback.message}
+          </Text>
         </Pressable>
       ) : null}
 
@@ -198,10 +247,16 @@ export function OnTripScreen({ tripId, tripTitle }: Props) {
   );
 }
 
-function ScrollSectionLabel({ label }: { label: string }) {
+function SectionLabel({ label }: { label: string }) {
   return (
-    <Text className="text-[11px] font-semibold uppercase tracking-[0.5px] text-on-dark-soft">
+    <Text className="text-[11px] font-semibold uppercase tracking-[0.5px] text-ontrip-muted">
       {label}
     </Text>
   );
+}
+
+function buildDayLabel(snapshot: TripOnTripSnapshot): string {
+  const day = snapshot.today.day_number;
+  if (typeof day === "number" && day > 0) return `Day ${day} · On-Trip`;
+  return "On-Trip";
 }

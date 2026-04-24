@@ -2,7 +2,7 @@ import { useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, Text, View } from "react-native";
 import { router } from "expo-router";
 
-import { ApiError } from "@/shared/api/client";
+import { friendlyError } from "@/shared/api/friendlyError";
 import { useAuth } from "@/providers/AuthProvider";
 import { PrimaryButton } from "@/shared/ui/Button";
 import { ScreenHeader } from "@/shared/ui/ScreenHeader";
@@ -29,13 +29,7 @@ export default function LoginPage() {
       await signIn({ email: email.trim(), password });
       router.replace("/(tabs)/trips");
     } catch (error) {
-      if (error instanceof ApiError) {
-        setErrorMessage(error.message);
-      } else if (error instanceof Error) {
-        setErrorMessage(error.message);
-      } else {
-        setErrorMessage("Login failed.");
-      }
+      setErrorMessage(friendlyError(error, "auth"));
     } finally {
       setIsSubmitting(false);
     }

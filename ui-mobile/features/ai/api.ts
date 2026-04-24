@@ -72,12 +72,12 @@ function friendlyAiError(action: AiActionKey, status: number, body: string): str
   if (status >= 500) return "The AI service is having trouble. Please try again shortly.";
   if (status === 408 || status === 504) return "The AI took too long to respond. Please try again.";
   const fallback: Record<AiActionKey, string> = {
-    apply: "Failed to apply itinerary.",
-    refine: "Failed to refine itinerary.",
-    fetch: "Failed to fetch itinerary.",
+    apply: "We couldn't save the itinerary. Try again.",
+    refine: "We couldn't refine the itinerary. Try again.",
+    fetch: "We couldn't load the itinerary. Try again in a moment.",
   };
-  const trimmed = body.trim();
-  return trimmed ? `${fallback[action]} (${trimmed})` : fallback[action];
+  // Never append raw server body — it may contain backend/debug language.
+  return fallback[action];
 }
 
 export async function applyItinerary(
@@ -114,6 +114,17 @@ export async function refineItinerary(
   }).catch((err) => {
     const status = (err as { status?: number }).status ?? 0;
     throw new Error(friendlyAiError("refine", status, err.message ?? ""));
+  });
+}
+
+export async function planItinerary(tripId: number): Promise<Itinerary> {
+  return apiRequest<Itinerary>("/v1/ai/plan", {
+    method: "POST",
+    body: { trip_id: tripId },
+    timeoutMs: AI_REQUEST_TIMEOUT_MS,
+  }).catch((err) => {
+    const status = (err as { status?: number }).status ?? 0;
+    throw new Error(friendlyAiError("apply", status, err.message ?? ""));
   });
 }
 

@@ -50,9 +50,7 @@ export function useWorkspaceCollaboration(
     sendInvite,
     isSendingInvite: createInviteMutation.isPending,
     memberReadinessError: memberReadinessQuery.isError
-      ? memberReadinessQuery.error instanceof Error
-        ? memberReadinessQuery.error.message
-        : "Could not load member readiness."
+      ? "We couldn't load traveler readiness right now."
       : null,
   };
 }
