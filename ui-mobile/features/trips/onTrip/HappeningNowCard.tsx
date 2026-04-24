@@ -1,20 +1,23 @@
 import { Pressable, Text, View } from "react-native";
 
+import { fontStyles } from "@/shared/theme/typography";
+
 import type { StopVM } from "./adapters";
 
 type Props = {
   stop: StopVM;
+  onNavigate?: () => void;
   onConfirm: () => void;
   onSkip: () => void;
 };
 
-export function HappeningNowCard({ stop, onConfirm, onSkip }: Props) {
+export function HappeningNowCard({ stop, onNavigate, onConfirm, onSkip }: Props) {
   return (
     <View className="rounded-[28px] bg-cocoa-1 px-5 py-5 shadow-exec">
       <Text className="text-[11px] uppercase tracking-[1.7px] text-on-dark-soft">
         Happening now
       </Text>
-      <Text className="mt-3 text-[28px] font-semibold text-on-dark">
+      <Text className="mt-3 text-[30px] text-on-dark" style={fontStyles.displaySemibold}>
         {stop.title ?? "Untitled stop"}
       </Text>
       {stop.location ? (
@@ -24,20 +27,32 @@ export function HappeningNowCard({ stop, onConfirm, onSkip }: Props) {
         </Text>
       ) : null}
 
-      {!stop.isReadOnly ? (
+      {onNavigate || !stop.isReadOnly ? (
         <View className="mt-5 flex-row gap-2">
-          <ActionButton
-            label={stop.effectiveStatus === "confirmed" ? "Confirmed" : "Confirm"}
-            variant="primary"
-            disabled={stop.isPending || !stop.stop_ref}
-            onPress={onConfirm}
-          />
-          <ActionButton
-            label={stop.effectiveStatus === "skipped" ? "Skipped" : "Skip"}
-            variant="secondary"
-            disabled={stop.isPending || !stop.stop_ref}
-            onPress={onSkip}
-          />
+          {onNavigate ? (
+            <ActionButton
+              label="Navigate"
+              variant="secondary"
+              disabled={false}
+              onPress={onNavigate}
+            />
+          ) : null}
+          {!stop.isReadOnly ? (
+            <ActionButton
+              label={stop.effectiveStatus === "confirmed" ? "Confirmed" : "Confirm"}
+              variant="primary"
+              disabled={stop.isPending || !stop.stop_ref}
+              onPress={onConfirm}
+            />
+          ) : null}
+          {!stop.isReadOnly ? (
+            <ActionButton
+              label={stop.effectiveStatus === "skipped" ? "Skipped" : "Skip"}
+              variant="secondary"
+              disabled={stop.isPending || !stop.stop_ref}
+              onPress={onSkip}
+            />
+          ) : null}
         </View>
       ) : null}
     </View>

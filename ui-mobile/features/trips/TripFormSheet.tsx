@@ -37,10 +37,17 @@ function toInitialValue(trip?: TripResponse | null): TripFormValue {
 
 function validate(value: TripFormValue): Partial<Record<keyof TripFormValue, string>> {
   const next: Partial<Record<keyof TripFormValue, string>> = {};
+  const datePattern = /^\d{4}-\d{2}-\d{2}$/;
   if (!value.title.trim()) next.title = "Trip title is required.";
   if (!value.destination.trim()) next.destination = "Destination is required.";
   if (!value.start_date) next.start_date = "Start date is required.";
+  if (value.start_date && !datePattern.test(value.start_date)) {
+    next.start_date = "Use YYYY-MM-DD.";
+  }
   if (!value.end_date) next.end_date = "End date is required.";
+  if (value.end_date && !datePattern.test(value.end_date)) {
+    next.end_date = "Use YYYY-MM-DD.";
+  }
   if (value.start_date && value.end_date && value.end_date < value.start_date) {
     next.end_date = "End date must be on or after start date.";
   }
@@ -136,7 +143,7 @@ export function TripFormSheet({
               <TextInputField
                 label="Trip notes"
                 hint="Optional"
-                placeholder="Pace, budget, interests, or reminders"
+                placeholder="Pace, budget, interests, reminders"
                 value={value.notes}
                 onChangeText={(notes) => setValue((current) => ({ ...current, notes }))}
                 multiline

@@ -1,5 +1,6 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
+import * as Linking from "expo-linking";
 import { Pressable, ScrollView, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -17,6 +18,7 @@ import { NeedsAttentionCard } from "./NeedsAttentionCard";
 import { OnTripHeader } from "./OnTripHeader";
 import { TimelineRow } from "./TimelineRow";
 import { UnplannedStopRow } from "./UnplannedStopRow";
+import { buildNavigateUrl } from "./navigation";
 
 type Props = {
   tripId: number;
@@ -63,6 +65,24 @@ export function OnTripScreen({ tripId, tripTitle }: Props) {
     (stop) => stop.effectiveStatus === "confirmed" || stop.effectiveStatus === "skipped",
   ).length;
 
+  const navigateToStop = async (key: string) => {
+    const stop =
+      vm.timeline.find((item) => item.key === key) ??
+      (vm.now?.key === key ? vm.now : null);
+    if (!stop) return;
+    const url = buildNavigateUrl(stop);
+    if (!url) return;
+    await Linking.openURL(url);
+  };
+
+  const navigateAction = (key: string): (() => void) | undefined => {
+    const stop =
+      vm.timeline.find((item) => item.key === key) ??
+      (vm.now?.key === key ? vm.now : null);
+    if (!stop || !buildNavigateUrl(stop)) return undefined;
+    return () => void navigateToStop(key);
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-surface-exec" edges={["top"]}>
       <OnTripHeader
@@ -80,6 +100,7 @@ export function OnTripScreen({ tripId, tripTitle }: Props) {
         {vm.now ? (
           <HappeningNowCard
             stop={vm.now}
+            onNavigate={navigateAction(vm.now.key)}
             onConfirm={() => {
               if (!vm.now?.stop_ref) return;
               void mutations.setStopStatus(
@@ -112,6 +133,7 @@ export function OnTripScreen({ tripId, tripTitle }: Props) {
                     stop={stop}
                     variant={stopVariant(stop, nowKey, nextKey)}
                     isLast={idx === vm.timeline.length - 1}
+                    onNavigate={navigateAction(stop.key)}
                     onConfirm={
                       stopRef
                         ? () =>

@@ -1,4 +1,4 @@
-import { apiRequest } from "@/shared/api/client";
+import { ApiError, apiRequest } from "@/shared/api/client";
 
 export type ItineraryStopStatus = "planned" | "confirmed" | "skipped";
 
@@ -120,6 +120,13 @@ export async function refineItinerary(
 export async function getSavedItinerary(tripId: number): Promise<Itinerary> {
   return apiRequest<Itinerary>(`/v1/ai/trips/${tripId}/itinerary`).catch(
     (err) => {
+      if (err instanceof ApiError) {
+        throw new ApiError(
+          err.status,
+          friendlyAiError("fetch", err.status, err.message ?? ""),
+          err.detail,
+        );
+      }
       const status = (err as { status?: number }).status ?? 0;
       throw new Error(friendlyAiError("fetch", status, err.message ?? ""));
     },

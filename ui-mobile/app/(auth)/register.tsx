@@ -2,42 +2,53 @@ import { useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, Text, View } from "react-native";
 import { router } from "expo-router";
 
+import { useRegisterMutation } from "@/features/auth/hooks";
 import { ApiError } from "@/shared/api/client";
-import { useAuth } from "@/providers/AuthProvider";
 import { PrimaryButton } from "@/shared/ui/Button";
 import { ScreenHeader } from "@/shared/ui/ScreenHeader";
 import { SectionCard } from "@/shared/ui/SectionCard";
 import { TextInputField } from "@/shared/ui/TextInputField";
 
-export default function LoginPage() {
-  const { signIn } = useAuth();
+export default function RegisterPage() {
+  const registerMutation = useRegisterMutation();
+  const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   async function handleSubmit() {
-    if (!email.trim() || !password) {
-      setErrorMessage("Email and password are required.");
+    const trimmedName = displayName.trim();
+    const trimmedEmail = email.trim().toLowerCase();
+
+    if (!trimmedName || !trimmedEmail || !password || !confirmPassword) {
+      setErrorMessage("Display name, email, and password are required.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setErrorMessage("Passwords do not match.");
       return;
     }
 
-    setIsSubmitting(true);
     setErrorMessage(null);
+    setSuccessMessage(null);
 
     try {
-      await signIn({ email: email.trim(), password });
-      router.replace("/(tabs)/trips");
+      await registerMutation.mutateAsync({
+        display_name: trimmedName,
+        email: trimmedEmail,
+        password,
+      });
+      setSuccessMessage("Account created. Verify your email before signing in.");
     } catch (error) {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
       } else if (error instanceof Error) {
         setErrorMessage(error.message);
       } else {
-        setErrorMessage("Login failed.");
+        setErrorMessage("Could not create account.");
       }
-    } finally {
-      setIsSubmitting(false);
     }
   }
 
@@ -49,15 +60,22 @@ export default function LoginPage() {
       <View className="gap-4">
         <ScreenHeader
           title="Waypoint"
-          subtitle="Sign in to manage trips, logistics, and on-trip execution."
+          subtitle="Create your account to start planning and executing trips."
         />
 
         <SectionCard
           eyebrow="Account"
-          title="Sign in"
-          description="Use the same account you already use on web."
+          title="Register"
+          description="Use a name your travel group can recognize."
         >
           <View className="gap-4">
+            <TextInputField
+              label="Display name"
+              value={displayName}
+              onChangeText={setDisplayName}
+              placeholder="e.g. Maya"
+            />
+
             <TextInputField
               label="Email"
               autoCapitalize="none"
@@ -76,21 +94,34 @@ export default function LoginPage() {
               placeholder="Password"
             />
 
+            <TextInputField
+              label="Confirm password"
+              secureTextEntry
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              placeholder="Confirm password"
+            />
+
             {errorMessage ? (
               <View className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3">
                 <Text className="text-sm font-medium text-danger">{errorMessage}</Text>
               </View>
             ) : null}
+            {successMessage ? (
+              <View className="rounded-2xl border border-olive/20 bg-olive/10 px-4 py-3">
+                <Text className="text-sm font-medium text-olive">{successMessage}</Text>
+              </View>
+            ) : null}
 
             <PrimaryButton
-              label={isSubmitting ? "Signing In…" : "Sign In"}
+              label={registerMutation.isPending ? "Creating…" : "Create Account"}
               onPress={() => void handleSubmit()}
-              disabled={isSubmitting}
+              disabled={registerMutation.isPending}
               fullWidth
             />
-            <Pressable onPress={() => router.push("./register")}>
+            <Pressable onPress={() => router.replace("./login")}>
               <Text className="text-center text-sm font-semibold text-accent">
-                Create account
+                Already have an account
               </Text>
             </Pressable>
           </View>

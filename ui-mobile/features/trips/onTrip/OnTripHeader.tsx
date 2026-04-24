@@ -1,5 +1,7 @@
 import { Pressable, Text, View } from "react-native";
 
+import { fontStyles } from "@/shared/theme/typography";
+
 type Props = {
   title: string;
   readOnly: boolean;
@@ -22,7 +24,9 @@ export function OnTripHeader({ title, readOnly, progressLabel, onBack }: Props) 
           <Text className="text-[11px] uppercase tracking-[1.5px] text-on-dark-soft">
             On-Trip
           </Text>
-          <Text className="mt-1 text-2xl font-semibold text-on-dark">{title}</Text>
+          <Text className="mt-1 text-[34px] text-on-dark" style={fontStyles.displaySemibold}>
+            {title}
+          </Text>
           <View className="mt-2 flex-row flex-wrap gap-2">
             {readOnly ? (
               <View className="rounded-full border border-white/15 bg-white/8 px-3 py-1">

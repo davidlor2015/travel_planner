@@ -6,6 +6,7 @@ type Props = {
   stop: StopVM;
   variant: TimelineVariant;
   isLast: boolean;
+  onNavigate?: () => void;
   onConfirm?: () => void;
   onSkip?: () => void;
 };
@@ -14,6 +15,7 @@ export function TimelineRow({
   stop,
   variant,
   isLast,
+  onNavigate,
   onConfirm,
   onSkip,
 }: Props) {
@@ -42,10 +44,11 @@ export function TimelineRow({
         {stop.location ? (
           <Text className="mt-1 text-sm text-on-dark-muted">{stop.location}</Text>
         ) : null}
-        {variant === "next" && !stop.isReadOnly ? (
+        {variant === "next" ? (
           <View className="mt-3 flex-row gap-2">
-            <MiniAction label="Confirm" onPress={onConfirm} />
-            <MiniAction label="Skip" onPress={onSkip} />
+            {onNavigate ? <MiniAction label="Navigate" onPress={onNavigate} /> : null}
+            {!stop.isReadOnly ? <MiniAction label="Confirm" onPress={onConfirm} /> : null}
+            {!stop.isReadOnly ? <MiniAction label="Skip" onPress={onSkip} /> : null}
           </View>
         ) : null}
       </View>

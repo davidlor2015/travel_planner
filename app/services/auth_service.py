@@ -18,10 +18,12 @@ class AuthService:
 
     def register(self, user_in: UserCreate) -> User:
         normalized_email = user_in.email.lower()
+        cleaned_display_name = (user_in.display_name or "").strip() or None
         if self.repo.get_by_email(normalized_email):
             raise HTTPException(status_code=400, detail="Email already registered")
         new_user = User(
             email=normalized_email,
+            display_name=cleaned_display_name,
             hashed_password=security.get_password_hash(user_in.password),
         )
         return self.repo.add(new_user)

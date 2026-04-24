@@ -30,13 +30,18 @@ def _verify_email(client, email: str) -> None:
 def test_register_user(client):
     response = client.post(
         "/v1/auth/register",
-        json={"email": "testuser@example.com", "password": "testme1"},
+        json={
+            "email": "testuser@example.com",
+            "password": "testme1",
+            "display_name": "Test User",
+        },
     )
 
     assert response.status_code == 200, response.text
     data = response.json()
 
     assert data["email"] == "testuser@example.com"
+    assert data["display_name"] == "Test User"
     assert "id" in data
     assert "password" not in data
     assert "hashed_password" not in data
@@ -95,7 +100,11 @@ def test_login_wrong_password(client):
 def test_read_users_me(client):
     client.post(
         "/v1/auth/register",
-        json={"email": "me@example.com", "password": "password111"},
+        json={
+            "email": "me@example.com",
+            "password": "password111",
+            "display_name": "Me Example",
+        },
     )
     _verify_email(client, "me@example.com")
 
@@ -114,6 +123,7 @@ def test_read_users_me(client):
 
     assert response.status_code == 200, response.text
     assert response.json()["email"] == "me@example.com"
+    assert response.json()["display_name"] == "Me Example"
 
 
 def test_refresh_session_returns_new_token_pair(client):

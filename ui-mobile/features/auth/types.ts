@@ -15,6 +15,7 @@ export type LoginResponse = {
 export type MeResponse = {
   id: number;
   email: string;
+  display_name: string | null;
   is_active: boolean;
   email_verified: boolean;
 };

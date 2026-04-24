@@ -1,107 +1,92 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import {
-  TripFormSheet,
-  buildTripUpdatePayload,
-  type TripFormValue,
-} from "@/features/trips/TripFormSheet";
+import { TripFormSheet, type TripFormValue } from "@/features/trips/TripFormSheet";
 import { TripSwitcherSheet } from "@/features/trips/TripSwitcherSheet";
-import { toTripListItem } from "@/features/trips/adapters";
-import {
-  useTripDetailQuery,
-  useTripsQuery,
-  useTripSummariesQuery,
-  useUpdateTripMutation,
-} from "@/features/trips/hooks";
 import { useAuth } from "@/providers/AuthProvider";
-import { ApiError } from "@/shared/api/client";
 import { ScreenError } from "@/shared/ui/ScreenError";
 import { ScreenLoading } from "@/shared/ui/ScreenLoading";
 
-import { BudgetTab } from "./BudgetTab";
 import { OverviewTab } from "./OverviewTab";
-import { PackingTab } from "./PackingTab";
-import { ReservationsTab } from "./ReservationsTab";
-import { WorkspaceTabs, type WorkspaceTab } from "./WorkspaceTabs";
+import { WorkspaceToolsSheet } from "./WorkspaceToolsSheet";
 import { WorkspaceTripHeader } from "./WorkspaceTripHeader";
-import { toTripSummaryViewModel, toTripWorkspaceViewModel } from "./adapters";
+import { useTripWorkspaceModel } from "./useTripWorkspaceModel";
 
 type Props = { tripId: number };
 
 export function WorkspaceScreen({ tripId }: Props) {
   const router = useRouter();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<WorkspaceTab>("overview");
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
-  const tripQuery = useTripDetailQuery(tripId);
-  const tripsQuery = useTripsQuery();
-  const summariesQuery = useTripSummariesQuery();
-  const updateTripMutation = useUpdateTripMutation();
+  const workspace = useTripWorkspaceModel({
+    tripId,
+    currentUserEmail: user?.email ?? "",
+  });
 
-  if (tripQuery.isLoading) {
+  if (workspace.tripQuery.isLoading) {
     return <ScreenLoading />;
   }
 
-  if (tripQuery.isError) {
-    const is404 =
-      tripQuery.error instanceof ApiError && tripQuery.error.status === 404;
+  if (workspace.tripQuery.isError) {
     return (
       <ScreenError
-        message={is404 ? "Trip not found." : "Could not load trip."}
-        onRetry={is404 ? undefined : () => void tripQuery.refetch()}
+        message={workspace.isNotFound ? "Trip not found." : "Could not load trip."}
+        onRetry={workspace.isNotFound ? undefined : () => void workspace.tripQuery.refetch()}
       />
     );
   }
 
-  const tripData = tripQuery.data;
-  if (!tripData) return null;
-
-  const currentUserEmail = user?.email ?? "";
-  const trip = toTripWorkspaceViewModel(tripData, currentUserEmail);
-
-  const summaryRaw = summariesQuery.data?.find((s) => s.trip_id === tripId);
-  const summary = summaryRaw ? toTripSummaryViewModel(summaryRaw) : null;
-  const switcherTrips = (tripsQuery.data ?? []).map(toTripListItem);
+  const tripData = workspace.tripRaw;
+  const trip = workspace.trip;
+  const collaboration = workspace.collaboration;
+  if (!collaboration) return null;
+  if (!tripData || !trip) return null;
 
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={["top"]}>
       <WorkspaceTripHeader
         trip={trip}
-        summary={summary}
+        summary={workspace.summary}
         onTripPress={() => setSwitcherOpen(true)}
+        onOpenToolsPress={() => setToolsOpen(true)}
         onEditPress={() => setEditOpen(true)}
       />
 
-      <WorkspaceTabs activeTab={activeTab} onTabChange={setActiveTab} />
-
-      <View className="flex-1">
-        {activeTab === "overview" && (
-          <OverviewTab tripId={tripId} trip={trip} summary={summary} />
-        )}
-        {activeTab === "budget" && <BudgetTab tripId={tripId} />}
-        {activeTab === "packing" && <PackingTab tripId={tripId} />}
-        {activeTab === "reservations" && <ReservationsTab tripId={tripId} />}
-      </View>
+      <OverviewTab
+        tripId={tripId}
+        trip={trip}
+        summary={workspace.summary}
+        collaboration={collaboration}
+        showGroupCoordination={workspace.showGroupCoordination}
+        memberReadinessError={workspace.memberReadinessError}
+        invitePending={workspace.invitePending}
+        onInvite={workspace.onInvite}
+      />
 
       <TripSwitcherSheet
         visible={switcherOpen}
-        trips={switcherTrips}
+        trips={workspace.switcherTrips}
         activeTripId={tripId}
         onClose={() => setSwitcherOpen(false)}
         onSelect={(nextTripId) => router.replace(`/(tabs)/trips/${nextTripId}`)}
+      />
+
+      <WorkspaceToolsSheet
+        tripId={tripId}
+        visible={toolsOpen}
+        onClose={() => setToolsOpen(false)}
       />
 
       <TripFormSheet
         visible={editOpen}
         mode="edit"
         trip={tripData}
-        submitting={updateTripMutation.isPending}
+        submitting={workspace.isUpdatingTrip}
         error={editError}
         onClose={() => {
           setEditOpen(false);
@@ -110,10 +95,7 @@ export function WorkspaceScreen({ tripId }: Props) {
         onSubmit={async (value: TripFormValue) => {
           try {
             setEditError(null);
-            await updateTripMutation.mutateAsync({
-              tripId,
-              data: buildTripUpdatePayload(value),
-            });
+            await workspace.updateTrip(value);
             setEditOpen(false);
           } catch (error) {
             setEditError(error instanceof Error ? error.message : "Could not update trip.");

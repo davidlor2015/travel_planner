@@ -19,8 +19,11 @@ export function useLoginMutation() {
 
 export function useRegisterMutation() {
   return useMutation({
-    mutationFn: ({ email, password }: { email: string; password: string }) =>
-      register(email, password),
+    mutationFn: (payload: {
+      email: string;
+      password: string;
+      display_name: string;
+    }) => register(payload),
   });
 }
 

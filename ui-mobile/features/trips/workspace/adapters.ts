@@ -1,6 +1,11 @@
-import type { TripResponse, TripSummary } from "../types";
+import type {
+  TripMemberReadiness,
+  TripResponse,
+  TripSummary,
+} from "../types";
 
 export type TripStatus = "upcoming" | "active" | "past";
+export type WorkspacePillVariant = "default" | "success" | "warning" | "error" | "info";
 
 export type TripWorkspaceViewModel = {
   id: number;
@@ -12,7 +17,30 @@ export type TripWorkspaceViewModel = {
   statusLabel: string;
   memberCount: number;
   isOwner: boolean;
-  members: Array<{ userId: number; email: string; role: string }>;
+};
+
+export type TripWorkspaceMemberViewModel = {
+  userId: number;
+  email: string;
+  roleLabel: string;
+  isCurrentUser: boolean;
+  readinessLabel: string;
+  readinessVariant: WorkspacePillVariant;
+  readinessDetail: string;
+};
+
+export type TripWorkspacePendingInviteViewModel = {
+  id: number;
+  email: string;
+  statusLabel: string;
+  expiresAtLabel: string;
+};
+
+export type TripWorkspaceCollaborationViewModel = {
+  canInvite: boolean;
+  groupDescription: string;
+  members: TripWorkspaceMemberViewModel[];
+  pendingInvites: TripWorkspacePendingInviteViewModel[];
 };
 
 export type TripSummaryViewModel = {
@@ -50,6 +78,18 @@ function tripStatusLabel(status: TripStatus): string {
   return "Completed";
 }
 
+function roleLabel(role: string): string {
+  return role === "owner" ? "Owner" : "Member";
+}
+
+function statusLabel(status: string): string {
+  return status
+    .split("_")
+    .filter(Boolean)
+    .map((part) => part.slice(0, 1).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 export function toTripWorkspaceViewModel(
   trip: TripResponse,
   currentUserEmail: string,
@@ -73,7 +113,90 @@ export function toTripWorkspaceViewModel(
     isOwner: trip.members.some(
       (m) => m.email.toLowerCase() === currentUserEmail.toLowerCase() && m.role === "owner",
     ),
-    members: trip.members.map((m) => ({ userId: m.user_id, email: m.email, role: m.role })),
+  };
+}
+
+export function toTripWorkspaceCollaborationViewModel(args: {
+  trip: TripResponse;
+  currentUserEmail: string;
+  readiness: TripMemberReadiness | null;
+  readinessLoading: boolean;
+}): TripWorkspaceCollaborationViewModel {
+  const { trip, currentUserEmail, readiness, readinessLoading } = args;
+  const normalizedCurrentUserEmail = currentUserEmail.trim().toLowerCase();
+  const readinessByUserId = new Map(
+    (readiness?.members ?? []).map((member) => [member.user_id, member]),
+  );
+  const canInvite = trip.members.some(
+    (member) =>
+      member.email.trim().toLowerCase() === normalizedCurrentUserEmail && member.role === "owner",
+  );
+
+  return {
+    canInvite,
+    groupDescription: canInvite
+      ? "See who is ready, track pending invites, and add travelers without leaving mobile."
+      : "See who is in this trip and how ready the group looks from the workspace.",
+    members: trip.members.map((member) => {
+      const readinessItem = readinessByUserId.get(member.user_id);
+      const isCurrentUser =
+        member.email.trim().toLowerCase() === normalizedCurrentUserEmail;
+
+      if (!readinessItem) {
+        return {
+          userId: member.user_id,
+          email: member.email,
+          roleLabel: roleLabel(member.role),
+          isCurrentUser,
+          readinessLabel: readinessLoading ? "Checking readiness…" : "Readiness unavailable",
+          readinessVariant: "default",
+          readinessDetail: readinessLoading
+            ? "Syncing the latest planning state for this traveler."
+            : "Readiness could not be loaded for this traveler.",
+        };
+      }
+
+      const readinessLabel =
+        readinessItem.status === "ready"
+          ? "Ready"
+          : readinessItem.status === "needs_attention"
+            ? `${readinessItem.blocker_count} blocker${readinessItem.blocker_count === 1 ? "" : "s"}`
+            : "Readiness unknown";
+      const readinessVariant: WorkspacePillVariant =
+        readinessItem.status === "ready"
+          ? "success"
+          : readinessItem.status === "needs_attention"
+            ? "warning"
+            : "default";
+      const readinessDetail =
+        readinessItem.status === "ready"
+          ? readinessItem.readiness_score != null
+            ? `Readiness score ${readinessItem.readiness_score}%`
+            : "No open blockers."
+          : readinessItem.status === "needs_attention"
+            ? readinessItem.blocker_count > 0
+              ? `${readinessItem.blocker_count} itinerary blocker${readinessItem.blocker_count === 1 ? "" : "s"} need attention.`
+              : readinessItem.readiness_score != null
+                ? `Readiness score ${readinessItem.readiness_score}%`
+                : "Operational details still need work."
+            : "Not enough trip prep data yet.";
+
+      return {
+        userId: member.user_id,
+        email: member.email,
+        roleLabel: roleLabel(member.role),
+        isCurrentUser,
+        readinessLabel,
+        readinessVariant,
+        readinessDetail,
+      };
+    }),
+    pendingInvites: trip.pending_invites.map((invite) => ({
+      id: invite.id,
+      email: invite.email,
+      statusLabel: statusLabel(invite.status),
+      expiresAtLabel: formatDate(invite.expires_at),
+    })),
   };
 }
 

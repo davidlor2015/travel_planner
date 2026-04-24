@@ -44,12 +44,11 @@ export async function login(payload: LoginRequest): Promise<LoginResponse> {
 }
 
 export async function register(
-  email: string,
-  password: string,
+  payload: { email: string; password: string; display_name: string },
 ): Promise<MeResponse> {
   return apiRequest<MeResponse>("/v1/auth/register", {
     method: "POST",
-    body: { email, password },
+    body: payload,
     skipAuth: true,
   });
 }
