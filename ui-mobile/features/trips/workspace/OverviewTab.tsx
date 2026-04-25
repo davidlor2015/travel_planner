@@ -3,7 +3,6 @@ import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-nati
 
 import type { StreamState } from "@/features/ai/useStreamingItinerary";
 import type { TripOnTripSnapshot } from "../types";
-import { PrimaryButton } from "@/shared/ui/Button";
 import { fontStyles } from "@/shared/theme/typography";
 
 import type {
@@ -11,11 +10,12 @@ import type {
   TripWorkspaceCollaborationViewModel,
   TripWorkspaceViewModel,
 } from "./adapters";
-import { EditableItineraryDayCard } from "./EditableItineraryDayCard";
+import { ItineraryTabView } from "./ItineraryTabView";
 import { RegenerateSheet } from "./RegenerateSheet";
 import { StopEditSheet } from "./StopEditSheet";
 import { useWorkspaceOverviewModel } from "./useWorkspaceOverviewModel";
 import type { WorkspaceAttentionItem, WorkspaceQuickAction } from "./workspaceCommandModel";
+import type { OverviewItineraryDayPreview } from "./overviewItineraryPreview";
 import type { WorkspaceTab } from "./WorkspaceTabBar";
 
 const QUICK_ACTION_ICONS: Partial<Record<WorkspaceTab, keyof typeof Ionicons.glyphMap>> = {
@@ -62,7 +62,7 @@ export function OverviewTab({
   });
 
   const command = overview.command;
-  const previewDays = (overview.itinerary?.days ?? []).slice(0, 3);
+  const previewDays = overview.itineraryDayPreviews;
 
   // Pill text for NEXT ACTION header
   const nextActionPill = overview.isStreaming
@@ -96,56 +96,26 @@ export function OverviewTab({
   return (
     <View className="flex-1">
       {showItineraryOnly ? (
-        /* ── Itinerary tab ─────────────────────────────────────────── */
-        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
-          {overview.isItineraryLoading && !overview.isStreaming ? (
-            <ActivityIndicator className="py-8" />
-          ) : overview.isItineraryMissing && !overview.isStreaming ? (
-            <View className="items-center gap-4 py-10">
-              <Text className="text-center text-[14px] leading-5 text-text-muted">
-                No itinerary yet. Generate one from the Overview tab.
-              </Text>
-            </View>
-          ) : overview.itinerary ? (
-            <View className="gap-3">
-              {overview.itinerary.days.map((day, dayIndex) => (
-                <EditableItineraryDayCard
-                  key={day.day_number}
-                  day={day}
-                  onAddStop={() => overview.setEditingStop({ dayIndex, stopIndex: null })}
-                  onEditStop={(stopIndex) => overview.setEditingStop({ dayIndex, stopIndex })}
-                  onRegenerate={
-                    !overview.isItineraryDirty
-                      ? () => overview.setRegeneratingDayIndex(dayIndex)
-                      : undefined
-                  }
-                />
-              ))}
-              {overview.isItineraryDirty ? (
-                <PrimaryButton
-                  label={overview.isSavingItinerary ? "Publishing..." : "Publish changes"}
-                  onPress={() => void overview.handlePublishChanges()}
-                  disabled={overview.isSavingItinerary}
-                  fullWidth
-                />
-              ) : null}
-              <Pressable
-                onPress={onStartStream}
-                disabled={overview.isItineraryDirty}
-                className={[
-                  "items-center justify-center rounded-full border border-border-strong py-2.5 active:opacity-70",
-                  overview.isItineraryDirty ? "opacity-50" : "",
-                ].join(" ")}
-              >
-                <Text className="text-[12px] font-semibold text-text-muted">
-                  {overview.isItineraryDirty
-                    ? "Publish changes before regenerating"
-                    : "Regenerate with AI"}
-                </Text>
-              </Pressable>
-            </View>
-          ) : null}
-        </ScrollView>
+        <ItineraryTabView
+          days={overview.itineraryDays}
+          allDayCount={overview.itinerary?.days.length ?? 0}
+          filter={overview.itineraryFilter}
+          onFilterChange={overview.setItineraryFilter}
+          isLoading={overview.isItineraryLoading}
+          isMissing={overview.isItineraryMissing}
+          isStreaming={overview.isStreaming}
+          isDirty={overview.isItineraryDirty}
+          isSaving={overview.isSavingItinerary}
+          streamText={overview.streamText}
+          error={overview.itineraryError}
+          onAddStop={(dayIndex) => overview.setEditingStop({ dayIndex, stopIndex: null })}
+          onEditStop={(dayIndex, stopIndex) =>
+            overview.setEditingStop({ dayIndex, stopIndex })
+          }
+          onPublish={() => void overview.handlePublishChanges()}
+          onRegenerateAll={onStartStream}
+          onCancelStream={onCancelStream}
+        />
       ) : (
         /* ── Overview tab ──────────────────────────────────────────── */
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
@@ -291,7 +261,7 @@ export function OverviewTab({
               </Text>
               {previewDays.length > 0 ? (
                 <Pressable onPress={() => onOpenTab("itinerary")}>
-                  <Text className="text-[12px] font-semibold text-amber">Open itinerary</Text>
+                  <Text className="text-[12px] font-semibold text-amber">View full itinerary</Text>
                 </Pressable>
               ) : null}
             </View>
@@ -317,37 +287,20 @@ export function OverviewTab({
                 </View>
               ) : previewDays.length > 0 ? (
                 previewDays.map((day, index) => (
-                  <View
-                    key={day.day_number}
-                    className={[
-                      "flex-row items-center px-4 py-3",
-                      index < previewDays.length - 1 ? "border-b border-border" : "",
-                    ].join(" ")}
-                  >
-                    <View className="mr-3 w-11">
-                      <Text
-                        className="text-[17px] text-espresso"
-                        style={fontStyles.uiSemibold}
-                      >
-                        {day.day_number}
-                      </Text>
-                      {day.date ? (
-                        <Text className="text-[10px] uppercase tracking-[0.5px] text-text-soft">
-                          {formatItineraryDate(day.date)}
-                        </Text>
-                      ) : null}
-                    </View>
-                    <View className="mr-3 w-px self-stretch bg-border" />
-                    <Text
-                      className="flex-1 text-[13px] text-espresso"
-                      style={fontStyles.uiMedium}
-                      numberOfLines={1}
-                    >
-                      {day.day_title?.trim() || `Day ${day.day_number}`}
-                    </Text>
-                  </View>
+                  <OverviewItineraryPreviewRow
+                    key={`${day.dayNumber}-${day.dayTitle}-${index}`}
+                    preview={day}
+                    isLast={index === previewDays.length - 1}
+                    onPress={() => onOpenTab("itinerary")}
+                  />
                 ))
-              ) : null}
+              ) : (
+                <View className="px-4 py-5">
+                  <Text className="text-[13px] leading-5 text-text-muted">
+                    No itinerary days available yet.
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
 
@@ -386,6 +339,70 @@ export function OverviewTab({
         </>
       ) : null}
     </View>
+  );
+}
+
+function OverviewItineraryPreviewRow({
+  preview,
+  isLast,
+  onPress,
+}: {
+  preview: OverviewItineraryDayPreview;
+  isLast: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`View ${preview.dayTitle}`}
+      className={[
+        "flex-row px-4 py-3 active:opacity-75",
+        isLast ? "" : "border-b border-border",
+      ].join(" ")}
+    >
+      <View className="mr-3 w-12">
+        <Text
+          className="text-[22px] leading-[24px] text-espresso"
+          style={fontStyles.displayMedium}
+        >
+          {preview.dayNumber}
+        </Text>
+        {preview.dateLabel ? (
+          <Text className="mt-0.5 text-[10px] uppercase tracking-[0.9px] text-text-soft">
+            {preview.dateLabel}
+          </Text>
+        ) : null}
+      </View>
+
+      <View className="mr-3 w-px self-stretch bg-border" />
+
+      <View className="min-w-0 flex-1">
+        <Text
+          className="text-[13px] leading-[19px] text-espresso"
+          style={fontStyles.uiSemibold}
+          numberOfLines={1}
+        >
+          {preview.dayTitle}
+        </Text>
+        <Text
+          className={[
+            "mt-0.5 text-[12px] leading-[18px]",
+            preview.hasStops ? "text-text-muted" : "text-text-soft",
+          ].join(" ")}
+          numberOfLines={1}
+        >
+          {preview.stopPreviewLine}
+        </Text>
+        <Text className="mt-0.5 text-[11px] leading-[16px] text-text-soft" numberOfLines={1}>
+          {preview.metaLine}
+        </Text>
+      </View>
+
+      <View className="ml-2 items-center justify-center">
+        <Ionicons name="chevron-forward" size={14} color="#8A7E74" />
+      </View>
+    </Pressable>
   );
 }
 
@@ -502,12 +519,6 @@ function TripBasicsGrid({ trip }: { trip: TripWorkspaceViewModel }) {
       ))}
     </View>
   );
-}
-
-function formatItineraryDate(dateStr: string): string {
-  const d = new Date(`${dateStr}T00:00:00`);
-  if (Number.isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 function chunkArray<T>(array: T[], size: number): T[][] {

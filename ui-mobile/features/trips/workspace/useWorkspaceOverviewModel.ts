@@ -13,9 +13,18 @@ import type {
 } from "./adapters";
 import type { StopEditPatch } from "./StopEditSheet";
 import {
+  buildItineraryTabDays,
+  type ItineraryFilterKey,
+  type ItineraryTabDay,
+} from "./itineraryPresentation";
+import {
   buildWorkspaceCommandModel,
   type WorkspaceCommandModel,
 } from "./workspaceCommandModel";
+import {
+  buildOverviewItineraryDayPreviews,
+  type OverviewItineraryDayPreview,
+} from "./overviewItineraryPreview";
 
 type Options = {
   trip: TripWorkspaceViewModel;
@@ -39,7 +48,11 @@ export type WorkspaceOverviewModel = {
   isStreaming: boolean;
   itineraryError: string | null;
   streamText: string | null;
+  itineraryFilter: ItineraryFilterKey;
+  itineraryDays: ItineraryTabDay[];
+  itineraryDayPreviews: OverviewItineraryDayPreview[];
   showFullItinerary: boolean;
+  setItineraryFilter: (value: ItineraryFilterKey) => void;
   setShowFullItinerary: (value: boolean) => void;
   setEditingStop: (value: { dayIndex: number; stopIndex: number | null } | null) => void;
   setRegeneratingDayIndex: (value: number | null) => void;
@@ -68,6 +81,7 @@ export function useWorkspaceOverviewModel({
     stopIndex: number | null;
   } | null>(null);
   const [regeneratingDayIndex, setRegeneratingDayIndex] = useState<number | null>(null);
+  const [itineraryFilter, setItineraryFilter] = useState<ItineraryFilterKey>("all");
   const [showFullItinerary, setShowFullItinerary] = useState(false);
   const applyInFlight = useRef(false);
 
@@ -108,6 +122,7 @@ export function useWorkspaceOverviewModel({
     setLastSyncedSaved(null);
     setEditingStop(null);
     setRegeneratingDayIndex(null);
+    setItineraryFilter("all");
     setSaveError(null);
     setShowFullItinerary(false);
     applyInFlight.current = false;
@@ -233,6 +248,14 @@ export function useWorkspaceOverviewModel({
   }
 
   const visibleItinerary = editableItinerary ?? savedItinerary;
+  const itineraryDays = useMemo(
+    () => buildItineraryTabDays(visibleItinerary, itineraryFilter),
+    [itineraryFilter, visibleItinerary],
+  );
+  const itineraryDayPreviews = useMemo(
+    () => buildOverviewItineraryDayPreviews(visibleItinerary, { maxDays: 3 }),
+    [visibleItinerary],
+  );
   const command = useMemo(
     () =>
       buildWorkspaceCommandModel({
@@ -276,7 +299,11 @@ export function useWorkspaceOverviewModel({
     isStreaming: isStillStreaming,
     itineraryError,
     streamText: streamState?.text ?? null,
+    itineraryFilter,
+    itineraryDays,
+    itineraryDayPreviews,
     showFullItinerary,
+    setItineraryFilter,
     setShowFullItinerary,
     setEditingStop,
     setRegeneratingDayIndex,

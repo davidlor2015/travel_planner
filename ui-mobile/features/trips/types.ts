@@ -201,3 +201,40 @@ export type TripListItem = {
   memberCount: number;
   status: "upcoming" | "active" | "past";
 };
+
+export type PlaceSuggestion = {
+  id: string;
+  label: string;
+  city: string | null;
+  region: string | null;
+  country: string | null;
+  country_code: string | null;
+  latitude: number | null;
+  longitude: number | null;
+};
+
+export type PlaceSearchApiSuggestion = {
+  id?: string | number | null;
+  place_id?: string | number | null;
+  label?: string | null;
+  display_name?: string | null;
+  name?: string | null;
+  city?: string | null;
+  region?: string | null;
+  state?: string | null;
+  country?: string | null;
+  country_code?: string | null;
+  latitude?: number | string | null;
+  longitude?: number | string | null;
+  lat?: number | string | null;
+  lon?: number | string | null;
+};
+
+export type PlaceSearchApiResponse =
+  | PlaceSearchApiSuggestion[]
+  | {
+      suggestions?: PlaceSearchApiSuggestion[] | null;
+      places?: PlaceSearchApiSuggestion[] | null;
+      results?: PlaceSearchApiSuggestion[] | null;
+      data?: PlaceSearchApiSuggestion[] | null;
+    };

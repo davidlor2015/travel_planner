@@ -1,42 +1,45 @@
 import { Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 import { fontStyles } from "@/shared/theme/typography";
 import type { TripOnTripBlocker } from "../types";
+import { buildBlockerStrip } from "./presentation";
 
 export function NeedsAttentionCard({ blockers }: { blockers: TripOnTripBlocker[] }) {
-  if (blockers.length === 0) return null;
+  const blocker = buildBlockerStrip(blockers);
+  if (!blocker) return null;
 
   return (
     <View
-      className="flex-row items-start gap-3 rounded-[14px] px-3.5 py-3"
-      style={{
-        backgroundColor: "rgba(184, 104, 69, 0.07)",
-        borderWidth: 1,
-        borderColor: "rgba(184, 104, 69, 0.22)",
-      }}
+      className="flex-row items-center gap-3 rounded-[14px] border border-divider bg-[#EAD7C9] px-4 py-3"
       accessibilityRole="alert"
       accessibilityLabel={`${blockers.length} item${blockers.length === 1 ? "" : "s"} need attention`}
     >
-      {/* Amber dot indicator */}
-      <View className="mt-[3px] h-2 w-2 flex-shrink-0 rounded-full bg-accent-ontrip" />
+      <Ionicons name="alert-circle-outline" size={16} color="#B86845" />
 
-      <View className="flex-1 gap-0.5">
+      <View className="min-w-0 flex-1">
         <Text
-          className="text-[10px] uppercase tracking-[1.5px] text-accent-ontrip"
-          style={fontStyles.uiSemibold}
+          className="text-[12px] leading-[18px] text-ontrip"
+          style={fontStyles.uiMedium}
+          numberOfLines={1}
         >
-          Needs attention
+          {blocker.title}
         </Text>
-        {blockers.map((blocker) => (
+        {blocker.detail ? (
           <Text
-            key={blocker.id}
-            className="text-[12px] leading-[18px] text-ontrip-muted"
+            className="text-[11px] leading-[16px] text-clay"
             style={fontStyles.uiRegular}
+            numberOfLines={1}
           >
-            {blocker.title}
+            {blocker.detail}
           </Text>
-        ))}
+        ) : null}
       </View>
+      {blocker.actionLabel ? (
+        <Text className="text-[12px] text-amber" style={fontStyles.uiSemibold}>
+          {blocker.actionLabel}
+        </Text>
+      ) : null}
     </View>
   );
 }

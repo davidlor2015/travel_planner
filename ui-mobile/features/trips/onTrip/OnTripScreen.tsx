@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import * as Linking from "expo-linking";
+import { Ionicons } from "@expo/vector-icons";
 import { type Href, useRouter } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -11,20 +12,21 @@ import {
 } from "@/features/trips/onTrip/eligibility";
 import { ScreenError } from "@/shared/ui/ScreenError";
 import { ScreenLoading } from "@/shared/ui/ScreenLoading";
-import { PrimaryButton } from "@/shared/ui/Button";
-import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
+import { fontStyles } from "@/shared/theme/typography";
 
-import type { TripOnTripSnapshot } from "../types";
-import { deriveOnTripViewModel, stopVariant, type StopVM } from "./adapters";
-import { HappeningNowCard } from "./HappeningNowCard";
+import type { TripExecutionStatus, TripOnTripSnapshot } from "../types";
+import { deriveOnTripViewModel, stopVariant } from "./adapters";
 import { useOnTripMutations } from "./hooks";
 import { LogStopFab } from "./LogStopFab";
 import { LogStopSheet } from "./LogStopSheet";
 import { NeedsAttentionCard } from "./NeedsAttentionCard";
 import { OnTripHeader } from "./OnTripHeader";
+import {
+  buildNavigateUrl,
+  buildOnTripDayHeader,
+} from "./presentation";
 import { TimelineRow } from "./TimelineRow";
 import { UnplannedStopRow } from "./UnplannedStopRow";
-import { buildNavigateUrl } from "./navigation";
 
 type Props = {
   tripId: number;
@@ -65,7 +67,12 @@ export function OnTripScreen({ tripId, tripTitle }: Props) {
     [rawSnapshot, mutations.statusPending, mutations.unplannedPendingIds],
   );
 
-  if (snapshotQuery.isLoading) return <ScreenLoading label="Loading your trip…" />;
+  const dayHeader = useMemo(
+    () => (rawSnapshot ? buildOnTripDayHeader(rawSnapshot, tripTitle) : null),
+    [rawSnapshot, tripTitle],
+  );
+
+  if (snapshotQuery.isLoading) return <ScreenLoading label="Loading your trip..." />;
 
   if (snapshotQuery.isError) {
     return (
@@ -76,23 +83,16 @@ export function OnTripScreen({ tripId, tripTitle }: Props) {
     );
   }
 
-  if (!rawSnapshot || !vm) return null;
+  if (!rawSnapshot || !vm || !dayHeader) return null;
 
   const nowKey = vm.now?.key ?? null;
   const nextKey = vm.next?.key ?? null;
-  const doneCount = vm.timeline.filter(
-    (s) => s.effectiveStatus === "confirmed" || s.effectiveStatus === "skipped",
-  ).length;
-  const totalCount = vm.timeline.length;
-  const progressLabel = totalCount > 0 ? `${doneCount} / ${totalCount} done` : undefined;
 
   const showNoStopsToday =
     rawSnapshot.mode === "active" &&
     !hasResolvedTodayStop(rawSnapshot) &&
     !isResolvedStop(vm.now) &&
     !isResolvedStop(rawSnapshot.next_stop);
-
-  const dayLabel = buildDayLabel(rawSnapshot);
 
   const navigateToStop = async (key: string) => {
     const stop =
@@ -114,7 +114,7 @@ export function OnTripScreen({ tripId, tripTitle }: Props) {
 
   const toggleStatus = (
     stopRef: string | null,
-    current: "planned" | "confirmed" | "skipped",
+    current: TripExecutionStatus,
     target: "confirmed" | "skipped",
   ) => {
     if (!stopRef || vm.isReadOnly) return;
@@ -129,104 +129,82 @@ export function OnTripScreen({ tripId, tripTitle }: Props) {
   return (
     <SafeAreaView className="flex-1 bg-surface-ontrip" edges={["top"]}>
       <OnTripHeader
-        title={tripTitle}
-        readOnly={vm.isReadOnly}
-        dayLabel={dayLabel}
-        progressLabel={progressLabel}
+        eyebrow={dayHeader.eyebrow}
         onBack={() =>
           router.canGoBack() ? router.back() : router.replace("/(tabs)/trips")
         }
       />
 
       <ScrollView
-        contentContainerClassName="gap-5 pb-36"
-        contentContainerStyle={{ paddingTop: 20, paddingHorizontal: 16 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }}
         showsVerticalScrollIndicator={false}
       >
+        <View className="pt-1">
+          <Text
+            className="text-[28px] leading-[31px] text-ontrip"
+            style={fontStyles.displayMedium}
+            numberOfLines={2}
+          >
+            {dayHeader.title}
+          </Text>
+          <Text className="mt-1.5 text-[12px] leading-[18px] text-ontrip-muted">
+            {dayHeader.meta}
+            {vm.isReadOnly ? " · Read-only" : ""}
+          </Text>
+        </View>
+
+        {vm.blockers.length > 0 ? (
+          <View className="mt-5">
+            <NeedsAttentionCard blockers={vm.blockers} />
+          </View>
+        ) : null}
+
         {showNoStopsToday ? (
           <NoStopsTodayCard onOpenWorkspace={openFullWorkspace} />
         ) : (
-          <>
-            <NeedsAttentionCard blockers={vm.blockers} />
+          <View className="mt-5">
+            <Text
+              className="mb-2 text-[11px] uppercase leading-[16px] tracking-[1.76px] text-ontrip-muted"
+              style={fontStyles.uiRegular}
+            >
+              Today
+            </Text>
 
-            {vm.now ? (
-              <HappeningNowCard
-                stop={vm.now}
-                onNavigate={navigateAction(vm.now.key)}
-                onConfirm={() =>
-                  toggleStatus(vm.now?.stop_ref ?? null, vm.now!.effectiveStatus, "confirmed")
-                }
-                onSkip={() =>
-                  toggleStatus(vm.now?.stop_ref ?? null, vm.now!.effectiveStatus, "skipped")
-                }
-              />
-            ) : null}
-
-            {/* Next stop peek — shown when there's a now + a distinct next */}
-            {vm.now && vm.next ? (
-              <NextPeek
-                stop={vm.next}
-                onNavigate={navigateAction(vm.next.key)}
-              />
-            ) : null}
-
-            {/* Today timeline */}
-            <View>
-              <TodaySectionHeader
-                totalCount={totalCount}
-                doneCount={doneCount}
-              />
-
-              {vm.timeline.length === 0 ? (
-                <Text className="text-sm text-ontrip-muted" style={fontStyles.uiRegular}>
-                  No planned stops for today. You can still log what happens below.
-                </Text>
-              ) : (
-                <View
-                  className="mt-4 rounded-[20px] border border-border-ontrip bg-surface-ontrip-raised"
-                  style={{ overflow: "hidden" }}
-                >
-                  {vm.timeline.map((stop, idx) => (
-                    <View
-                      key={stop.key}
-                      className="px-4 pt-4"
-                      style={
-                        idx < vm.timeline.length - 1
-                          ? { borderBottomWidth: 1, borderBottomColor: "#E4DBCB", borderStyle: "dashed" }
-                          : { paddingBottom: 4 }
-                      }
-                    >
-                      <TimelineRow
-                        stop={stop}
-                        variant={stopVariant(stop, nowKey, nextKey)}
-                        isLast={idx === vm.timeline.length - 1}
-                        onNavigate={navigateAction(stop.key)}
-                        onConfirm={
-                          stop.stop_ref
-                            ? () =>
-                                toggleStatus(stop.stop_ref, stop.effectiveStatus, "confirmed")
-                            : undefined
-                        }
-                        onSkip={
-                          stop.stop_ref
-                            ? () =>
-                                toggleStatus(stop.stop_ref, stop.effectiveStatus, "skipped")
-                            : undefined
-                        }
-                      />
-                    </View>
-                  ))}
-                </View>
-              )}
-            </View>
-          </>
+            {vm.timeline.length === 0 ? (
+              <Text className="text-[13px] leading-5 text-ontrip-muted" style={fontStyles.uiRegular}>
+                No planned stops for today. You can still log what happens below.
+              </Text>
+            ) : (
+              <View>
+                {vm.timeline.map((stop, idx) => (
+                  <TimelineRow
+                    key={stop.key}
+                    stop={stop}
+                    variant={stopVariant(stop, nowKey, nextKey)}
+                    isLast={idx === vm.timeline.length - 1}
+                    onNavigate={navigateAction(stop.key)}
+                    onConfirm={
+                      stop.stop_ref
+                        ? () => toggleStatus(stop.stop_ref, stop.effectiveStatus, "confirmed")
+                        : undefined
+                    }
+                    onSkip={
+                      stop.stop_ref
+                        ? () => toggleStatus(stop.stop_ref, stop.effectiveStatus, "skipped")
+                        : undefined
+                    }
+                  />
+                ))}
+              </View>
+            )}
+          </View>
         )}
 
         {vm.unplanned.length > 0 ? (
-          <View>
+          <View className="mt-6">
             <Text
-              className="mb-3 text-[10px] uppercase tracking-[2px] text-ontrip-muted"
-              style={fontStyles.uiMedium}
+              className="mb-3 text-[11px] uppercase tracking-[1.76px] text-ontrip-muted"
+              style={fontStyles.uiRegular}
             >
               Along the way
             </Text>
@@ -246,28 +224,30 @@ export function OnTripScreen({ tripId, tripTitle }: Props) {
           </View>
         ) : null}
 
-        <View className="flex-row items-center justify-between border-t border-border-ontrip pt-4">
-          <Text
-            className="flex-1 pr-3 text-[13px] leading-5 text-ontrip-muted"
-            style={fontStyles.uiRegular}
+        <View className="mt-5 items-center">
+          <Pressable
+            onPress={openFullWorkspace}
+            className="flex-row items-center gap-1.5 px-3 py-2 active:opacity-70"
           >
-            The saved itinerary remains your plan of record.
-          </Text>
-          <Pressable onPress={openFullWorkspace} hitSlop={8}>
-            <Text className="text-[13px] text-ontrip-strong" style={fontStyles.uiSemibold}>
-              Open workspace
+            <Ionicons name="open-outline" size={12} color="#8A7866" />
+            <Text className="text-[12px] leading-[18px] text-ontrip-muted">
+              Open full workspace
             </Text>
           </Pressable>
         </View>
-      </ScrollView>
 
-      {!vm.isReadOnly ? <LogStopFab onPress={() => setLogModalOpen(true)} /> : null}
+        {!vm.isReadOnly ? (
+          <View className="mt-3">
+            <LogStopFab onPress={() => setLogModalOpen(true)} />
+          </View>
+        ) : null}
+      </ScrollView>
 
       {mutations.feedback ? (
         <Pressable
           onPress={mutations.dismissFeedback}
           className={[
-            "absolute bottom-[90px] left-4 right-4 rounded-[16px] px-4 py-3",
+            "absolute bottom-[24px] left-5 right-5 rounded-[16px] px-4 py-3",
             mutations.feedback.kind === "error" ? "bg-danger" : "bg-olive",
           ].join(" ")}
         >
@@ -291,127 +271,11 @@ export function OnTripScreen({ tripId, tripTitle }: Props) {
   );
 }
 
-// ─── Local components ─────────────────────────────────────────────────────────
-
-function TodaySectionHeader({
-  totalCount,
-  doneCount,
-}: {
-  totalCount: number;
-  doneCount: number;
-}) {
-  const remaining = totalCount - doneCount;
-  const subLabel =
-    doneCount === totalCount && totalCount > 0
-      ? "all done"
-      : doneCount > 0
-        ? `${remaining} remaining`
-        : "";
-
-  return (
-    <View className="flex-row items-baseline justify-between">
-      <View>
-        <Text
-          className="text-[10px] uppercase tracking-[2px] text-ontrip-muted"
-          style={fontStyles.uiMedium}
-        >
-          Today
-        </Text>
-        <Text
-          className="mt-1 text-ontrip"
-          style={[textScaleStyles.displayL, { fontSize: 22, lineHeight: 26 }]}
-        >
-          {totalCount > 0 ? (
-            <>
-              {totalCount} {totalCount === 1 ? "stop" : "stops"}
-              {subLabel ? (
-                <Text className="text-ontrip-muted" style={fontStyles.displayMedium}>
-                  {", "}
-                  <Text style={{ fontStyle: "italic" }}>{subLabel}.</Text>
-                </Text>
-              ) : null}
-            </>
-          ) : (
-            "No stops planned."
-          )}
-        </Text>
-      </View>
-      {totalCount > 0 ? (
-        <Text
-          className="text-[10px] uppercase tracking-[1.5px] text-ontrip-muted"
-          style={fontStyles.uiMedium}
-        >
-          {doneCount} / {totalCount}
-        </Text>
-      ) : null}
-    </View>
-  );
-}
-
-function NextPeek({
-  stop,
-  onNavigate,
-}: {
-  stop: StopVM;
-  onNavigate?: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onNavigate}
-      className="flex-row items-center gap-4 rounded-[18px] border border-border-ontrip bg-surface-ontrip-raised px-4 py-4 active:opacity-80"
-      disabled={!onNavigate}
-    >
-      {/* Time */}
-      {stop.time ? (
-        <>
-          <Text
-            className="text-[20px] text-accent-ontrip"
-            style={fontStyles.displaySemibold}
-          >
-            {stop.time.trim()}
-          </Text>
-          <View className="h-8 w-px bg-border-ontrip" />
-        </>
-      ) : null}
-
-      {/* Details */}
-      <View className="flex-1">
-        <Text
-          className="mb-0.5 text-[10px] uppercase tracking-[2px] text-ontrip-muted"
-          style={fontStyles.uiMedium}
-        >
-          Next
-        </Text>
-        <Text
-          className="text-[14px] text-ontrip"
-          style={fontStyles.uiSemibold}
-          numberOfLines={1}
-        >
-          {stop.title ?? "Untitled stop"}
-        </Text>
-        {stop.location ? (
-          <Text
-            className="mt-0.5 text-[12px] text-ontrip-muted"
-            style={fontStyles.uiRegular}
-            numberOfLines={1}
-          >
-            {stop.location}
-          </Text>
-        ) : null}
-      </View>
-
-      {onNavigate ? (
-        <Text className="text-ontrip-muted" style={{ fontSize: 18 }}>›</Text>
-      ) : null}
-    </Pressable>
-  );
-}
-
 function NoStopsTodayCard({ onOpenWorkspace }: { onOpenWorkspace: () => void }) {
   return (
-    <View className="gap-4 rounded-[20px] border border-border-ontrip bg-surface-ontrip-raised px-5 py-6">
+    <View className="mt-6 gap-4 rounded-[18px] border border-border-ontrip bg-surface-ontrip-raised px-5 py-6">
       <View>
-        <Text className="text-[18px] text-ontrip" style={fontStyles.uiSemibold}>
+        <Text className="text-[17px] text-ontrip" style={fontStyles.uiSemibold}>
           No stops are planned for today.
         </Text>
         <Text className="mt-2 text-[13px] leading-5 text-ontrip-muted" style={fontStyles.uiRegular}>
@@ -419,13 +283,14 @@ function NoStopsTodayCard({ onOpenWorkspace }: { onOpenWorkspace: () => void }) 
           workspace to review the trip plan or adjust the itinerary.
         </Text>
       </View>
-      <PrimaryButton label="Open full workspace" onPress={onOpenWorkspace} fullWidth />
+      <Pressable
+        onPress={onOpenWorkspace}
+        className="h-11 items-center justify-center rounded-full border border-border-ontrip-strong bg-surface-ontrip px-4 active:opacity-75"
+      >
+        <Text className="text-[13px] text-ontrip-strong" style={fontStyles.uiSemibold}>
+          Open full workspace
+        </Text>
+      </Pressable>
     </View>
   );
-}
-
-function buildDayLabel(snapshot: TripOnTripSnapshot): string {
-  const day = snapshot.today.day_number;
-  if (typeof day === "number" && day > 0) return `Day ${day} · On-Trip`;
-  return "On-Trip";
 }

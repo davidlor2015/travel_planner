@@ -17,6 +17,7 @@ import { ScreenLoading } from "@/shared/ui/ScreenLoading";
 import { BookingsTab } from "./BookingsTab";
 import { BudgetTab } from "./BudgetTab";
 import { MembersTab } from "./MembersTab";
+import { MapTab } from "./MapTab";
 import { OverviewTab } from "./OverviewTab";
 import { PackingTab } from "./PackingTab";
 import { WorkspaceTabBar, type WorkspaceTab } from "./WorkspaceTabBar";
@@ -97,18 +98,19 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
       tabs.push({ key: "bookings", label: "Bookings" });
       tabs.push({ key: "budget", label: "Budget" });
       tabs.push({ key: "packing", label: "Packing" });
+      if (ENABLE_MAP) {
+        tabs.push({ key: "map", label: "Map" });
+      }
     }
-    tabs.push({ key: "members", label: "Members" });
-    // Map tab: gated behind EXPO_PUBLIC_ENABLE_MAP flag (not yet wired to native map SDK)
-    if (ENABLE_MAP) {
-      // Map would go here when SDK is integrated
+    if (workspace.showGroupCoordination) {
+      tabs.push({ key: "members", label: "People" });
     }
     // Chat tab: only when collaboration active (>1 joined member), mirrors web collaborationGate
     if (collaborationActive) {
       // Chat tab not yet ported (web uses local storage); placeholder for future slice
     }
     return tabs;
-  }, [hasSavedItinerary, workspace.tripRaw]);
+  }, [hasSavedItinerary, workspace.showGroupCoordination, workspace.tripRaw]);
 
   // Keep activeTab valid when visible set changes
   const resolvedTab: WorkspaceTab = useMemo(
@@ -148,6 +150,7 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
         onCreatePress={() => setCreateOpen(true)}
         onEditPress={() => setEditOpen(true)}
         onMembersPress={() => setActiveTab("members")}
+        showMembersButton={workspace.showGroupCoordination}
       />
 
       {canOpenLiveView ? (
@@ -192,6 +195,7 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
       {resolvedTab === "bookings" && <BookingsTab tripId={tripId} />}
       {resolvedTab === "budget" && <BudgetTab tripId={tripId} />}
       {resolvedTab === "packing" && <PackingTab tripId={tripId} />}
+      {resolvedTab === "map" && <MapTab tripId={tripId} />}
       {resolvedTab === "members" && (
         <MembersTab
           trip={trip}

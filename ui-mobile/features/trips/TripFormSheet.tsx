@@ -13,7 +13,9 @@ import { PrimaryButton, SecondaryButton } from "@/shared/ui/Button";
 import { ScreenHeader } from "@/shared/ui/ScreenHeader";
 import { TextInputField } from "@/shared/ui/TextInputField";
 
-import type { TripCreate, TripResponse, TripUpdate } from "./types";
+import { PlaceAutocompleteInput } from "./PlaceAutocompleteInput";
+import type { PlaceSuggestion, TripCreate, TripResponse, TripUpdate } from "./types";
+import { usePlaceAutocomplete } from "./usePlaceAutocomplete";
 import {
   BUDGET_OPTIONS,
   INTEREST_OPTIONS,
@@ -30,6 +32,7 @@ export type TripFormValue = {
   budget?: string;
   pace?: string;
   interests?: string[];
+  selectedDestinationPlace?: PlaceSuggestion | null;
 };
 
 type Props = {
@@ -55,6 +58,7 @@ function toInitialValue(
     budget:      undefined,
     pace:        undefined,
     interests:   [],
+    selectedDestinationPlace: null,
   };
 }
 
@@ -110,6 +114,21 @@ export function TripFormSheet({
   onClose,
   onSubmit,
 }: Props) {
+  const {
+    query: destinationQuery,
+    suggestions: placeSuggestions,
+    selectedPlace,
+    isLoading: isSearchingPlaces,
+    error: placeSearchError,
+    hasSearched: hasSearchedPlaces,
+    minQueryLength,
+    onQueryChange: onDestinationQueryChange,
+    selectSuggestion: onDestinationSuggestionSelect,
+    reset: resetDestinationAutocomplete,
+  } = usePlaceAutocomplete({
+    debounceMs: 300,
+    minQueryLength: 2,
+  });
   const [value, setValue] = useState<TripFormValue>(toInitialValue(mode, trip));
   const [errors, setErrors] = useState<
     Partial<Record<keyof TripFormValue, string>>
@@ -117,9 +136,25 @@ export function TripFormSheet({
 
   useEffect(() => {
     if (!visible) return;
-    setValue(toInitialValue(mode, trip));
+    const initial = toInitialValue(mode, trip);
+    setValue(initial);
+    resetDestinationAutocomplete(initial.destination);
     setErrors({});
-  }, [trip, visible, mode]);
+  }, [trip, visible, mode, resetDestinationAutocomplete]);
+
+  useEffect(() => {
+    setValue((current) => {
+      if (current.destination === destinationQuery) return current;
+      return { ...current, destination: destinationQuery };
+    });
+  }, [destinationQuery]);
+
+  useEffect(() => {
+    setValue((current) => {
+      if (current.selectedDestinationPlace === selectedPlace) return current;
+      return { ...current, selectedDestinationPlace: selectedPlace };
+    });
+  }, [selectedPlace]);
 
   const titleLabel =
     mode === "create" ? "Create Trip" : "Edit Trip";
@@ -146,10 +181,15 @@ export function TripFormSheet({
   }
 
   function handleSubmit() {
-    const nextErrors = validate(value);
+    const submitValue: TripFormValue = {
+      ...value,
+      destination: destinationQuery,
+      selectedDestinationPlace: selectedPlace,
+    };
+    const nextErrors = validate(submitValue);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
-    void onSubmit(value);
+    void onSubmit(submitValue);
   }
 
   return (
@@ -187,13 +227,17 @@ export function TripFormSheet({
                   onChangeText={(v) => setValue((c) => ({ ...c, title: v }))}
                   error={errors.title}
                 />
-                <TextInputField
+                <PlaceAutocompleteInput
                   label="Destination"
                   placeholder="e.g. Rome, Italy"
-                  value={value.destination}
-                  onChangeText={(v) =>
-                    setValue((c) => ({ ...c, destination: v }))
-                  }
+                  value={destinationQuery}
+                  minQueryLength={minQueryLength}
+                  loading={isSearchingPlaces}
+                  searchError={placeSearchError}
+                  hasSearched={hasSearchedPlaces}
+                  suggestions={placeSuggestions}
+                  onChangeText={onDestinationQueryChange}
+                  onSelectSuggestion={onDestinationSuggestionSelect}
                   error={errors.destination}
                 />
                 <View className="flex-row gap-3">

@@ -2,6 +2,7 @@ import { apiFetch, apiRequest } from "@/shared/api/client";
 import { executeWithRetry } from "@/shared/api/executeWithRetry";
 
 import type {
+  PlaceSearchApiResponse,
   TripCreate,
   TripExecutionEvent,
   TripExecutionStatus,
@@ -56,6 +57,14 @@ export async function deleteTrip(tripId: number): Promise<void> {
 
 export async function getTripSummaries(): Promise<TripSummary[]> {
   return apiRequest<TripSummary[]>("/v1/trips/summaries");
+}
+
+export async function searchPlaces(query: string): Promise<PlaceSearchApiResponse> {
+  const normalized = query.trim();
+  if (!normalized) return { suggestions: [] };
+  return apiRequest<PlaceSearchApiResponse>(
+    `/v1/search/places?q=${encodeURIComponent(normalized)}`,
+  );
 }
 
 export async function updateWorkspaceLastSeen(

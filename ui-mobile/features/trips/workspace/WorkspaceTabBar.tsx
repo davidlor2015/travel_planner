@@ -6,7 +6,8 @@ export type WorkspaceTab =
   | "bookings"
   | "budget"
   | "packing"
-  | "members";
+  | "members"
+  | "map";
 
 interface WorkspaceTabBarProps {
   visibleTabs: { key: WorkspaceTab; label: string }[];
