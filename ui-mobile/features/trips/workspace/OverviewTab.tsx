@@ -40,6 +40,37 @@ export function OverviewTab({
 }: Props) {
   return (
     <ScrollView contentContainerClassName="gap-4 px-4 pb-8 pt-4">
+      {/* Most actionable first: the itinerary plan and AI generation */}
+      <ItinerarySection
+        tripId={trip.id}
+        streamState={streamState}
+        onStartStream={onStartStream}
+        onCancelStream={onCancelStream}
+      />
+
+      {/* Readiness snapshot — quick-scan logistics health */}
+      {summary ? (
+        <SectionCard eyebrow="At a glance" title="Readiness">
+          <View className="flex-row gap-3">
+            <StatBlock
+              label="Packing"
+              value={`${summary.packingChecked}/${summary.packingTotal}`}
+            />
+            <StatBlock
+              label="Budget"
+              value={
+                summary.budgetLimit != null
+                  ? `$${summary.budgetSpent.toFixed(0)} / $${summary.budgetLimit.toFixed(0)}`
+                  : `$${summary.budgetSpent.toFixed(0)} spent`
+              }
+              highlight={summary.isOverBudget ? "error" : undefined}
+            />
+            <StatBlock label="Bookings" value={String(summary.reservationCount)} />
+          </View>
+        </SectionCard>
+      ) : null}
+
+      {/* Trip basics — reference info pushed to the bottom */}
       <SectionCard
         eyebrow="Trip basics"
         title="Destination and timing"
@@ -70,34 +101,6 @@ export function OverviewTab({
           </View>
         </View>
       </SectionCard>
-
-      {summary ? (
-        <SectionCard eyebrow="At a glance" title="Readiness">
-          <View className="flex-row gap-3">
-            <StatBlock
-              label="Packing"
-              value={`${summary.packingChecked}/${summary.packingTotal}`}
-            />
-            <StatBlock
-              label="Budget"
-              value={
-                summary.budgetLimit != null
-                  ? `$${summary.budgetSpent.toFixed(0)} / $${summary.budgetLimit.toFixed(0)}`
-                  : `$${summary.budgetSpent.toFixed(0)} spent`
-              }
-              highlight={summary.isOverBudget ? "error" : undefined}
-            />
-            <StatBlock label="Bookings" value={String(summary.reservationCount)} />
-          </View>
-        </SectionCard>
-      ) : null}
-
-      <ItinerarySection
-        tripId={trip.id}
-        streamState={streamState}
-        onStartStream={onStartStream}
-        onCancelStream={onCancelStream}
-      />
     </ScrollView>
   );
 }

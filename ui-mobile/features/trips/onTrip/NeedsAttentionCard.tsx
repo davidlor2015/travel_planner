@@ -7,26 +7,34 @@ export function NeedsAttentionCard({ blockers }: { blockers: TripOnTripBlocker[]
   if (blockers.length === 0) return null;
 
   return (
-    <View className="rounded-[20px] border border-border-ontrip-strong bg-surface-ontrip-raised p-4">
-      <Text
-        className="mb-3 text-[10px] uppercase tracking-[2px] text-accent-ontrip"
-        style={fontStyles.uiSemibold}
-      >
-        Needs attention
-      </Text>
-      <View className="gap-2">
+    <View
+      className="flex-row items-start gap-3 rounded-[14px] px-3.5 py-3"
+      style={{
+        backgroundColor: "rgba(184, 104, 69, 0.07)",
+        borderWidth: 1,
+        borderColor: "rgba(184, 104, 69, 0.22)",
+      }}
+      accessibilityRole="alert"
+      accessibilityLabel={`${blockers.length} item${blockers.length === 1 ? "" : "s"} need attention`}
+    >
+      {/* Amber dot indicator */}
+      <View className="mt-[3px] h-2 w-2 flex-shrink-0 rounded-full bg-accent-ontrip" />
+
+      <View className="flex-1 gap-0.5">
+        <Text
+          className="text-[10px] uppercase tracking-[1.5px] text-accent-ontrip"
+          style={fontStyles.uiSemibold}
+        >
+          Needs attention
+        </Text>
         {blockers.map((blocker) => (
-          <View
+          <Text
             key={blocker.id}
-            className="rounded-[14px] border border-border-ontrip bg-surface-ontrip px-4 py-3"
+            className="text-[12px] leading-[18px] text-ontrip-muted"
+            style={fontStyles.uiRegular}
           >
-            <Text className="text-[14px] text-ontrip" style={fontStyles.uiSemibold}>
-              {blocker.title}
-            </Text>
-            <Text className="mt-0.5 text-[13px] leading-5 text-ontrip-muted" style={fontStyles.uiRegular}>
-              {blocker.detail}
-            </Text>
-          </View>
+            {blocker.title}
+          </Text>
         ))}
       </View>
     </View>

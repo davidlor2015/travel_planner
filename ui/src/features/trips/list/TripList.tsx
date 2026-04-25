@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import { type Trip } from "../../../shared/api/trips";
@@ -28,6 +28,7 @@ import { TripWorkspaceSection } from "./TripWorkspaceSection";
 import { useTripWorkspaceModel } from "./useTripWorkspaceModel";
 import { isCollaborationActive } from "../workspace/helpers/collaborationGate";
 import { OnTripCompactMode } from "../workspace/OnTripCompactMode";
+import { useOnTripMutations } from "../workspace/useOnTripMutations";
 
 interface TripListProps {
   token: string;
@@ -92,6 +93,25 @@ export const TripList = ({
     next.delete("from");
     setSearchParams(next, { replace: true });
   }, [model, searchParams, setSearchParams]);
+
+  // On-trip mutations hook — called unconditionally so hook order is stable
+  // across the early returns below. The hook handles null tripId / snapshot.
+  const onTripSnapshotRefresh = useCallback(
+    (snap: Parameters<typeof model.actions.updateOnTripSnapshot>[1]) => {
+      const selectedTrip = model.selection.selectedTrip;
+      if (selectedTrip) model.actions.updateOnTripSnapshot(selectedTrip.id, snap);
+    },
+    // model reference is stable; model.selection.selectedTrip and
+    // model.actions.updateOnTripSnapshot are the only accessed members.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [model],
+  );
+  const onTripMutations = useOnTripMutations({
+    token,
+    tripId: model.selection.selectedTrip?.id ?? null,
+    snapshot: model.derived.selectedOnTripSnapshot ?? null,
+    onSnapshotRefresh: onTripSnapshotRefresh,
+  });
 
   if (model.status.loading) return <TripListLoadingSkeleton />;
 
@@ -390,12 +410,16 @@ export const TripList = ({
             </section>
           ) : selectedIsOnTripCompactMode && selectedOnTripSnapshot ? (
             <OnTripCompactMode
-              token={token}
               trip={selectedTrip}
-              snapshot={selectedOnTripSnapshot}
-              onSnapshotRefresh={(snapshot) =>
-                updateOnTripSnapshot(selectedTrip.id, snapshot)
-              }
+              viewSnapshot={onTripMutations.viewSnapshot ?? selectedOnTripSnapshot}
+              setStopStatus={onTripMutations.setStopStatus}
+              isUpdatingStop={onTripMutations.isUpdatingStop}
+              feedback={onTripMutations.feedback}
+              dismissFeedback={onTripMutations.dismissFeedback}
+              logUnplannedStop={onTripMutations.logUnplannedStop}
+              removeUnplannedStop={onTripMutations.removeUnplannedStop}
+              isLoggingUnplanned={onTripMutations.isLoggingUnplanned}
+              unplannedPendingIds={onTripMutations.unplannedPendingIds}
               onOpenFullWorkspace={() => {
                 dismissOnTripCompactMode(selectedTrip.id);
                 openWorkspaceTab("overview");

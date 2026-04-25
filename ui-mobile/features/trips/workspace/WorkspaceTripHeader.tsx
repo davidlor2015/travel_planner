@@ -11,8 +11,12 @@ import { getTripImageUrl, getTripTagline } from "./helpers/tripVisuals";
 type Props = {
   trip: TripWorkspaceViewModel;
   summary: TripSummaryViewModel | null;
+  /** Opens the trip switcher — triggered by pressing the trip title area. */
   onTripPress: () => void;
+  /** Opens the edit trip sheet. */
   onEditPress: () => void;
+  /** Opens the members / invite sheet. */
+  onMembersPress: () => void;
 };
 
 function buildCountdownLabel(trip: TripWorkspaceViewModel): {
@@ -55,6 +59,7 @@ export function WorkspaceTripHeader({
   summary,
   onTripPress,
   onEditPress,
+  onMembersPress,
 }: Props) {
   const imageUrl = getTripImageUrl({ id: trip.id, destination: trip.destination });
   const tagline = getTripTagline({ destination: trip.destination, durationDays: trip.durationDays });
@@ -109,28 +114,39 @@ export function WorkspaceTripHeader({
           <View className="flex-row items-center gap-2">
             <GlassButton
               icon="people-outline"
-              onPress={onTripPress}
-              accessibilityLabel="Manage group"
+              onPress={onMembersPress}
+              accessibilityLabel="View trip members"
+              accessibilityHint="Opens the members and invite panel"
             />
             <GlassButton
               icon="pencil-outline"
               onPress={onEditPress}
-              accessibilityLabel="Edit trip"
+              accessibilityLabel="Edit trip details"
+              accessibilityHint="Opens the edit trip form"
             />
           </View>
         </View>
 
         {/* Bottom: title + meta + stats */}
         <View className="gap-3">
-          {/* Title + tagline */}
-          <View className="max-w-[92%]">
-            <Text
-              className="text-ivory leading-tight"
-              style={[fontStyles.displaySemibold, { fontSize: 34, lineHeight: 38 }]}
-              numberOfLines={2}
-            >
-              {trip.title}
-            </Text>
+          {/* Title + tagline — tap to switch trips */}
+          <Pressable
+            onPress={onTripPress}
+            className="max-w-[92%] active:opacity-75"
+            accessibilityRole="button"
+            accessibilityLabel={`Switch trip — currently: ${trip.title}`}
+            accessibilityHint="Tap to open the trip switcher"
+          >
+            <View className="flex-row items-center gap-1.5">
+              <Text
+                className="text-ivory leading-tight"
+                style={[fontStyles.displaySemibold, { fontSize: 34, lineHeight: 38 }]}
+                numberOfLines={2}
+              >
+                {trip.title}
+              </Text>
+              <Ionicons name="chevron-down" size={16} color="rgba(255,255,255,0.45)" style={{ marginTop: 4 }} />
+            </View>
             <Text
               className="mt-0.5 text-[13px] italic text-white/55"
               style={fontStyles.displayMedium}
@@ -141,7 +157,7 @@ export function WorkspaceTripHeader({
             <Text className="mt-2 text-[10px] font-semibold uppercase tracking-[1.2px] text-white/40">
               Live trip workspace · itinerary + logistics
             </Text>
-          </View>
+          </Pressable>
 
           {/* Destination + date metadata */}
           <View className="flex-row flex-wrap gap-x-3 gap-y-2">
@@ -178,15 +194,19 @@ function GlassButton({
   icon,
   onPress,
   accessibilityLabel,
+  accessibilityHint,
 }: {
   icon: React.ComponentProps<typeof Ionicons>["name"];
   onPress: () => void;
   accessibilityLabel: string;
+  accessibilityHint?: string;
 }) {
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
       className="h-10 w-10 items-center justify-center rounded-xl active:opacity-80"
       style={{
         backgroundColor: "rgba(255,255,255,0.12)",

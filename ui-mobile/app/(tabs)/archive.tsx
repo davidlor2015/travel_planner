@@ -1,60 +1,236 @@
-import { useMemo } from "react";
-import { FlatList, View } from "react-native";
+import { useCallback, useRef } from "react";
+import {
+  Pressable,
+  SectionList,
+  Text,
+  TextInput,
+  View,
+  type SectionListRenderItemInfo,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { type Href, router } from "expo-router";
 
-import { TripCard } from "@/features/trips/TripCard";
-import { toTripListItem } from "@/features/trips/adapters";
-import { useTripsQuery, useTripSummariesQuery } from "@/features/trips/hooks";
-import { EmptyState } from "@/shared/ui/EmptyState";
-import { ScreenHeader } from "@/shared/ui/ScreenHeader";
+import {
+  useArchiveScreen,
+} from "@/features/trips/archive/useArchiveScreen";
+import type { ArchiveTripViewModel, ArchiveYearGroup } from "@/features/trips/archive/archiveUtils";
+import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
 import { ScreenLoading } from "@/shared/ui/ScreenLoading";
 
+// ─── Archive trip card ───────────────────────────────────────────────────────
+
+function ArchiveTripCard({
+  trip,
+  onPress,
+}: {
+  trip: ArchiveTripViewModel;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${trip.title}, ${trip.destination}`}
+      className="active:opacity-70"
+    >
+      <View className="flex-row items-center gap-3 rounded-[18px] border border-smoke bg-white px-4 py-4">
+        {/* Accent dot */}
+        <View className="h-2 w-2 flex-shrink-0 rounded-full bg-amber opacity-60 mt-[2px]" />
+
+        <View className="flex-1 gap-0.5">
+          <Text
+            style={textScaleStyles.titleM}
+            className="text-espresso"
+            numberOfLines={1}
+          >
+            {trip.title}
+          </Text>
+          <Text
+            style={fontStyles.uiRegular}
+            className="text-[13px] text-muted"
+            numberOfLines={1}
+          >
+            {trip.destination}
+          </Text>
+          <View className="mt-1 flex-row items-center gap-2">
+            <Text style={fontStyles.uiMedium} className="text-[11px] text-flint">
+              {trip.dateRange}
+            </Text>
+            <Text className="text-[11px] text-flint opacity-40">·</Text>
+            <Text style={fontStyles.uiMedium} className="text-[11px] text-flint">
+              {trip.duration}
+            </Text>
+          </View>
+        </View>
+
+        <Ionicons name="chevron-forward" size={14} color="#8A7E74" />
+      </View>
+    </Pressable>
+  );
+}
+
+// ─── Year section header ─────────────────────────────────────────────────────
+
+function YearHeader({ year, count }: { year: number; count: number }) {
+  return (
+    <View className="flex-row items-baseline gap-2 pb-2 pt-5">
+      <Text style={textScaleStyles.displayL} className="text-espresso">
+        {year}
+      </Text>
+      <Text style={fontStyles.uiMedium} className="text-[12px] text-muted">
+        {count} trip{count === 1 ? "" : "s"}
+      </Text>
+    </View>
+  );
+}
+
+// ─── Search bar ──────────────────────────────────────────────────────────────
+
+function SearchBar({
+  value,
+  onChangeText,
+  onClear,
+}: {
+  value: string;
+  onChangeText: (q: string) => void;
+  onClear: () => void;
+}) {
+  const inputRef = useRef<TextInput>(null);
+
+  return (
+    <View className="mx-4 mb-3 flex-row items-center gap-2 rounded-[14px] border border-smoke bg-white px-3.5 py-2.5">
+      <Ionicons name="search-outline" size={16} color="#8A7E74" />
+      <TextInput
+        ref={inputRef}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder="Search destinations or trips…"
+        placeholderTextColor="#C9BCA8"
+        returnKeyType="search"
+        clearButtonMode="never"
+        style={[fontStyles.uiRegular, { flex: 1, fontSize: 14, color: "#1C1108" }]}
+        accessibilityLabel="Search past trips"
+      />
+      {value.length > 0 ? (
+        <Pressable
+          onPress={onClear}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Clear search"
+        >
+          <Ionicons name="close-circle" size={16} color="#8A7E74" />
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+// ─── Empty states ─────────────────────────────────────────────────────────────
+
+function NoArchiveState() {
+  return (
+    <View className="flex-1 items-center justify-center px-8 gap-3">
+      <View className="h-14 w-14 items-center justify-center rounded-full border border-smoke bg-parchment">
+        <Ionicons name="map-outline" size={26} color="#B86845" />
+      </View>
+      <Text style={textScaleStyles.displayL} className="text-espresso text-center">
+        No past trips yet
+      </Text>
+      <Text style={fontStyles.uiRegular} className="text-[14px] text-muted text-center leading-5">
+        Completed trips appear here after their end date. Every journey becomes part of your story.
+      </Text>
+    </View>
+  );
+}
+
+function NoResultsState({ query }: { query: string }) {
+  return (
+    <View className="flex-1 items-center justify-center px-8 gap-3 pt-16">
+      <Ionicons name="search-outline" size={28} color="#C9BCA8" />
+      <Text style={fontStyles.uiSemibold} className="text-[16px] text-espresso text-center">
+        No matches for "{query}"
+      </Text>
+      <Text style={fontStyles.uiRegular} className="text-[13px] text-muted text-center">
+        Try searching by destination or trip name.
+      </Text>
+    </View>
+  );
+}
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
+
 export default function ArchivePage() {
-  const tripsQuery = useTripsQuery();
-  const summariesQuery = useTripSummariesQuery();
+  const {
+    isLoading,
+    searchQuery,
+    setSearchQuery,
+    yearGroups,
+    hasNoArchive,
+    hasNoResults,
+  } = useArchiveScreen();
 
-  const pastTrips = useMemo(() => {
-    const summariesById = new Map(
-      (summariesQuery.data ?? []).map((s) => [s.trip_id, s]),
-    );
-    return (tripsQuery.data ?? [])
-      .map((trip) => toTripListItem(trip, summariesById.get(trip.id)))
-      .filter((t) => t.status === "past")
-      .sort((a, b) => b.dateRange.localeCompare(a.dateRange));
-  }, [tripsQuery.data, summariesQuery.data]);
+  const handleClear = useCallback(() => setSearchQuery(""), [setSearchQuery]);
 
-  if (tripsQuery.isLoading) {
-    return <ScreenLoading label="Loading your trips…" />;
+  const renderItem = useCallback(
+    ({ item }: SectionListRenderItemInfo<ArchiveTripViewModel, ArchiveYearGroup>) => (
+      <ArchiveTripCard
+        trip={item}
+        onPress={() => router.push(`/(tabs)/trips/${item.id}` as Href)}
+      />
+    ),
+    [],
+  );
+
+  const renderSectionHeader = useCallback(
+    ({ section }: { section: ArchiveYearGroup }) => (
+      <YearHeader year={section.year} count={section.data.length} />
+    ),
+    [],
+  );
+
+  if (isLoading) {
+    return <ScreenLoading label="Loading archive…" />;
   }
 
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={["top"]}>
-      <View className="px-4 py-3">
-        <ScreenHeader
-          title="Archive"
-          subtitle="Past trips and places you've been."
-        />
+      {/* Header */}
+      <View className="px-4 pb-1 pt-4">
+        <Text style={textScaleStyles.displayL} className="text-espresso">
+          Archive
+        </Text>
+        <Text style={fontStyles.uiRegular} className="mt-0.5 text-[13px] text-muted">
+          Places you've been
+        </Text>
       </View>
 
-      {pastTrips.length === 0 ? (
-        <View className="flex-1 px-4">
-          <EmptyState
-            title="No past trips yet"
-            message="Completed trips show up here after their end date. Plan your first trip to get started."
+      {/* Search bar — always shown once loading is done */}
+      {!hasNoArchive ? (
+        <View className="pt-3">
+          <SearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onClear={handleClear}
           />
         </View>
+      ) : null}
+
+      {/* Content */}
+      {hasNoArchive ? (
+        <NoArchiveState />
+      ) : hasNoResults ? (
+        <NoResultsState query={searchQuery} />
       ) : (
-        <FlatList
-          contentContainerClassName="gap-3 px-4 pb-8"
-          data={pastTrips}
+        <SectionList<ArchiveTripViewModel, ArchiveYearGroup>
+          sections={yearGroups}
           keyExtractor={(item) => String(item.id)}
-          renderItem={({ item }) => (
-            <TripCard
-              trip={item}
-              onPress={() => router.push(`/(tabs)/trips/${item.id}` as Href)}
-            />
-          )}
+          renderItem={renderItem}
+          renderSectionHeader={renderSectionHeader}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}
+          ItemSeparatorComponent={() => <View className="h-2" />}
+          stickySectionHeadersEnabled={false}
+          showsVerticalScrollIndicator={false}
         />
       )}
     </SafeAreaView>

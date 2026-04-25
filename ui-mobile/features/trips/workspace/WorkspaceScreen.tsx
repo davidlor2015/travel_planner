@@ -144,6 +144,7 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
         summary={workspace.summary}
         onTripPress={() => setSwitcherOpen(true)}
         onEditPress={() => setEditOpen(true)}
+        onMembersPress={() => setActiveTab("members")}
       />
 
       {canOpenLiveView ? (

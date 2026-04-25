@@ -8,6 +8,18 @@ function TabsLayoutInner() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        tabBarActiveTintColor: "#1C1108",
+        tabBarInactiveTintColor: "#8A7E74",
+        tabBarStyle: {
+          backgroundColor: "#FEFCF9",
+          borderTopColor: "#EAE2D6",
+          borderTopWidth: 1,
+        },
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: "500",
+          letterSpacing: 0.2,
+        },
       }}
     >
       <Tabs.Screen
