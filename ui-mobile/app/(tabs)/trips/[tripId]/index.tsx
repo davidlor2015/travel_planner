@@ -1,5 +1,5 @@
 import { Text, View } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { Tabs, useLocalSearchParams } from "expo-router";
 
 import { WorkspaceScreen } from "@/features/trips/workspace/WorkspaceScreen";
 
@@ -27,9 +27,12 @@ export default function TripDetailPage() {
   }
 
   return (
-    <WorkspaceScreen
-      tripId={tripId}
-      autoStartFromCreate={from === "create"}
-    />
+    <>
+      <Tabs.Screen options={{ tabBarStyle: { display: "none" } }} />
+      <WorkspaceScreen
+        tripId={tripId}
+        autoStartFromCreate={from === "create"}
+      />
+    </>
   );
 }

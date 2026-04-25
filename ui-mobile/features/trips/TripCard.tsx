@@ -2,6 +2,7 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, Text, View } from "react-native";
 
+import { fontStyles } from "@/shared/theme/typography";
 import { StatusPill } from "@/shared/ui/StatusPill";
 
 import type { TripCardReadiness, TripListItemViewModel } from "./adapters";
@@ -34,10 +35,10 @@ export function TripCard({ trip, onPress, onOpenLiveView }: Props) {
   return (
     <Pressable
       onPress={onPress}
-      className="overflow-hidden rounded-[24px] border border-border bg-white shadow-card active:opacity-80"
+      className="overflow-hidden rounded-[26px] border border-border bg-bg-app shadow-card active:opacity-80"
     >
       {/* ── Hero image ──────────────────────────────────────── */}
-      <View style={{ height: 110 }}>
+      <View style={{ height: 132 }}>
         <Image
           source={{ uri: imageUri }}
           style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
@@ -45,8 +46,9 @@ export function TripCard({ trip, onPress, onOpenLiveView }: Props) {
           transition={200}
         />
         <LinearGradient
-          colors={["transparent", "rgba(255,255,255,0.92)"]}
-          style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 56 }}
+          colors={["rgba(28,17,8,0.10)", "rgba(28,17,8,0.02)", "rgba(254,252,249,0.96)"]}
+          locations={[0, 0.45, 1]}
+          style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 74 }}
         />
         {/* Status pill anchored to top-right of image */}
         <View className="absolute right-3 top-3">
@@ -58,22 +60,27 @@ export function TripCard({ trip, onPress, onOpenLiveView }: Props) {
       </View>
 
       {/* ── Content ─────────────────────────────────────────── */}
-      <View className="gap-3 px-4 pb-4 pt-2">
-        <View className="gap-0.5">
-          <Text className="text-lg font-semibold text-text" numberOfLines={1}>
+      <View className="gap-3 px-4 pb-4 pt-3">
+        <View className="gap-1">
+          <Text
+            className="text-[22px] leading-7 text-text"
+            style={fontStyles.displaySemibold}
+            numberOfLines={1}
+          >
             {trip.title}
           </Text>
-          <Text className="text-sm text-text-muted" numberOfLines={1}>
+          <Text className="text-[13px] font-medium text-text-muted" numberOfLines={1}>
             {trip.destination}
           </Text>
         </View>
 
-        <View className="gap-1">
-          <Text className="text-sm text-text-muted">{trip.dateRange}</Text>
-          <Text className="text-sm text-text-muted">
-            {trip.memberCount}{" "}
-            {trip.memberCount === 1 ? "traveler" : "travelers"}
-          </Text>
+        <View className="flex-row flex-wrap gap-2">
+          <MetaPill label={trip.dateRange} />
+          <MetaPill
+            label={`${trip.memberCount} ${
+              trip.memberCount === 1 ? "traveler" : "travelers"
+            }`}
+          />
         </View>
 
         {readiness || showLiveCta ? (
@@ -108,10 +115,10 @@ export function TripCard({ trip, onPress, onOpenLiveView }: Props) {
                   onOpenLiveView?.();
                 }}
                 hitSlop={8}
-                className="rounded-full border border-accent-ontrip bg-surface-ontrip px-3 py-1.5 active:opacity-80"
+                className="rounded-full border border-accent/25 bg-accent/10 px-3 py-2 active:opacity-80"
               >
                 <Text className="text-xs font-semibold text-accent-ontrip">
-                  Open live view →
+                  Live view
                 </Text>
               </Pressable>
             ) : null}
@@ -119,5 +126,15 @@ export function TripCard({ trip, onPress, onOpenLiveView }: Props) {
         ) : null}
       </View>
     </Pressable>
+  );
+}
+
+function MetaPill({ label }: { label: string }) {
+  return (
+    <View className="rounded-full border border-border bg-surface-muted px-2.5 py-1">
+      <Text className="text-[11px] font-medium text-text-muted" numberOfLines={1}>
+        {label}
+      </Text>
+    </View>
   );
 }

@@ -1,5 +1,6 @@
 import { Pressable, Text, View } from "react-native";
 
+import { fontStyles } from "@/shared/theme/typography";
 import type { StopVM, TimelineVariant } from "./adapters";
 
 type Props = {
@@ -19,49 +20,82 @@ export function TimelineRow({
   onConfirm,
   onSkip,
 }: Props) {
-  const dotClass =
-    variant === "now"
-      ? "h-3 w-3 bg-accent-ontrip"
-      : variant === "next"
-        ? "h-2.5 w-2.5 border-2 border-accent-ontrip bg-surface-ontrip-raised"
-        : variant === "done"
-          ? "h-2 w-2 bg-border-ontrip-strong"
-          : "h-2 w-2 border border-border-ontrip-strong bg-surface-ontrip";
-
-  const titleClass =
-    variant === "done"
-      ? "text-ontrip-muted line-through"
-      : variant === "upcoming"
-        ? "text-ontrip-strong"
-        : "text-ontrip";
-
-  const metaClass = variant === "done" ? "text-ontrip-soft" : "text-ontrip-muted";
+  const isDone = variant === "done";
+  const isNow = variant === "now";
+  const isNext = variant === "next";
 
   return (
-    <View className="flex-row gap-4">
-      <View className="w-14 pt-0.5">
-        <Text className="text-right text-xs uppercase tracking-[0.5px] text-ontrip-muted">
+    <View
+      className="flex-row gap-4"
+      style={{ opacity: isDone ? 0.5 : 1 }}
+    >
+      {/* Time column */}
+      <View className="w-12 pt-0.5">
+        <Text
+          className="text-right text-[11px] text-ontrip-muted"
+          style={[
+            fontStyles.uiMedium,
+            isNow && { color: "#B4532A" },
+          ]}
+        >
           {stop.time?.trim() || "TBD"}
         </Text>
       </View>
-      <View className="items-center">
-        <View className={`rounded-full ${dotClass}`} />
+
+      {/* Dot + connector line */}
+      <View className="items-center" style={{ width: 14 }}>
+        <DotForVariant variant={variant} />
         {!isLast ? (
-          <View className="mt-1 w-px flex-1 bg-border-ontrip" />
+          <View
+            className="mt-1 w-px flex-1 bg-border-ontrip"
+            style={{ borderStyle: "dashed" }}
+          />
         ) : null}
       </View>
+
+      {/* Content */}
       <View className="flex-1 pb-5">
-        <Text className={`text-base font-semibold ${titleClass}`}>
-          {stop.title ?? "Untitled stop"}
-        </Text>
+        <View className="flex-row items-baseline justify-between gap-2">
+          <Text
+            className={[
+              "flex-1 text-[14px] leading-5",
+              isDone ? "line-through text-ontrip-muted" : isNow ? "text-ontrip" : "text-ontrip-strong",
+            ].join(" ")}
+            style={isDone ? fontStyles.uiRegular : fontStyles.uiSemibold}
+          >
+            {stop.title ?? "Untitled stop"}
+          </Text>
+
+          {/* State label */}
+          {isDone ? (
+            <Text
+              className="text-[10px] uppercase tracking-[1.5px] text-ontrip-soft"
+              style={fontStyles.uiMedium}
+            >
+              Done
+            </Text>
+          ) : isNext ? (
+            <Text
+              className="text-[10px] uppercase tracking-[1.5px] text-ontrip-muted"
+              style={fontStyles.uiMedium}
+            >
+              Next
+            </Text>
+          ) : null}
+        </View>
+
         {stop.location ? (
-          <Text className={`mt-1 text-sm ${metaClass}`}>{stop.location}</Text>
+          <Text
+            className="mt-0.5 text-[13px] text-ontrip-muted"
+            style={fontStyles.uiRegular}
+          >
+            {stop.location}
+          </Text>
         ) : null}
-        {variant === "next" ? (
-          <View className="mt-3 flex-row flex-wrap gap-2">
-            {onNavigate ? (
-              <MiniAction label="Navigate" onPress={onNavigate} />
-            ) : null}
+
+        {isNext && (
+          <View className="mt-2.5 flex-row flex-wrap gap-2">
+            {onNavigate ? <MiniAction label="Navigate" onPress={onNavigate} /> : null}
             {!stop.isReadOnly && onConfirm ? (
               <MiniAction
                 label={stop.effectiveStatus === "confirmed" ? "Confirmed" : "Confirm"}
@@ -77,9 +111,31 @@ export function TimelineRow({
               />
             ) : null}
           </View>
-        ) : null}
+        )}
       </View>
     </View>
+  );
+}
+
+function DotForVariant({ variant }: { variant: TimelineVariant }) {
+  if (variant === "now") {
+    return (
+      <View className="mt-1.5 h-3 w-3 rounded-full bg-accent-ontrip" />
+    );
+  }
+  if (variant === "next") {
+    return (
+      <View className="mt-1.5 h-2.5 w-2.5 rounded-full border-2 border-accent-ontrip bg-surface-ontrip-raised" />
+    );
+  }
+  if (variant === "done") {
+    return (
+      <View className="mt-1.5 h-2.5 w-2.5 rounded-full border border-border-ontrip-strong bg-surface-ontrip" />
+    );
+  }
+  // upcoming
+  return (
+    <View className="mt-1.5 h-2 w-2 rounded-full border border-border-ontrip-strong bg-surface-ontrip" />
   );
 }
 
@@ -101,7 +157,9 @@ function MiniAction({
         disabled ? "opacity-50" : "",
       ].join(" ")}
     >
-      <Text className="text-xs font-semibold text-ontrip-strong">{label}</Text>
+      <Text className="text-xs text-ontrip-strong" style={fontStyles.uiSemibold}>
+        {label}
+      </Text>
     </Pressable>
   );
 }

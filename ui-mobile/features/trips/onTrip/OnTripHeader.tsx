@@ -1,4 +1,5 @@
 import { Pressable, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 import { fontStyles } from "@/shared/theme/typography";
 
@@ -10,6 +11,8 @@ type Props = {
   onBack: () => void;
 };
 
+// Compact topbar — mirrors the design's minimal status bar.
+// Day/status left, progress right. No large Playfair title block.
 export function OnTripHeader({
   title,
   readOnly,
@@ -18,41 +21,51 @@ export function OnTripHeader({
   onBack,
 }: Props) {
   return (
-    <View className="border-b border-border-ontrip bg-surface-ontrip-raised px-4 py-3">
-      <View className="flex-row items-start gap-3">
-        <Pressable
-          onPress={onBack}
-          hitSlop={8}
-          className="h-10 w-10 items-center justify-center rounded-full border border-border-ontrip-strong bg-surface-ontrip"
-        >
-          <Text className="text-2xl text-ontrip">‹</Text>
+    <View className="border-b border-border-ontrip bg-surface-ontrip px-4 py-3">
+      <View className="flex-row items-center gap-3">
+        {/* Back */}
+        <Pressable onPress={onBack} hitSlop={12} className="pr-1">
+          <Ionicons name="chevron-back" size={20} color="#8A7866" />
         </Pressable>
-        <View className="flex-1">
-          <Text className="text-[11px] font-semibold uppercase tracking-[1.5px] text-ontrip-muted">
-            {dayLabel ?? "On-Trip"}
-          </Text>
+
+        {/* Status + title */}
+        <View className="flex-1 gap-0.5">
+          <View className="flex-row items-center gap-1.5">
+            <View className="h-1.5 w-1.5 rounded-full bg-accent-ontrip" />
+            <Text
+              className="text-[10px] uppercase tracking-[2px] text-accent-ontrip"
+              style={fontStyles.uiMedium}
+            >
+              {dayLabel ?? "On-Trip"}
+            </Text>
+          </View>
           <Text
-            className="mt-1 text-[30px] text-ontrip"
-            style={fontStyles.displaySemibold}
+            className="text-[15px] text-ontrip"
+            style={fontStyles.uiSemibold}
+            numberOfLines={1}
           >
             {title}
           </Text>
-          <View className="mt-2 flex-row flex-wrap gap-2">
-            {readOnly ? (
-              <View className="rounded-full border border-border-ontrip-strong bg-surface-ontrip px-3 py-1">
-                <Text className="text-[11px] font-semibold uppercase tracking-[0.6px] text-ontrip-muted">
-                  Read-only
-                </Text>
-              </View>
-            ) : null}
-            {progressLabel ? (
-              <View className="rounded-full border border-border-ontrip-strong bg-surface-ontrip px-3 py-1">
-                <Text className="text-[11px] font-semibold uppercase tracking-[0.6px] text-ontrip-muted">
-                  {progressLabel}
-                </Text>
-              </View>
-            ) : null}
-          </View>
+        </View>
+
+        {/* Right: read-only or progress */}
+        <View className="items-end gap-0.5">
+          {readOnly ? (
+            <Text
+              className="text-[10px] uppercase tracking-[1.5px] text-ontrip-muted"
+              style={fontStyles.uiMedium}
+            >
+              Read-only
+            </Text>
+          ) : null}
+          {progressLabel ? (
+            <Text
+              className="text-[10px] uppercase tracking-[1.5px] text-ontrip-muted"
+              style={fontStyles.uiMedium}
+            >
+              {progressLabel}
+            </Text>
+          ) : null}
         </View>
       </View>
     </View>

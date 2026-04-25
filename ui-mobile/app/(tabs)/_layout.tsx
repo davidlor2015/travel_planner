@@ -1,28 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Redirect, Tabs, useSegments } from "expo-router";
+import { Redirect, Tabs } from "expo-router";
 
 import { useAuth } from "@/providers/AuthProvider";
 
-function shouldHideTabBar(segments: string[]): boolean {
-  const tripsIndex = segments.findIndex((segment) => segment === "trips");
-  if (tripsIndex === -1) return false;
-
-  const childSegments = segments
-    .slice(tripsIndex + 1)
-    .filter((segment) => segment !== "index");
-
-  return childSegments.length > 0;
-}
-
 function TabsLayoutInner() {
-  const segments = useSegments();
-  const tabBarHidden = shouldHideTabBar(segments);
-
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: tabBarHidden ? { display: "none" } : undefined,
       }}
     >
       <Tabs.Screen

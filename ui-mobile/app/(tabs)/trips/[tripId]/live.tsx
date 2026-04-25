@@ -1,5 +1,5 @@
 import { Text, View } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { Tabs, useLocalSearchParams } from "expo-router";
 
 import { useTripDetailQuery } from "@/features/trips/hooks";
 import { OnTripScreen } from "@/features/trips/onTrip/OnTripScreen";
@@ -35,5 +35,10 @@ export default function LiveViewPage() {
     return <ScreenLoading label="Loading your trip…" />;
   }
 
-  return <OnTripScreen tripId={tripId} tripTitle={title} />;
+  return (
+    <>
+      <Tabs.Screen options={{ tabBarStyle: { display: "none" } }} />
+      <OnTripScreen tripId={tripId} tripTitle={title} />
+    </>
+  );
 }

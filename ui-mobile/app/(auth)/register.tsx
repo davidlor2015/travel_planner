@@ -1,13 +1,20 @@
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, Text, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
 import { useRegisterMutation } from "@/features/auth/hooks";
 import { friendlyError } from "@/shared/api/friendlyError";
-import { PrimaryButton } from "@/shared/ui/Button";
-import { ScreenHeader } from "@/shared/ui/ScreenHeader";
-import { SectionCard } from "@/shared/ui/SectionCard";
-import { TextInputField } from "@/shared/ui/TextInputField";
+import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
 
 export default function RegisterPage() {
   const registerMutation = useRegisterMutation();
@@ -47,87 +54,179 @@ export default function RegisterPage() {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      className="flex-1 justify-center bg-bg px-4"
-    >
-      <View className="gap-4">
-        <ScreenHeader
-          title="Waypoint"
-          subtitle="Create your account to start planning and executing trips."
-        />
-
-        <SectionCard
-          eyebrow="Account"
-          title="Register"
-          description="Use a name your travel group can recognize."
+    <SafeAreaView className="flex-1 bg-bg">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        className="flex-1"
+      >
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <View className="gap-4">
-            <TextInputField
+          {/* Back button */}
+          <View className="flex-row items-center px-7 pt-10 pb-2">
+            <Pressable
+              onPress={() => router.replace("./login")}
+              hitSlop={8}
+              className="flex-row items-center gap-1.5"
+            >
+              <Ionicons name="chevron-back" size={16} color="#8A7E74" />
+              <Text
+                className="text-[11px] uppercase tracking-[1.5px] text-muted"
+                style={fontStyles.uiMedium}
+              >
+                Sign in
+              </Text>
+            </Pressable>
+          </View>
+
+          {/* Editorial headline */}
+          <View className="mt-8 px-7">
+            <Text
+              className="mb-1 text-[11px] uppercase tracking-[1.8px] text-amber"
+              style={fontStyles.uiMedium}
+            >
+              Create account
+            </Text>
+            <Text
+              className="text-espresso"
+              style={[textScaleStyles.displayXL, { fontSize: 38, lineHeight: 42 }]}
+            >
+              {"Join\nWaypoint."}
+            </Text>
+            <Text className="mt-2 text-sm leading-5 text-muted" style={fontStyles.uiRegular}>
+              Use a name your travel group will recognize.
+            </Text>
+          </View>
+
+          {/* Form fields */}
+          <View className="mt-8 px-7">
+            <UnderlineField
               label="Display name"
               value={displayName}
               onChangeText={setDisplayName}
               placeholder="e.g. Maya"
+              returnKeyType="next"
             />
-
-            <TextInputField
-              label="Email"
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="email-address"
+            <UnderlineField
+              label="Email address"
               value={email}
               onChangeText={setEmail}
               placeholder="you@example.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="next"
             />
-
-            <TextInputField
+            <UnderlineField
               label="Password"
-              secureTextEntry
               value={password}
               onChangeText={setPassword}
               placeholder="Password"
-            />
-
-            <TextInputField
-              label="Confirm password"
               secureTextEntry
+              returnKeyType="next"
+            />
+            <UnderlineField
+              label="Confirm password"
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               placeholder="Confirm password"
+              secureTextEntry
+              returnKeyType="done"
+              onSubmitEditing={() => void handleSubmit()}
             />
 
             {errorMessage ? (
-              <View className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3">
-                <Text className="text-sm font-medium text-danger">{errorMessage}</Text>
+              <View className="mt-1 rounded-xl border border-danger/20 bg-danger/10 px-4 py-3">
+                <Text className="text-sm text-danger" style={fontStyles.uiMedium}>
+                  {errorMessage}
+                </Text>
               </View>
             ) : null}
+
             {successMessage ? (
-              <View className="gap-3 rounded-2xl border border-olive/20 bg-olive/10 px-4 py-3">
-                <Text className="text-sm font-medium text-olive">{successMessage}</Text>
-                <Pressable
-                  onPress={() => router.push("./verify-email-request")}
-                >
-                  <Text className="text-sm font-semibold text-accent">
+              <View className="mt-1 gap-3 rounded-xl border border-olive/20 bg-olive/10 px-4 py-3">
+                <Text className="text-sm text-olive" style={fontStyles.uiMedium}>
+                  {successMessage}
+                </Text>
+                <Pressable onPress={() => router.push("./verify-email-request")}>
+                  <Text
+                    className="text-sm text-espresso underline"
+                    style={fontStyles.uiMedium}
+                  >
                     Request verification link
                   </Text>
                 </Pressable>
               </View>
             ) : null}
+          </View>
 
-            <PrimaryButton
-              label={registerMutation.isPending ? "Creating…" : "Create Account"}
+          {/* CTA */}
+          <View className="mt-8 px-7 pb-8">
+            <Pressable
               onPress={() => void handleSubmit()}
               disabled={registerMutation.isPending}
-              fullWidth
-            />
-            <Pressable onPress={() => router.replace("./login")}>
-              <Text className="text-center text-sm font-semibold text-accent">
-                Already have an account
+              className="h-14 items-center justify-center rounded-2xl bg-espresso active:opacity-80"
+              style={registerMutation.isPending ? { opacity: 0.6 } : undefined}
+            >
+              <View className="flex-row items-center gap-2">
+                <Text className="text-[15px] text-on-dark" style={fontStyles.uiMedium}>
+                  {registerMutation.isPending ? "Creating account…" : "Create Account"}
+                </Text>
+                {!registerMutation.isPending && (
+                  <Ionicons name="arrow-forward" size={16} color="#F2EBDD" />
+                )}
+              </View>
+            </Pressable>
+
+            <Pressable
+              onPress={() => router.replace("./login")}
+              className="mt-5 items-center"
+            >
+              <Text className="text-sm text-muted" style={fontStyles.uiRegular}>
+                Already have an account?{" "}
+                <Text className="text-espresso underline" style={fontStyles.uiMedium}>
+                  Sign in
+                </Text>
               </Text>
             </Pressable>
           </View>
-        </SectionCard>
-      </View>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+function UnderlineField({
+  label,
+  error,
+  ...inputProps
+}: {
+  label: string;
+  error?: string | null;
+} & React.ComponentProps<typeof TextInput>) {
+  return (
+    <View className="mb-6">
+      <Text
+        className="mb-1.5 text-[10px] uppercase tracking-[1.8px] text-muted"
+        style={fontStyles.uiMedium}
+      >
+        {label}
+      </Text>
+      <TextInput
+        placeholderTextColor="#8A7E74"
+        selectionColor="#B86845"
+        className="pb-2 text-[18px] text-espresso"
+        style={[fontStyles.uiRegular, { borderBottomWidth: 1.5, borderBottomColor: error ? "#881337" : "#EAE2D6" }]}
+        {...inputProps}
+      />
+      {error ? (
+        <Text className="mt-1 text-xs text-danger" style={fontStyles.uiMedium}>
+          {error}
+        </Text>
+      ) : null}
+    </View>
   );
 }

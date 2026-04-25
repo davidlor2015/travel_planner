@@ -20,6 +20,7 @@ import type {
   TripWorkspaceViewModel,
 } from "./adapters";
 import { EditableItineraryDayCard } from "./EditableItineraryDayCard";
+import { RegenerateSheet } from "./RegenerateSheet";
 import { StopEditSheet, type StopEditPatch } from "./StopEditSheet";
 
 type Props = {
@@ -124,6 +125,7 @@ function ItinerarySection({
     dayIndex: number;
     stopIndex: number | null;
   } | null>(null);
+  const [regeneratingDayIndex, setRegeneratingDayIndex] = useState<number | null>(null);
   const applyInFlight = useRef(false);
 
   const completedItinerary: Itinerary | null = streamState?.itinerary ?? null;
@@ -153,6 +155,7 @@ function ItinerarySection({
     setEditableItinerary(null);
     setLastSyncedSaved(null);
     setEditingStop(null);
+    setRegeneratingDayIndex(null);
     setSaveError(null);
     applyInFlight.current = false;
   }, [tripId]);
@@ -269,6 +272,12 @@ function ItinerarySection({
     setEditingStop(null);
   }
 
+  function handleAcceptRefinement(refinedItinerary: Itinerary) {
+    if (!editableItinerary) return;
+    setEditableItinerary(refinedItinerary);
+    setRegeneratingDayIndex(null);
+  }
+
   async function handlePublishChanges() {
     if (!editableItinerary || !isDirty) return;
 
@@ -379,6 +388,7 @@ function ItinerarySection({
               day={day}
               onAddStop={() => setEditingStop({ dayIndex, stopIndex: null })}
               onEditStop={(stopIndex) => setEditingStop({ dayIndex, stopIndex })}
+              onRegenerate={!isDirty ? () => setRegeneratingDayIndex(dayIndex) : undefined}
             />
           ))}
           {isDirty ? (
@@ -408,6 +418,18 @@ function ItinerarySection({
             onSave={handleSaveStop}
             onDelete={handleDeleteStop}
             onClose={() => setEditingStop(null)}
+          />
+          <RegenerateSheet
+            visible={regeneratingDayIndex !== null}
+            tripId={tripId}
+            day={
+              regeneratingDayIndex !== null
+                ? (editableItinerary.days[regeneratingDayIndex] ?? null)
+                : null
+            }
+            currentItinerary={editableItinerary}
+            onAccept={handleAcceptRefinement}
+            onClose={() => setRegeneratingDayIndex(null)}
           />
         </View>
       )}

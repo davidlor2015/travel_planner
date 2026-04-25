@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   KeyboardAvoidingView,
   Modal,
@@ -145,6 +145,13 @@ export function TripFormSheet({
     });
   }
 
+  function handleSubmit() {
+    const nextErrors = validate(value);
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
+    void onSubmit(value);
+  }
+
   return (
     <Modal
       animationType="slide"
@@ -156,58 +163,73 @@ export function TripFormSheet({
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-          <View className="max-h-[92%] rounded-t-[28px] bg-bg-app">
-            <ScreenHeader
-              title={titleLabel}
-              subtitle={subtitle}
-              onBack={onClose}
-            />
+          <View className="max-h-[92%] overflow-hidden rounded-t-[30px] border border-border bg-bg-app">
+            <View className="items-center pt-3">
+              <View className="h-1.5 w-12 rounded-full bg-border-strong" />
+            </View>
+            <View className="border-b border-border/70 bg-bg-app">
+              <ScreenHeader
+                title={titleLabel}
+                subtitle={subtitle}
+                onBack={onClose}
+              />
+            </View>
 
-            <ScrollView contentContainerClassName="gap-4 px-4 pb-8">
-              <TextInputField
-                label="Trip title"
-                placeholder="e.g. Summer in Rome"
-                value={value.title}
-                onChangeText={(v) => setValue((c) => ({ ...c, title: v }))}
-                error={errors.title}
-              />
-              <TextInputField
-                label="Destination"
-                placeholder="e.g. Rome, Italy"
-                value={value.destination}
-                onChangeText={(v) =>
-                  setValue((c) => ({ ...c, destination: v }))
-                }
-                error={errors.destination}
-              />
-              <TextInputField
-                label="Start date"
-                hint="YYYY-MM-DD"
-                placeholder="2026-07-10"
-                value={value.start_date}
-                onChangeText={(v) =>
-                  setValue((c) => ({ ...c, start_date: v }))
-                }
-                autoCapitalize="none"
-                error={errors.start_date}
-              />
-              <TextInputField
-                label="End date"
-                hint="YYYY-MM-DD"
-                placeholder="2026-07-16"
-                value={value.end_date}
-                onChangeText={(v) => setValue((c) => ({ ...c, end_date: v }))}
-                autoCapitalize="none"
-                error={errors.end_date}
-              />
+            <ScrollView contentContainerClassName="gap-4 px-4 py-4">
+              <FormSection
+                eyebrow="Core details"
+                description="Destination and dates anchor the workspace."
+              >
+                <TextInputField
+                  label="Trip title"
+                  placeholder="e.g. Summer in Rome"
+                  value={value.title}
+                  onChangeText={(v) => setValue((c) => ({ ...c, title: v }))}
+                  error={errors.title}
+                />
+                <TextInputField
+                  label="Destination"
+                  placeholder="e.g. Rome, Italy"
+                  value={value.destination}
+                  onChangeText={(v) =>
+                    setValue((c) => ({ ...c, destination: v }))
+                  }
+                  error={errors.destination}
+                />
+                <View className="flex-row gap-3">
+                  <View className="flex-1">
+                    <TextInputField
+                      label="Start date"
+                      hint="YYYY-MM-DD"
+                      placeholder="2026-07-10"
+                      value={value.start_date}
+                      onChangeText={(v) =>
+                        setValue((c) => ({ ...c, start_date: v }))
+                      }
+                      autoCapitalize="none"
+                      error={errors.start_date}
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <TextInputField
+                      label="End date"
+                      hint="YYYY-MM-DD"
+                      placeholder="2026-07-16"
+                      value={value.end_date}
+                      onChangeText={(v) => setValue((c) => ({ ...c, end_date: v }))}
+                      autoCapitalize="none"
+                      error={errors.end_date}
+                    />
+                  </View>
+                </View>
+              </FormSection>
 
               {/* ── Preferences (create mode only) ──────────────── */}
               {mode === "create" && (
-                <View className="rounded-2xl border border-border bg-surface-muted px-4 pb-4 pt-3">
-                  <Text className="mb-4 text-[11px] font-semibold uppercase tracking-[0.5px] text-text-soft">
-                    AI Preferences · Optional
-                  </Text>
-
+                <FormSection
+                  eyebrow="Optional guidance"
+                  description="Preferences help shape the first itinerary draft."
+                >
                   {/* Budget */}
                   <View className="gap-2">
                     <Text className="text-sm font-semibold text-text">
@@ -222,8 +244,8 @@ export function TripFormSheet({
                             onPress={() => toggleSegment("budget", opt.value)}
                             className={`flex-1 items-center rounded-full border py-2 active:opacity-70 ${
                               active
-                                ? "border-amber bg-amber"
-                                : "border-border bg-transparent"
+                                ? "border-text bg-text"
+                                : "border-border bg-white"
                             }`}
                           >
                             <Text
@@ -253,8 +275,8 @@ export function TripFormSheet({
                             onPress={() => toggleSegment("pace", opt.value)}
                             className={`flex-1 items-center rounded-full border py-2 active:opacity-70 ${
                               active
-                                ? "border-amber bg-amber"
-                                : "border-border bg-transparent"
+                                ? "border-text bg-text"
+                                : "border-border bg-white"
                             }`}
                           >
                             <Text
@@ -285,8 +307,8 @@ export function TripFormSheet({
                             onPress={() => toggleInterest(interest)}
                             className={`rounded-full border px-3 py-1.5 active:opacity-70 ${
                               active
-                                ? "border-amber bg-amber"
-                                : "border-border bg-transparent"
+                                ? "border-text bg-text"
+                                : "border-border bg-white"
                             }`}
                           >
                             <Text
@@ -301,19 +323,24 @@ export function TripFormSheet({
                       })}
                     </View>
                   </View>
-                </View>
+                </FormSection>
               )}
 
               {/* Edit mode: free-text notes */}
               {mode === "edit" && (
-                <TextInputField
-                  label="Trip notes"
-                  hint="Optional"
-                  placeholder="Pace, budget, interests, reminders"
-                  value={value.notes}
-                  onChangeText={(v) => setValue((c) => ({ ...c, notes: v }))}
-                  multiline
-                />
+                <FormSection
+                  eyebrow="Trip preferences"
+                  description="Notes guide itinerary generation and planning."
+                >
+                  <TextInputField
+                    label="Trip notes"
+                    hint="Optional"
+                    placeholder="Pace, budget, interests, reminders"
+                    value={value.notes}
+                    onChangeText={(v) => setValue((c) => ({ ...c, notes: v }))}
+                    multiline
+                  />
+                </FormSection>
               )}
 
               {error ? (
@@ -323,31 +350,48 @@ export function TripFormSheet({
                   </Text>
                 </View>
               ) : null}
-
-              <View className="gap-2 pt-2">
-                <PrimaryButton
-                  label={
-                    submitting
-                      ? mode === "create"
-                        ? "Creating…"
-                        : "Saving…"
-                      : titleLabel
-                  }
-                  onPress={() => {
-                    const nextErrors = validate(value);
-                    setErrors(nextErrors);
-                    if (Object.keys(nextErrors).length > 0) return;
-                    void onSubmit(value);
-                  }}
-                  disabled={submitting}
-                  fullWidth
-                />
-                <SecondaryButton label="Cancel" onPress={onClose} fullWidth />
-              </View>
             </ScrollView>
+
+            <View className="gap-2 border-t border-border bg-bg-app px-4 pb-6 pt-3">
+              <PrimaryButton
+                label={
+                  submitting
+                    ? mode === "create"
+                      ? "Creating…"
+                      : "Saving…"
+                    : titleLabel
+                }
+                onPress={handleSubmit}
+                disabled={submitting}
+                fullWidth
+              />
+              <SecondaryButton label="Cancel" onPress={onClose} fullWidth />
+            </View>
           </View>
         </KeyboardAvoidingView>
       </View>
     </Modal>
+  );
+}
+
+function FormSection({
+  eyebrow,
+  description,
+  children,
+}: {
+  eyebrow: string;
+  description: string;
+  children: ReactNode;
+}) {
+  return (
+    <View className="gap-4 rounded-2xl border border-border bg-surface-muted px-4 py-4">
+      <View>
+        <Text className="text-[10px] font-bold uppercase tracking-[1.2px] text-text-soft">
+          {eyebrow}
+        </Text>
+        <Text className="mt-1 text-sm leading-5 text-text-muted">{description}</Text>
+      </View>
+      <View className="gap-4">{children}</View>
+    </View>
   );
 }

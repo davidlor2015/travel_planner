@@ -1,13 +1,20 @@
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, Text, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
 import { useConfirmPasswordResetMutation } from "@/features/auth/hooks";
 import { friendlyError } from "@/shared/api/friendlyError";
-import { PrimaryButton } from "@/shared/ui/Button";
-import { ScreenHeader } from "@/shared/ui/ScreenHeader";
-import { SectionCard } from "@/shared/ui/SectionCard";
-import { TextInputField } from "@/shared/ui/TextInputField";
+import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
 
 export default function ResetPasswordPage() {
   const params = useLocalSearchParams<{ token?: string | string[] }>();
@@ -30,9 +37,7 @@ export default function ResetPasswordPage() {
       setErrorMessage("Passwords do not match.");
       return;
     }
-
     setErrorMessage(null);
-
     try {
       await confirmPasswordResetMutation.mutateAsync({ token, password });
       router.replace("/(auth)/login");
@@ -42,70 +47,140 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      className="flex-1 justify-center bg-bg px-4"
-    >
-      <View className="gap-4">
-        <ScreenHeader
-          title="Waypoint"
-          subtitle="Choose a new password for your account."
-        />
-
-        <SectionCard
-          eyebrow="Account"
-          title="New password"
-          description="Your reset link must still be valid to update your password."
+    <SafeAreaView className="flex-1 bg-bg">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        className="flex-1"
+      >
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <View className="gap-4">
-            {!token ? (
-              <View className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3">
-                <Text className="text-sm font-medium text-danger">
-                  This reset link is invalid or expired.
-                </Text>
-              </View>
-            ) : null}
-
-            <TextInputField
-              label="New password"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-              placeholder="New password"
-            />
-
-            <TextInputField
-              label="Confirm password"
-              secureTextEntry
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              placeholder="Confirm password"
-            />
-
-            {errorMessage ? (
-              <View className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3">
-                <Text className="text-sm font-medium text-danger">{errorMessage}</Text>
-              </View>
-            ) : null}
-
-            <PrimaryButton
-              label={
-                confirmPasswordResetMutation.isPending
-                  ? "Updating..."
-                  : "Update password"
-              }
-              onPress={() => void handleSubmit()}
-              disabled={confirmPasswordResetMutation.isPending || !token}
-              fullWidth
-            />
-            <Pressable onPress={() => router.replace("./forgot-password")}>
-              <Text className="text-center text-sm font-semibold text-accent">
-                Request a new reset link
+          {/* Back button */}
+          <View className="flex-row items-center px-7 pt-10 pb-2">
+            <Pressable
+              onPress={() => router.replace("./forgot-password")}
+              hitSlop={8}
+              className="flex-row items-center gap-1.5"
+            >
+              <Ionicons name="chevron-back" size={16} color="#8A7E74" />
+              <Text
+                className="text-[11px] uppercase tracking-[1.5px] text-muted"
+                style={fontStyles.uiMedium}
+              >
+                Back
               </Text>
             </Pressable>
           </View>
-        </SectionCard>
-      </View>
-    </KeyboardAvoidingView>
+
+          {/* Editorial headline */}
+          <View className="mt-8 px-7">
+            <Text
+              className="mb-1 text-[11px] uppercase tracking-[1.8px] text-amber"
+              style={fontStyles.uiMedium}
+            >
+              Account recovery
+            </Text>
+            <Text
+              className="text-espresso"
+              style={[textScaleStyles.displayXL, { fontSize: 36, lineHeight: 40 }]}
+            >
+              {"Choose a new\npassword."}
+            </Text>
+            <Text className="mt-2 text-sm leading-5 text-muted" style={fontStyles.uiRegular}>
+              Your reset link must still be valid.
+            </Text>
+          </View>
+
+          {/* Token warning */}
+          {!token ? (
+            <View className="mx-7 mt-6 rounded-xl border border-danger/20 bg-danger/10 px-4 py-3">
+              <Text className="text-sm text-danger" style={fontStyles.uiMedium}>
+                This reset link is invalid or expired.
+              </Text>
+            </View>
+          ) : null}
+
+          {/* Form fields */}
+          <View className="mt-8 px-7">
+            <View className="mb-6">
+              <Text
+                className="mb-1.5 text-[10px] uppercase tracking-[1.8px] text-muted"
+                style={fontStyles.uiMedium}
+              >
+                New password
+              </Text>
+              <TextInput
+                placeholderTextColor="#8A7E74"
+                selectionColor="#B86845"
+                className="pb-2 text-[18px] text-espresso"
+                style={[fontStyles.uiRegular, { borderBottomWidth: 1.5, borderBottomColor: "#EAE2D6" }]}
+                value={password}
+                onChangeText={setPassword}
+                placeholder="New password"
+                secureTextEntry
+                returnKeyType="next"
+              />
+            </View>
+            <View className="mb-6">
+              <Text
+                className="mb-1.5 text-[10px] uppercase tracking-[1.8px] text-muted"
+                style={fontStyles.uiMedium}
+              >
+                Confirm password
+              </Text>
+              <TextInput
+                placeholderTextColor="#8A7E74"
+                selectionColor="#B86845"
+                className="pb-2 text-[18px] text-espresso"
+                style={[fontStyles.uiRegular, { borderBottomWidth: 1.5, borderBottomColor: "#EAE2D6" }]}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                placeholder="Confirm password"
+                secureTextEntry
+                returnKeyType="done"
+                onSubmitEditing={() => void handleSubmit()}
+              />
+            </View>
+
+            {errorMessage ? (
+              <View className="rounded-xl border border-danger/20 bg-danger/10 px-4 py-3">
+                <Text className="text-sm text-danger" style={fontStyles.uiMedium}>
+                  {errorMessage}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+
+          {/* CTA */}
+          <View className="mt-8 px-7 pb-8">
+            <Pressable
+              onPress={() => void handleSubmit()}
+              disabled={confirmPasswordResetMutation.isPending || !token}
+              className="h-14 items-center justify-center rounded-2xl bg-espresso active:opacity-80"
+              style={confirmPasswordResetMutation.isPending || !token ? { opacity: 0.5 } : undefined}
+            >
+              <Text className="text-[15px] text-on-dark" style={fontStyles.uiMedium}>
+                {confirmPasswordResetMutation.isPending ? "Updating…" : "Update password"}
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => router.replace("./forgot-password")}
+              className="mt-5 items-center"
+            >
+              <Text className="text-sm text-muted" style={fontStyles.uiRegular}>
+                Need a new link?{" "}
+                <Text className="text-espresso underline" style={fontStyles.uiMedium}>
+                  Request reset
+                </Text>
+              </Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }

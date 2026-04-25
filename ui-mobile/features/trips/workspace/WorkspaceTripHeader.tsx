@@ -23,10 +23,6 @@ function buildCountdownLabel(trip: TripWorkspaceViewModel): {
     return { label: "In Progress", dotColor: "#4ADE80" };
   }
   if (trip.status === "upcoming") {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    // dateRange is formatted; parse start from raw fields is unavailable here,
-    // so derive from the dateRange string as a best-effort display.
     return { label: "Upcoming", dotColor: "#FCD34D" };
   }
   return null;
@@ -35,7 +31,7 @@ function buildCountdownLabel(trip: TripWorkspaceViewModel): {
 function buildStats(
   trip: TripWorkspaceViewModel,
   summary: TripSummaryViewModel | null,
-): Array<{ label: string; sub: string }> {
+): { label: string; sub: string }[] {
   const budgetPct =
     summary?.budgetLimit && summary.budgetLimit > 0
       ? `${Math.round((summary.budgetSpent / summary.budgetLimit) * 100)}%`
@@ -77,7 +73,7 @@ export function WorkspaceTripHeader({
 
       {/* Primary dark gradient — left heavy, fades right */}
       <LinearGradient
-        colors={["rgba(18,10,4,0.82)", "rgba(18,10,4,0.48)", "rgba(18,10,4,0.10)"]}
+        colors={["rgba(18,10,4,0.88)", "rgba(18,10,4,0.58)", "rgba(18,10,4,0.18)"]}
         start={{ x: 0, y: 0.5 }}
         end={{ x: 1, y: 0.5 }}
         style={StyleSheet.absoluteFillObject}
@@ -85,7 +81,7 @@ export function WorkspaceTripHeader({
 
       {/* Bottom fade for stats strip legibility */}
       <LinearGradient
-        colors={["transparent", "rgba(12,6,2,0.40)"]}
+        colors={["transparent", "rgba(12,6,2,0.56)"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
         style={StyleSheet.absoluteFillObject}
@@ -94,10 +90,10 @@ export function WorkspaceTripHeader({
       {/* Content */}
       <View style={styles.content}>
         {/* Top row: countdown pill + action buttons */}
-        <View className="flex-row items-start justify-between">
+        <View className="flex-row items-start justify-between gap-3">
           <View>
             {countdown ? (
-              <View className="flex-row items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-2.5 py-1">
+              <View className="flex-row items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1.5">
                 <View
                   className="h-1.5 w-1.5 rounded-full"
                   style={{ backgroundColor: countdown.dotColor }}
@@ -127,10 +123,10 @@ export function WorkspaceTripHeader({
         {/* Bottom: title + meta + stats */}
         <View className="gap-3">
           {/* Title + tagline */}
-          <View>
+          <View className="max-w-[92%]">
             <Text
               className="text-ivory leading-tight"
-              style={[fontStyles.displaySemibold, { fontSize: 32 }]}
+              style={[fontStyles.displaySemibold, { fontSize: 34, lineHeight: 38 }]}
               numberOfLines={2}
             >
               {trip.title}
@@ -138,20 +134,24 @@ export function WorkspaceTripHeader({
             <Text
               className="mt-0.5 text-[13px] italic text-white/55"
               style={fontStyles.displayMedium}
+              numberOfLines={1}
             >
               {tagline}
+            </Text>
+            <Text className="mt-2 text-[10px] font-semibold uppercase tracking-[1.2px] text-white/40">
+              Live trip workspace · itinerary + logistics
             </Text>
           </View>
 
           {/* Destination + date metadata */}
-          <View className="flex-row flex-wrap gap-x-4 gap-y-1">
+          <View className="flex-row flex-wrap gap-x-3 gap-y-2">
             <MetaItem icon="location-outline" text={trip.destination} />
             <MetaItem icon="calendar-outline" text={trip.dateRange} />
           </View>
 
           {/* Stats strip */}
           <View
-            className="flex-row gap-6 pt-2.5"
+            className="flex-row flex-wrap gap-x-6 gap-y-2 pt-3"
             style={{ borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.10)" }}
           >
             {stats.map((stat) => (
@@ -187,14 +187,14 @@ function GlassButton({
     <Pressable
       onPress={onPress}
       accessibilityLabel={accessibilityLabel}
-      className="h-9 w-9 items-center justify-center rounded-xl active:opacity-80"
+      className="h-10 w-10 items-center justify-center rounded-xl active:opacity-80"
       style={{
-        backgroundColor: "rgba(255,255,255,0.10)",
+        backgroundColor: "rgba(255,255,255,0.12)",
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.15)",
+        borderColor: "rgba(255,255,255,0.18)",
       }}
     >
-      <Ionicons name={icon} size={15} color="rgba(255,255,255,0.85)" />
+      <Ionicons name={icon} size={16} color="rgba(255,255,255,0.88)" />
     </Pressable>
   );
 }
@@ -207,9 +207,9 @@ function MetaItem({
   text: string;
 }) {
   return (
-    <View className="flex-row items-center gap-1">
+    <View className="max-w-full flex-row items-center gap-1 rounded-full border border-white/10 bg-white/10 px-2.5 py-1">
       <Ionicons name={icon} size={12} color="rgba(255,255,255,0.55)" />
-      <Text className="text-[12px] text-white/55" numberOfLines={1}>
+      <Text className="text-[12px] font-medium text-white/60" numberOfLines={1}>
         {text}
       </Text>
     </View>
@@ -218,14 +218,14 @@ function MetaItem({
 
 const styles = StyleSheet.create({
   container: {
-    minHeight: 240,
+    minHeight: 268,
     overflow: "hidden",
   },
   content: {
     flex: 1,
-    minHeight: 240,
+    minHeight: 268,
     justifyContent: "space-between",
     padding: 20,
-    paddingTop: 16,
+    paddingTop: 18,
   },
 });

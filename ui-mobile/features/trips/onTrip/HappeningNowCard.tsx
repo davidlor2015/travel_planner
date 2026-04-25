@@ -1,6 +1,7 @@
+import { useEffect, useRef } from "react";
+import { Animated, Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { Pressable, Text, View } from "react-native";
 
 import { fontStyles } from "@/shared/theme/typography";
 
@@ -17,6 +18,23 @@ export function HappeningNowCard({ stop, onNavigate, onConfirm, onSkip }: Props)
   const isConfirmed = stop.effectiveStatus === "confirmed";
   const isSkipped = stop.effectiveStatus === "skipped";
   const disableStatus = stop.isPending || !stop.stop_ref;
+  const pulseAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 0, duration: 900, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulseAnim]);
+
+  const ringOpacity = pulseAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.1, 0.35],
+  });
 
   return (
     <LinearGradient
@@ -24,81 +42,102 @@ export function HappeningNowCard({ stop, onNavigate, onConfirm, onSkip }: Props)
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
       style={{
-        borderRadius: 26,
-        paddingHorizontal: 28,
-        paddingVertical: 28,
+        borderRadius: 24,
+        overflow: "hidden",
         shadowColor: "#3A2A1F",
-        shadowOffset: { width: 0, height: 20 },
-        shadowOpacity: 0.4,
-        shadowRadius: 40,
-        elevation: 16,
+        shadowOffset: { width: 0, height: 16 },
+        shadowOpacity: 0.38,
+        shadowRadius: 36,
+        elevation: 14,
       }}
     >
-      {/* "• HAPPENING NOW" + current time */}
-      <View className="flex-row items-center justify-between gap-3">
+      {/* Status strip */}
+      <View
+        className="flex-row items-center justify-between px-5 py-3.5"
+        style={{ borderBottomWidth: 1, borderBottomColor: "rgba(242,235,221,0.10)" }}
+      >
         <View className="flex-row items-center gap-2">
-          <View className="h-1.5 w-1.5 rounded-full bg-accent-ontrip" style={{ opacity: 0.84 }} />
-          <Text className="text-[11px] font-normal uppercase tracking-[3.5px] text-on-dark-soft">
+          {/* Pulsing dot */}
+          <View className="h-4 w-4 items-center justify-center">
+            <Animated.View
+              style={{
+                position: "absolute",
+                width: 14,
+                height: 14,
+                borderRadius: 7,
+                backgroundColor: "#B4532A",
+                opacity: ringOpacity,
+              }}
+            />
+            <View className="h-[7px] w-[7px] rounded-full bg-accent-ontrip" />
+          </View>
+          <Text
+            className="text-[10px] uppercase tracking-[2.5px] text-on-dark-soft"
+            style={fontStyles.uiMedium}
+          >
             Happening now
           </Text>
         </View>
-        <Text className="text-xs text-on-dark-muted">{localTimeHHMM()}</Text>
+        <Text className="text-[11px] tracking-[0.5px] text-on-dark-muted" style={fontStyles.uiRegular}>
+          {localTimeHHMM()}
+        </Text>
       </View>
 
-      {/* Stop title */}
-      <Text
-        className="mt-4 text-[28px] text-on-dark"
-        style={fontStyles.displaySemibold}
-      >
-        {stop.title ?? "Untitled stop"}
-      </Text>
-
-      {/* Location + time */}
-      {(stop.location?.trim() || stop.time?.trim()) ? (
-        <View className="mt-3 flex-row items-center gap-1.5">
-          <Ionicons name="location-outline" size={14} color="#C9BCA8" />
-          <Text className="flex-1 text-[13px] text-on-dark-muted" numberOfLines={1}>
-            {[stop.location?.trim(), stop.time?.trim()].filter(Boolean).join(" · ")}
-          </Text>
-        </View>
-      ) : null}
-
-      {/* Full-width Navigate button */}
-      {onNavigate ? (
-        <Pressable
-          onPress={onNavigate}
-          className="mt-5 flex-row items-center justify-center gap-2 rounded-full bg-on-dark px-4 py-3 active:opacity-90"
-          style={{
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 6 },
-            shadowOpacity: 0.4,
-            shadowRadius: 14,
-            elevation: 8,
-          }}
+      {/* Content */}
+      <View className="px-5 pt-5 pb-2">
+        <Text
+          className="text-[30px] leading-[1.15] text-on-dark"
+          style={fontStyles.displaySemibold}
         >
-          <Ionicons name="navigate" size={16} color="#2A1D13" />
-          <Text className="text-base font-semibold text-ontrip">Navigate</Text>
-        </Pressable>
-      ) : null}
+          {stop.title ?? "Untitled stop"}
+        </Text>
 
-      {/* Action row: Confirm | Skip */}
-      {!stop.isReadOnly ? (
-        <View className="mt-3 flex-row items-center gap-2">
-          <ActionButton
-            label={isConfirmed ? "Confirmed" : "Confirm"}
-            variant={isConfirmed ? "filled" : "outline"}
-            disabled={disableStatus}
-            onPress={onConfirm}
-          />
-          <ActionButton
-            label={isSkipped ? "Skipped" : "Skip"}
-            variant="outline"
-            muted={isSkipped}
-            disabled={disableStatus}
-            onPress={onSkip}
-          />
-        </View>
-      ) : null}
+        {(stop.location?.trim() || stop.time?.trim()) ? (
+          <View className="mt-3 flex-row items-center gap-1.5">
+            <Ionicons name="location-outline" size={13} color="#C9BCA8" />
+            <Text
+              className="flex-1 text-[13px] leading-5 text-on-dark-muted"
+              style={fontStyles.uiRegular}
+              numberOfLines={1}
+            >
+              {[stop.location?.trim(), stop.time?.trim()].filter(Boolean).join(" · ")}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+
+      {/* Actions */}
+      <View className="gap-2.5 px-5 pb-5 pt-3">
+        {onNavigate ? (
+          <Pressable
+            onPress={onNavigate}
+            className="h-12 flex-row items-center justify-center gap-2 rounded-[14px] bg-on-dark active:opacity-90"
+          >
+            <Ionicons name="navigate" size={15} color="#2A1D13" />
+            <Text className="text-[15px] text-ontrip" style={fontStyles.uiSemibold}>
+              Navigate
+            </Text>
+          </Pressable>
+        ) : null}
+
+        {!stop.isReadOnly ? (
+          <View className="flex-row gap-2">
+            <ActionButton
+              label={isConfirmed ? "Confirmed" : "I'm here"}
+              variant={isConfirmed ? "filled" : "outline"}
+              disabled={disableStatus}
+              onPress={onConfirm}
+            />
+            <ActionButton
+              label={isSkipped ? "Skipped" : "Skip"}
+              variant="outline"
+              muted={isSkipped}
+              disabled={disableStatus}
+              onPress={onSkip}
+            />
+          </View>
+        ) : null}
+      </View>
     </LinearGradient>
   );
 }
@@ -116,25 +155,23 @@ function ActionButton({
   disabled?: boolean;
   onPress: () => void;
 }) {
-  const bgClass = variant === "filled" ? "bg-on-dark" : "border border-border-exec";
-  const textClass =
-    variant === "filled"
-      ? "text-ontrip"
-      : muted
-        ? "text-on-dark-muted"
-        : "text-on-dark-soft";
+  const bg = variant === "filled" ? "bg-on-dark" : "border border-border-exec";
+  const textColor =
+    variant === "filled" ? "text-ontrip" : muted ? "text-on-dark-muted" : "text-on-dark-soft";
 
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
       className={[
-        "flex-1 items-center justify-center rounded-full px-3 py-2.5",
-        bgClass,
+        "flex-1 items-center justify-center rounded-[12px] py-2.5",
+        bg,
         disabled ? "opacity-50" : "",
       ].join(" ")}
     >
-      <Text className={`text-sm font-semibold ${textClass}`}>{label}</Text>
+      <Text className={`text-sm ${textColor}`} style={fontStyles.uiMedium}>
+        {label}
+      </Text>
     </Pressable>
   );
 }

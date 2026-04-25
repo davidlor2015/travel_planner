@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
 import { useConfirmEmailVerificationMutation } from "@/features/auth/hooks";
 import { friendlyError } from "@/shared/api/friendlyError";
-import { PrimaryButton } from "@/shared/ui/Button";
-import { ScreenHeader } from "@/shared/ui/ScreenHeader";
-import { SectionCard } from "@/shared/ui/SectionCard";
+import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
+import { WaypointLogo } from "@/shared/ui/WaypointLogo";
 
 export default function VerifyEmailPage() {
   const params = useLocalSearchParams<{ token?: string | string[] }>();
@@ -36,54 +37,94 @@ export default function VerifyEmailPage() {
   }, [confirmEmailVerificationMutation, token]);
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      className="flex-1 justify-center bg-bg px-4"
-    >
-      <View className="gap-4">
-        <ScreenHeader
-          title="Waypoint"
-          subtitle="Confirming your email keeps shared trip access reliable."
-        />
+    <SafeAreaView className="flex-1 bg-bg">
+      <View className="flex-1 px-7">
+        {/* Logo row */}
+        <View className="pt-10 pb-2">
+          <WaypointLogo size={24} />
+        </View>
 
-        <SectionCard eyebrow="Account" title="Confirm your email">
-          <View className="gap-4">
-            {confirmEmailVerificationMutation.isPending ? (
-              <View className="rounded-2xl border border-border bg-surface-muted px-4 py-5">
-                <Text className="text-center text-sm font-medium text-text-muted">
-                  Confirming email...
-                </Text>
-              </View>
-            ) : null}
+        {/* Editorial headline */}
+        <View className="mt-12">
+          <Text
+            className="mb-1 text-[11px] uppercase tracking-[1.8px] text-amber"
+            style={fontStyles.uiMedium}
+          >
+            Confirming email
+          </Text>
+          <Text
+            className="text-espresso"
+            style={[textScaleStyles.displayXL, { fontSize: 36, lineHeight: 40 }]}
+          >
+            {isComplete ? "You're\nconfirmed." : "One\nmoment."}
+          </Text>
+          <Text className="mt-2 text-sm leading-5 text-muted" style={fontStyles.uiRegular}>
+            {isComplete
+              ? "Your email is verified. Sign in to get started."
+              : "Verifying your email address…"}
+          </Text>
+        </View>
 
-            {isComplete ? (
-              <View className="rounded-2xl border border-olive/20 bg-olive/10 px-4 py-3">
-                <Text className="text-sm font-medium text-olive">Email verified.</Text>
-              </View>
-            ) : null}
+        {/* Status cards */}
+        <View className="mt-10 gap-3">
+          {confirmEmailVerificationMutation.isPending ? (
+            <View className="rounded-xl border border-border bg-surface-muted px-4 py-4">
+              <Text className="text-center text-sm text-muted" style={fontStyles.uiRegular}>
+                Confirming your email…
+              </Text>
+            </View>
+          ) : null}
 
-            {errorMessage ? (
-              <View className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3">
-                <Text className="text-sm font-medium text-danger">{errorMessage}</Text>
-              </View>
-            ) : null}
+          {isComplete ? (
+            <View className="rounded-xl border border-olive/20 bg-olive/10 px-4 py-3">
+              <Text className="text-sm text-olive" style={fontStyles.uiMedium}>
+                Email verified successfully.
+              </Text>
+            </View>
+          ) : null}
 
-            <PrimaryButton
-              label="Continue to sign in"
-              onPress={() => router.replace("/(auth)/login")}
-              disabled={confirmEmailVerificationMutation.isPending}
-              fullWidth
-            />
-            {errorMessage ? (
-              <Pressable onPress={() => router.replace("./verify-email-request")}>
-                <Text className="text-center text-sm font-semibold text-accent">
+          {errorMessage ? (
+            <View className="rounded-xl border border-danger/20 bg-danger/10 px-4 py-3">
+              <Text className="text-sm text-danger" style={fontStyles.uiMedium}>
+                {errorMessage}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+
+        {/* Spacer */}
+        <View className="flex-1" />
+
+        {/* CTA */}
+        <View className="pb-8">
+          <Pressable
+            onPress={() => router.replace("/(auth)/login")}
+            disabled={confirmEmailVerificationMutation.isPending}
+            className="h-14 items-center justify-center rounded-2xl bg-espresso active:opacity-80"
+            style={confirmEmailVerificationMutation.isPending ? { opacity: 0.5 } : undefined}
+          >
+            <View className="flex-row items-center gap-2">
+              <Text className="text-[15px] text-on-dark" style={fontStyles.uiMedium}>
+                Continue to sign in
+              </Text>
+              <Ionicons name="arrow-forward" size={16} color="#F2EBDD" />
+            </View>
+          </Pressable>
+
+          {errorMessage ? (
+            <Pressable
+              onPress={() => router.replace("./verify-email-request")}
+              className="mt-5 items-center"
+            >
+              <Text className="text-sm text-muted" style={fontStyles.uiRegular}>
+                <Text className="text-espresso underline" style={fontStyles.uiMedium}>
                   Request a new verification link
                 </Text>
-              </Pressable>
-            ) : null}
-          </View>
-        </SectionCard>
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
-    </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }

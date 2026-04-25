@@ -7,12 +7,14 @@ type Props = {
   day: DayPlan;
   onAddStop: () => void;
   onEditStop: (stopIndex: number) => void;
+  onRegenerate?: () => void;
 };
 
 export function EditableItineraryDayCard({
   day,
   onAddStop,
   onEditStop,
+  onRegenerate,
 }: Props) {
   const [expanded, setExpanded] = useState(true);
   const title = day.day_title?.trim() || `Day ${day.day_number}`;
@@ -81,13 +83,25 @@ export function EditableItineraryDayCard({
             </Text>
           )}
 
-          <Pressable
-            onPress={onAddStop}
-            accessibilityRole="button"
-            className="mt-2 flex-row items-center justify-center rounded-full border border-border-strong py-2.5 active:opacity-70"
-          >
-            <Text className="text-xs font-semibold text-text-muted">Add stop</Text>
-          </Pressable>
+          <View className="mt-2 flex-row gap-2">
+            <Pressable
+              onPress={onAddStop}
+              accessibilityRole="button"
+              className="flex-1 flex-row items-center justify-center rounded-full border border-border-strong py-2.5 active:opacity-70"
+            >
+              <Text className="text-xs font-semibold text-text-muted">Add stop</Text>
+            </Pressable>
+            {onRegenerate ? (
+              <Pressable
+                onPress={onRegenerate}
+                accessibilityRole="button"
+                accessibilityLabel={`Regenerate ${day.day_title?.trim() || `Day ${day.day_number}`}`}
+                className="flex-row items-center justify-center rounded-full border border-border-strong px-4 py-2.5 active:opacity-70"
+              >
+                <Text className="text-xs font-semibold text-text-muted">Improve day</Text>
+              </Pressable>
+            ) : null}
+          </View>
         </View>
       ) : null}
     </View>

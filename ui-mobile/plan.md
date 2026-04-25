@@ -46,125 +46,127 @@ The web app is always the **source of truth**. Read it before touching any mobil
 - Auto-start AI stream after trip creation (`?from=create` → `WorkspaceScreen` effect)
 - `features/trips/tripSchema.ts`: `BUDGET_OPTIONS`, `PACE_OPTIONS`, `INTEREST_OPTIONS`, `serializePreferences`
 
+### Slice 4 — Auth Parity
+- Added auth screens: `forgot-password`, `reset-password`, `verify-email-request`, `verify-email`
+- Screens use existing auth hooks in `features/auth/hooks.ts`; no backend or contract changes
+- Added "Forgot password?" navigation from login
+- Added verify-email-request navigation after successful registration
+- Deep-link token handling remains out of scope; current support is in-app token routes only
+
+### Auth Screen Visual Redesign (post-Slice 4)
+All six auth screens (`login`, `register`, `forgot-password`, `reset-password`, `verify-email-request`, `verify-email`) rebuilt to match the Waypoint Signup design reference. Auth logic, routing, hooks, and API calls are unchanged.
+
+**Layout pattern applied across all screens:**
+- `SafeAreaView` with `bg-bg` ivory full-screen background (replaces `KeyboardAvoidingView justify-center`)
+- Three-zone vertical structure: logo/back row → editorial headline block → bottom-anchored CTA
+- Kicker (small uppercase `text-amber` label) → Playfair Display headline → muted subtitle copy
+- Underline-style input fields: small all-caps label, `text-[18px]` editable text, `borderBottomWidth 1.5` in `border-color`, no box or background — implemented as a local `UnderlineField` component inside each screen file
+- Dark espresso CTA button (`bg-espresso h-14 rounded-2xl`) with `text-on-dark` label and Ionicons arrow — replaces the amber `PrimaryButton` on auth screens only
+- Secondary actions rendered as inline text links below the CTA
+
+**Login screen specifically:**
+- `WaypointLogo` mark + wordmark at the top (real SVG asset, not a placeholder)
+- Spacer pushes headline + form to the lower portion of the screen
+
+**Token mapping (prototype → Waypoint):**
+- Prototype `WP.ink` → `espresso` (`#1C1108`) for dark surfaces and primary text
+- Prototype `WP.accent` orange-red → `amber` (`#B86845`), Waypoint's brand accent
+- Prototype `WP.cream` → `bg-bg` (`#FBF7EF`)
+- Prototype Instrument Serif → `fontStyles.displaySemibold` (Playfair Display, already loaded)
+- Hero card text → `text-on-dark` / `text-on-dark-muted` / `text-brass`
+
+**Not copied from prototype:** multi-step progress bar, OTP/magic-link verify flow, travel style preference chips, path-fork screen, invite-accept screen, prototype copy verbatim. Shared `Button`, `TextInputField`, `SectionCard`, `ScreenHeader` primitives are untouched.
+
+**WaypointLogo component (`shared/ui/WaypointLogo.tsx`):**
+- `WaypointMark` — renders the geometric star mark from `ui/public/Logo.svg` via react-native-svg `Path` with `fill-rule="evenodd"`; accepts `size` and `color` props
+- `WaypointLogo` — horizontal lockup: mark + "WAYPOINT" uppercase text in Inter
+- SVG source copied to `assets/images/Logo.svg`
+- Used on login and verify-email screens; logo row replaces the previous hand-drawn circle-dot mark
+- The decorative trip preview card ("Kyoto · Day 2, 5 stops") removed from login — it belonged to the on-trip context, not auth
+- `react-native-svg ^15.8.0` added to `package.json` (run `npm install` once)
+
+### On-Trip Screen Visual Redesign (post-Routing Hardening)
+All six on-trip execution components redesigned to match the Waypoint On-Trip design reference (`ontrip-screens.jsx`, `Waypoint On-Trip.html`). Behavior, data flow, mutations, and API contracts unchanged.
+
+**Components rewritten:**
+
+- **`OnTripHeader.tsx`** — Compact single-row topbar: Ionicons chevron-back, live red dot + "ON TRIP · Day N" uppercase kicker, 15px Inter trip title, right-side read-only/progress labels. Replaced the previous tall block with large Playfair title.
+- **`HappeningNowCard.tsx`** — Added `Animated` pulsing glow ring (opacity 0.1→0.35, 900ms loop) around the live dot in the status strip. Status strip separated from content area with a subtle border. CTA label changed from "Confirm" → "I'm here". Navigate button uses `rounded-[14px]`; action buttons use `rounded-[12px]`.
+- **`TimelineRow.tsx`** — Done items at 50% opacity with strikethrough + `uiRegular`. `DotForVariant` extracted as sub-component (filled dot = now, hollow accent border = next, small hollow = done/upcoming). Right-aligned "Done" / "Next" mono labels. `fontStyles` import added.
+- **`NeedsAttentionCard.tsx`** — `rounded-[20px]` outer card, `rounded-[14px]` inner blocker items, "Needs attention" kicker with 2px tracking.
+- **`LogStopFab.tsx`** — Dark `bg-espresso` pill (was `bg-accent-ontrip`), Ionicons `add` icon, `text-on-dark` label, stronger shadow values.
+- **`OnTripScreen.tsx`** — `SectionLabel` local component replaced with `TodaySectionHeader` (Playfair Display stop count + "N remaining" in italic). `NextPeek` card added (shown when `vm.now && vm.next`). Timeline items wrapped in rounded card container (`rounded-[20px]`) with dashed internal `borderBottomWidth` dividers. `NoStopsTodayCard` restyled. All mutation/toggleStatus/routing logic unchanged.
+
+**Visual rules preserved:**
+- Outer shell: `bg-surface-ontrip` cream (`#F2EBDD`) — light, NOT dark
+- `HappeningNowCard`: dark cocoa gradient `surface-exec-top → surface-exec` — NOT light
+- Timeline cards and content: `surface-ontrip-raised` cream surfaces — NOT dark
+
+### Slice 5 — Mobile Saved-Plan Itinerary Editing
+- `EditableItineraryDayCard`: collapsible saved-itinerary day card with editable stop rows and "Add stop"
+- `StopEditSheet`: slide-up stop add/edit sheet with `Alert.alert` delete confirmation
+- `OverviewTab`: local editable copy of saved `Itinerary`, add/edit/delete stops, dirty detection, and publish via `useApplyItineraryMutation` with `source: "manual_edit"`
+- Preserves untouched stop fields on edit; add/delete operate on the real backend itinerary shape without web draft IDs
+- Audit fixes: key-sorted dirty comparison, reset on `tripId` changes, reset when `itineraryQuery.data` changes, failed publish keeps local edits
+- Streaming auto-apply updates local editable state and clears dirty state
+
+**Still deferred from Slice 5:**
+- Drag-and-drop stop reordering
+- Day add / duplicate / clear / delete
+- Lock / favorite per stop
+- AI refinement controls (Slice 6)
+
+### Routing / On-Trip Entry Hardening
+- Added nested Trips stack (`app/(tabs)/trips/_layout.tsx`) so workspace/live screens remain under Trips
+- Bottom tabs are limited to Trips, Companions, Archive, Profile; Explore is hidden for now
+- Tab bar is hidden defensively on Trips child routes while staying visible on the Trips list
+- On-Trip CTA is gated by active trip status plus usable active snapshot data
+- Live route uses strict `tripId` parsing and never queries trip `0`
+- OnTrip shows a helpful "No stops are planned for today." empty state when an active snapshot has no usable today stops
+- If Expo Router warnings persist, fallback remains: move trip workspace/live routes outside `(tabs)` to `app/trips/[tripId]/...`
+
+### Trips → Workspace → Edit Visual Polish
+- `TripCard`: warmer editorial card surface, taller image, display-title typography, pill metadata, restyled live CTA
+- `WorkspaceTripHeader`: stronger web-inspired hero overlay, metadata pills, glass action buttons, improved stat wrapping
+- `TripFormSheet`: warmer bottom-sheet treatment, grouped core/preference/notes sections, anchored actions
+- Visual-only pass: routing, payloads, validation, OnTrip, and saved-itinerary editing behavior unchanged
+
+### Tab Bar Routing Fix
+- Removed the `shouldHideTabBar(useSegments())` pattern from `(tabs)/_layout.tsx`; `tabBarStyle: undefined` does not reliably restore a previously-hidden tab bar in React Navigation
+- Tab bar hiding is now opt-in per screen: `[tripId]/index.tsx` and `[tripId]/live.tsx` each render `<Tabs.Screen options={{ tabBarStyle: { display: "none" } }} />` so the trips list always shows the tab bar by default
+
+### Slice 6 — AI Refinement Controls
+Wires the existing `useRefineItineraryMutation` into the workspace itinerary view so users can regenerate a single day without replacing the full plan.
+
+**Files changed:**
+- **`features/trips/workspace/RegenerateSheet.tsx`** (new) — slide-up `Modal` sheet; "Improve this day" kicker, day title + stop count, optional variant pills (Cheaper / More local / Less walking / Faster pace), spinner + cancel during generation, refined-day preview (new stop list with diff count), "Accept changes" / "Keep original" actions. Manages own `RefineState` machine and `AbortController`. Calls `useRefineItineraryMutation` directly.
+- **`features/trips/workspace/EditableItineraryDayCard.tsx`** — added optional `onRegenerate` prop; renders an "Improve day" pill button alongside "Add stop" when provided.
+- **`features/trips/workspace/OverviewTab.tsx`** — added `regeneratingDayIndex` state; passes `onRegenerate` to each day card (only when not dirty); renders `<RegenerateSheet>`; `handleAcceptRefinement` replaces `editableItinerary` with the refined result and clears the sheet — user still publishes via the existing "Publish changes" flow.
+
+**UX invariants:**
+- The existing itinerary is never replaced until the user explicitly taps "Accept changes"
+- "Improve day" button is hidden when the itinerary has unpublished edits (prevents conflating manual and AI edits)
+- Accepting marks the itinerary as dirty and requires a separate "Publish changes" step
+- Cancelling / "Keep original" leaves the itinerary and state unchanged
+
+**Tests (`__tests__/workspace/RegenerateSheet.test.tsx` — 9 passing):**
+- Mutation called with correct `tripId`, `regenerate_day_number`, and no variant by default
+- Selected variant forwarded to mutation payload
+- Loading message shown; CTA hidden while refining
+- Error message shown on mutation reject
+- `onAccept` called with the refined itinerary (not the original)
+- `onAccept` NOT called when user dismisses with "Keep original"
+- Refined stop titles visible in preview before acceptance
+- Day title display (day_title vs "Day N" fallback)
+
+**Test infrastructure added:**
+- `jest`, `jest-expo@~54`, `@testing-library/react-native`, `@types/jest`, `react-test-renderer@19.1.0` added to devDependencies
+- Jest config added to `package.json` (preset: `jest-expo`, moduleNameMapper for `@/` path alias)
+- Run with: `npm test`
+
 ---
 
 ## Pending Slices
-
----
-
-### Slice 4 — Auth Parity
-
-All API hooks already exist in `features/auth/hooks.ts`. Only screens are missing.
-
-**Web reference files:**
-- `ui/src/features/auth/ForgotPasswordPage.tsx`
-- `ui/src/features/auth/ResetPasswordPage.tsx`
-- `ui/src/features/auth/VerifyEmailRequestPage.tsx`
-- `ui/src/features/auth/VerifyEmailPage.tsx`
-- `ui/src/features/auth/LoginPage/LoginPage.tsx` (forgot-password link placement)
-
-**Deliverables:**
-
-1. **`app/(auth)/forgot-password.tsx`**
-   - Email input + submit
-   - Calls `useRequestPasswordResetMutation()` (hook already exists)
-   - Success: confirmation message; back link to login
-
-2. **`app/(auth)/reset-password.tsx`**
-   - Reads `token` from `useLocalSearchParams`
-   - New password + confirm inputs
-   - Calls `useConfirmPasswordResetMutation({ token, password })`
-   - Success: navigate to login
-
-3. **`app/(auth)/verify-email.tsx`**
-   - Reads `token` from `useLocalSearchParams`
-   - Calls `useConfirmEmailVerificationMutation(token)` on mount
-   - Shows success or error state with back-to-login action
-
-4. **`app/(auth)/verify-email-request.tsx`**
-   - Email input
-   - Calls `useRequestEmailVerificationMutation(email)`
-   - Confirmation message on success
-
-5. **Update `app/(auth)/login.tsx`**
-   - Add "Forgot password?" link → `/(auth)/forgot-password`
-   - After successful register, surface message linking to `/(auth)/verify-email-request`
-
-**Notes:**
-- Deep-link token handling (email links opening the app to a token URL) is out of scope; in-app navigation only
-- All screens use existing primitives: `SafeAreaView`, `KeyboardAvoidingView`, `TextInputField`, `PrimaryButton`, `SecondaryButton`
-- No new shared UI primitives needed
-
----
-
-### Slice 5 — Itinerary Editing
-
-The largest product gap. `OverviewTab` renders the saved itinerary read-only. Web has a full `EditableItineraryPanel` with per-stop CRUD, day management, and a publish flow. Mobile scope: stop add/edit/delete + publish. Drag-drop reordering deferred.
-
-**Web reference files:**
-- `ui/src/features/trips/itinerary/EditableItineraryPanel.tsx`
-- `ui/src/features/trips/itinerary/EditableItineraryDayCard.tsx`
-- `ui/src/features/trips/itinerary/EditableTimelineStopRow.tsx`
-- `ui/src/features/trips/workspace/tabs/SavedItineraryView.tsx`
-
-**Mobile existing (do not break):**
-- `features/trips/workspace/ItineraryDayCard.tsx` — read-only card used by OnTrip live view; do not modify
-- `features/trips/workspace/ItineraryStopRow.tsx` — read-only row used by OnTrip live view; do not modify
-- `features/ai/hooks.ts` — `useApplyItineraryMutation`, `useRefineItineraryMutation`
-- `features/ai/api.ts` — `Itinerary`, `DayPlan`, `ItineraryItem` types
-
-**Deliverables:**
-
-1. **`features/trips/workspace/EditableItineraryDayCard.tsx`** (new)
-   - Collapsible day card; tap header to expand/collapse
-   - Header: day number pill, title, date, stop count
-   - "Add stop" button at bottom of expanded list
-   - Props: `day: DayPlan`, `onAddStop()`, `onUpdateStop(stopIndex, patch)`, `onDeleteStop(stopIndex)`
-
-2. **`features/trips/workspace/StopEditSheet.tsx`** (new)
-   - `Modal` slide-up with `TextInputField` for time, title, location, notes
-   - Confirm delete with `Alert.alert`
-   - Props: `visible`, `item: ItineraryItem | null`, `onSave(patch)`, `onDelete()`, `onClose()`
-
-3. **Update `OverviewTab.tsx`**
-   - When saved itinerary exists and `!isStreaming`: maintain a local `editableItinerary` state (copy of `itineraryQuery.data`)
-   - Use `EditableItineraryDayCard` instead of read-only `ItineraryDayCard`
-   - "Publish changes" button shown only when local copy differs from saved (`isDirty` boolean)
-   - Publish calls `useApplyItineraryMutation`; on success reset dirty state
-   - On streaming complete + auto-apply: also reset dirty state
-
-**Deferred:**
-- Drag-and-drop stop reordering
-- Day duplication / clear day
-- Lock / favorite per stop (used by refinement; add in Slice 6)
-
----
-
-### Slice 6 — AI Refinement Controls
-
-Adds regenerate controls for refining an existing itinerary by day, time block, and variant. Builds on existing `useRefineItineraryMutation` (already in `features/ai/hooks.ts` but unused).
-
-**Web reference files:**
-- `ui/src/features/trips/workspace/tabs/OverviewTab.tsx` (regeneration control state management)
-- `ui/src/features/trips/itinerary/EditableItineraryPanel.tsx` (regenerate button, control layout)
-
-**Mobile existing:**
-- `features/ai/hooks.ts` — `useRefineItineraryMutation`
-- `features/ai/api.ts` — `RefinementVariant`, `RefinementTimeBlock`
-
-**Deliverables:**
-
-1. **`features/trips/workspace/RegenerateSheet.tsx`** (new)
-   - `Modal` slide-up
-   - Day number picker (scrollable list built from current itinerary days)
-   - Variant selector pills: `more_local` / `cheaper` / `faster_pace` / `less_walking`
-   - Time block selector pills: `full_day` / `morning` / `afternoon` / `evening`
-   - "Regenerate" button → calls `useRefineItineraryMutation`
-   - On success: closes sheet, updates `editableItinerary` state in `OverviewTab`
-
-2. **Update `OverviewTab.tsx`**
-   - "Refine with AI" button alongside "Regenerate with AI" on saved view
-   - Opens `RegenerateSheet`; on complete, update editable copy and set dirty
 
 ---
 
@@ -205,15 +207,15 @@ Port the web matching feature. The web has `MatchingPage`, `TravelProfileForm`, 
 
 **Mobile existing:**
 - `app/(tabs)/companions.tsx` — stub (empty state only)
-- No `features/matching/` directory exists yet
+- `features/matching/api.ts` and `features/matching/hooks.ts` already exist; re-audit before porting more files
+- No mobile matching UI/components are complete yet
 
 **Deliverables:**
-1. `features/matching/api.ts` — port web API calls verbatim (same endpoints, no invention)
-2. `features/matching/hooks.ts` — port TanStack Query hooks
-3. `features/matching/adapters.ts` — typed view models for match card display
-4. `features/matching/TravelProfileForm.tsx` — travel style, budget, interests, availability form
-5. `features/matching/MatchList.tsx` — FlatList of match cards with compatibility score chips
-6. Update `app/(tabs)/companions.tsx` — replace stub with full matching screen
+1. Re-audit existing `features/matching/api.ts` and `features/matching/hooks.ts` against web before editing
+2. `features/matching/adapters.ts` — typed view models for match card display
+3. `features/matching/TravelProfileForm.tsx` — travel style, budget, interests, availability form
+4. `features/matching/MatchList.tsx` — FlatList of match cards with compatibility score chips
+5. Update `app/(tabs)/companions.tsx` — replace stub with full matching screen
 
 **Notes:**
 - Do not replicate framer-motion animations; use `Pressable` + NativeWind active states
@@ -290,11 +292,11 @@ grep -rn "['\"]\(✈\|🏨\|🚆\|🚌\|🚗\|🎯\|🍽\|📌\|🗺\|📦\|💰
 
 | Concern | Web source of truth | Mobile counterpart |
 |---|---|---|
-| Auth flows | `ui/src/features/auth/` | `app/(auth)/`, `features/auth/` |
+| Auth flows | `ui/src/features/auth/` | `app/(auth)/`, `features/auth/` (screens present) |
 | Trip list | `ui/src/features/trips/list/TripList.tsx` | `app/(tabs)/trips/index.tsx` |
 | Workspace screen | web workspace is inline in `TripList`; see `useTripWorkspaceModel` | `features/trips/workspace/WorkspaceScreen.tsx` |
 | Overview / itinerary | `ui/src/features/trips/workspace/tabs/OverviewTab.tsx` | `features/trips/workspace/OverviewTab.tsx` |
-| Editable itinerary | `ui/src/features/trips/itinerary/EditableItineraryPanel.tsx` | not yet ported (Slice 5) |
+| Editable itinerary | `ui/src/features/trips/itinerary/components/EditableItineraryPanel.tsx` | `features/trips/workspace/OverviewTab.tsx`, `EditableItineraryDayCard.tsx`, `StopEditSheet.tsx` |
 | Bookings | `ui/src/features/trips/workspace/tabs/BookingsTab.tsx` | `features/trips/workspace/BookingsTab.tsx` |
 | Budget | `ui/src/features/trips/workspace/tabs/BudgetTab.tsx` | `features/trips/workspace/BudgetTab.tsx` |
 | Packing | `ui/src/features/trips/workspace/tabs/PackingTab.tsx` | `features/trips/workspace/PackingTab.tsx` |

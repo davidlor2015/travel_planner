@@ -1,13 +1,21 @@
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, Text, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
 import { friendlyError } from "@/shared/api/friendlyError";
 import { useAuth } from "@/providers/AuthProvider";
-import { PrimaryButton } from "@/shared/ui/Button";
-import { ScreenHeader } from "@/shared/ui/ScreenHeader";
-import { SectionCard } from "@/shared/ui/SectionCard";
-import { TextInputField } from "@/shared/ui/TextInputField";
+import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
+import { WaypointLogo } from "@/shared/ui/WaypointLogo";
 
 export default function LoginPage() {
   const { signIn } = useAuth();
@@ -21,10 +29,8 @@ export default function LoginPage() {
       setErrorMessage("Email and password are required.");
       return;
     }
-
     setIsSubmitting(true);
     setErrorMessage(null);
-
     try {
       await signIn({ email: email.trim(), password });
       router.replace("/(tabs)/trips");
@@ -36,65 +42,150 @@ export default function LoginPage() {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      className="flex-1 justify-center bg-bg px-4"
-    >
-      <View className="gap-4">
-        <ScreenHeader
-          title="Waypoint"
-          subtitle="Sign in to manage trips, logistics, and on-trip execution."
-        />
-
-        <SectionCard
-          eyebrow="Account"
-          title="Sign in"
-          description="Use the same account you already use on web."
+    <SafeAreaView className="flex-1 bg-bg">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        className="flex-1"
+      >
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <View className="gap-4">
-            <TextInputField
-              label="Email"
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="email-address"
+          {/* Logo row */}
+          <View className="px-7 pt-10 pb-2">
+            <WaypointLogo size={24} />
+          </View>
+
+          {/* Spacer */}
+          <View className="flex-1" style={{ minHeight: 48 }} />
+
+          {/* Editorial headline */}
+          <View className="px-7">
+            <Text
+              className="mb-1 text-[11px] uppercase tracking-[1.8px] text-amber"
+              style={fontStyles.uiMedium}
+            >
+              Welcome back
+            </Text>
+            <Text
+              className="text-espresso"
+              style={[textScaleStyles.displayXL, { fontSize: 38, lineHeight: 42 }]}
+            >
+              {"Sign in."}
+            </Text>
+            <Text className="mt-2 text-sm leading-5 text-muted" style={fontStyles.uiRegular}>
+              Pick up where you left off.
+            </Text>
+          </View>
+
+          {/* Form fields */}
+          <View className="mt-8 px-7">
+            <UnderlineField
+              label="Email address"
               value={email}
               onChangeText={setEmail}
               placeholder="you@example.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
             />
-
-            <TextInputField
+            <UnderlineField
               label="Password"
-              secureTextEntry
               value={password}
               onChangeText={setPassword}
               placeholder="Password"
+              secureTextEntry
+              returnKeyType="done"
+              onSubmitEditing={() => void handleSubmit()}
             />
 
             {errorMessage ? (
-              <View className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3">
-                <Text className="text-sm font-medium text-danger">{errorMessage}</Text>
+              <View className="mt-1 rounded-xl border border-danger/20 bg-danger/10 px-4 py-3">
+                <Text className="text-sm text-danger" style={fontStyles.uiMedium}>
+                  {errorMessage}
+                </Text>
               </View>
             ) : null}
+          </View>
 
-            <PrimaryButton
-              label={isSubmitting ? "Signing In…" : "Sign In"}
+          {/* CTA */}
+          <View className="mt-8 px-7 pb-8">
+            <Pressable
               onPress={() => void handleSubmit()}
               disabled={isSubmitting}
-              fullWidth
-            />
-            <Pressable onPress={() => router.push("./forgot-password")}>
-              <Text className="text-center text-sm font-semibold text-accent">
-                Forgot password?
+              className="h-14 items-center justify-center rounded-2xl bg-espresso active:opacity-80"
+              style={isSubmitting ? { opacity: 0.6 } : undefined}
+            >
+              <View className="flex-row items-center gap-2">
+                <Text className="text-[15px] text-on-dark" style={fontStyles.uiMedium}>
+                  {isSubmitting ? "Signing in…" : "Sign In"}
+                </Text>
+                {!isSubmitting && (
+                  <Ionicons name="arrow-forward" size={16} color="#F2EBDD" />
+                )}
+              </View>
+            </Pressable>
+
+            <Pressable
+              onPress={() => router.push("./forgot-password")}
+              className="mt-5 items-center"
+            >
+              <Text className="text-sm text-muted" style={fontStyles.uiRegular}>
+                Forgot password?{" "}
+                <Text className="text-espresso underline" style={fontStyles.uiMedium}>
+                  Reset it
+                </Text>
               </Text>
             </Pressable>
-            <Pressable onPress={() => router.push("./register")}>
-              <Text className="text-center text-sm font-semibold text-accent">
-                Create account
+            <Pressable
+              onPress={() => router.push("./register")}
+              className="mt-3 items-center"
+            >
+              <Text className="text-sm text-muted" style={fontStyles.uiRegular}>
+                New here?{" "}
+                <Text className="text-espresso underline" style={fontStyles.uiMedium}>
+                  Create an account
+                </Text>
               </Text>
             </Pressable>
           </View>
-        </SectionCard>
-      </View>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+// Underline-style input — editorial feel, auth-screens only
+function UnderlineField({
+  label,
+  error,
+  ...inputProps
+}: {
+  label: string;
+  error?: string | null;
+} & React.ComponentProps<typeof TextInput>) {
+  return (
+    <View className="mb-6">
+      <Text
+        className="mb-1.5 text-[10px] uppercase tracking-[1.8px] text-muted"
+        style={fontStyles.uiMedium}
+      >
+        {label}
+      </Text>
+      <TextInput
+        placeholderTextColor="#8A7E74"
+        selectionColor="#B86845"
+        className="pb-2 text-[18px] text-espresso"
+        style={[fontStyles.uiRegular, { borderBottomWidth: 1.5, borderBottomColor: error ? "#881337" : "#EAE2D6" }]}
+        {...inputProps}
+      />
+      {error ? (
+        <Text className="mt-1 text-xs text-danger" style={fontStyles.uiMedium}>
+          {error}
+        </Text>
+      ) : null}
+    </View>
   );
 }
