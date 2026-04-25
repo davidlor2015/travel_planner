@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 
 import {
+  useCreateTripMutation,
   useTripDetailQuery,
   useTripsQuery,
   useTripSummariesQuery,
@@ -8,6 +9,7 @@ import {
 } from "@/features/trips/hooks";
 import { toTripListItem } from "@/features/trips/adapters";
 import {
+  buildCreateTripPayload,
   buildTripUpdatePayload,
   type TripFormValue,
 } from "@/features/trips/TripFormSheet";
@@ -31,7 +33,9 @@ export type TripWorkspaceModel = {
   invitePending: ReturnType<typeof useWorkspaceCollaboration>["isSendingInvite"];
   onInvite: ReturnType<typeof useWorkspaceCollaboration>["sendInvite"];
   switcherTrips: ReturnType<typeof toTripListItem>[];
+  isCreatingTrip: boolean;
   isUpdatingTrip: boolean;
+  createTrip: (value: TripFormValue) => Promise<{ id: number }>;
   updateTrip: (value: TripFormValue) => Promise<unknown>;
   isSolo: boolean;
   showGroupCoordination: boolean;
@@ -46,6 +50,7 @@ export function useTripWorkspaceModel({
   const tripQuery = useTripDetailQuery(tripId);
   const tripsQuery = useTripsQuery();
   const summariesQuery = useTripSummariesQuery();
+  const createTripMutation = useCreateTripMutation();
   const updateTripMutation = useUpdateTripMutation();
   const collaborationQuery = useWorkspaceCollaboration(
     tripId,
@@ -83,6 +88,10 @@ export function useTripWorkspaceModel({
   const showGroupCoordination = !isSolo;
 
   // Action handlers
+  const createTrip = async (value: TripFormValue) => {
+    return createTripMutation.mutateAsync(buildCreateTripPayload(value));
+  };
+
   const updateTrip = async (value: TripFormValue) => {
     return updateTripMutation.mutateAsync({
       tripId,
@@ -100,7 +109,9 @@ export function useTripWorkspaceModel({
     invitePending: collaborationQuery.isSendingInvite,
     onInvite: collaborationQuery.sendInvite,
     switcherTrips,
+    isCreatingTrip: createTripMutation.isPending,
     isUpdatingTrip: updateTripMutation.isPending,
+    createTrip,
     updateTrip,
     isSolo,
     showGroupCoordination,

@@ -32,6 +32,8 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
   const router = useRouter();
   const { user } = useAuth();
   const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("overview");
@@ -110,6 +112,9 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
   // Keep activeTab valid when visible set changes
   const resolvedTab: WorkspaceTab = useMemo(() => {
     if (visibleTabs.some((t) => t.key === activeTab)) return activeTab;
+    if (["bookings", "budget", "packing", "members"].includes(activeTab)) {
+      return activeTab;
+    }
     return "overview";
   }, [activeTab, visibleTabs]);
 
@@ -143,6 +148,7 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
         trip={trip}
         summary={workspace.summary}
         onTripPress={() => setSwitcherOpen(true)}
+        onCreatePress={() => setCreateOpen(true)}
         onEditPress={() => setEditOpen(true)}
         onMembersPress={() => setActiveTab("members")}
       />
@@ -175,9 +181,14 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
         <OverviewTab
           trip={trip}
           summary={workspace.summary}
+          collaboration={collaboration}
+          onTripSnapshot={onTripSnapshotQuery.data ?? null}
+          canOpenLiveView={canOpenLiveView}
           streamState={streamState}
           onStartStream={handleStartStream}
           onCancelStream={handleCancelStream}
+          onOpenTab={setActiveTab}
+          onOpenLiveView={() => router.push(`/(tabs)/trips/${tripId}/live` as Href)}
         />
       )}
       {resolvedTab === "bookings" && <BookingsTab tripId={tripId} />}
@@ -201,6 +212,27 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
         onSelect={(nextTripId) =>
           router.replace(`/(tabs)/trips/${nextTripId}` as Href)
         }
+      />
+
+      <TripFormSheet
+        visible={createOpen}
+        mode="create"
+        submitting={workspace.isCreatingTrip}
+        error={createError}
+        onClose={() => {
+          setCreateOpen(false);
+          setCreateError(null);
+        }}
+        onSubmit={async (value: TripFormValue) => {
+          try {
+            setCreateError(null);
+            const created = await workspace.createTrip(value);
+            setCreateOpen(false);
+            router.push(`/(tabs)/trips/${created.id}?from=create` as Href);
+          } catch {
+            setCreateError("We couldn't create that trip. Try again.");
+          }
+        }}
       />
 
       <TripFormSheet

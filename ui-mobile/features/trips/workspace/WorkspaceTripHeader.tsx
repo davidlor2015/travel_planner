@@ -15,6 +15,8 @@ type Props = {
   onTripPress: () => void;
   /** Opens the edit trip sheet. */
   onEditPress: () => void;
+  /** Opens the create trip sheet. */
+  onCreatePress: () => void;
   /** Opens the members / invite sheet. */
   onMembersPress: () => void;
 };
@@ -59,6 +61,7 @@ export function WorkspaceTripHeader({
   summary,
   onTripPress,
   onEditPress,
+  onCreatePress,
   onMembersPress,
 }: Props) {
   const imageUrl = getTripImageUrl({ id: trip.id, destination: trip.destination });
@@ -112,6 +115,12 @@ export function WorkspaceTripHeader({
 
           {/* Glass action buttons */}
           <View className="flex-row items-center gap-2">
+            <GlassButton
+              icon="add-outline"
+              onPress={onCreatePress}
+              accessibilityLabel="Create a new trip"
+              accessibilityHint="Opens the new trip form"
+            />
             <GlassButton
               icon="people-outline"
               onPress={onMembersPress}

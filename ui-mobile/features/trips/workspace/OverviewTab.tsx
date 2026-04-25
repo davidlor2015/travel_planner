@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import type { ReactNode } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -7,474 +8,611 @@ import {
   View,
 } from "react-native";
 
-import { useApplyItineraryMutation, useSavedItineraryQuery } from "@/features/ai/hooks";
-import type { Itinerary, ItineraryItem } from "@/features/ai/api";
+import type { ItineraryItem } from "@/features/ai/api";
 import type { StreamState } from "@/features/ai/useStreamingItinerary";
-import { ApiError } from "@/shared/api/client";
-import { PrimaryButton } from "@/shared/ui/Button";
+import type { TripOnTripSnapshot } from "../types";
+import { PrimaryButton, SecondaryButton } from "@/shared/ui/Button";
 import { SectionCard } from "@/shared/ui/SectionCard";
 import { StatusPill } from "@/shared/ui/StatusPill";
+import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
 
 import type {
   TripSummaryViewModel,
+  TripWorkspaceCollaborationViewModel,
   TripWorkspaceViewModel,
 } from "./adapters";
 import { EditableItineraryDayCard } from "./EditableItineraryDayCard";
 import { RegenerateSheet } from "./RegenerateSheet";
-import { StopEditSheet, type StopEditPatch } from "./StopEditSheet";
+import { StopEditSheet } from "./StopEditSheet";
+import { useWorkspaceOverviewModel } from "./useWorkspaceOverviewModel";
+import type {
+  WorkspaceAttentionItem,
+  WorkspaceItineraryPreview,
+  WorkspaceQuickAction,
+} from "./workspaceCommandModel";
+import type { WorkspaceTab } from "./WorkspaceTabBar";
 
 type Props = {
   trip: TripWorkspaceViewModel;
   summary: TripSummaryViewModel | null;
+  collaboration: TripWorkspaceCollaborationViewModel | null;
+  onTripSnapshot: TripOnTripSnapshot | null;
+  canOpenLiveView: boolean;
   streamState: StreamState | undefined;
   onStartStream: () => void;
   onCancelStream: () => void;
+  onOpenTab: (tab: WorkspaceTab) => void;
+  onOpenLiveView: () => void;
+};
+
+const ACTION_ICONS: Record<WorkspaceTab, keyof typeof Ionicons.glyphMap> = {
+  overview: "list-outline",
+  bookings: "bookmark-outline",
+  budget: "card-outline",
+  packing: "bag-outline",
+  members: "people-outline",
 };
 
 export function OverviewTab({
   trip,
   summary,
+  collaboration,
+  onTripSnapshot,
+  canOpenLiveView,
   streamState,
   onStartStream,
   onCancelStream,
+  onOpenTab,
+  onOpenLiveView,
 }: Props) {
+  const overview = useWorkspaceOverviewModel({
+    trip,
+    summary,
+    collaboration,
+    onTripSnapshot,
+    streamState,
+    onCancelStream,
+  });
+
+  const command = overview.command;
+
   return (
     <ScrollView contentContainerClassName="gap-4 px-4 pb-8 pt-4">
-      {/* Most actionable first: the itinerary plan and AI generation */}
-      <ItinerarySection
-        tripId={trip.id}
-        streamState={streamState}
-        onStartStream={onStartStream}
-        onCancelStream={onCancelStream}
+      <TodayCard
+        title={command.todayTitle}
+        body={command.todayBody}
+        meta={command.todayMeta}
+        canOpenLiveView={canOpenLiveView}
+        onOpenLiveView={onOpenLiveView}
       />
 
-      {/* Readiness snapshot — quick-scan logistics health */}
-      {summary ? (
-        <SectionCard eyebrow="At a glance" title="Readiness">
-          <View className="flex-row gap-3">
-            <StatBlock
-              label="Packing"
-              value={`${summary.packingChecked}/${summary.packingTotal}`}
-            />
-            <StatBlock
-              label="Budget"
-              value={
-                summary.budgetLimit != null
-                  ? `$${summary.budgetSpent.toFixed(0)} / $${summary.budgetLimit.toFixed(0)}`
-                  : `$${summary.budgetSpent.toFixed(0)} spent`
-              }
-              highlight={summary.isOverBudget ? "error" : undefined}
-            />
-            <StatBlock label="Bookings" value={String(summary.reservationCount)} />
+      <NextActionCard
+        title={command.nextActionTitle}
+        body={command.nextActionBody}
+        meta={command.nextActionMeta}
+        isStreaming={overview.isStreaming}
+        isSaving={overview.isSavingItinerary}
+        isDirty={overview.isItineraryDirty}
+        isMissing={overview.isItineraryMissing}
+        hasItinerary={Boolean(overview.itinerary)}
+        onCancelStream={onCancelStream}
+        onStartStream={onStartStream}
+        onPublish={() => void overview.handlePublishChanges()}
+        onShowItinerary={() => overview.setShowFullItinerary(true)}
+      />
+
+      <ReadinessCard
+        title={command.readinessTitle}
+        body={command.readinessBody}
+        items={command.attentionItems}
+      />
+
+      <QuickActionsCard actions={command.quickActions} onOpenTab={onOpenTab} />
+
+      <ItineraryPreviewCard
+        preview={command.itineraryPreview}
+        isLoading={overview.isItineraryLoading}
+        isMissing={overview.isItineraryMissing}
+        isStreaming={overview.isStreaming}
+        isSaving={overview.isSavingItinerary}
+        error={overview.itineraryError}
+        streamText={overview.streamText}
+        showFullItinerary={overview.showFullItinerary}
+        onStartStream={onStartStream}
+        onCancelStream={onCancelStream}
+        onShowFullItinerary={() => overview.setShowFullItinerary(true)}
+        onHideFullItinerary={() => overview.setShowFullItinerary(false)}
+      />
+
+      {overview.showFullItinerary && overview.itinerary ? (
+        <SectionCard
+          eyebrow="Edit itinerary"
+          title="Full saved plan"
+          description="Use this for quick mobile corrections. Larger planning work is better on the web workspace."
+        >
+          <View className="gap-3">
+            {overview.itinerary.days.map((day, dayIndex) => (
+              <EditableItineraryDayCard
+                key={day.day_number}
+                day={day}
+                onAddStop={() => overview.setEditingStop({ dayIndex, stopIndex: null })}
+                onEditStop={(stopIndex) =>
+                  overview.setEditingStop({ dayIndex, stopIndex })
+                }
+                onRegenerate={
+                  !overview.isItineraryDirty
+                    ? () => overview.setRegeneratingDayIndex(dayIndex)
+                    : undefined
+                }
+              />
+            ))}
+            {overview.isItineraryDirty ? (
+              <PrimaryButton
+                label={overview.isSavingItinerary ? "Publishing..." : "Publish changes"}
+                onPress={() => void overview.handlePublishChanges()}
+                disabled={overview.isSavingItinerary}
+                fullWidth
+              />
+            ) : null}
+            <Pressable
+              onPress={onStartStream}
+              disabled={overview.isItineraryDirty}
+              accessibilityRole="button"
+              className={[
+                "flex-row items-center justify-center rounded-full border border-border-strong py-2.5 active:opacity-70",
+                overview.isItineraryDirty ? "opacity-50" : "",
+              ].join(" ")}
+            >
+              <Text className="text-xs font-semibold text-text-muted">
+                {overview.isItineraryDirty
+                  ? "Publish changes before regenerating"
+                  : "Regenerate with AI"}
+              </Text>
+            </Pressable>
           </View>
         </SectionCard>
       ) : null}
 
-      {/* Trip basics — reference info pushed to the bottom */}
-      <SectionCard
-        eyebrow="Trip basics"
-        title="Destination and timing"
-        description="Keep the core trip facts visible while you fill in the details."
-      >
-        <View className="gap-3">
-          <InfoRow label="Destination" value={trip.destination} />
-          <InfoRow label="Dates" value={trip.dateRange} />
-          <InfoRow
-            label="Duration"
-            value={`${trip.durationDays} ${trip.durationDays === 1 ? "day" : "days"}`}
+      <TripBasicsCard trip={trip} />
+
+      {overview.itinerary ? (
+        <>
+          <StopEditSheet
+            visible={Boolean(overview.editingStop)}
+            item={overview.selectedStop}
+            onSave={overview.handleSaveStop}
+            onDelete={overview.handleDeleteStop}
+            onClose={() => overview.setEditingStop(null)}
           />
-          <View className="flex-row flex-wrap gap-2">
-            <StatusPill
-              label={trip.statusLabel}
-              variant={
-                trip.status === "active"
-                  ? "success"
-                  : trip.status === "upcoming"
-                    ? "warning"
-                    : "default"
-              }
-            />
-            <StatusPill
-              label={trip.isOwner ? "You own this trip" : "Shared trip"}
-              variant="info"
-            />
-          </View>
-        </View>
-      </SectionCard>
+          <RegenerateSheet
+            visible={overview.regeneratingDayIndex !== null}
+            tripId={trip.id}
+            day={
+              overview.regeneratingDayIndex !== null
+                ? (overview.itinerary.days[overview.regeneratingDayIndex] ?? null)
+                : null
+            }
+            currentItinerary={overview.itinerary}
+            onAccept={overview.handleAcceptRefinement}
+            onClose={() => overview.setRegeneratingDayIndex(null)}
+          />
+        </>
+      ) : null}
     </ScrollView>
   );
 }
 
-type ItinerarySectionProps = {
-  tripId: number;
-  streamState: StreamState | undefined;
-  onStartStream: () => void;
-  onCancelStream: () => void;
-};
+function TodayCard({
+  title,
+  body,
+  meta,
+  canOpenLiveView,
+  onOpenLiveView,
+}: {
+  title: string;
+  body: string;
+  meta: string | null;
+  canOpenLiveView: boolean;
+  onOpenLiveView: () => void;
+}) {
+  return (
+    <View className="rounded-[26px] border border-border bg-white px-4 py-5 shadow-card">
+      <View className="flex-row items-start justify-between gap-3">
+        <View className="flex-1">
+          <Text
+            className="text-[10px] uppercase tracking-[1.6px] text-accent"
+            style={fontStyles.uiSemibold}
+          >
+            Today
+          </Text>
+          <Text className="mt-1 text-espresso" style={textScaleStyles.displayL}>
+            {title}
+          </Text>
+          <Text className="mt-2 text-[14px] leading-5 text-muted" style={fontStyles.uiRegular}>
+            {body}
+          </Text>
+          {meta ? (
+            <Text className="mt-2 text-[12px] text-flint" style={fontStyles.uiMedium}>
+              {meta}
+            </Text>
+          ) : null}
+        </View>
+        <View className="h-11 w-11 items-center justify-center rounded-full bg-amber/10">
+          <Ionicons name="sunny-outline" size={21} color="#B86845" />
+        </View>
+      </View>
 
-function ItinerarySection({
-  tripId,
-  streamState,
-  onStartStream,
+      {canOpenLiveView ? (
+        <Pressable
+          onPress={onOpenLiveView}
+          accessibilityRole="button"
+          accessibilityLabel="Open live trip view"
+          className="mt-4 flex-row items-center justify-between rounded-[18px] border border-border-ontrip-strong bg-surface-ontrip-raised px-4 py-3 active:opacity-75"
+        >
+          <View className="flex-row items-center gap-2">
+            <View className="h-2 w-2 rounded-full bg-accent-ontrip" />
+            <Text className="text-[13px] text-ontrip" style={fontStyles.uiSemibold}>
+              Live trip controls
+            </Text>
+          </View>
+          <Text className="text-[13px] text-accent-ontrip" style={fontStyles.uiSemibold}>
+            Open
+          </Text>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+function NextActionCard({
+  title,
+  body,
+  meta,
+  isStreaming,
+  isSaving,
+  isDirty,
+  isMissing,
+  hasItinerary,
   onCancelStream,
-}: ItinerarySectionProps) {
-  const itineraryQuery = useSavedItineraryQuery(tripId);
-  const { mutateAsync: saveItinerary, isPending: isSaving } =
-    useApplyItineraryMutation();
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [editableItinerary, setEditableItinerary] = useState<Itinerary | null>(null);
-  const [lastSyncedSaved, setLastSyncedSaved] = useState<string | null>(null);
-  const [editingStop, setEditingStop] = useState<{
-    dayIndex: number;
-    stopIndex: number | null;
-  } | null>(null);
-  const [regeneratingDayIndex, setRegeneratingDayIndex] = useState<number | null>(null);
-  const applyInFlight = useRef(false);
-
-  const completedItinerary: Itinerary | null = streamState?.itinerary ?? null;
-  const isStillStreaming = streamState?.streaming ?? false;
-  const streamError = streamState?.error ?? null;
-  const isStreaming = isStillStreaming;
-  const savedItinerary = itineraryQuery.data ?? null;
-  const savedSerialized = useMemo(
-    () => (savedItinerary ? serializeItinerary(savedItinerary) : null),
-    [savedItinerary],
-  );
-  const editableSerialized = useMemo(
-    () => (editableItinerary ? serializeItinerary(editableItinerary) : null),
-    [editableItinerary],
-  );
-  const isDirty = Boolean(
-    savedSerialized && editableSerialized && savedSerialized !== editableSerialized,
-  );
-  const selectedStop =
-    editingStop && editableItinerary
-      ? editableItinerary.days[editingStop.dayIndex]?.items[
-          editingStop.stopIndex ?? -1
-        ] ?? null
-      : null;
-
-  useEffect(() => {
-    setEditableItinerary(null);
-    setLastSyncedSaved(null);
-    setEditingStop(null);
-    setRegeneratingDayIndex(null);
-    setSaveError(null);
-    applyInFlight.current = false;
-  }, [tripId]);
-
-  useEffect(() => {
-    if (!savedItinerary || !savedSerialized) {
-      setEditableItinerary(null);
-      setLastSyncedSaved(null);
-      setEditingStop(null);
-      return;
-    }
-
-    if (lastSyncedSaved !== savedSerialized) {
-      setEditableItinerary(savedItinerary);
-      setLastSyncedSaved(savedSerialized);
-      setEditingStop(null);
-    }
-  }, [lastSyncedSaved, savedItinerary, savedSerialized]);
-
-  // Auto-apply when the stream finishes with a valid itinerary.
-  useEffect(() => {
-    if (!completedItinerary || isStillStreaming || applyInFlight.current) return;
-
-    applyInFlight.current = true;
-    setSaveError(null);
-
-    saveItinerary({ tripId, itinerary: completedItinerary, source: "ai_stream" })
-      .then(() => {
-        setEditableItinerary(completedItinerary);
-        setLastSyncedSaved(serializeItinerary(completedItinerary));
-        onCancelStream();
-        applyInFlight.current = false;
-      })
-      .catch(() => {
-        setSaveError("We couldn't save the itinerary. Try again.");
-        onCancelStream();
-        applyInFlight.current = false;
-      });
-    // completedItinerary identity only changes once (null → object); isStillStreaming
-    // transitions true → false exactly once per stream. tripId is stable from props.
-    // saveItinerary / onCancelStream are stable callbacks from their respective hooks.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [completedItinerary, isStillStreaming, tripId]);
-
-  const is404 =
-    itineraryQuery.isError &&
-    itineraryQuery.error instanceof ApiError &&
-    itineraryQuery.error.status === 404;
-
-  const hasSaved = Boolean(itineraryQuery.data);
-  const showNormal = !isStreaming && !isSaving;
-
-  function handleAddStop(dayIndex: number, patch: StopEditPatch) {
-    setEditableItinerary((current) => {
-      if (!current) return current;
-      const day = current.days[dayIndex];
-      if (!day) return current;
-
-      const nextDays = [...current.days];
-      nextDays[dayIndex] = {
-        ...day,
-        items: [...day.items, createStopFromPatch(patch)],
-      };
-      return { ...current, days: nextDays };
-    });
-  }
-
-  function handleUpdateStop(
-    dayIndex: number,
-    stopIndex: number,
-    patch: StopEditPatch,
-  ) {
-    setEditableItinerary((current) => {
-      if (!current) return current;
-      const day = current.days[dayIndex];
-      const stop = day?.items[stopIndex];
-      if (!day || !stop) return current;
-
-      const nextItems = [...day.items];
-      nextItems[stopIndex] = { ...stop, ...patch };
-      const nextDays = [...current.days];
-      nextDays[dayIndex] = { ...day, items: nextItems };
-      return { ...current, days: nextDays };
-    });
-  }
-
-  function handleDeleteStop() {
-    if (!editingStop || editingStop.stopIndex == null) return;
-    const { dayIndex, stopIndex } = editingStop;
-
-    setEditableItinerary((current) => {
-      if (!current) return current;
-      const day = current.days[dayIndex];
-      if (!day?.items[stopIndex]) return current;
-
-      const nextDays = [...current.days];
-      nextDays[dayIndex] = {
-        ...day,
-        items: day.items.filter((_item, index) => index !== stopIndex),
-      };
-      return { ...current, days: nextDays };
-    });
-    setEditingStop(null);
-  }
-
-  function handleSaveStop(patch: StopEditPatch) {
-    if (!editingStop) return;
-
-    if (editingStop.stopIndex == null) {
-      handleAddStop(editingStop.dayIndex, patch);
-    } else {
-      handleUpdateStop(editingStop.dayIndex, editingStop.stopIndex, patch);
-    }
-    setEditingStop(null);
-  }
-
-  function handleAcceptRefinement(refinedItinerary: Itinerary) {
-    if (!editableItinerary) return;
-    setEditableItinerary(refinedItinerary);
-    setRegeneratingDayIndex(null);
-  }
-
-  async function handlePublishChanges() {
-    if (!editableItinerary || !isDirty) return;
-
-    setSaveError(null);
-    try {
-      await saveItinerary({
-        tripId,
-        itinerary: editableItinerary,
-        source: "manual_edit",
-      });
-      setLastSyncedSaved(serializeItinerary(editableItinerary));
-    } catch {
-      setSaveError("We couldn't publish your itinerary changes. Try again.");
-    }
+  onStartStream,
+  onPublish,
+  onShowItinerary,
+}: {
+  title: string;
+  body: string;
+  meta: string | null;
+  isStreaming: boolean;
+  isSaving: boolean;
+  isDirty: boolean;
+  isMissing: boolean;
+  hasItinerary: boolean;
+  onCancelStream: () => void;
+  onStartStream: () => void;
+  onPublish: () => void;
+  onShowItinerary: () => void;
+}) {
+  let action: ReactNode = null;
+  if (isStreaming) {
+    action = <SecondaryButton label="Cancel" onPress={onCancelStream} />;
+  } else if (isDirty) {
+    action = <PrimaryButton label="Publish" onPress={onPublish} />;
+  } else if (isMissing) {
+    action = <PrimaryButton label="Generate" onPress={onStartStream} />;
+  } else if (hasItinerary && !isSaving) {
+    action = <SecondaryButton label="View plan" onPress={onShowItinerary} />;
   }
 
   return (
-    <SectionCard
-      eyebrow="Itinerary"
-      title="Saved plan"
-      description="Your published itinerary — shared with everyone on this trip."
-    >
-      {/* ── Streaming banner ─────────────────────────────────── */}
-      {isStreaming && (
-        <View
-          className="rounded-2xl p-4 gap-3"
-          style={{
-            borderWidth: 1,
-            borderColor: "rgba(184, 104, 69, 0.3)",
-            backgroundColor: "rgba(184, 104, 69, 0.05)",
-          }}
-        >
-          <View className="flex-row items-center justify-between">
-            <View className="flex-row items-center gap-2">
-              <ActivityIndicator size="small" color="#B86845" />
-              <Text className="text-sm font-semibold text-amber">
-                Generating itinerary…
-              </Text>
-            </View>
-            <Pressable
-              onPress={onCancelStream}
-              accessibilityRole="button"
-              accessibilityLabel="Cancel generation"
-              className="rounded-full px-3 py-1.5 active:opacity-60"
-            >
-              <Text className="text-xs font-semibold text-text-muted">
-                Cancel
-              </Text>
-            </Pressable>
-          </View>
-          <Text
-            className="text-xs leading-relaxed text-text-soft"
-            numberOfLines={6}
-          >
-            {streamState?.text
-              ? streamState.text.slice(-400)
-              : "Connecting to AI… you can cancel at any time."}
-          </Text>
-        </View>
-      )}
-
-      {/* ── Saving spinner (stream done, writing to server) ───── */}
-      {isSaving && (
-        <View className="flex-row items-center gap-2 py-2">
-          <ActivityIndicator size="small" color="#B86845" />
-          <Text className="text-sm text-text-muted">Saving itinerary…</Text>
-        </View>
-      )}
-
-      {/* ── Stream / save error ───────────────────────────────── */}
-      {showNormal && (streamError || saveError) && (
-        <Text className="text-sm text-danger">{streamError ?? saveError}</Text>
-      )}
-
-      {/* ── Loading cached itinerary ──────────────────────────── */}
-      {showNormal && itineraryQuery.isLoading && (
-        <ActivityIndicator className="py-2" />
-      )}
-
-      {/* ── No itinerary yet — generate CTA ──────────────────── */}
-      {showNormal && is404 && (
-        <View className="gap-3">
-          <Text className="text-sm text-text-muted">
-            No itinerary saved yet. Generate one with AI or build it manually on
-            the web workspace.
-          </Text>
-          <PrimaryButton label="Generate with AI" onPress={onStartStream} />
-          <Text className="text-[11px] text-text-soft">
-            AI suggestions are a starting point — confirm details before anyone
-            travels.
-          </Text>
-        </View>
-      )}
-
-      {/* ── Fetch error (non-404) ─────────────────────────────── */}
-      {showNormal && itineraryQuery.isError && !is404 && (
-        <Text className="text-sm text-text-muted">
-          We could not load the itinerary right now. Try again in a moment.
+    <SectionCard eyebrow="Next action" title={title} action={action}>
+      <View className="gap-2">
+        <Text className="text-[14px] leading-5 text-text-muted" style={fontStyles.uiRegular}>
+          {body}
         </Text>
-      )}
+        {meta ? (
+          <Text className="text-[12px] text-text-soft" style={fontStyles.uiMedium}>
+            {meta}
+          </Text>
+        ) : null}
+        {isSaving ? (
+          <View className="mt-1 flex-row items-center gap-2">
+            <ActivityIndicator size="small" color="#B86845" />
+            <Text className="text-sm text-text-muted">Saving itinerary...</Text>
+          </View>
+        ) : null}
+      </View>
+    </SectionCard>
+  );
+}
 
-      {/* ── Saved itinerary ───────────────────────────────────── */}
-      {showNormal && hasSaved && editableItinerary && (
-        <View className="mt-1 gap-3">
-          {editableItinerary.days.map((day, dayIndex) => (
-            <EditableItineraryDayCard
-              key={day.day_number}
-              day={day}
-              onAddStop={() => setEditingStop({ dayIndex, stopIndex: null })}
-              onEditStop={(stopIndex) => setEditingStop({ dayIndex, stopIndex })}
-              onRegenerate={!isDirty ? () => setRegeneratingDayIndex(dayIndex) : undefined}
-            />
+function ReadinessCard({
+  title,
+  body,
+  items,
+}: {
+  title: string;
+  body: string;
+  items: WorkspaceAttentionItem[];
+}) {
+  return (
+    <SectionCard eyebrow="Readiness" title={title} description={body}>
+      {items.length > 0 ? (
+        <View className="gap-2">
+          {items.map((item) => (
+            <View
+              key={`${item.label}-${item.detail}`}
+              className="rounded-[16px] border border-border bg-surface-muted px-3 py-3"
+            >
+              <View className="flex-row items-start justify-between gap-3">
+                <View className="flex-1">
+                  <Text className="text-[13px] text-text" style={fontStyles.uiSemibold}>
+                    {item.label}
+                  </Text>
+                  <Text className="mt-1 text-[12px] leading-4 text-text-muted">
+                    {item.detail}
+                  </Text>
+                </View>
+                <StatusPill label="Check" variant={item.variant} />
+              </View>
+            </View>
           ))}
-          {isDirty ? (
-            <PrimaryButton
-              label={isSaving ? "Publishing..." : "Publish changes"}
-              onPress={() => void handlePublishChanges()}
-              disabled={isSaving}
-              fullWidth
-            />
-          ) : null}
-          <Pressable
-            onPress={onStartStream}
-            disabled={isDirty}
-            accessibilityRole="button"
-            className={[
-              "mt-1 flex-row items-center justify-center rounded-full border border-border-strong py-2.5 active:opacity-70",
-              isDirty ? "opacity-50" : "",
-            ].join(" ")}
-          >
-            <Text className="text-xs font-semibold text-text-muted">
-              {isDirty ? "Publish changes before regenerating" : "Regenerate with AI"}
-            </Text>
-          </Pressable>
-          <StopEditSheet
-            visible={Boolean(editingStop)}
-            item={selectedStop}
-            onSave={handleSaveStop}
-            onDelete={handleDeleteStop}
-            onClose={() => setEditingStop(null)}
-          />
-          <RegenerateSheet
-            visible={regeneratingDayIndex !== null}
-            tripId={tripId}
-            day={
-              regeneratingDayIndex !== null
-                ? (editableItinerary.days[regeneratingDayIndex] ?? null)
-                : null
-            }
-            currentItinerary={editableItinerary}
-            onAccept={handleAcceptRefinement}
-            onClose={() => setRegeneratingDayIndex(null)}
-          />
+        </View>
+      ) : (
+        <View className="rounded-[16px] border border-olive/20 bg-olive/10 px-3 py-3">
+          <Text className="text-[13px] text-olive" style={fontStyles.uiSemibold}>
+            No urgent blockers from saved trip details.
+          </Text>
         </View>
       )}
     </SectionCard>
   );
 }
 
-function serializeItinerary(itinerary: Itinerary): string {
-  return JSON.stringify(sortObjectKeys(itinerary));
+function QuickActionsCard({
+  actions,
+  onOpenTab,
+}: {
+  actions: WorkspaceQuickAction[];
+  onOpenTab: (tab: WorkspaceTab) => void;
+}) {
+  return (
+    <SectionCard
+      eyebrow="Quick actions"
+      title="Open a trip tool"
+      description="Jump into the details only when you need to update them."
+    >
+      <View className="gap-2">
+        {actions.map((action) => (
+          <Pressable
+            key={action.key}
+            onPress={() => onOpenTab(action.key)}
+            accessibilityRole="button"
+            accessibilityLabel={`Open ${action.label}`}
+            className="active:opacity-70"
+          >
+            <View className="flex-row items-center gap-3 rounded-[16px] border border-border bg-surface-muted px-3 py-3">
+              <View
+                className={[
+                  "h-10 w-10 items-center justify-center rounded-full",
+                  action.tone === "warning"
+                    ? "bg-amber/10"
+                    : action.tone === "success"
+                      ? "bg-olive/10"
+                      : "bg-white",
+                ].join(" ")}
+              >
+                <Ionicons
+                  name={ACTION_ICONS[action.key]}
+                  size={18}
+                  color={action.tone === "success" ? "#6A7A43" : "#B86845"}
+                />
+              </View>
+              <View className="flex-1">
+                <Text className="text-[14px] text-text" style={fontStyles.uiSemibold}>
+                  {action.label}
+                </Text>
+                <Text className="mt-0.5 text-[12px] text-text-muted">
+                  {action.detail}
+                </Text>
+              </View>
+              <Text className="text-[13px] text-text" style={fontStyles.uiSemibold}>
+                {action.summary}
+              </Text>
+            </View>
+          </Pressable>
+        ))}
+      </View>
+    </SectionCard>
+  );
 }
 
-function sortObjectKeys(value: unknown): unknown {
-  if (Array.isArray(value)) {
-    return value.map(sortObjectKeys);
-  }
+function ItineraryPreviewCard({
+  preview,
+  isLoading,
+  isMissing,
+  isStreaming,
+  isSaving,
+  error,
+  streamText,
+  showFullItinerary,
+  onStartStream,
+  onCancelStream,
+  onShowFullItinerary,
+  onHideFullItinerary,
+}: {
+  preview: WorkspaceItineraryPreview | null;
+  isLoading: boolean;
+  isMissing: boolean;
+  isStreaming: boolean;
+  isSaving: boolean;
+  error: string | null;
+  streamText: string | null;
+  showFullItinerary: boolean;
+  onStartStream: () => void;
+  onCancelStream: () => void;
+  onShowFullItinerary: () => void;
+  onHideFullItinerary: () => void;
+}) {
+  return (
+    <SectionCard
+      eyebrow="Itinerary"
+      title={preview ? preview.title : "Saved plan"}
+      description={preview?.subtitle ?? "Keep the plan lightweight on mobile."}
+      action={
+        preview ? (
+          <Pressable
+            onPress={showFullItinerary ? onHideFullItinerary : onShowFullItinerary}
+            accessibilityRole="button"
+          >
+            <Text className="text-[13px] text-accent" style={fontStyles.uiSemibold}>
+              {showFullItinerary ? "Hide editor" : "Edit itinerary"}
+            </Text>
+          </Pressable>
+        ) : undefined
+      }
+    >
+      <View className="gap-3">
+        {isStreaming ? (
+          <View
+            className="gap-3 rounded-[18px] p-4"
+            style={{
+              borderWidth: 1,
+              borderColor: "rgba(184, 104, 69, 0.3)",
+              backgroundColor: "rgba(184, 104, 69, 0.05)",
+            }}
+          >
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center gap-2">
+                <ActivityIndicator size="small" color="#B86845" />
+                <Text className="text-sm font-semibold text-amber">
+                  Generating itinerary...
+                </Text>
+              </View>
+              <Pressable
+                onPress={onCancelStream}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel generation"
+                className="rounded-full px-3 py-1.5 active:opacity-60"
+              >
+                <Text className="text-xs font-semibold text-text-muted">Cancel</Text>
+              </Pressable>
+            </View>
+            <Text className="text-xs leading-relaxed text-text-soft" numberOfLines={5}>
+              {streamText
+                ? streamText.slice(-320)
+                : "Connecting to AI... you can cancel at any time."}
+            </Text>
+          </View>
+        ) : null}
 
-  if (value && typeof value === "object") {
-    return Object.keys(value)
-      .sort()
-      .reduce<Record<string, unknown>>((result, key) => {
-        result[key] = sortObjectKeys((value as Record<string, unknown>)[key]);
-        return result;
-      }, {});
-  }
+        {isSaving ? (
+          <View className="flex-row items-center gap-2 py-2">
+            <ActivityIndicator size="small" color="#B86845" />
+            <Text className="text-sm text-text-muted">Saving itinerary...</Text>
+          </View>
+        ) : null}
 
-  return value;
+        {error && !isStreaming ? (
+          <Text className="text-sm text-danger">{error}</Text>
+        ) : null}
+
+        {isLoading && !isStreaming ? (
+          <ActivityIndicator className="py-2" />
+        ) : null}
+
+        {isMissing && !isStreaming ? (
+          <View className="gap-3">
+            <Text className="text-sm leading-5 text-text-muted">
+              No itinerary is saved yet. Generate one with AI when you are ready
+              to turn the trip shell into a plan.
+            </Text>
+            <PrimaryButton label="Generate with AI" onPress={onStartStream} />
+          </View>
+        ) : null}
+
+        {preview ? (
+          <View className="gap-3">
+            {preview.primaryStop ? (
+              <StopPreview stop={preview.primaryStop} primary />
+            ) : (
+              <Text className="rounded-[16px] border border-border bg-surface-muted px-4 py-4 text-sm text-text-muted">
+                Nothing scheduled for this day.
+              </Text>
+            )}
+            {preview.secondaryStops.length > 0 ? (
+              <View className="gap-2">
+                {preview.secondaryStops.map((stop, index) => (
+                  <StopPreview key={`${stop.title}-${index}`} stop={stop} />
+                ))}
+              </View>
+            ) : null}
+          </View>
+        ) : null}
+      </View>
+    </SectionCard>
+  );
 }
 
-function createStopFromPatch(patch: StopEditPatch): ItineraryItem {
-  return {
-    id: null,
-    time: patch.time,
-    title: patch.title,
-    location: patch.location,
-    lat: null,
-    lon: null,
-    notes: patch.notes,
-    cost_estimate: null,
-    status: "planned",
-    handled_by: null,
-    booked_by: null,
-  };
+function StopPreview({ stop, primary = false }: { stop: ItineraryItem; primary?: boolean }) {
+  return (
+    <View
+      className={[
+        "rounded-[16px] border px-3 py-3",
+        primary ? "border-amber/30 bg-amber/10" : "border-border bg-surface-muted",
+      ].join(" ")}
+    >
+      <View className="flex-row gap-3">
+        {stop.time?.trim() ? (
+          <Text
+            className={primary ? "w-16 text-[13px] text-accent" : "w-16 text-[12px] text-text-soft"}
+            style={fontStyles.uiSemibold}
+          >
+            {stop.time.trim()}
+          </Text>
+        ) : null}
+        <View className="flex-1">
+          <Text className="text-[14px] text-text" style={fontStyles.uiSemibold}>
+            {stop.title?.trim() || "Untitled stop"}
+          </Text>
+          {stop.location?.trim() ? (
+            <Text className="mt-0.5 text-[12px] text-text-muted">
+              {stop.location.trim()}
+            </Text>
+          ) : null}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function TripBasicsCard({ trip }: { trip: TripWorkspaceViewModel }) {
+  return (
+    <SectionCard eyebrow="Trip basics" title="Destination and timing">
+      <View className="gap-3">
+        <InfoRow label="Destination" value={trip.destination} />
+        <InfoRow label="Dates" value={trip.dateRange} />
+        <InfoRow
+          label="Duration"
+          value={`${trip.durationDays} ${trip.durationDays === 1 ? "day" : "days"}`}
+        />
+        <View className="flex-row flex-wrap gap-2">
+          <StatusPill
+            label={trip.statusLabel}
+            variant={
+              trip.status === "active"
+                ? "success"
+                : trip.status === "upcoming"
+                  ? "warning"
+                  : "default"
+            }
+          />
+          <StatusPill
+            label={trip.isOwner ? "You own this trip" : "Shared trip"}
+            variant="info"
+          />
+        </View>
+      </View>
+    </SectionCard>
+  );
 }
 
 function InfoRow({ label, value }: { label: string; value: string }) {
@@ -484,29 +622,6 @@ function InfoRow({ label, value }: { label: string; value: string }) {
         {label}
       </Text>
       <Text className="mt-1 text-base text-text">{value}</Text>
-    </View>
-  );
-}
-
-function StatBlock({
-  label,
-  value,
-  highlight,
-}: {
-  label: string;
-  value: string;
-  highlight?: "error";
-}) {
-  return (
-    <View className="flex-1 gap-0.5 rounded-2xl border border-border bg-surface-muted px-3 py-3">
-      <Text className="text-[11px] font-normal uppercase tracking-[0.5px] text-text-soft">
-        {label}
-      </Text>
-      <Text
-        className={`text-[15px] font-semibold ${highlight === "error" ? "text-danger" : "text-text"}`}
-      >
-        {value}
-      </Text>
     </View>
   );
 }
