@@ -1,3 +1,4 @@
+import { getTripImageUrl } from "./workspace/helpers/tripVisuals";
 import type { TripListItem, TripResponse, TripSummary } from "./types";
 
 export type TripCardReadiness = {
@@ -141,6 +142,98 @@ function pickHint(
   }
 
   return undefined;
+}
+
+// ─── Compact date helpers ────────────────────────────────────────────────────
+
+function parseLocalDate(isoDate: string): Date {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  return new Date(year!, (month ?? 1) - 1, day ?? 1);
+}
+
+function formatCompactDate(isoDate: string): string {
+  const d = parseLocalDate(isoDate);
+  if (Number.isNaN(d.getTime())) return isoDate;
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+export function formatCompactDateRange(start: string, end: string): string {
+  return `${formatCompactDate(start)} – ${formatCompactDate(end)}`;
+}
+
+// ─── Readiness percentage ─────────────────────────────────────────────────────
+
+export function buildReadinessPct(summary: TripSummary | undefined): number {
+  if (!summary) return 0;
+  const metrics: number[] = [];
+  if (summary.packing_total > 0) {
+    metrics.push(clampPct(summary.packing_progress_pct));
+  }
+  if (summary.budget_limit != null && summary.budget_limit > 0) {
+    const spendRatio = summary.budget_total_spent / summary.budget_limit;
+    metrics.push(summary.budget_is_over ? 0 : clampPct((1 - spendRatio) * 100));
+  }
+  if (summary.reservation_count > 0) {
+    metrics.push(
+      clampPct((summary.reservation_upcoming_count / summary.reservation_count) * 100),
+    );
+  }
+  if (metrics.length === 0) return 0;
+  return Math.round(metrics.reduce((sum, p) => sum + p, 0) / metrics.length);
+}
+
+// ─── List-page view models ───────────────────────────────────────────────────
+
+export interface ActiveTripViewModel {
+  id: number;
+  title: string;
+  country: string;
+  dateRange: string;
+  imageUrl: string;
+  canOpenOnTrip: boolean;
+}
+
+export interface UpcomingTripViewModel {
+  id: number;
+  title: string;
+  dateRange: string;
+  imageUrl: string;
+  statusPill: "Planning" | "Confirmed";
+  readinessPct: number;
+}
+
+function extractCountry(destination: string): string {
+  const parts = destination.split(",").map((p) => p.trim()).filter(Boolean);
+  return parts[1] ?? parts[0] ?? destination;
+}
+
+export function toActiveTripViewModel(
+  trip: TripResponse,
+  canOpenOnTrip: boolean,
+): ActiveTripViewModel {
+  return {
+    id: trip.id,
+    title: trip.title,
+    country: extractCountry(trip.destination),
+    dateRange: formatCompactDateRange(trip.start_date, trip.end_date),
+    imageUrl: getTripImageUrl({ id: trip.id, destination: trip.destination }),
+    canOpenOnTrip,
+  };
+}
+
+export function toUpcomingTripViewModel(
+  trip: TripResponse,
+  summary: TripSummary | undefined,
+): UpcomingTripViewModel {
+  const pct = buildReadinessPct(summary);
+  return {
+    id: trip.id,
+    title: trip.title,
+    dateRange: formatCompactDateRange(trip.start_date, trip.end_date),
+    imageUrl: getTripImageUrl({ id: trip.id, destination: trip.destination }),
+    statusPill: pct >= 70 ? "Confirmed" : "Planning",
+    readinessPct: pct,
+  };
 }
 
 export function toTripListItem(

@@ -1,0 +1,208 @@
+SESSION PROGRESS — ui-mobile
+Date: 2026-04-25
+================================================================================
+
+Three screens implemented from the WaypointMobileUI Figma file
+(file key: ysiFkm5bJQ9udwnIbaHmsG) following the Desert Editorial design system.
+
+Constraints applied across all three screens:
+  - Container/Presentational pattern — screens are thin renderers, logic in hooks
+  - No static/mock data — all content from existing API clients and adapters
+  - No backend modifications or new API routes
+  - TypeScript strict (npx tsc --noEmit --skipLibCheck passes with zero errors)
+  - Inter for UI text, Playfair Display for editorial/display headings
+  - Ionicons only — no emoji as icons
+  - Feature flags respected (EXPO_PUBLIC_ENABLE_EXPLORE)
+
+================================================================================
+SCREEN 1 — EXPLORE
+Figma nodes: 3:14236, 6:3457
+================================================================================
+
+New files created:
+
+  features/explore/types.ts
+    - DestinationMood union type
+    - Destination, FeaturedCardViewModel, GridCardViewModel interfaces
+
+  features/explore/catalog.ts
+    - 12-entry CATALOG (Bali, Swiss Alps, Lisbon, Maldives, Iceland, Queenstown,
+      Machu Picchu, Dubrovnik, Serengeti, Provence, Halong Bay, Scottish Highlands)
+    - Exports: listDestinationMoods(), getDestinations({query, mood}),
+      getFeaturedDestinations()
+    - isFeatured: Bali, Maldives
+
+  features/explore/adapters.ts
+    - toFeaturedCardViewModel(d) — locationLine = "Country · summary"
+    - toGridCardViewModel(d)
+
+  features/explore/useExploreScreen.ts
+    - State: query, activeMood
+    - Derived: isFiltering, showFeatured, featuredCards, moreToConsiderCards,
+      filteredCards, hasResults
+
+  features/explore/ExploreHeader.tsx
+    - "EXPLORE" amber eyebrow (small caps, tracking-[0.16em])
+    - "Wander, gently." Playfair 32px headline
+    - Subtitle in text-text-muted
+
+  features/explore/ExploreSearchBar.tsx
+    - TextInput with search-outline Ionicon
+
+  features/explore/CategoryChips.tsx
+    - Horizontal ScrollView, gap-8
+    - Active: border-amber bg-amber text-white
+    - Inactive: border-border bg-surface text-text-muted
+    - Tap active chip deselects it (toggle off)
+
+  features/explore/FeaturedDestinationCard.tsx
+    - 196px tall, rounded-[20px], mx-4, full-bleed expo-image
+    - LinearGradient overlay (transparent → rgba(28,17,8,0.52) → rgba(28,17,8,0.82))
+    - Season badge: absolute top-right, bg-black/30 border-white/25
+    - Name in fontStyles.displaySemibold 24px white
+
+  features/explore/GridDestinationCard.tsx
+    - flex-1 for 2-column layout, 108px image, rounded-[16px] border border-border
+    - Name in fontStyles.uiSemibold + locationLine below
+
+  features/explore/ExploreScreen.tsx
+    - SafeAreaView → ScrollView (keyboardShouldPersistTaps="handled")
+    - Local DestinationGrid: pairs items into rows of 2 with spacer for odd items
+    - Featured section → grid sections (Results / More to Consider labels)
+    - EmptyState when no results
+
+Modified files:
+
+  app/(tabs)/explore.tsx
+    - Feature flag gate: shows ExploreScreen when enabled, ExploreComingSoon stub
+      when flag is off
+
+  app/(tabs)/_layout.tsx
+    - Added Explore tab between Trips and Companions (compass-outline icon)
+    - Conditionally hidden via href:null when flag is off
+
+  .env
+    - Added EXPO_PUBLIC_ENABLE_EXPLORE=true
+
+================================================================================
+SCREEN 2 — TRIPS LIST
+Figma nodes: 3:11820, 6:2894
+================================================================================
+
+New files created:
+
+  features/trips/useTripsListModel.ts
+    - TripsFilter type: "all" | "active" | "upcoming" | "drafts"
+    - TripsListModel interface
+    - Uses useTripsQuery, useTripSummariesQuery, useQueries for snapshots
+    - journeySubtitle: word form for 0–10 trips, numeric for >10
+    - "drafts" filter hides both active and upcoming (no draft concept in API)
+    - Past trips excluded from visible sections
+
+  features/trips/TripsListHeader.tsx
+    - todayLabel() → "SATURDAY · APR 23" from new Date()
+    - "Your trips." in fontStyles.displaySemibold 30px
+    - "+" FAB: rounded-full bg-espresso h-10 w-10
+
+  features/trips/TripsSearchBar.tsx
+    - TextInput with search-outline Ionicon
+    - placeholder "Search trips, places, dates"
+
+  features/trips/TripsFilterChips.tsx
+    - Chips: All | Active | Upcoming | Drafts
+    - Active chip: border-espresso bg-espresso text-ivory (espresso, not amber)
+
+  features/trips/ActiveTripHeroCard.tsx
+    - rounded-[24px] mx-4, 220px image area
+    - LinearGradient: transparent → rgba(28,17,8,0.55) → rgba(28,17,8,0.90)
+    - Meta row: location-outline + country + calendar-outline + dateRange (white/65)
+    - Title: fontStyles.displaySemibold 26px white
+    - Button row on bg-espresso: "Open On-Trip" (conditional) + "Workspace"
+      both border-white/20 bg-white/15
+
+  features/trips/UpcomingTripRow.tsx
+    - 60×68px thumbnail rounded-[12px]
+    - Status pill: olive for "Confirmed", amber for "Planning"
+    - "Readiness X%" right-aligned in text-text-soft
+    - Title: fontStyles.displaySemibold 16px
+    - "Open workspace ›" Pressable in amber
+
+Modified files:
+
+  features/trips/adapters.ts
+    - Added formatCompactDateRange(start, end) → "Apr 23 – May 1"
+    - Added buildReadinessPct(summary?) → 0-100 average from logistics metrics
+    - Added ActiveTripViewModel interface
+    - Added UpcomingTripViewModel interface
+    - Added toActiveTripViewModel(trip, canOpenOnTrip)
+    - Added toUpcomingTripViewModel(trip, summary)
+      Pill logic: "Confirmed" if readiness ≥ 70%, else "Planning"
+
+  app/(tabs)/trips/index.tsx
+    - Full rewrite using useTripsListModel
+    - States: loading, error, allTripsEmpty (empty state), main list
+    - Sections: Active (hero cards) → Upcoming (rows + "See all") → Drafts (CTA card)
+    - Drafts section always visible in "all" or "drafts" filter
+    - Pull-to-refresh via RefreshControl
+    - TripFormSheet wired to create flow with router.push on success
+
+================================================================================
+SCREEN 3 — TRIPS WORKSPACE
+Figma nodes: 3:11956, 6:2673
+================================================================================
+
+Modified files (all visual redesign — no logic/hook changes):
+
+  features/trips/workspace/WorkspaceTabBar.tsx
+    - Added "itinerary" to WorkspaceTab type
+    - Removed icons from tab bar — now text-only labels
+    - Tab order: Overview | Itinerary | Bookings | Budget | Packing | Members
+    - Amber underline on active tab preserved
+
+  features/trips/workspace/WorkspaceTripHeader.tsx
+    - Full rewrite — simplified to clean 190px hero image
+    - Removed: title overlay, stats strip (4d/Bookings/Budget/Packed), tagline,
+      meta pills, countdown pill with complex logic
+    - Added: subtle LinearGradient (top-dark → transparent → bottom-dark)
+    - Status badge top-left (In Progress green dot / Upcoming yellow dot)
+    - Glass action buttons top-right (add, people, pencil) on rgba(0,0,0,0.35) bg
+    - Whole image is Pressable → opens trip switcher
+    - Removed summary prop (no longer needed)
+
+  features/trips/workspace/WorkspaceScreen.tsx
+    - Removed summary prop from WorkspaceTripHeader
+    - Added "itinerary" tab to visibleTabs (when hasSavedItinerary)
+    - Simplified resolvedTab useMemo (single ternary)
+    - Both "overview" and "itinerary" tabs render OverviewTab with
+      showItineraryOnly={resolvedTab === "itinerary"}
+
+  features/trips/workspace/OverviewTab.tsx
+    - Full visual redesign — data models and hooks unchanged
+    - Added showItineraryOnly?: boolean prop
+    - Removed: TodayCard, SectionCard, StatusPill, SecondaryButton dependencies
+    - NEXT ACTION card: white bg shadow, Playfair 22px title, amber pill
+      (Building… / Unsaved edits / No plan yet), espresso primary + ghost buttons
+    - NEEDS ATTENTION: section label + amber item count + rows with
+      information-circle-outline + label/detail + chevron-forward; hidden when empty
+    - QUICK ACTIONS: 2×2 grid of tappable cards (icon in rounded square +
+      label + summary stat); icons: bed/card/bag/people per tab key
+    - ITINERARY: section label + "Open itinerary" amber link + day rows
+      (day number | date | day title, up to 3 days); "Generate with AI" CTA
+      when missing; streaming indicator when building
+    - TRIP BASICS: 2-column grid (Dates / Travelers / Destination / Duration)
+    - Itinerary-only mode (showItineraryOnly=true): full EditableItineraryDayCard
+      list + Publish button + Regenerate with AI; same state as overview model
+    - StopEditSheet + RegenerateSheet rendered unconditionally so sheet state
+      persists when user switches between Overview and Itinerary tabs
+
+================================================================================
+DEFERRED / STILL PENDING (per CLAUDE.md)
+================================================================================
+
+  Slice 7  — Archive: search + year grouping; Profile: travel stats + change pw
+  Slice 8  — Companions / Matching: MatchingPage + TravelProfileForm
+  Slice 9  — Explore (DONE this session — base implementation shipped)
+  Slice 10 — Chat Collaboration: ChatTab (inverted FlatList + compose)
+  Slice 11 — Map Tab: native map SDK + pins from saved itinerary lat/lon
+
+  Ongoing: replace remaining emoji icons in BookingsTab TYPE_ICONS with Ionicons

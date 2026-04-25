@@ -93,6 +93,7 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
       { key: "overview", label: "Overview" },
     ];
     if (hasSavedItinerary) {
+      tabs.push({ key: "itinerary", label: "Itinerary" });
       tabs.push({ key: "bookings", label: "Bookings" });
       tabs.push({ key: "budget", label: "Budget" });
       tabs.push({ key: "packing", label: "Packing" });
@@ -110,13 +111,10 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
   }, [hasSavedItinerary, workspace.tripRaw]);
 
   // Keep activeTab valid when visible set changes
-  const resolvedTab: WorkspaceTab = useMemo(() => {
-    if (visibleTabs.some((t) => t.key === activeTab)) return activeTab;
-    if (["bookings", "budget", "packing", "members"].includes(activeTab)) {
-      return activeTab;
-    }
-    return "overview";
-  }, [activeTab, visibleTabs]);
+  const resolvedTab: WorkspaceTab = useMemo(
+    () => (visibleTabs.some((t) => t.key === activeTab) ? activeTab : "overview"),
+    [activeTab, visibleTabs],
+  );
 
   if (workspace.tripQuery.isLoading) {
     return <ScreenLoading />;
@@ -146,7 +144,6 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
     <SafeAreaView className="flex-1 bg-bg" edges={["top"]}>
       <WorkspaceTripHeader
         trip={trip}
-        summary={workspace.summary}
         onTripPress={() => setSwitcherOpen(true)}
         onCreatePress={() => setCreateOpen(true)}
         onEditPress={() => setEditOpen(true)}
@@ -177,7 +174,7 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
         onTabChange={setActiveTab}
       />
 
-      {resolvedTab === "overview" && (
+      {(resolvedTab === "overview" || resolvedTab === "itinerary") && (
         <OverviewTab
           trip={trip}
           summary={workspace.summary}
@@ -189,6 +186,7 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
           onCancelStream={handleCancelStream}
           onOpenTab={setActiveTab}
           onOpenLiveView={() => router.push(`/(tabs)/trips/${tripId}/live` as Href)}
+          showItineraryOnly={resolvedTab === "itinerary"}
         />
       )}
       {resolvedTab === "bookings" && <BookingsTab tripId={tripId} />}

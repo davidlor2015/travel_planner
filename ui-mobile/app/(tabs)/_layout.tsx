@@ -32,6 +32,19 @@ function TabsLayoutInner() {
         }}
       />
       <Tabs.Screen
+        name="explore"
+        options={
+          process.env.EXPO_PUBLIC_ENABLE_EXPLORE === "true"
+            ? {
+                title: "Explore",
+                tabBarIcon: ({ color, size }) => (
+                  <Ionicons name="compass-outline" size={size} color={color} />
+                ),
+              }
+            : { href: null }
+        }
+      />
+      <Tabs.Screen
         name="companions"
         options={{
           title: "Companions",
@@ -57,11 +70,6 @@ function TabsLayoutInner() {
             <Ionicons name="person-outline" size={size} color={color} />
           ),
         }}
-      />
-      {/* Explore stays routed but hidden until the mobile slice is ready. */}
-      <Tabs.Screen
-        name="explore"
-        options={{ href: null }}
       />
     </Tabs>
   );

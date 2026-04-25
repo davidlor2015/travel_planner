@@ -1,20 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
-import type { ReactNode } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 
-import type { ItineraryItem } from "@/features/ai/api";
 import type { StreamState } from "@/features/ai/useStreamingItinerary";
 import type { TripOnTripSnapshot } from "../types";
-import { PrimaryButton, SecondaryButton } from "@/shared/ui/Button";
-import { SectionCard } from "@/shared/ui/SectionCard";
-import { StatusPill } from "@/shared/ui/StatusPill";
-import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
+import { PrimaryButton } from "@/shared/ui/Button";
+import { fontStyles } from "@/shared/theme/typography";
 
 import type {
   TripSummaryViewModel,
@@ -25,12 +15,15 @@ import { EditableItineraryDayCard } from "./EditableItineraryDayCard";
 import { RegenerateSheet } from "./RegenerateSheet";
 import { StopEditSheet } from "./StopEditSheet";
 import { useWorkspaceOverviewModel } from "./useWorkspaceOverviewModel";
-import type {
-  WorkspaceAttentionItem,
-  WorkspaceItineraryPreview,
-  WorkspaceQuickAction,
-} from "./workspaceCommandModel";
+import type { WorkspaceAttentionItem, WorkspaceQuickAction } from "./workspaceCommandModel";
 import type { WorkspaceTab } from "./WorkspaceTabBar";
+
+const QUICK_ACTION_ICONS: Partial<Record<WorkspaceTab, keyof typeof Ionicons.glyphMap>> = {
+  bookings: "bed-outline",
+  budget: "card-outline",
+  packing: "bag-outline",
+  members: "people-outline",
+};
 
 type Props = {
   trip: TripWorkspaceViewModel;
@@ -43,14 +36,7 @@ type Props = {
   onCancelStream: () => void;
   onOpenTab: (tab: WorkspaceTab) => void;
   onOpenLiveView: () => void;
-};
-
-const ACTION_ICONS: Record<WorkspaceTab, keyof typeof Ionicons.glyphMap> = {
-  overview: "list-outline",
-  bookings: "bookmark-outline",
-  budget: "card-outline",
-  packing: "bag-outline",
-  members: "people-outline",
+  showItineraryOnly?: boolean;
 };
 
 export function OverviewTab({
@@ -64,6 +50,7 @@ export function OverviewTab({
   onCancelStream,
   onOpenTab,
   onOpenLiveView,
+  showItineraryOnly = false,
 }: Props) {
   const overview = useWorkspaceOverviewModel({
     trip,
@@ -75,106 +62,306 @@ export function OverviewTab({
   });
 
   const command = overview.command;
+  const previewDays = (overview.itinerary?.days ?? []).slice(0, 3);
+
+  // Pill text for NEXT ACTION header
+  const nextActionPill = overview.isStreaming
+    ? "Building…"
+    : overview.isItineraryDirty
+      ? "Unsaved edits"
+      : overview.isItineraryMissing
+        ? "No plan yet"
+        : null;
+
+  // Action buttons for NEXT ACTION card
+  let primaryLabel: string | null = null;
+  let primaryHandler: (() => void) | null = null;
+  let ghostLabel: string | null = null;
+  let ghostHandler: (() => void) | null = null;
+
+  if (overview.isStreaming) {
+    ghostLabel = "Cancel";
+    ghostHandler = onCancelStream;
+  } else if (overview.isItineraryDirty) {
+    primaryLabel = overview.isSavingItinerary ? "Publishing…" : "Publish changes";
+    primaryHandler = () => void overview.handlePublishChanges();
+  } else if (overview.isItineraryMissing) {
+    primaryLabel = "Generate with AI";
+    primaryHandler = onStartStream;
+  } else if (canOpenLiveView) {
+    primaryLabel = "Open live view";
+    primaryHandler = onOpenLiveView;
+  }
 
   return (
-    <ScrollView contentContainerClassName="gap-4 px-4 pb-8 pt-4">
-      <TodayCard
-        title={command.todayTitle}
-        body={command.todayBody}
-        meta={command.todayMeta}
-        canOpenLiveView={canOpenLiveView}
-        onOpenLiveView={onOpenLiveView}
-      />
-
-      <NextActionCard
-        title={command.nextActionTitle}
-        body={command.nextActionBody}
-        meta={command.nextActionMeta}
-        isStreaming={overview.isStreaming}
-        isSaving={overview.isSavingItinerary}
-        isDirty={overview.isItineraryDirty}
-        isMissing={overview.isItineraryMissing}
-        hasItinerary={Boolean(overview.itinerary)}
-        onCancelStream={onCancelStream}
-        onStartStream={onStartStream}
-        onPublish={() => void overview.handlePublishChanges()}
-        onShowItinerary={() => overview.setShowFullItinerary(true)}
-      />
-
-      <ReadinessCard
-        title={command.readinessTitle}
-        body={command.readinessBody}
-        items={command.attentionItems}
-      />
-
-      <QuickActionsCard actions={command.quickActions} onOpenTab={onOpenTab} />
-
-      <ItineraryPreviewCard
-        preview={command.itineraryPreview}
-        isLoading={overview.isItineraryLoading}
-        isMissing={overview.isItineraryMissing}
-        isStreaming={overview.isStreaming}
-        isSaving={overview.isSavingItinerary}
-        error={overview.itineraryError}
-        streamText={overview.streamText}
-        showFullItinerary={overview.showFullItinerary}
-        onStartStream={onStartStream}
-        onCancelStream={onCancelStream}
-        onShowFullItinerary={() => overview.setShowFullItinerary(true)}
-        onHideFullItinerary={() => overview.setShowFullItinerary(false)}
-      />
-
-      {overview.showFullItinerary && overview.itinerary ? (
-        <SectionCard
-          eyebrow="Edit itinerary"
-          title="Full saved plan"
-          description="Use this for quick mobile corrections. Larger planning work is better on the web workspace."
-        >
-          <View className="gap-3">
-            {overview.itinerary.days.map((day, dayIndex) => (
-              <EditableItineraryDayCard
-                key={day.day_number}
-                day={day}
-                onAddStop={() => overview.setEditingStop({ dayIndex, stopIndex: null })}
-                onEditStop={(stopIndex) =>
-                  overview.setEditingStop({ dayIndex, stopIndex })
-                }
-                onRegenerate={
-                  !overview.isItineraryDirty
-                    ? () => overview.setRegeneratingDayIndex(dayIndex)
-                    : undefined
-                }
-              />
-            ))}
-            {overview.isItineraryDirty ? (
-              <PrimaryButton
-                label={overview.isSavingItinerary ? "Publishing..." : "Publish changes"}
-                onPress={() => void overview.handlePublishChanges()}
-                disabled={overview.isSavingItinerary}
-                fullWidth
-              />
-            ) : null}
-            <Pressable
-              onPress={onStartStream}
-              disabled={overview.isItineraryDirty}
-              accessibilityRole="button"
-              className={[
-                "flex-row items-center justify-center rounded-full border border-border-strong py-2.5 active:opacity-70",
-                overview.isItineraryDirty ? "opacity-50" : "",
-              ].join(" ")}
-            >
-              <Text className="text-xs font-semibold text-text-muted">
-                {overview.isItineraryDirty
-                  ? "Publish changes before regenerating"
-                  : "Regenerate with AI"}
+    <View className="flex-1">
+      {showItineraryOnly ? (
+        /* ── Itinerary tab ─────────────────────────────────────────── */
+        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+          {overview.isItineraryLoading && !overview.isStreaming ? (
+            <ActivityIndicator className="py-8" />
+          ) : overview.isItineraryMissing && !overview.isStreaming ? (
+            <View className="items-center gap-4 py-10">
+              <Text className="text-center text-[14px] leading-5 text-text-muted">
+                No itinerary yet. Generate one from the Overview tab.
               </Text>
-            </Pressable>
+            </View>
+          ) : overview.itinerary ? (
+            <View className="gap-3">
+              {overview.itinerary.days.map((day, dayIndex) => (
+                <EditableItineraryDayCard
+                  key={day.day_number}
+                  day={day}
+                  onAddStop={() => overview.setEditingStop({ dayIndex, stopIndex: null })}
+                  onEditStop={(stopIndex) => overview.setEditingStop({ dayIndex, stopIndex })}
+                  onRegenerate={
+                    !overview.isItineraryDirty
+                      ? () => overview.setRegeneratingDayIndex(dayIndex)
+                      : undefined
+                  }
+                />
+              ))}
+              {overview.isItineraryDirty ? (
+                <PrimaryButton
+                  label={overview.isSavingItinerary ? "Publishing..." : "Publish changes"}
+                  onPress={() => void overview.handlePublishChanges()}
+                  disabled={overview.isSavingItinerary}
+                  fullWidth
+                />
+              ) : null}
+              <Pressable
+                onPress={onStartStream}
+                disabled={overview.isItineraryDirty}
+                className={[
+                  "items-center justify-center rounded-full border border-border-strong py-2.5 active:opacity-70",
+                  overview.isItineraryDirty ? "opacity-50" : "",
+                ].join(" ")}
+              >
+                <Text className="text-[12px] font-semibold text-text-muted">
+                  {overview.isItineraryDirty
+                    ? "Publish changes before regenerating"
+                    : "Regenerate with AI"}
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
+        </ScrollView>
+      ) : (
+        /* ── Overview tab ──────────────────────────────────────────── */
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+
+          {/* NEXT ACTION ─────────────────────────────────────────── */}
+          <View className="mx-4 mt-4">
+            <View
+              className="rounded-[20px] overflow-hidden bg-white"
+              style={{ shadowColor: "#1C1108", shadowOpacity: 0.06, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 3 }}
+            >
+              {/* Section label row */}
+              <View className="flex-row items-center justify-between px-4 pt-4 pb-2">
+                <Text className="text-[10px] font-semibold uppercase tracking-[1.4px] text-text-soft">
+                  Next action
+                </Text>
+                {nextActionPill ? (
+                  <View className="rounded-full border border-amber/30 bg-amber/10 px-2.5 py-0.5">
+                    <Text className="text-[11px] font-semibold text-amber">{nextActionPill}</Text>
+                  </View>
+                ) : null}
+              </View>
+
+              <View className="gap-3 px-4 pb-4">
+                {/* Title + body */}
+                <View className="gap-1">
+                  <Text
+                    className="leading-tight text-espresso"
+                    style={[fontStyles.displaySemibold, { fontSize: 22, lineHeight: 27 }]}
+                  >
+                    {command.nextActionTitle}
+                  </Text>
+                  <Text className="text-[14px] leading-[20px] text-text-muted">
+                    {command.nextActionBody}
+                  </Text>
+                  {command.nextActionMeta && !overview.isStreaming ? (
+                    <Text className="text-[12px] text-flint" style={fontStyles.uiMedium}>
+                      {command.nextActionMeta}
+                    </Text>
+                  ) : null}
+                </View>
+
+                {/* Streaming progress */}
+                {overview.isStreaming ? (
+                  <View
+                    className="gap-2 rounded-[14px] px-3 py-3"
+                    style={{ borderWidth: 1, borderColor: "rgba(184,104,69,0.25)", backgroundColor: "rgba(184,104,69,0.05)" }}
+                  >
+                    <View className="flex-row items-center gap-2">
+                      <ActivityIndicator size="small" color="#B86845" />
+                      <Text className="text-[13px] font-semibold text-amber">Generating itinerary…</Text>
+                    </View>
+                    <Text className="text-[11px] leading-[16px] text-text-soft" numberOfLines={4}>
+                      {overview.streamText
+                        ? overview.streamText.slice(-280)
+                        : "Connecting to AI…"}
+                    </Text>
+                  </View>
+                ) : null}
+
+                {/* Saving indicator */}
+                {overview.isSavingItinerary && !overview.isStreaming ? (
+                  <View className="flex-row items-center gap-2">
+                    <ActivityIndicator size="small" color="#B86845" />
+                    <Text className="text-[13px] text-text-muted">Saving itinerary…</Text>
+                  </View>
+                ) : null}
+
+                {/* Action buttons */}
+                {primaryLabel || ghostLabel ? (
+                  <View className="mt-1 flex-row gap-2">
+                    {primaryLabel && primaryHandler ? (
+                      <Pressable
+                        onPress={primaryHandler}
+                        disabled={overview.isSavingItinerary}
+                        className="flex-1 items-center justify-center rounded-full bg-espresso py-3 active:opacity-75"
+                        style={overview.isSavingItinerary ? { opacity: 0.5 } : undefined}
+                      >
+                        <Text className="text-[13px] font-semibold text-ivory">
+                          {primaryLabel}
+                        </Text>
+                      </Pressable>
+                    ) : null}
+                    {ghostLabel && ghostHandler ? (
+                      <Pressable
+                        onPress={ghostHandler}
+                        className="flex-1 items-center justify-center rounded-full border border-border py-3 active:opacity-75"
+                      >
+                        <Text className="text-[13px] font-semibold text-text">{ghostLabel}</Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
+                ) : null}
+              </View>
+            </View>
           </View>
-        </SectionCard>
-      ) : null}
 
-      <TripBasicsCard trip={trip} />
+          {/* NEEDS ATTENTION ─────────────────────────────────────── */}
+          {command.attentionItems.length > 0 ? (
+            <View className="mx-4 mt-5 gap-2">
+              <View className="flex-row items-center justify-between">
+                <Text className="text-[10px] font-semibold uppercase tracking-[1.4px] text-text-soft">
+                  Needs attention
+                </Text>
+                <Text className="text-[12px] font-semibold text-amber">
+                  {command.attentionItems.length}{" "}
+                  {command.attentionItems.length === 1 ? "item" : "items"}
+                </Text>
+              </View>
+              <View className="gap-2">
+                {command.attentionItems.map((item, index) => (
+                  <AttentionRow key={`${item.label}-${index}`} item={item} />
+                ))}
+              </View>
+            </View>
+          ) : null}
 
+          {/* QUICK ACTIONS 2×2 grid ───────────────────────────── */}
+          <View className="mx-4 mt-5 gap-2">
+            <Text className="text-[10px] font-semibold uppercase tracking-[1.4px] text-text-soft">
+              Quick actions
+            </Text>
+            <View className="gap-2">
+              {chunkArray(command.quickActions, 2).map((row, rowIndex) => (
+                <View key={rowIndex} className="flex-row gap-2">
+                  {row.map((action) => (
+                    <QuickActionCell
+                      key={action.key}
+                      action={action}
+                      onPress={() => onOpenTab(action.key)}
+                    />
+                  ))}
+                  {row.length === 1 ? <View className="flex-1" /> : null}
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* ITINERARY ───────────────────────────────────────────── */}
+          <View className="mx-4 mt-5 gap-2">
+            <View className="flex-row items-center justify-between">
+              <Text className="text-[10px] font-semibold uppercase tracking-[1.4px] text-text-soft">
+                Itinerary
+              </Text>
+              {previewDays.length > 0 ? (
+                <Pressable onPress={() => onOpenTab("itinerary")}>
+                  <Text className="text-[12px] font-semibold text-amber">Open itinerary</Text>
+                </Pressable>
+              ) : null}
+            </View>
+            <View className="overflow-hidden rounded-[16px] border border-border bg-surface">
+              {overview.isItineraryLoading && !overview.isStreaming ? (
+                <ActivityIndicator className="py-6" />
+              ) : overview.isStreaming ? (
+                <View className="flex-row items-center gap-2 px-4 py-4">
+                  <ActivityIndicator size="small" color="#B86845" />
+                  <Text className="text-[13px] text-text-muted">Generating itinerary…</Text>
+                </View>
+              ) : overview.isItineraryMissing ? (
+                <View className="gap-3 px-4 py-5">
+                  <Text className="text-[13px] leading-5 text-text-muted">
+                    No itinerary saved yet. Generate one to start planning day-by-day.
+                  </Text>
+                  <Pressable
+                    onPress={onStartStream}
+                    className="self-start rounded-full bg-amber px-4 py-2 active:opacity-75"
+                  >
+                    <Text className="text-[13px] font-semibold text-white">Generate with AI</Text>
+                  </Pressable>
+                </View>
+              ) : previewDays.length > 0 ? (
+                previewDays.map((day, index) => (
+                  <View
+                    key={day.day_number}
+                    className={[
+                      "flex-row items-center px-4 py-3",
+                      index < previewDays.length - 1 ? "border-b border-border" : "",
+                    ].join(" ")}
+                  >
+                    <View className="mr-3 w-11">
+                      <Text
+                        className="text-[17px] text-espresso"
+                        style={fontStyles.uiSemibold}
+                      >
+                        {day.day_number}
+                      </Text>
+                      {day.date ? (
+                        <Text className="text-[10px] uppercase tracking-[0.5px] text-text-soft">
+                          {formatItineraryDate(day.date)}
+                        </Text>
+                      ) : null}
+                    </View>
+                    <View className="mr-3 w-px self-stretch bg-border" />
+                    <Text
+                      className="flex-1 text-[13px] text-espresso"
+                      style={fontStyles.uiMedium}
+                      numberOfLines={1}
+                    >
+                      {day.day_title?.trim() || `Day ${day.day_number}`}
+                    </Text>
+                  </View>
+                ))
+              ) : null}
+            </View>
+          </View>
+
+          {/* TRIP BASICS ─────────────────────────────────────────── */}
+          <View className="mx-4 mt-5 gap-2">
+            <Text className="text-[10px] font-semibold uppercase tracking-[1.4px] text-text-soft">
+              Trip basics
+            </Text>
+            <TripBasicsGrid trip={trip} />
+          </View>
+        </ScrollView>
+      )}
+
+      {/* Sheets — always rendered so state persists across tab switches */}
       {overview.itinerary ? (
         <>
           <StopEditSheet
@@ -198,430 +385,135 @@ export function OverviewTab({
           />
         </>
       ) : null}
-    </ScrollView>
-  );
-}
-
-function TodayCard({
-  title,
-  body,
-  meta,
-  canOpenLiveView,
-  onOpenLiveView,
-}: {
-  title: string;
-  body: string;
-  meta: string | null;
-  canOpenLiveView: boolean;
-  onOpenLiveView: () => void;
-}) {
-  return (
-    <View className="rounded-[26px] border border-border bg-white px-4 py-5 shadow-card">
-      <View className="flex-row items-start justify-between gap-3">
-        <View className="flex-1">
-          <Text
-            className="text-[10px] uppercase tracking-[1.6px] text-accent"
-            style={fontStyles.uiSemibold}
-          >
-            Today
-          </Text>
-          <Text className="mt-1 text-espresso" style={textScaleStyles.displayL}>
-            {title}
-          </Text>
-          <Text className="mt-2 text-[14px] leading-5 text-muted" style={fontStyles.uiRegular}>
-            {body}
-          </Text>
-          {meta ? (
-            <Text className="mt-2 text-[12px] text-flint" style={fontStyles.uiMedium}>
-              {meta}
-            </Text>
-          ) : null}
-        </View>
-        <View className="h-11 w-11 items-center justify-center rounded-full bg-amber/10">
-          <Ionicons name="sunny-outline" size={21} color="#B86845" />
-        </View>
-      </View>
-
-      {canOpenLiveView ? (
-        <Pressable
-          onPress={onOpenLiveView}
-          accessibilityRole="button"
-          accessibilityLabel="Open live trip view"
-          className="mt-4 flex-row items-center justify-between rounded-[18px] border border-border-ontrip-strong bg-surface-ontrip-raised px-4 py-3 active:opacity-75"
-        >
-          <View className="flex-row items-center gap-2">
-            <View className="h-2 w-2 rounded-full bg-accent-ontrip" />
-            <Text className="text-[13px] text-ontrip" style={fontStyles.uiSemibold}>
-              Live trip controls
-            </Text>
-          </View>
-          <Text className="text-[13px] text-accent-ontrip" style={fontStyles.uiSemibold}>
-            Open
-          </Text>
-        </Pressable>
-      ) : null}
     </View>
   );
 }
 
-function NextActionCard({
-  title,
-  body,
-  meta,
-  isStreaming,
-  isSaving,
-  isDirty,
-  isMissing,
-  hasItinerary,
-  onCancelStream,
-  onStartStream,
-  onPublish,
-  onShowItinerary,
-}: {
-  title: string;
-  body: string;
-  meta: string | null;
-  isStreaming: boolean;
-  isSaving: boolean;
-  isDirty: boolean;
-  isMissing: boolean;
-  hasItinerary: boolean;
-  onCancelStream: () => void;
-  onStartStream: () => void;
-  onPublish: () => void;
-  onShowItinerary: () => void;
-}) {
-  let action: ReactNode = null;
-  if (isStreaming) {
-    action = <SecondaryButton label="Cancel" onPress={onCancelStream} />;
-  } else if (isDirty) {
-    action = <PrimaryButton label="Publish" onPress={onPublish} />;
-  } else if (isMissing) {
-    action = <PrimaryButton label="Generate" onPress={onStartStream} />;
-  } else if (hasItinerary && !isSaving) {
-    action = <SecondaryButton label="View plan" onPress={onShowItinerary} />;
-  }
-
+function AttentionRow({ item }: { item: WorkspaceAttentionItem }) {
+  const isWarning = item.variant === "warning" || item.variant === "error";
   return (
-    <SectionCard eyebrow="Next action" title={title} action={action}>
-      <View className="gap-2">
-        <Text className="text-[14px] leading-5 text-text-muted" style={fontStyles.uiRegular}>
-          {body}
-        </Text>
-        {meta ? (
-          <Text className="text-[12px] text-text-soft" style={fontStyles.uiMedium}>
-            {meta}
-          </Text>
-        ) : null}
-        {isSaving ? (
-          <View className="mt-1 flex-row items-center gap-2">
-            <ActivityIndicator size="small" color="#B86845" />
-            <Text className="text-sm text-text-muted">Saving itinerary...</Text>
-          </View>
-        ) : null}
+    <View className="flex-row items-center gap-3 rounded-[14px] border border-border bg-surface px-3 py-3">
+      <View
+        className="h-8 w-8 items-center justify-center rounded-full"
+        style={{
+          backgroundColor: isWarning
+            ? "rgba(184,104,69,0.10)"
+            : "rgba(28,17,8,0.05)",
+        }}
+      >
+        <Ionicons
+          name="information-circle-outline"
+          size={16}
+          color={isWarning ? "#B86845" : "#8A7E74"}
+        />
       </View>
-    </SectionCard>
+      <View className="flex-1">
+        <Text className="text-[13px] font-semibold text-espresso">{item.label}</Text>
+        <Text className="mt-0.5 text-[12px] leading-[16px] text-text-muted">{item.detail}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={14} color="#8A7E74" />
+    </View>
   );
 }
 
-function ReadinessCard({
-  title,
-  body,
-  items,
+function QuickActionCell({
+  action,
+  onPress,
 }: {
-  title: string;
-  body: string;
-  items: WorkspaceAttentionItem[];
+  action: WorkspaceQuickAction;
+  onPress: () => void;
 }) {
+  const icon = QUICK_ACTION_ICONS[action.key] ?? "grid-outline";
+  const iconColor = action.tone === "success" ? "#6A7A43" : "#B86845";
+  const iconBg =
+    action.tone === "success"
+      ? "rgba(106,122,67,0.10)"
+      : action.tone === "warning"
+        ? "rgba(184,104,69,0.10)"
+        : "rgba(28,17,8,0.06)";
+
   return (
-    <SectionCard eyebrow="Readiness" title={title} description={body}>
-      {items.length > 0 ? (
-        <View className="gap-2">
-          {items.map((item) => (
+    <Pressable
+      onPress={onPress}
+      className="flex-1 gap-2 rounded-[16px] border border-border bg-surface p-3 active:opacity-75"
+    >
+      <View
+        className="h-9 w-9 items-center justify-center rounded-[10px]"
+        style={{ backgroundColor: iconBg }}
+      >
+        <Ionicons name={icon} size={17} color={iconColor} />
+      </View>
+      <View>
+        <Text className="text-[13px] font-semibold text-espresso">{action.label}</Text>
+        <Text className="mt-0.5 text-[11px] text-text-muted" numberOfLines={1}>
+          {action.summary}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
+function TripBasicsGrid({ trip }: { trip: TripWorkspaceViewModel }) {
+  const cells = [
+    { label: "Dates", value: trip.dateRange },
+    {
+      label: "Travelers",
+      value: `${trip.memberCount} ${trip.memberCount === 1 ? "traveler" : "travelers"}`,
+    },
+    { label: "Destination", value: trip.destination },
+    {
+      label: "Duration",
+      value: `${trip.durationDays} ${trip.durationDays === 1 ? "day" : "days"}`,
+    },
+  ];
+
+  return (
+    <View className="overflow-hidden rounded-[16px] border border-border bg-surface">
+      {chunkArray(cells, 2).map((row, rowIndex) => (
+        <View
+          key={rowIndex}
+          className={[
+            "flex-row",
+            rowIndex < Math.ceil(cells.length / 2) - 1 ? "border-b border-border" : "",
+          ].join(" ")}
+        >
+          {row.map((cell, cellIndex) => (
             <View
-              key={`${item.label}-${item.detail}`}
-              className="rounded-[16px] border border-border bg-surface-muted px-3 py-3"
+              key={cell.label}
+              className={[
+                "flex-1 px-3 py-3",
+                cellIndex === 0 ? "border-r border-border" : "",
+              ].join(" ")}
             >
-              <View className="flex-row items-start justify-between gap-3">
-                <View className="flex-1">
-                  <Text className="text-[13px] text-text" style={fontStyles.uiSemibold}>
-                    {item.label}
-                  </Text>
-                  <Text className="mt-1 text-[12px] leading-4 text-text-muted">
-                    {item.detail}
-                  </Text>
-                </View>
-                <StatusPill label="Check" variant={item.variant} />
-              </View>
+              <Text className="text-[10px] font-semibold uppercase tracking-[0.8px] text-text-soft">
+                {cell.label}
+              </Text>
+              <Text
+                className="mt-1 text-[13px] text-espresso"
+                style={fontStyles.uiMedium}
+                numberOfLines={1}
+              >
+                {cell.value}
+              </Text>
             </View>
           ))}
+          {row.length === 1 ? <View className="flex-1" /> : null}
         </View>
-      ) : (
-        <View className="rounded-[16px] border border-olive/20 bg-olive/10 px-3 py-3">
-          <Text className="text-[13px] text-olive" style={fontStyles.uiSemibold}>
-            No urgent blockers from saved trip details.
-          </Text>
-        </View>
-      )}
-    </SectionCard>
-  );
-}
-
-function QuickActionsCard({
-  actions,
-  onOpenTab,
-}: {
-  actions: WorkspaceQuickAction[];
-  onOpenTab: (tab: WorkspaceTab) => void;
-}) {
-  return (
-    <SectionCard
-      eyebrow="Quick actions"
-      title="Open a trip tool"
-      description="Jump into the details only when you need to update them."
-    >
-      <View className="gap-2">
-        {actions.map((action) => (
-          <Pressable
-            key={action.key}
-            onPress={() => onOpenTab(action.key)}
-            accessibilityRole="button"
-            accessibilityLabel={`Open ${action.label}`}
-            className="active:opacity-70"
-          >
-            <View className="flex-row items-center gap-3 rounded-[16px] border border-border bg-surface-muted px-3 py-3">
-              <View
-                className={[
-                  "h-10 w-10 items-center justify-center rounded-full",
-                  action.tone === "warning"
-                    ? "bg-amber/10"
-                    : action.tone === "success"
-                      ? "bg-olive/10"
-                      : "bg-white",
-                ].join(" ")}
-              >
-                <Ionicons
-                  name={ACTION_ICONS[action.key]}
-                  size={18}
-                  color={action.tone === "success" ? "#6A7A43" : "#B86845"}
-                />
-              </View>
-              <View className="flex-1">
-                <Text className="text-[14px] text-text" style={fontStyles.uiSemibold}>
-                  {action.label}
-                </Text>
-                <Text className="mt-0.5 text-[12px] text-text-muted">
-                  {action.detail}
-                </Text>
-              </View>
-              <Text className="text-[13px] text-text" style={fontStyles.uiSemibold}>
-                {action.summary}
-              </Text>
-            </View>
-          </Pressable>
-        ))}
-      </View>
-    </SectionCard>
-  );
-}
-
-function ItineraryPreviewCard({
-  preview,
-  isLoading,
-  isMissing,
-  isStreaming,
-  isSaving,
-  error,
-  streamText,
-  showFullItinerary,
-  onStartStream,
-  onCancelStream,
-  onShowFullItinerary,
-  onHideFullItinerary,
-}: {
-  preview: WorkspaceItineraryPreview | null;
-  isLoading: boolean;
-  isMissing: boolean;
-  isStreaming: boolean;
-  isSaving: boolean;
-  error: string | null;
-  streamText: string | null;
-  showFullItinerary: boolean;
-  onStartStream: () => void;
-  onCancelStream: () => void;
-  onShowFullItinerary: () => void;
-  onHideFullItinerary: () => void;
-}) {
-  return (
-    <SectionCard
-      eyebrow="Itinerary"
-      title={preview ? preview.title : "Saved plan"}
-      description={preview?.subtitle ?? "Keep the plan lightweight on mobile."}
-      action={
-        preview ? (
-          <Pressable
-            onPress={showFullItinerary ? onHideFullItinerary : onShowFullItinerary}
-            accessibilityRole="button"
-          >
-            <Text className="text-[13px] text-accent" style={fontStyles.uiSemibold}>
-              {showFullItinerary ? "Hide editor" : "Edit itinerary"}
-            </Text>
-          </Pressable>
-        ) : undefined
-      }
-    >
-      <View className="gap-3">
-        {isStreaming ? (
-          <View
-            className="gap-3 rounded-[18px] p-4"
-            style={{
-              borderWidth: 1,
-              borderColor: "rgba(184, 104, 69, 0.3)",
-              backgroundColor: "rgba(184, 104, 69, 0.05)",
-            }}
-          >
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center gap-2">
-                <ActivityIndicator size="small" color="#B86845" />
-                <Text className="text-sm font-semibold text-amber">
-                  Generating itinerary...
-                </Text>
-              </View>
-              <Pressable
-                onPress={onCancelStream}
-                accessibilityRole="button"
-                accessibilityLabel="Cancel generation"
-                className="rounded-full px-3 py-1.5 active:opacity-60"
-              >
-                <Text className="text-xs font-semibold text-text-muted">Cancel</Text>
-              </Pressable>
-            </View>
-            <Text className="text-xs leading-relaxed text-text-soft" numberOfLines={5}>
-              {streamText
-                ? streamText.slice(-320)
-                : "Connecting to AI... you can cancel at any time."}
-            </Text>
-          </View>
-        ) : null}
-
-        {isSaving ? (
-          <View className="flex-row items-center gap-2 py-2">
-            <ActivityIndicator size="small" color="#B86845" />
-            <Text className="text-sm text-text-muted">Saving itinerary...</Text>
-          </View>
-        ) : null}
-
-        {error && !isStreaming ? (
-          <Text className="text-sm text-danger">{error}</Text>
-        ) : null}
-
-        {isLoading && !isStreaming ? (
-          <ActivityIndicator className="py-2" />
-        ) : null}
-
-        {isMissing && !isStreaming ? (
-          <View className="gap-3">
-            <Text className="text-sm leading-5 text-text-muted">
-              No itinerary is saved yet. Generate one with AI when you are ready
-              to turn the trip shell into a plan.
-            </Text>
-            <PrimaryButton label="Generate with AI" onPress={onStartStream} />
-          </View>
-        ) : null}
-
-        {preview ? (
-          <View className="gap-3">
-            {preview.primaryStop ? (
-              <StopPreview stop={preview.primaryStop} primary />
-            ) : (
-              <Text className="rounded-[16px] border border-border bg-surface-muted px-4 py-4 text-sm text-text-muted">
-                Nothing scheduled for this day.
-              </Text>
-            )}
-            {preview.secondaryStops.length > 0 ? (
-              <View className="gap-2">
-                {preview.secondaryStops.map((stop, index) => (
-                  <StopPreview key={`${stop.title}-${index}`} stop={stop} />
-                ))}
-              </View>
-            ) : null}
-          </View>
-        ) : null}
-      </View>
-    </SectionCard>
-  );
-}
-
-function StopPreview({ stop, primary = false }: { stop: ItineraryItem; primary?: boolean }) {
-  return (
-    <View
-      className={[
-        "rounded-[16px] border px-3 py-3",
-        primary ? "border-amber/30 bg-amber/10" : "border-border bg-surface-muted",
-      ].join(" ")}
-    >
-      <View className="flex-row gap-3">
-        {stop.time?.trim() ? (
-          <Text
-            className={primary ? "w-16 text-[13px] text-accent" : "w-16 text-[12px] text-text-soft"}
-            style={fontStyles.uiSemibold}
-          >
-            {stop.time.trim()}
-          </Text>
-        ) : null}
-        <View className="flex-1">
-          <Text className="text-[14px] text-text" style={fontStyles.uiSemibold}>
-            {stop.title?.trim() || "Untitled stop"}
-          </Text>
-          {stop.location?.trim() ? (
-            <Text className="mt-0.5 text-[12px] text-text-muted">
-              {stop.location.trim()}
-            </Text>
-          ) : null}
-        </View>
-      </View>
+      ))}
     </View>
   );
 }
 
-function TripBasicsCard({ trip }: { trip: TripWorkspaceViewModel }) {
-  return (
-    <SectionCard eyebrow="Trip basics" title="Destination and timing">
-      <View className="gap-3">
-        <InfoRow label="Destination" value={trip.destination} />
-        <InfoRow label="Dates" value={trip.dateRange} />
-        <InfoRow
-          label="Duration"
-          value={`${trip.durationDays} ${trip.durationDays === 1 ? "day" : "days"}`}
-        />
-        <View className="flex-row flex-wrap gap-2">
-          <StatusPill
-            label={trip.statusLabel}
-            variant={
-              trip.status === "active"
-                ? "success"
-                : trip.status === "upcoming"
-                  ? "warning"
-                  : "default"
-            }
-          />
-          <StatusPill
-            label={trip.isOwner ? "You own this trip" : "Shared trip"}
-            variant="info"
-          />
-        </View>
-      </View>
-    </SectionCard>
-  );
+function formatItineraryDate(dateStr: string): string {
+  const d = new Date(`${dateStr}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View>
-      <Text className="text-[11px] font-semibold uppercase tracking-[0.5px] text-text-soft">
-        {label}
-      </Text>
-      <Text className="mt-1 text-base text-text">{value}</Text>
-    </View>
-  );
+function chunkArray<T>(array: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size));
+  }
+  return chunks;
 }

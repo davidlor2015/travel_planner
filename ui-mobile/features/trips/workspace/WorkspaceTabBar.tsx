@@ -1,21 +1,12 @@
-import { Ionicons } from "@expo/vector-icons";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
-export type WorkspaceTab = "overview" | "bookings" | "budget" | "packing" | "members";
-
-interface TabDef {
-  key: WorkspaceTab;
-  label: string;
-  icon: keyof typeof Ionicons.glyphMap;
-}
-
-const TAB_DEFS: TabDef[] = [
-  { key: "overview", label: "Overview", icon: "list-outline" },
-  { key: "bookings", label: "Bookings", icon: "bookmark-outline" },
-  { key: "budget", label: "Budget", icon: "card-outline" },
-  { key: "packing", label: "Packing", icon: "bag-outline" },
-  { key: "members", label: "Members", icon: "people-outline" },
-];
+export type WorkspaceTab =
+  | "overview"
+  | "itinerary"
+  | "bookings"
+  | "budget"
+  | "packing"
+  | "members";
 
 interface WorkspaceTabBarProps {
   visibleTabs: { key: WorkspaceTab; label: string }[];
@@ -37,10 +28,6 @@ export function WorkspaceTabBar({
     members: membersBadge,
   };
 
-  const tabs = visibleTabs
-    .map((t) => ({ ...t, ...TAB_DEFS.find((d) => d.key === t.key)! }))
-    .filter((t) => t.icon !== undefined);
-
   return (
     <View className="border-b border-smoke bg-ivory">
       <ScrollView
@@ -48,7 +35,7 @@ export function WorkspaceTabBar({
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 16 }}
       >
-        {tabs.map((tab) => {
+        {visibleTabs.map((tab) => {
           const isActive = activeTab === tab.key;
           const badge = badges[tab.key] ?? 0;
 
@@ -58,11 +45,6 @@ export function WorkspaceTabBar({
               onPress={() => onTabChange(tab.key)}
               className="relative mr-5 flex-row items-center gap-1.5 py-3"
             >
-              <Ionicons
-                name={tab.icon}
-                size={15}
-                color={isActive ? "#1C1108" : "#8A7E74"}
-              />
               <Text
                 className={
                   isActive
