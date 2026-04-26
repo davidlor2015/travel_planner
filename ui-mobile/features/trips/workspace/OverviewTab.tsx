@@ -12,7 +12,7 @@ import type {
 } from "./adapters";
 import { ItineraryTabView } from "./ItineraryTabView";
 import { RegenerateSheet } from "./RegenerateSheet";
-import { StopEditSheet } from "./StopEditSheet";
+import { StopFormSheet } from "./StopFormSheet";
 import { useWorkspaceOverviewModel } from "./useWorkspaceOverviewModel";
 import type { WorkspaceAttentionItem, WorkspaceQuickAction } from "./workspaceCommandModel";
 import type { OverviewItineraryDayPreview } from "./overviewItineraryPreview";
@@ -112,6 +112,8 @@ export function OverviewTab({
           onEditStop={(dayIndex, stopIndex) =>
             overview.setEditingStop({ dayIndex, stopIndex })
           }
+          onAddDay={overview.handleAddDay}
+          onDeleteDay={overview.handleDeleteDay}
           onPublish={() => void overview.handlePublishChanges()}
           onRegenerateAll={onStartStream}
           onCancelStream={onCancelStream}
@@ -317,11 +319,19 @@ export function OverviewTab({
       {/* Sheets — always rendered so state persists across tab switches */}
       {overview.itinerary ? (
         <>
-          <StopEditSheet
+          <StopFormSheet
             visible={Boolean(overview.editingStop)}
             item={overview.selectedStop}
+            initialDayIndex={overview.editingStop?.dayIndex ?? 0}
+            dayOptions={overview.dayOptions}
+            timeOptions={overview.timeOptions}
+            moveAvailability={overview.stopMoveAvailability}
             onSave={overview.handleSaveStop}
             onDelete={overview.handleDeleteStop}
+            onMoveUp={overview.handleMoveStopUp}
+            onMoveDown={overview.handleMoveStopDown}
+            onMoveToPreviousDay={overview.handleMoveStopToPreviousDay}
+            onMoveToNextDay={overview.handleMoveStopToNextDay}
             onClose={() => overview.setEditingStop(null)}
           />
           <RegenerateSheet

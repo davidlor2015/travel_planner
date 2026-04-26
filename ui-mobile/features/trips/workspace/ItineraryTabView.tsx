@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "react-native";
 
 import { PrimaryButton } from "@/shared/ui/Button";
 
@@ -24,6 +24,8 @@ type Props = {
   error: string | null;
   onAddStop: (dayIndex: number) => void;
   onEditStop: (dayIndex: number, stopIndex: number) => void;
+  onAddDay: () => void;
+  onDeleteDay: (dayIndex: number) => void;
   onPublish: () => void;
   onRegenerateAll: () => void;
   onCancelStream: () => void;
@@ -43,12 +45,36 @@ export function ItineraryTabView({
   error,
   onAddStop,
   onEditStop,
+  onAddDay,
+  onDeleteDay,
   onPublish,
   onRegenerateAll,
   onCancelStream,
 }: Props) {
   const firstDayIndex = days[0]?.dayIndex ?? 0;
-  const canAddStop = allDayCount > 0 && !isLoading && !isMissing && !isStreaming;
+  const canEditItinerary = !isLoading && !isMissing && !isStreaming;
+  const canAddStop = allDayCount > 0 && canEditItinerary;
+  const canDeleteDay = allDayCount > 1 && canEditItinerary;
+
+  function confirmDeleteDay(day: ItineraryTabDay) {
+    if (!canDeleteDay) return;
+
+    const stopCount = day.day.items.length;
+    Alert.alert(
+      `Remove ${day.dayLabel}?`,
+      stopCount > 0
+        ? `This removes the day and deletes ${stopCount} ${stopCount === 1 ? "stop" : "stops"} from your local draft.`
+        : "This removes the empty day from your local draft.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove day",
+          style: "destructive",
+          onPress: () => onDeleteDay(day.dayIndex),
+        },
+      ],
+    );
+  }
 
   return (
     <ScrollView
@@ -88,19 +114,34 @@ export function ItineraryTabView({
           })}
         </ScrollView>
 
-        <Pressable
-          onPress={() => onAddStop(firstDayIndex)}
-          disabled={!canAddStop}
-          className={[
-            "h-7 shrink-0 flex-row items-center justify-center gap-1 rounded-full border border-amber/40 bg-amber/10 px-3 active:opacity-70",
-            canAddStop ? "" : "opacity-40",
-          ].join(" ")}
-          accessibilityRole="button"
-          accessibilityLabel="Add itinerary stop"
-        >
-          <Ionicons name="add" size={13} color="#B86845" />
-          <Text className="text-[11px] font-semibold text-amber">Add</Text>
-        </Pressable>
+        <View className="shrink-0 flex-row gap-2">
+          <Pressable
+            onPress={onAddDay}
+            disabled={!canEditItinerary}
+            className={[
+              "h-7 flex-row items-center justify-center gap-1 rounded-full border border-amber/40 bg-amber/10 px-3 active:opacity-70",
+              canEditItinerary ? "" : "opacity-40",
+            ].join(" ")}
+            accessibilityRole="button"
+            accessibilityLabel="Add itinerary day"
+          >
+            <Ionicons name="add" size={13} color="#B86845" />
+            <Text className="text-[11px] font-semibold text-amber">Day</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => onAddStop(firstDayIndex)}
+            disabled={!canAddStop}
+            className={[
+              "h-7 flex-row items-center justify-center gap-1 rounded-full border border-divider bg-transparent px-3 active:opacity-70",
+              canAddStop ? "" : "opacity-40",
+            ].join(" ")}
+            accessibilityRole="button"
+            accessibilityLabel="Add itinerary stop"
+          >
+            <Ionicons name="add" size={13} color="#8A7E74" />
+            <Text className="text-[11px] font-semibold text-flint">Stop</Text>
+          </Pressable>
+        </View>
       </View>
 
       {error ? (
@@ -145,7 +186,10 @@ export function ItineraryTabView({
             <ItineraryTimelineDay
               key={day.day.day_number}
               day={day}
+              onAddStop={() => onAddStop(day.dayIndex)}
               onEditStop={(stopIndex) => onEditStop(day.dayIndex, stopIndex)}
+              onDeleteDay={() => confirmDeleteDay(day)}
+              canDeleteDay={canDeleteDay}
             />
           ))}
 
@@ -172,10 +216,22 @@ export function ItineraryTabView({
           </Pressable>
         </View>
       ) : (
-        <View className="mx-5 mt-5 rounded-[16px] border border-divider bg-ivory px-4 py-5">
+        <View className="mx-5 mt-5 gap-3 rounded-[16px] border border-divider bg-ivory px-4 py-5">
           <Text className="text-[13px] leading-5 text-muted">
-            No stops match this filter.
+            {allDayCount === 0
+              ? "No itinerary days yet. Add a day to start building the trip."
+              : "No stops match this filter."}
           </Text>
+          {allDayCount === 0 && canEditItinerary ? (
+            <Pressable
+              onPress={onAddDay}
+              className="self-start rounded-full bg-amber px-4 py-2 active:opacity-75"
+              accessibilityRole="button"
+              accessibilityLabel="Add itinerary day"
+            >
+              <Text className="text-[13px] font-semibold text-white">Add day</Text>
+            </Pressable>
+          ) : null}
         </View>
       )}
     </ScrollView>

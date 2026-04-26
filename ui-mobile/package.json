@@ -8,7 +8,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint",
+    "lint": "eslint \"app/**/*.{js,jsx,ts,tsx}\" \"features/**/*.{js,jsx,ts,tsx}\" \"shared/**/*.{js,jsx,ts,tsx}\" \"constants/**/*.{js,jsx,ts,tsx}\" \"hooks/**/*.{js,jsx,ts,tsx}\" \"__tests__/**/*.{js,jsx,ts,tsx}\" eslint.config.js",
     "test": "jest"
   },
   "jest": {

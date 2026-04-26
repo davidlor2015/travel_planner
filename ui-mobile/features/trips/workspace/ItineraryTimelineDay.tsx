@@ -12,12 +12,21 @@ import type {
 type Props = {
   day: ItineraryTabDay;
   onEditStop: (stopIndex: number) => void;
+  onAddStop: () => void;
+  onDeleteDay: () => void;
+  canDeleteDay: boolean;
 };
 
-export function ItineraryTimelineDay({ day, onEditStop }: Props) {
+export function ItineraryTimelineDay({
+  day,
+  onEditStop,
+  onAddStop,
+  onDeleteDay,
+  canDeleteDay,
+}: Props) {
   return (
     <View className="gap-2">
-      <View className="flex-row items-end justify-between">
+      <View className="flex-row items-start justify-between gap-3">
         <View className="min-w-0 flex-1 flex-row items-end gap-2">
           <Text
             className="text-[18px] leading-[27px] text-espresso"
@@ -34,7 +43,34 @@ export function ItineraryTimelineDay({ day, onEditStop }: Props) {
             </Text>
           ) : null}
         </View>
-        <Text className="pb-1 text-[11px] text-muted">{day.stopCountLabel}</Text>
+        <View className="items-end gap-1.5">
+          <Text className="text-[11px] text-muted">{day.stopCountLabel}</Text>
+          <View className="flex-row items-center gap-2">
+            <Pressable
+              onPress={onAddStop}
+              accessibilityRole="button"
+              accessibilityLabel={`Add stop to ${day.dayLabel}`}
+              className="min-h-8 justify-center rounded-full border border-border-strong px-3 active:opacity-70"
+            >
+              <Text className="text-[11px] font-semibold text-muted">Add stop</Text>
+            </Pressable>
+            <Pressable
+              onPress={onDeleteDay}
+              disabled={!canDeleteDay}
+              accessibilityRole="button"
+              accessibilityLabel={`Remove ${day.dayLabel}`}
+              accessibilityState={{ disabled: !canDeleteDay }}
+              className={[
+                "min-h-8 justify-center px-1 active:opacity-70",
+                canDeleteDay ? "" : "opacity-40",
+              ].join(" ")}
+            >
+              <Text className={canDeleteDay ? "text-[11px] font-semibold text-danger" : "text-[11px] font-semibold text-muted"}>
+                Remove
+              </Text>
+            </Pressable>
+          </View>
+        </View>
       </View>
 
       <View className="overflow-hidden rounded-[16px] border border-divider bg-ivory">

@@ -192,7 +192,7 @@ function NoResultsState({ query }: { query: string }) {
     <View className="flex-1 items-center justify-center px-8 gap-3 pt-16">
       <Ionicons name="search-outline" size={28} color="#C9BCA8" />
       <Text style={fontStyles.uiSemibold} className="text-[16px] text-espresso text-center">
-        No matches for "{query}"
+        No matches for {`"${query}"`}
       </Text>
       <Text style={fontStyles.uiRegular} className="text-[13px] text-muted text-center">
         Try searching by destination or trip name.

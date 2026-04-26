@@ -74,7 +74,7 @@ export default function ForgotPasswordPage() {
             {"Reset your\npassword."}
           </Text>
           <Text className="mt-2 text-sm leading-5 text-muted" style={fontStyles.uiRegular}>
-            Enter your email and we'll send a link to choose a new one.
+            {"Enter your email and we'll send a link to choose a new one."}
           </Text>
         </View>
 
