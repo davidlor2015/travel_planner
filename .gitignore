@@ -1,10 +1,15 @@
 .env
 .env.docker
 __pycache__/
+# .venv/     — Linux/WSL venv (used by Makefile targets)
+# .venv-win/ — Windows PowerShell venv (only needed on native Windows)
 .venv/
 .venv-win/
 .pytest_cache/
 *.pyc
+# Stray pip artifacts (e.g. `pip install =0.x.x` typos)
+=*
+.tmp/
 app/core/__pycache__/
 app/db/__pycache__/
 app/models/__pycache__/
@@ -20,4 +25,3 @@ V1_SCOPE.md
 UI_DIRECTION.md
 
 .vscode/*
-=0.8.0

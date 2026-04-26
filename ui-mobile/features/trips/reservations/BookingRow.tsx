@@ -1,44 +1,122 @@
 import { Pressable, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
-import { StatusPill } from "@/shared/ui/StatusPill";
+import { fontStyles } from "@/shared/theme/typography";
 
-import type { ReservationViewModel } from "./adapters";
+import type { BookingIconName, ReservationViewModel } from "./adapters";
 
 type Props = {
   reservation: ReservationViewModel;
+  onPress: () => void;
   onDelete: () => void;
 };
 
-export function BookingRow({ reservation, onDelete }: Props) {
+function StatusPill({ label, variant }: { label: string; variant: ReservationViewModel["statusVariant"] }) {
+  const bg =
+    variant === "confirmed"
+      ? "bg-[#dde0cd]"
+      : variant === "pending"
+        ? "bg-[#ead7c9]"
+        : "bg-smoke";
+
+  const textColor =
+    variant === "confirmed"
+      ? "#6f7a4a"
+      : variant === "pending"
+        ? "#b9714f"
+        : "#8A7E74";
+
   return (
-    <View className="flex-row items-start gap-3 rounded-[22px] border border-border bg-white px-4 py-4">
-      <View className="mt-0.5 h-10 w-10 items-center justify-center rounded-xl bg-surface-muted">
-        <Text className="text-sm font-semibold text-text">{reservation.typeLabel.slice(0, 1)}</Text>
+    <View className={`rounded-full px-2.5 py-[3px] ${bg}`}>
+      <Text style={[fontStyles.uiMedium, { fontSize: 11, color: textColor, letterSpacing: 0.3 }]}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+export function BookingRow({ reservation, onPress, onDelete }: Props) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`View ${reservation.title} details`}
+      className="flex-row items-center gap-3 rounded-[14px] border border-smoke bg-ivory px-[15px] py-[13px] active:opacity-70"
+    >
+      {/* Icon square */}
+      <View className="h-9 w-9 items-center justify-center rounded-[10px] border border-smoke bg-parchment-soft">
+        <Ionicons
+          name={reservation.typeIconName satisfies BookingIconName}
+          size={15}
+          color="#8A7E74"
+        />
       </View>
-      <View className="flex-1">
-        <View className="flex-row flex-wrap items-center gap-2">
-          <StatusPill label={reservation.typeLabel} />
-          <StatusPill
-            label={reservation.statusLabel}
-            variant={reservation.statusLabel === "Upcoming" ? "warning" : reservation.statusLabel === "In Progress" ? "success" : "default"}
-          />
+
+      {/* Main content */}
+      <View className="flex-1 gap-[3px]">
+        {/* Title row + optional confirmation code */}
+        <View className="flex-row items-center gap-1.5">
+          <Text
+            style={fontStyles.uiSemibold}
+            className="text-[13px] text-espresso"
+            numberOfLines={1}
+          >
+            {reservation.title}
+          </Text>
+          {reservation.confirmationCode ? (
+            <Text
+              style={[fontStyles.uiRegular, { fontSize: 10, letterSpacing: 1, color: "#8A7E74" }]}
+              numberOfLines={1}
+            >
+              · {reservation.confirmationCode}
+            </Text>
+          ) : null}
         </View>
-        <Text className="mt-2 text-sm font-semibold text-text">{reservation.title}</Text>
-        {reservation.detailLabel ? (
-          <Text className="mt-1 text-sm text-text-muted">{reservation.detailLabel}</Text>
+
+        {/* Detail line */}
+        {reservation.detailLine ? (
+          <Text
+            style={fontStyles.uiRegular}
+            className="text-[11px] text-muted"
+            numberOfLines={1}
+          >
+            {reservation.detailLine}
+          </Text>
         ) : null}
-        {reservation.dateLabel ? (
-          <Text className="mt-1 text-sm text-text-muted">{reservation.dateLabel}</Text>
+
+        {/* Location hint */}
+        {reservation.location ? (
+          <View className="flex-row items-center gap-1 mt-[1px]">
+            <Ionicons name="location-outline" size={10} color="#8A7E74" />
+            <Text
+              style={fontStyles.uiRegular}
+              className="text-[10px] text-muted"
+              numberOfLines={1}
+            >
+              {reservation.location}
+            </Text>
+          </View>
         ) : null}
       </View>
-      <View className="items-end gap-2">
-        <Text className="text-sm font-semibold text-text">
-          {reservation.priceLabel ?? "Pending"}
-        </Text>
-        <Pressable onPress={onDelete}>
-          <Text className="text-sm font-semibold text-text-soft">Delete</Text>
+
+      {/* Right column: price + status pill + delete */}
+      <View className="items-end gap-[3px]">
+        {reservation.priceLabel ? (
+          <Text style={fontStyles.uiMedium} className="text-[13px] text-espresso">
+            {reservation.priceLabel}
+          </Text>
+        ) : null}
+        <StatusPill label={reservation.statusLabel} variant={reservation.statusVariant} />
+        <Pressable
+          onPress={(e) => { e.stopPropagation?.(); onDelete(); }}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={`Delete ${reservation.title}`}
+          className="mt-0.5"
+        >
+          <Ionicons name="trash-outline" size={13} color="#C9BCA8" />
         </Pressable>
       </View>
-    </View>
+    </Pressable>
   );
 }
