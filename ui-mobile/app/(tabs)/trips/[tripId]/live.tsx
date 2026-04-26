@@ -20,6 +20,7 @@ export default function LiveViewPage() {
 
   const tripQuery = useTripDetailQuery(tripId);
   const title = tripQuery.data?.title ?? "Trip";
+  const destination = tripQuery.data?.destination ?? "";
 
   if (tripId === null) {
     return (
@@ -38,7 +39,7 @@ export default function LiveViewPage() {
   return (
     <>
       <Tabs.Screen options={{ tabBarStyle: { display: "none" } }} />
-      <OnTripScreen tripId={tripId} tripTitle={title} />
+      <OnTripScreen tripId={tripId} tripTitle={title} tripDestination={destination} />
     </>
   );
 }

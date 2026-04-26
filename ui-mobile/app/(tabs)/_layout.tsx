@@ -45,20 +45,25 @@ function TabsLayoutInner() {
         }
       />
       <Tabs.Screen
-        name="companions"
+        name="today"
         options={{
-          title: "Companions",
+          title: "Today",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people-outline" size={size} color={color} />
+            <Ionicons name="today-outline" size={size} color={color} />
           ),
         }}
+      />
+      {/* Companions is hidden from primary nav for V1; feature code preserved in features/matching/ */}
+      <Tabs.Screen
+        name="companions"
+        options={{ href: null }}
       />
       <Tabs.Screen
         name="archive"
         options={{
-          title: "Archive",
+          title: "Memories",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="archive-outline" size={size} color={color} />
+            <Ionicons name="albums-outline" size={size} color={color} />
           ),
         }}
       />

@@ -18,6 +18,39 @@ import type { ArchiveTripViewModel, ArchiveYearGroup } from "@/features/trips/ar
 import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
 import { ScreenLoading } from "@/shared/ui/ScreenLoading";
 
+// ─── Memory stats helpers ─────────────────────────────────────────────────────
+
+function formatSpent(amount: number): string {
+  if (amount >= 10000) return `$${Math.round(amount / 1000)}k spent`;
+  if (amount >= 1000) return `$${(amount / 1000).toFixed(1)}k spent`;
+  return `$${Math.round(amount)} spent`;
+}
+
+function MemoryStats({ trip }: { trip: ArchiveTripViewModel }) {
+  const stats: string[] = [];
+  if (trip.hasSavedItinerary) stats.push("Itinerary");
+  if (trip.reservationCount > 0)
+    stats.push(`${trip.reservationCount} booking${trip.reservationCount === 1 ? "" : "s"}`);
+  if (trip.totalSpent != null && trip.totalSpent > 0)
+    stats.push(formatSpent(trip.totalSpent));
+  if (trip.memberCount > 1)
+    stats.push(`${trip.memberCount} travelers`);
+
+  if (stats.length === 0) return null;
+
+  return (
+    <View className="mt-1.5 flex-row flex-wrap gap-1">
+      {stats.map((stat) => (
+        <View key={stat} className="rounded-full bg-parchment px-2 py-0.5">
+          <Text style={fontStyles.uiMedium} className="text-[10px] text-flint">
+            {stat}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 // ─── Archive trip card ───────────────────────────────────────────────────────
 
 function ArchiveTripCard({
@@ -62,6 +95,7 @@ function ArchiveTripCard({
               {trip.duration}
             </Text>
           </View>
+          <MemoryStats trip={trip} />
         </View>
 
         <Ionicons name="chevron-forward" size={14} color="#8A7E74" />
@@ -130,16 +164,25 @@ function SearchBar({
 
 function NoArchiveState() {
   return (
-    <View className="flex-1 items-center justify-center px-8 gap-3">
+    <View className="flex-1 items-center justify-center px-8 gap-4">
       <View className="h-14 w-14 items-center justify-center rounded-full border border-smoke bg-parchment">
         <Ionicons name="map-outline" size={26} color="#B86845" />
       </View>
       <Text style={textScaleStyles.displayL} className="text-espresso text-center">
-        No past trips yet
+        No memories yet.
       </Text>
       <Text style={fontStyles.uiRegular} className="text-[14px] text-muted text-center leading-5">
-        Completed trips appear here after their end date. Every journey becomes part of your story.
+        Completed trips will appear here after their end date. Waypoint will keep track of what you planned, what you visited, and what changed along the way.
       </Text>
+      <Pressable
+        onPress={() => router.push("/(tabs)/trips" as Href)}
+        accessibilityRole="button"
+        className="mt-1 rounded-full border border-smoke bg-white px-5 py-2.5"
+      >
+        <Text style={fontStyles.uiMedium} className="text-[13px] text-espresso">
+          View Trips
+        </Text>
+      </Pressable>
     </View>
   );
 }
@@ -190,7 +233,7 @@ export default function ArchivePage() {
   );
 
   if (isLoading) {
-    return <ScreenLoading label="Loading archive…" />;
+    return <ScreenLoading label="Loading memories…" />;
   }
 
   return (
@@ -198,10 +241,10 @@ export default function ArchivePage() {
       {/* Header */}
       <View className="px-4 pb-1 pt-4">
         <Text style={textScaleStyles.displayL} className="text-espresso">
-          Archive
+          Memories
         </Text>
         <Text style={fontStyles.uiRegular} className="mt-0.5 text-[13px] text-muted">
-          Places you've been
+          Your travels, remembered.
         </Text>
       </View>
 

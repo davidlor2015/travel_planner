@@ -3,7 +3,7 @@ import * as Linking from "expo-linking";
 import { Ionicons } from "@expo/vector-icons";
 import { type Href, useRouter } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useOnTripSnapshotQuery } from "@/features/trips/hooks";
 import {
@@ -12,7 +12,7 @@ import {
 } from "@/features/trips/onTrip/eligibility";
 import { ScreenError } from "@/shared/ui/ScreenError";
 import { ScreenLoading } from "@/shared/ui/ScreenLoading";
-import { fontStyles } from "@/shared/theme/typography";
+import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
 
 import type { TripExecutionStatus, TripOnTripSnapshot } from "../types";
 import { deriveOnTripViewModel, stopVariant } from "./adapters";
@@ -31,12 +31,14 @@ import { UnplannedStopRow } from "./UnplannedStopRow";
 type Props = {
   tripId: number;
   tripTitle: string;
+  tripDestination?: string;
 };
 
 const NOW_TICK_INTERVAL_MS = 60_000;
 
-export function OnTripScreen({ tripId, tripTitle }: Props) {
+export function OnTripScreen({ tripId, tripTitle, tripDestination }: Props) {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const snapshotQuery = useOnTripSnapshotQuery(tripId);
   const [liveSnapshot, setLiveSnapshot] = useState<TripOnTripSnapshot | null>(null);
   const [logModalOpen, setLogModalOpen] = useState(false);
@@ -68,8 +70,8 @@ export function OnTripScreen({ tripId, tripTitle }: Props) {
   );
 
   const dayHeader = useMemo(
-    () => (rawSnapshot ? buildOnTripDayHeader(rawSnapshot, tripTitle) : null),
-    [rawSnapshot, tripTitle],
+    () => (rawSnapshot ? buildOnTripDayHeader(rawSnapshot, tripTitle, tripDestination) : null),
+    [rawSnapshot, tripTitle, tripDestination],
   );
 
   if (snapshotQuery.isLoading) return <ScreenLoading label="Loading your trip..." />;
@@ -94,32 +96,18 @@ export function OnTripScreen({ tripId, tripTitle }: Props) {
     !isResolvedStop(vm.now) &&
     !isResolvedStop(rawSnapshot.next_stop);
 
-  const navigateToStop = async (key: string) => {
-    const stop =
-      vm.timeline.find((item) => item.key === key) ??
-      (vm.now?.key === key ? vm.now : null);
-    if (!stop) return;
-    const url = buildNavigateUrl(stop);
-    if (!url) return;
-    await Linking.openURL(url);
+  const toggleStatus = (stopRef: string, target: TripExecutionStatus) => {
+    void mutations.setStopStatus(stopRef, target);
   };
 
   const navigateAction = (key: string): (() => void) | undefined => {
     const stop =
       vm.timeline.find((item) => item.key === key) ??
       (vm.now?.key === key ? vm.now : null);
-    if (!stop || !buildNavigateUrl(stop)) return undefined;
-    return () => void navigateToStop(key);
-  };
-
-  const toggleStatus = (
-    stopRef: string | null,
-    current: TripExecutionStatus,
-    target: "confirmed" | "skipped",
-  ) => {
-    if (!stopRef || vm.isReadOnly) return;
-    const next = current === target ? "planned" : target;
-    void mutations.setStopStatus(stopRef, next);
+    if (!stop) return undefined;
+    const url = buildNavigateUrl(stop);
+    if (!url) return undefined;
+    return () => void Linking.openURL(url);
   };
 
   const openFullWorkspace = () => {
@@ -136,18 +124,18 @@ export function OnTripScreen({ tripId, tripTitle }: Props) {
       />
 
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 88 }}
         showsVerticalScrollIndicator={false}
       >
-        <View className="pt-1">
+        <View className="pt-2">
           <Text
-            className="text-[28px] leading-[31px] text-ontrip"
-            style={fontStyles.displayMedium}
+            className="text-ontrip"
+            style={textScaleStyles.displayXL}
             numberOfLines={2}
           >
             {dayHeader.title}
           </Text>
-          <Text className="mt-1.5 text-[12px] leading-[18px] text-ontrip-muted">
+          <Text className="mt-1.5 text-[12px] leading-[18px] text-ontrip-muted" style={fontStyles.uiRegular}>
             {dayHeader.meta}
             {vm.isReadOnly ? " · Read-only" : ""}
           </Text>
@@ -184,13 +172,18 @@ export function OnTripScreen({ tripId, tripTitle }: Props) {
                     isLast={idx === vm.timeline.length - 1}
                     onNavigate={navigateAction(stop.key)}
                     onConfirm={
-                      stop.stop_ref
-                        ? () => toggleStatus(stop.stop_ref, stop.effectiveStatus, "confirmed")
+                      !vm.isReadOnly && stop.stop_ref
+                        ? () => toggleStatus(stop.stop_ref!, "confirmed")
                         : undefined
                     }
                     onSkip={
-                      stop.stop_ref
-                        ? () => toggleStatus(stop.stop_ref, stop.effectiveStatus, "skipped")
+                      !vm.isReadOnly && stop.stop_ref
+                        ? () => toggleStatus(stop.stop_ref!, "skipped")
+                        : undefined
+                    }
+                    onReset={
+                      !vm.isReadOnly && stop.stop_ref
+                        ? () => toggleStatus(stop.stop_ref!, "planned")
                         : undefined
                     }
                   />
@@ -224,7 +217,7 @@ export function OnTripScreen({ tripId, tripTitle }: Props) {
           </View>
         ) : null}
 
-        <View className="mt-5 items-center">
+        <View className="mt-6 items-center">
           <Pressable
             onPress={openFullWorkspace}
             className="flex-row items-center gap-1.5 px-3 py-2 active:opacity-70"
@@ -232,24 +225,32 @@ export function OnTripScreen({ tripId, tripTitle }: Props) {
             accessibilityLabel="Open full trip workspace"
           >
             <Ionicons name="open-outline" size={12} color="#8A7866" />
-            <Text className="text-[12px] leading-[18px] text-ontrip-muted">
+            <Text className="text-[12px] leading-[18px] text-ontrip-muted" style={fontStyles.uiRegular}>
               Open full workspace
             </Text>
           </Pressable>
         </View>
-
-        {!vm.isReadOnly ? (
-          <View className="mt-3">
-            <LogStopFab onPress={() => setLogModalOpen(true)} />
-          </View>
-        ) : null}
       </ScrollView>
+
+      {!vm.isReadOnly ? (
+        <View
+          style={{
+            position: "absolute",
+            bottom: insets.bottom + 16,
+            left: 20,
+            right: 20,
+          }}
+        >
+          <LogStopFab onPress={() => setLogModalOpen(true)} />
+        </View>
+      ) : null}
 
       {mutations.feedback ? (
         <Pressable
           onPress={mutations.dismissFeedback}
+          style={{ bottom: insets.bottom + (vm.isReadOnly ? 16 : 76) }}
           className={[
-            "absolute bottom-[24px] left-5 right-5 rounded-[16px] px-4 py-3",
+            "absolute left-5 right-5 rounded-[16px] px-4 py-3",
             mutations.feedback.kind === "error" ? "bg-danger" : "bg-olive",
           ].join(" ")}
         >

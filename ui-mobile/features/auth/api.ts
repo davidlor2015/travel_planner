@@ -60,6 +60,13 @@ export async function getMe(accessToken?: string): Promise<MeResponse> {
   });
 }
 
+export async function updateMe(payload: { display_name: string }): Promise<MeResponse> {
+  return apiRequest<MeResponse>("/v1/auth/me", {
+    method: "PATCH",
+    body: payload,
+  });
+}
+
 export async function requestPasswordReset(email: string): Promise<void> {
   await apiRequest<void>("/v1/auth/password-reset/request", {
     method: "POST",

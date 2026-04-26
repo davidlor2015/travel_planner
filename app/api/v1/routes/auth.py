@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.api.deps import CurrentUser
-from app.schemas.user import UserResponse, UserCreate
+from app.schemas.user import UserResponse, UserCreate, UserUpdate
 from app.schemas.auth import (
     EmailVerificationConfirmRequest,
     EmailVerificationRequest,
@@ -87,4 +87,17 @@ def confirm_email_verification(
 
 @router.get("/me", response_model=UserResponse)
 def read_users_me(current_user: CurrentUser):
+    return current_user
+
+
+@router.patch("/me", response_model=UserResponse)
+def update_me(
+    payload: UserUpdate,
+    current_user: CurrentUser,
+    db: Session = Depends(get_db),
+):
+    for field in payload.model_fields_set:
+        setattr(current_user, field, getattr(payload, field))
+    db.commit()
+    db.refresh(current_user)
     return current_user

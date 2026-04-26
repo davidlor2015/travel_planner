@@ -113,12 +113,35 @@ export function deriveOnTripViewModel(
 
   const defaultLogDate = snapshot.today.day_date ?? todayLocalISODate();
 
+  // Recompute the "today-planned-open" blocker from the effective status of each
+  // stop so optimistic updates immediately clear the counter once all stops are
+  // confirmed or skipped — the server-side count can lag behind local taps.
+  const unresolvedCount = timeline.filter(
+    (s) => s.effectiveStatus !== "confirmed" && s.effectiveStatus !== "skipped",
+  ).length;
+
+  const otherBlockers = snapshot.blockers.filter((b) => b.id !== "today-planned-open");
+  const effectiveBlockers: TripOnTripBlocker[] =
+    unresolvedCount > 0
+      ? [
+          {
+            id: "today-planned-open",
+            bucket: "on_trip_execution",
+            severity: "watch",
+            title: `${unresolvedCount} ${unresolvedCount === 1 ? "stop" : "stops"} still need review`,
+            detail: String(unresolvedCount),
+            owner_email: null,
+          },
+          ...otherBlockers,
+        ]
+      : otherBlockers;
+
   return {
     now: nowVm,
     next: nextVm,
     timeline,
     unplanned,
-    blockers: snapshot.blockers,
+    blockers: effectiveBlockers,
     defaultLogDate,
     isReadOnly,
   };

@@ -26,13 +26,73 @@ import {
   useBudgetTracker,
   type ExpenseCategory,
 } from "@/features/trips/budget/hooks";
-import { PrimaryButton, SecondaryButton } from "@/shared/ui/Button";
 import { ScreenError } from "@/shared/ui/ScreenError";
 import { ScreenLoading } from "@/shared/ui/ScreenLoading";
 import { SectionCard } from "@/shared/ui/SectionCard";
 import { TextInputField } from "@/shared/ui/TextInputField";
 
 type Props = { tripId: number };
+
+// ─── Local button helpers ─────────────────────────────────────────────────────
+
+function BudgetPrimaryButton({
+  label,
+  onPress,
+  icon,
+  disabled = false,
+  fullWidth = false,
+}: {
+  label: string;
+  onPress: () => void;
+  icon?: React.ReactNode;
+  disabled?: boolean;
+  fullWidth?: boolean;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      className={[
+        "min-h-[44px] flex-row items-center justify-center gap-2 rounded-2xl bg-espresso px-5 py-2.5 active:opacity-80",
+        fullWidth ? "w-full" : "",
+        disabled ? "opacity-40" : "",
+      ].join(" ")}
+    >
+      {icon}
+      <Text className="text-[14px] font-semibold text-ivory">{label}</Text>
+    </Pressable>
+  );
+}
+
+function BudgetSecondaryButton({
+  label,
+  onPress,
+  disabled = false,
+  fullWidth = false,
+}: {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  fullWidth?: boolean;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      className={[
+        "min-h-[44px] flex-row items-center justify-center rounded-2xl border border-border bg-ivory px-5 py-2.5 active:opacity-70",
+        fullWidth ? "w-full" : "",
+        disabled ? "opacity-40" : "",
+      ].join(" ")}
+    >
+      <Text className="text-[14px] font-medium text-espresso">{label}</Text>
+    </Pressable>
+  );
+}
 
 const SUMMARY_TONE_CLASS: Record<"default" | "muted" | "danger", string> = {
   default: "text-text",
@@ -172,7 +232,7 @@ export function BudgetTab({ tripId }: Props) {
             value={limitDraft}
             onChangeText={setLimitDraft}
           />
-          <PrimaryButton label="Save total budget" onPress={() => void handleSetLimit()} fullWidth />
+          <BudgetSecondaryButton label="Save total budget" onPress={() => void handleSetLimit()} fullWidth />
         </View>
       </SectionCard>
 
@@ -189,13 +249,13 @@ export function BudgetTab({ tripId }: Props) {
               <Text className="mb-3 text-[13px] leading-5 text-text-muted">
                 Capture meals, transit, and activities as they happen.
               </Text>
-              <PrimaryButton
+              <BudgetPrimaryButton
                 label="Add expense"
                 onPress={() => {
                   setExpenseDate(todayLocalISODate());
                   setShowExpenseComposer(true);
                 }}
-                icon={<Ionicons name="add" size={16} color="#FFFFFF" />}
+                icon={<Ionicons name="add" size={16} color="#FEFCF9" />}
                 fullWidth
               />
             </View>
@@ -259,14 +319,14 @@ export function BudgetTab({ tripId }: Props) {
               </ScrollView>
               <View className="flex-row gap-2">
                 <View className="flex-1">
-                  <PrimaryButton
+                  <BudgetPrimaryButton
                     label="Save expense"
                     onPress={() => void handleAddExpense()}
                     fullWidth
                   />
                 </View>
                 <View className="flex-1">
-                  <SecondaryButton
+                  <BudgetSecondaryButton
                     label="Cancel"
                     onPress={() => {
                       setShowExpenseComposer(false);

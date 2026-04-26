@@ -10,15 +10,17 @@ export function LogStopFab({ onPress }: { onPress: () => void }) {
       className="active:opacity-85"
       accessibilityRole="button"
       accessibilityLabel="Log a stop"
-      style={{
-        shadowColor: "#2A1D13",
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.32,
-        shadowRadius: 24,
-        elevation: 10,
-      }}
     >
-      <View className="h-[49px] flex-row items-center justify-center gap-3 rounded-[16px] bg-espresso px-5">
+      <View
+        className="h-[52px] flex-row items-center justify-center gap-3 rounded-full bg-espresso px-5"
+        style={{
+          shadowColor: "#2A1D13",
+          shadowOffset: { width: 0, height: 12 },
+          shadowOpacity: 0.32,
+          shadowRadius: 24,
+          elevation: 10,
+        }}
+      >
         <Ionicons name="add" size={17} color="#FBF6EC" />
         <Text className="text-[14px] text-ivory" style={fontStyles.uiMedium}>
           Log a stop

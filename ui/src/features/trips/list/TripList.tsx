@@ -101,9 +101,6 @@ export const TripList = ({
       const selectedTrip = model.selection.selectedTrip;
       if (selectedTrip) model.actions.updateOnTripSnapshot(selectedTrip.id, snap);
     },
-    // model reference is stable; model.selection.selectedTrip and
-    // model.actions.updateOnTripSnapshot are the only accessed members.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [model],
   );
   const onTripMutations = useOnTripMutations({
@@ -318,7 +315,6 @@ export const TripList = ({
     handleShareTrip,
     dismissOnTripCompactMode,
     restoreOnTripCompactMode,
-    updateOnTripSnapshot,
   } = model.actions;
 
   const { isMobileLayout, confirmDelete, editingTrip } = model.ui;

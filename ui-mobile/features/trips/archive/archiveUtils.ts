@@ -5,6 +5,9 @@ export type ArchiveTripViewModel = TripListItemViewModel & {
   year: number;
   duration: string;
   rawEndDate: string;
+  hasSavedItinerary: boolean;
+  reservationCount: number;
+  totalSpent: number | null;
 };
 
 export type ArchiveYearGroup = {
@@ -20,6 +23,12 @@ function computeDuration(startDate: string, endDate: string): string {
   return `${nights} night${nights === 1 ? "" : "s"}`;
 }
 
+function looksLikeSavedItinerary(description: string | null): boolean {
+  if (!description) return false;
+  const trimmed = description.trim();
+  return trimmed.includes('"days"') && trimmed.includes('"summary"');
+}
+
 export function toArchiveTripViewModel(
   trip: TripResponse,
   summary?: TripSummary,
@@ -27,7 +36,15 @@ export function toArchiveTripViewModel(
   const base = toTripListItem(trip, summary);
   const year = new Date(trip.end_date).getFullYear();
   const duration = computeDuration(trip.start_date, trip.end_date);
-  return { ...base, year, duration, rawEndDate: trip.end_date };
+  return {
+    ...base,
+    year,
+    duration,
+    rawEndDate: trip.end_date,
+    hasSavedItinerary: looksLikeSavedItinerary(trip.description),
+    reservationCount: summary?.reservation_count ?? 0,
+    totalSpent: summary && summary.budget_expense_count > 0 ? summary.budget_total_spent : null,
+  };
 }
 
 export function groupTripsByYear(trips: ArchiveTripViewModel[]): ArchiveYearGroup[] {

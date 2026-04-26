@@ -1,76 +1,84 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { useState } from "react";
+import { Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 
+import { EditDisplayNameSheet } from "@/features/profile/EditDisplayNameSheet";
+import { FeedbackSheet } from "@/features/profile/FeedbackSheet";
+import { DefaultsSheet } from "@/features/profile/preferences/DefaultsSheet";
+import { LanguageSheet } from "@/features/profile/preferences/LanguageSheet";
+import { NotificationsSheet } from "@/features/profile/preferences/NotificationsSheet";
+import {
+  buildDefaultsSubtext,
+  buildLanguageSubtext,
+  buildNotificationsSubtext,
+} from "@/features/profile/preferences/preferencePresentation";
+import { useAppPreferences } from "@/features/profile/preferences/useAppPreferences";
 import { useProfileScreen } from "@/features/profile/useProfileScreen";
-import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
-import type { TravelStats } from "@/features/profile/profileUtils";
+import { fontStyles } from "@/shared/theme/typography";
 
-// ─── Stats row ────────────────────────────────────────────────────────────────
+// ─── Row divider ──────────────────────────────────────────────────────────────
 
-function StatBox({
-  value,
-  label,
-}: {
-  value: number;
-  label: string;
-}) {
-  return (
-    <View className="flex-1 items-center gap-0.5">
-      <Text style={[fontStyles.displaySemibold, { fontSize: 28, lineHeight: 32, color: "#1C1108" }]}>
-        {value}
-      </Text>
-      <Text style={fontStyles.uiMedium} className="text-[11px] text-muted text-center">
-        {label}
-      </Text>
-    </View>
-  );
-}
-
-function StatsRow({ stats }: { stats: TravelStats }) {
-  return (
-    <View className="flex-row items-center rounded-[20px] border border-smoke bg-white px-4 py-4">
-      <StatBox value={stats.totalTrips} label="Total trips" />
-      <View className="h-10 w-px bg-smoke" />
-      <StatBox value={stats.activeOrUpcoming} label="Upcoming" />
-      <View className="h-10 w-px bg-smoke" />
-      <StatBox value={stats.pastTrips} label="Archived" />
-    </View>
-  );
+function RowDivider() {
+  return <View className="ml-[64px] mr-4 h-px bg-smoke" />;
 }
 
 // ─── Settings row ─────────────────────────────────────────────────────────────
 
+type SettingsRowProps = {
+  icon: React.ComponentProps<typeof Ionicons>["name"];
+  label: string;
+  subtext?: string;
+  rightLabel?: string;
+  onPress?: () => void;
+  destructive?: boolean;
+};
+
 function SettingsRow({
   icon,
   label,
+  subtext,
+  rightLabel,
   onPress,
-  destructive,
-}: {
-  icon: React.ComponentProps<typeof Ionicons>["name"];
-  label: string;
-  onPress: () => void;
-  destructive?: boolean;
-}) {
-  const textColor = destructive ? "text-red-600" : "text-espresso";
-  const iconColor = destructive ? "#dc2626" : "#6B5E52";
+  destructive = false,
+}: SettingsRowProps) {
+  const iconColor = destructive ? "#B86845" : "#8A7E74";
 
   return (
     <Pressable
       onPress={onPress}
+      className="active:opacity-60"
       accessibilityRole="button"
       accessibilityLabel={label}
-      className="active:opacity-60"
     >
-      <View className="flex-row items-center gap-3 py-3.5">
-        <View className="h-9 w-9 items-center justify-center rounded-full bg-parchment">
-          <Ionicons name={icon} size={18} color={iconColor} />
+      <View className="flex-row items-center gap-3 px-4 py-3.5">
+        <View className="h-9 w-9 items-center justify-center rounded-[10px] bg-parchment">
+          <Ionicons name={icon} size={17} color={iconColor} />
         </View>
-        <Text style={fontStyles.uiMedium} className={`flex-1 text-[15px] ${textColor}`}>
-          {label}
-        </Text>
-        {!destructive ? (
+        <View className="min-w-0 flex-1">
+          <Text
+            style={fontStyles.uiMedium}
+            className={`text-[15px] leading-[21px] ${destructive ? "text-amber" : "text-espresso"}`}
+            numberOfLines={1}
+          >
+            {label}
+          </Text>
+          {subtext ? (
+            <Text
+              style={fontStyles.uiRegular}
+              className="mt-0.5 text-[12px] leading-[17px] text-muted"
+              numberOfLines={1}
+            >
+              {subtext}
+            </Text>
+          ) : null}
+        </View>
+        {rightLabel ? (
+          <Text style={fontStyles.uiRegular} className="text-[13px] text-muted">
+            {rightLabel}
+          </Text>
+        ) : !destructive ? (
           <Ionicons name="chevron-forward" size={14} color="#C9BCA8" />
         ) : null}
       </View>
@@ -78,40 +86,40 @@ function SettingsRow({
   );
 }
 
-// ─── Section wrapper ─────────────────────────────────────────────────────────
+// ─── Section wrapper ──────────────────────────────────────────────────────────
 
-function Section({
-  title,
-  children,
-}: {
-  title?: string;
-  children: React.ReactNode;
-}) {
+function Section({ title, children }: { title?: string; children: React.ReactNode }) {
   return (
-    <View className="gap-0">
+    <View>
       {title ? (
         <Text
           style={fontStyles.uiSemibold}
-          className="mb-2 text-[11px] uppercase tracking-[1.2px] text-flint"
+          className="mb-2 text-[11px] uppercase tracking-[1.4px] text-flint"
         >
           {title}
         </Text>
       ) : null}
-      <View className="overflow-hidden rounded-[20px] border border-smoke bg-white px-4">
+      <View className="overflow-hidden rounded-[20px] border border-smoke bg-ivory">
         {children}
       </View>
     </View>
   );
 }
 
-function Divider() {
-  return <View className="h-px bg-smoke" />;
-}
-
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
+type OpenSheet = "defaults" | "notifications" | "language" | "feedback" | "edit-name" | null;
+
+const DEVICE_LABEL = Platform.select({
+  ios: "iPhone",
+  android: "Android",
+  default: "Device",
+});
+
 export default function ProfilePage() {
-  const { displayName, email, stats, signOut } = useProfileScreen();
+  const { displayName, email, signOut } = useProfileScreen();
+  const { preferences, update } = useAppPreferences();
+  const [openSheet, setOpenSheet] = useState<OpenSheet>(null);
 
   const initials = displayName
     .split(" ")
@@ -119,72 +127,148 @@ export default function ProfilePage() {
     .map((w) => w[0]?.toUpperCase() ?? "")
     .join("");
 
+  const defaultsSubtext = buildDefaultsSubtext(preferences);
+  const notificationsSubtext = buildNotificationsSubtext(preferences);
+  const languageSubtext = buildLanguageSubtext();
+
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={["top"]}>
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 48 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 48 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View className="pb-1 pt-4">
-          <Text style={textScaleStyles.displayL} className="text-espresso">
+        {/* ── Page header ─────────────────────────────────────────────────── */}
+        <View className="pb-1 pt-5">
+          <Text
+            style={fontStyles.uiMedium}
+            className="text-[11px] uppercase tracking-[0.16em] text-amber"
+          >
             Profile
+          </Text>
+          <Text
+            style={fontStyles.displaySemibold}
+            className="mt-1 text-[30px] leading-[36px] text-espresso"
+          >
+            Your account
           </Text>
         </View>
 
-        {/* Identity card */}
-        <View className="mt-4 flex-row items-center gap-4 rounded-[24px] border border-smoke bg-white px-4 py-4">
-          <View className="h-14 w-14 items-center justify-center rounded-full bg-amber/10">
-            <Text
-              style={[fontStyles.displaySemibold, { fontSize: 20, color: "#B86845" }]}
-            >
-              {initials}
+        {/* ── Identity card ────────────────────────────────────────────────── */}
+        <Pressable
+          onPress={() => setOpenSheet("edit-name")}
+          className="mt-5 flex-row items-center gap-4 rounded-[20px] border border-smoke bg-ivory px-4 py-4 active:opacity-70"
+          accessibilityRole="button"
+          accessibilityLabel="Edit display name"
+        >
+          <View className="h-[52px] w-[52px] items-center justify-center rounded-full bg-amber/10">
+            <Text style={[fontStyles.displaySemibold, { fontSize: 19, color: "#B86845" }]}>
+              {initials || "?"}
             </Text>
           </View>
-          <View className="flex-1 gap-0.5">
+          <View className="min-w-0 flex-1">
             <Text
-              style={[fontStyles.displaySemibold, { fontSize: 20, lineHeight: 24, color: "#1C1108" }]}
+              style={fontStyles.uiSemibold}
+              className="text-[18px] leading-[24px] text-espresso"
               numberOfLines={1}
             >
               {displayName}
             </Text>
             {email ? (
-              <Text style={fontStyles.uiRegular} className="text-[13px] text-muted">
+              <Text
+                style={fontStyles.uiRegular}
+                className="mt-0.5 text-[13px] text-muted"
+                numberOfLines={1}
+              >
                 {email}
               </Text>
             ) : null}
           </View>
-        </View>
+          <Ionicons name="pencil-outline" size={16} color="#C9BCA8" />
+        </Pressable>
 
-        {/* Stats */}
+        {/* ── Preferences ──────────────────────────────────────────────────── */}
         <View className="mt-5">
-          <Text
-            style={fontStyles.uiSemibold}
-            className="mb-2 text-[11px] uppercase tracking-[1.2px] text-flint"
-          >
-            Travel stats
-          </Text>
-          <StatsRow stats={stats} />
+          <Section title="Preferences">
+            <SettingsRow
+              icon="notifications-outline"
+              label="Notifications"
+              subtext={notificationsSubtext}
+              onPress={() => setOpenSheet("notifications")}
+            />
+            <RowDivider />
+            <SettingsRow
+              icon="globe-outline"
+              label="Language & region"
+              subtext={languageSubtext}
+              onPress={() => setOpenSheet("language")}
+            />
+            <RowDivider />
+            <SettingsRow
+              icon="settings-outline"
+              label="Defaults"
+              subtext={defaultsSubtext}
+              onPress={() => setOpenSheet("defaults")}
+            />
+          </Section>
         </View>
 
-        {/* Account settings */}
+        {/* ── Account ──────────────────────────────────────────────────────── */}
         <View className="mt-5">
           <Section title="Account">
             <SettingsRow
               icon="lock-closed-outline"
               label="Change password"
-              onPress={() => router.push("/(auth)/forgot-password")}
+              onPress={() => router.push("/(auth)/change-password")}
             />
-            <Divider />
+            <RowDivider />
+            <SettingsRow
+              icon="chatbubble-outline"
+              label="Send feedback"
+              subtext="Help improve Waypoint"
+              onPress={() => setOpenSheet("feedback")}
+            />
+            <RowDivider />
             <SettingsRow
               icon="log-out-outline"
               label="Sign out"
+              rightLabel={DEVICE_LABEL}
               onPress={() => void signOut()}
               destructive
             />
           </Section>
         </View>
       </ScrollView>
+
+      {/* ── Sheets ───────────────────────────────────────────────────────────── */}
+      <DefaultsSheet
+        visible={openSheet === "defaults"}
+        preferences={preferences}
+        onSave={(patch) => {
+          void update(patch);
+          setOpenSheet(null);
+        }}
+        onClose={() => setOpenSheet(null)}
+      />
+      <NotificationsSheet
+        visible={openSheet === "notifications"}
+        preferences={preferences}
+        onChange={(patch) => void update(patch)}
+        onClose={() => setOpenSheet(null)}
+      />
+      <LanguageSheet
+        visible={openSheet === "language"}
+        onClose={() => setOpenSheet(null)}
+      />
+      <FeedbackSheet
+        visible={openSheet === "feedback"}
+        userEmail={email}
+        onClose={() => setOpenSheet(null)}
+      />
+      <EditDisplayNameSheet
+        visible={openSheet === "edit-name"}
+        currentName={displayName}
+        onClose={() => setOpenSheet(null)}
+      />
     </SafeAreaView>
   );
 }

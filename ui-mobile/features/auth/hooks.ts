@@ -8,6 +8,7 @@ import {
   register,
   requestEmailVerification,
   requestPasswordReset,
+  updateMe,
 } from "./api";
 import type { LoginRequest } from "./types";
 
@@ -49,6 +50,12 @@ export function useRequestEmailVerificationMutation() {
 export function useConfirmEmailVerificationMutation() {
   return useMutation({
     mutationFn: (token: string) => confirmEmailVerification(token),
+  });
+}
+
+export function useUpdateMeMutation() {
+  return useMutation({
+    mutationFn: (payload: { display_name: string }) => updateMe(payload),
   });
 }
 

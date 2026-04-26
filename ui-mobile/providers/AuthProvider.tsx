@@ -33,6 +33,7 @@ type AuthContextValue = {
   user: MeResponse | null;
   signIn: (credentials: LoginRequest) => Promise<void>;
   signOut: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -157,6 +158,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
         await clearSessionTokens();
         queryClient.removeQueries({ queryKey: ["trips"] });
         queryClient.removeQueries({ queryKey: ["auth", "me"] });
+      },
+      refreshUser: async () => {
+        const me = await getMe();
+        setUser(me);
       },
     }),
     [accessToken, authStatus, loginMutation, queryClient, user],
