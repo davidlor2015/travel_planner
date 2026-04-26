@@ -28,14 +28,20 @@ export function MembersTab({
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
+  const isSoloTrip = trip.memberCount <= 1;
+  const sectionEyebrow = isSoloTrip ? "Solo planning" : "Shared workspace";
+  const sectionTitle = isSoloTrip ? "Planning solo for now" : "Group";
+  const sectionDescription = isSoloTrip
+    ? "Invite travel companions when you want to coordinate this trip with others."
+    : collaboration.groupDescription;
 
   return (
     <>
       <ScrollView contentContainerClassName="gap-4 px-4 pb-8 pt-4">
         <SectionCard
-          eyebrow="Shared workspace"
-          title="Group"
-          description={collaboration.groupDescription}
+          eyebrow={sectionEyebrow}
+          title={sectionTitle}
+          description={sectionDescription}
           action={
             collaboration.canInvite ? (
               <Pressable onPress={() => setInviteOpen(true)}>
@@ -57,7 +63,7 @@ export function MembersTab({
                 }
               />
               <StatusPill
-                label={trip.isOwner ? "You own this trip" : "Shared trip"}
+                label={isSoloTrip ? "Solo trip" : trip.isOwner ? "You own this trip" : "Shared trip"}
                 variant="info"
               />
               {collaboration.pendingInvites.length > 0 ? (

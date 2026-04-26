@@ -122,12 +122,15 @@ export function toTripWorkspaceCollaborationViewModel(args: {
     (member) =>
       member.email.trim().toLowerCase() === normalizedCurrentUserEmail && member.role === "owner",
   );
+  const isSoloTrip = trip.member_count <= 1;
 
   return {
     canInvite,
-    groupDescription: canInvite
-      ? "Track readiness, manage invites, and add travelers to the group."
-      : "See who's joined and how ready the group looks from here.",
+    groupDescription: isSoloTrip
+      ? "Planning solo for now. Invite travel companions when you want to coordinate this trip with others."
+      : canInvite
+        ? "Track readiness, manage invites, and add travelers to the group."
+        : "See who's joined and how ready the group looks from here.",
     members: trip.members.map((member) => {
       const readinessItem = readinessByUserId.get(member.user_id);
       const isCurrentUser =

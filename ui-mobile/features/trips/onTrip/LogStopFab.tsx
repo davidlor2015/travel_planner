@@ -8,6 +8,8 @@ export function LogStopFab({ onPress }: { onPress: () => void }) {
     <Pressable
       onPress={onPress}
       className="active:opacity-85"
+      accessibilityRole="button"
+      accessibilityLabel="Log a stop"
       style={{
         shadowColor: "#2A1D13",
         shadowOffset: { width: 0, height: 12 },

@@ -15,6 +15,8 @@ export function OnTripHeader({ eyebrow, onBack }: Props) {
         onPress={onBack}
         hitSlop={12}
         className="absolute left-5 top-2 z-10 flex-row items-center gap-1 active:opacity-70"
+        accessibilityRole="button"
+        accessibilityLabel="Back to trips"
       >
         <Ionicons name="chevron-back" size={16} color="#2B211A" />
         <Text className="text-[13px] leading-[19px] text-ontrip" style={fontStyles.uiMedium}>

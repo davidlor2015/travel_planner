@@ -119,6 +119,73 @@ function formatExpenseCount(count: number): string {
   return `${count} ${count === 1 ? "transaction" : "transactions"}`;
 }
 
+export function todayLocalISODate(now: Date = new Date()): string {
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+export function normalizeExpenseInputDate(value: string): string | null {
+  const trimmed = value.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return null;
+  const [yearText, monthText, dayText] = trimmed.split("-");
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day) ||
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > 31
+  ) {
+    return null;
+  }
+  const parsed = new Date(year, month - 1, day);
+  if (
+    Number.isNaN(parsed.getTime()) ||
+    parsed.getFullYear() !== year ||
+    parsed.getMonth() !== month - 1 ||
+    parsed.getDate() !== day
+  ) {
+    return null;
+  }
+  return trimmed;
+}
+
+export function toLocalNoonISOString(dateIso: string): string {
+  const normalized = normalizeExpenseInputDate(dateIso);
+  if (!normalized) return new Date().toISOString();
+  const [yearText, monthText, dayText] = normalized.split("-");
+  const localNoon = new Date(
+    Number(yearText),
+    Number(monthText) - 1,
+    Number(dayText),
+    12,
+    0,
+    0,
+    0,
+  );
+  if (Number.isNaN(localNoon.getTime())) return new Date().toISOString();
+  return localNoon.toISOString();
+}
+
+export function formatExpenseComposerDate(dateIso: string): string {
+  const normalized = normalizeExpenseInputDate(dateIso);
+  if (!normalized) return "Today";
+  const [yearText, monthText, dayText] = normalized.split("-");
+  const localDate = new Date(Number(yearText), Number(monthText) - 1, Number(dayText));
+  if (Number.isNaN(localDate.getTime())) return "Today";
+  return localDate.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 export function toExpenseCategory(rawCategory: string | null | undefined): ExpenseCategory {
   if (rawCategory === "food") return "food";
   if (rawCategory === "transport") return "transport";

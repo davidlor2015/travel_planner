@@ -1,181 +1,221 @@
 # Waypoint
 
-A full-stack collaborative travel planning app with AI-assisted itinerary generation, live trip execution, and companion matching. Built with FastAPI, PostgreSQL, and React 19.
+Waypoint is a full-stack travel planning project with:
+- a web workspace in `ui/` for planning and coordination,
+- a mobile app in `ui-mobile/` for trip execution and lightweight management,
+- a FastAPI backend in `app/` with PostgreSQL persistence and AI-assisted itinerary flows.
 
-## Why I built this
+## Main Project Overview
 
-I wanted to explore a harder product problem than simple itinerary generation: how to make trip planning feel collaborative, editable, and dependable once multiple people are involved.
+### Current scope
+- Auth: register, login, refresh token, password reset, email verification, current user
+- Trips: create/list/update/delete trips, summaries, members, invites, readiness, on-trip snapshot
+- Itinerary AI: generate, stream, refine, and apply itinerary drafts
+- Logistics: reservations, budget, packing, prep items
+- On-trip execution: stop status updates and unplanned stop logging
+- Matching: travel profile, match requests, match results, interaction state
+- Search/explore APIs: flights, inspirations, curated explore destinations
 
-A few decisions shaped the architecture early on. I abstracted the LLM provider so itinerary generation was not tightly coupled to a single model or vendor — switching between local inference (Ollama) and a cloud provider (Gemini) requires no product logic changes, just a config value. I also pulled the trip workspace into a centralized orchestration layer so collaborative state, drafts, derived readiness, and UI actions stay consistent instead of being scattered across page components.
+### Platform surfaces
+- Web (`ui/`): landing/auth, trips/workspace, matching, archive, profile, optional explore route (`VITE_ENABLE_EXPLORE`)
+- Mobile (`ui-mobile/`): auth flow, tabs (Trips, Archive, Profile, Companions, optional Explore), trip workspace, and live on-trip screen
 
-For the companion matching feature, I did not want a black-box result. I designed a weighted scoring system around factors like destination overlap, date overlap, budget range, interests, and travel style, with a breakdown that can actually be explained to the user. The interesting part of the project for me was less "calling AI" and more designing the surrounding system so the app still behaves predictably when real product complexity shows up.
+## Screenshots
 
-## Features
 
-- **Collaborative trip workspaces** — shared day-by-day itineraries with add, reorder, and inline editing of stops
-- **AI itinerary generation** — LLM generates a structured plan; user reviews and applies it explicitly rather than having it overwrite their data automatically
-- **Live execution mode** — real-time stop tracking with status updates and unplanned stop logging during an active trip
-- **Trip logistics** — packing lists, budget tracking, reservations, prep checklists, and group chat, all scoped to a trip
-- **Companion matching** — profile-based compatibility scoring with a transparent breakdown of each match factor
-- **Destination exploration** — mood and interest-based filtering for destination discovery
-- **Past trip archive** — browsable history with aggregate travel stats
-- **Auth and isolation** — JWT-based authentication with strict per-user data scoping throughout the backend
+## Tech Stack
 
-## Tech stack
+### Backend
+- Python 3.11
+- FastAPI (`fastapi==0.128.0`)
+- SQLAlchemy (`SQLAlchemy==2.0.46`)
+- Alembic (`alembic==1.18.3`)
+- PostgreSQL (`psycopg2-binary==2.9.9`)
+- Pydantic v2 (`pydantic==2.12.5`, `pydantic-settings==2.12.0`)
+- slowapi (`slowapi==0.1.9`) for rate limiting
+- Sentry SDK (`sentry-sdk==2.58.0`) optional monitoring
 
-**Backend** — Python 3.11, FastAPI, SQLAlchemy, Alembic, Pydantic v2, PostgreSQL, slowapi (rate limiting), Sentry (optional monitoring)
+### Web app (`ui/`)
+- React 19
+- TypeScript
+- Vite
+- Tailwind CSS v4
+- Framer Motion
+- Vitest and Playwright
 
-**Frontend** — React 19, TypeScript, Vite, Tailwind CSS v4, Framer Motion, Vitest, Playwright
+### Mobile app (`ui-mobile/`)
+- Expo + React Native
+- Expo Router
+- NativeWind
+- TanStack Query
+- Jest (`jest-expo`)
 
-**AI** — Ollama (local, default `qwen2.5:14b`) or Gemini 2.0 Flash, switchable via `LLM_PROVIDER` config
-
-**Integrations** — Amadeus API (travel search, optional), OpenTripMap (destination data, optional)
+### AI and integrations
+- Ollama (default local provider via `LLM_PROVIDER=ollama`)
+- Gemini (cloud provider via `LLM_PROVIDER=gemini`)
+- Amadeus (optional flight/inspiration search)
+- OpenTripMap (optional destination enrichment)
 
 ## Architecture
 
-```
-React (ui/)  →  FastAPI (app/)  →  PostgreSQL + Ollama / Gemini
+```text
+ui/ (React + Vite)          \
+                             \ HTTP API
+ui-mobile/ (Expo RN)        /  /v1/* routes
+                            /
+app/ (FastAPI services) --> PostgreSQL
+                       --> Ollama or Gemini
 ```
 
-- All HTTP calls from the frontend go through typed client functions in `ui/src/shared/api/`
-- Backend routes are versioned under `/v1/*` and delegate to a service layer — routes stay thin
-- The LLM provider is behind an interface in `app/services/llm/` — `ollama_client.py` and `gemini_client.py` are interchangeable
-- Trip workspace state is orchestrated through a single model hook rather than distributed across components
-- Matching scores are computed in `app/services/compatibility_scorer.py` with a per-factor breakdown returned alongside the result
+## Repository Layout
 
-## Repository layout
-
-```
+```text
 travel-planner/
-├── app/
-│   ├── api/v1/routes/      # Route handlers: auth, trips, ai, matching, search, invites, execution
-│   ├── core/               # Config, security, rate limiting, logging, monitoring
-│   ├── db/                 # Session and base setup
-│   ├── models/             # SQLAlchemy ORM models
-│   ├── repositories/       # Data access layer
-│   ├── schemas/            # Pydantic request/response schemas
-│   └── services/           # Business logic, LLM clients, matching scorer, execution
-├── alembic/                # Migrations
-├── tests/
-│   ├── unit/
-│   └── integration/
-└── ui/src/
-    ├── features/
-    │   ├── trips/          # Workspace, itinerary editor, logistics, map, live execution
-    │   ├── matching/       # Companion matching profile and requests
-    │   ├── explore/        # Destination discovery
-    │   ├── archive/        # Past trips
-    │   ├── profile/        # User profile and travel stats
-    │   └── auth/           # Login, registration, password reset
-    └── shared/             # API clients, hooks, UI primitives, auth utilities
+├── app/                  # FastAPI API, services, models, schemas
+├── alembic/              # Database migrations
+├── ui/                   # React web app
+├── ui-mobile/            # Expo React Native app
+├── tests/                # Backend unit + integration tests
+├── scripts/              # Backend helper scripts (seed, etc.)
+├── docs/                 # Project docs
+└── Makefile              # Unified dev/test/lint commands
 ```
 
-## Quick start
+## Setup
 
-**Prerequisites:** Python 3.11+, Node.js 18+, PostgreSQL, Ollama or a Gemini API key
+### Prerequisites
+- Python 3.11+
+- Node.js and npm
+- PostgreSQL
 
-### Backend
+### 1) Backend environment
 
 ```bash
-python -m venv .venv
-
-# Windows (PowerShell)
-.venv\Scripts\Activate.ps1
-# macOS / Linux
-source .venv/bin/activate
-
-pip install -r requirements.txt
-alembic upgrade head
-uvicorn app.main:app --reload
+make setup
 ```
 
-Runs at `http://localhost:8000` — interactive docs at `/docs`.
-
-### Frontend
+### 2) Environment variables
+- Fill a root `.env` file using `.env.example` as reference.
+- `JWT_SECRET` is required and must be at least 32 characters.
+- `.env.example` includes this helper command:
 
 ```bash
-cd ui
-npm install
-npm run dev
+python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
-Runs at `http://localhost:5173`.
+### 3) Run migrations
 
-## Configuration
+```bash
+make migrate
+```
 
-Create a `.env` file in the project root. Required:
+### 4) Start apps
+Run each in its own terminal:
 
-| Variable | Description |
-|---|---|
-| `DATABASE_URL` | SQLAlchemy connection string (default: PostgreSQL at localhost) |
-| `JWT_SECRET` | Signing key — must be at least 32 characters |
-| `JWT_ALG` | Algorithm (default: `HS256`) |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | Default: `30` |
-| `REFRESH_TOKEN_EXPIRE_DAYS` | Default: `14` |
-| `CORS_ORIGINS` | Comma-separated allowed origins (default: `http://localhost:5173`) |
-| `LLM_PROVIDER` | `ollama` or `gemini` (default: `ollama`) |
-| `OLLAMA_BASE_URL` | Default: `http://127.0.0.1:11434` |
-| `OLLAMA_MODEL` | Default: `qwen2.5:14b` |
-| `OLLAMA_TIMEOUT_SECONDS` | Default: `60` |
-| `GEMINI_API_KEY` | Required when `LLM_PROVIDER=gemini` |
-| `GEMINI_MODEL` | Default: `gemini-2.0-flash` |
-| `AI_RATE_LIMIT` | Default: `10/minute` |
-| `AMADEUS_CLIENT_ID` / `AMADEUS_CLIENT_SECRET` | Optional — enables travel search |
-| `OPENTRIPMAP_API_KEY` | Optional — enables destination enrichment |
-| `SENTRY_DSN` | Optional — enables error monitoring |
+```bash
+make dev-backend
+make dev-web
+make dev-mobile
+```
 
-Frontend (`ui/.env`):
-
-| Variable | Description |
-|---|---|
-| `VITE_API_URL` | Backend base URL (defaults to `http://localhost:8000`) |
+Default local endpoints:
+- Backend: `http://localhost:8000`
+- Web: `http://localhost:5173`
+- Backend docs: `http://localhost:8000/docs`
 
 ## Commands
 
-**Backend**
+### Root `Makefile`
 
 ```bash
-uvicorn app.main:app --reload    # dev server
-alembic upgrade head             # apply migrations
-pytest tests/ -v                 # all tests
-pytest tests/unit/ -v            # unit tests
-pytest tests/integration/ -v     # integration tests
+make help
+make setup
+make migrate
+make seed
+make gen-types
+make dev-backend
+make dev-web
+make dev-mobile
+make test
+make test-backend
+make test-web
+make test-mobile
+make lint
+make lint-backend
+make lint-web
+make lint-mobile
+make docker-up
+make docker-down
+make docker-build
 ```
 
-**Frontend** (from `ui/`)
+### Web (`ui/`)
 
 ```bash
-npm run dev          # dev server
-npm run build        # type-check and bundle
-npm run lint         # ESLint
-npm run test         # Vitest unit tests
-npm run test:e2e     # Playwright end-to-end tests
+npm run dev
+npm run build
+npm run lint
+npm run test
+npm run test:e2e
+npm run preview
+npm run gen:types
 ```
 
-## API surface
+### Mobile (`ui-mobile/`)
 
-```
-/v1/auth/...
-/v1/trips/...
-/v1/trips/{trip_id}/packing/...
-/v1/trips/{trip_id}/budget/...
-/v1/trips/{trip_id}/reservations/...
-/v1/trips/{trip_id}/prep/...
-/v1/ai/plan
-/v1/ai/apply
-/v1/matching/...
-/v1/search/...
-/v1/trip-invites/...
+```bash
+npm run start
+npm run android
+npm run ios
+npm run web
+npm run lint
+npm run test
 ```
 
-Full schemas available at `/docs` when the backend is running.
+## Feature Summary
 
-## Troubleshooting
+### API routes
+- `/v1/auth/*` for auth and identity
+- `/v1/trips/*` for trip CRUD, members, summaries, readiness, and snapshots
+- `/v1/trips/{trip_id}/execution/*` for on-trip execution events
+- `/v1/ai/*` for plan, stream, refine, and apply itinerary flows
+- `/v1/matching/*` for companion matching
+- `/v1/search/*` for flights, inspirations, and explore destinations
+- `/v1/trip-invites/*` for invite acceptance
+- `/v1/trips/{trip_id}/packing/*`
+- `/v1/trips/{trip_id}/budget/*`
+- `/v1/trips/{trip_id}/reservations/*`
+- `/v1/trips/{trip_id}/prep/*`
 
-**Backend won't start** — confirm the virtual environment is active, `DATABASE_URL` and `JWT_SECRET` are set, and migrations have been applied with `alembic upgrade head`.
+### Behavior notes
+- `/v1/search/flights` and `/v1/search/inspirations` use Amadeus sandbox behavior.
+- `/v1/search/explore-destinations` currently returns curated destination payloads from backend route data.
+- Additional runtime behavior should be confirmed in code when changing API assumptions.
 
-**Frontend can't reach the backend** — check that the backend is running on port 8000 and that `VITE_API_URL` in `ui/.env` matches. Restart `npm run dev` after env changes.
+## Docker
 
-**AI generation fails or times out** — for Ollama, confirm the server is running (`ollama serve`) and the model is pulled locally (`ollama pull qwen2.5:14b`). For Gemini, verify the API key and model name. Raise `OLLAMA_TIMEOUT_SECONDS` on slower hardware.
+`docker-compose.yml` defines:
+- `db` (PostgreSQL 15)
+- `backend` (FastAPI service)
+- `frontend` (web app)
 
-**CORS errors** — add your frontend origin to `CORS_ORIGINS` in `.env` and restart the backend.
+Use:
+
+```bash
+make docker-up
+make docker-down
+make docker-build
+```
+
+## Testing
+
+Use root targets for full-suite or layer-specific runs:
+
+```bash
+make test
+make test-backend
+make test-web
+make test-mobile
+```
+
+If local test status is uncertain, current behavior should be confirmed by running these commands.

@@ -228,6 +228,8 @@ export function OnTripScreen({ tripId, tripTitle }: Props) {
           <Pressable
             onPress={openFullWorkspace}
             className="flex-row items-center gap-1.5 px-3 py-2 active:opacity-70"
+            accessibilityRole="button"
+            accessibilityLabel="Open full trip workspace"
           >
             <Ionicons name="open-outline" size={12} color="#8A7866" />
             <Text className="text-[12px] leading-[18px] text-ontrip-muted">
@@ -286,6 +288,8 @@ function NoStopsTodayCard({ onOpenWorkspace }: { onOpenWorkspace: () => void }) 
       <Pressable
         onPress={onOpenWorkspace}
         className="h-11 items-center justify-center rounded-full border border-border-ontrip-strong bg-surface-ontrip px-4 active:opacity-75"
+        accessibilityRole="button"
+        accessibilityLabel="Open full trip workspace"
       >
         <Text className="text-[13px] text-ontrip-strong" style={fontStyles.uiSemibold}>
           Open full workspace

@@ -1,0 +1,861 @@
+SESSION PROGRESS — ui-mobile
+Date: 2026-04-25
+================================================================================
+
+Three screens implemented from the WaypointMobileUI Figma file
+(file key: ysiFkm5bJQ9udwnIbaHmsG) following the Desert Editorial design system.
+
+Constraints applied across all three screens:
+  - Container/Presentational pattern — screens are thin renderers, logic in hooks
+  - No static/mock data — all content from existing API clients and adapters
+  - No backend modifications or new API routes
+  - TypeScript strict (npx tsc --noEmit --skipLibCheck passes with zero errors)
+  - Inter for UI text, Playfair Display for editorial/display headings
+  - Ionicons only — no emoji as icons
+  - Feature flags respected (EXPO_PUBLIC_ENABLE_EXPLORE)
+
+================================================================================
+SCREEN 1 — EXPLORE
+Figma nodes: 3:14236, 6:3457
+================================================================================
+
+New files created:
+
+  features/explore/types.ts
+    - DestinationMood union type
+    - Destination, FeaturedCardViewModel, GridCardViewModel interfaces
+
+  features/explore/catalog.ts
+    - 12-entry CATALOG (Bali, Swiss Alps, Lisbon, Maldives, Iceland, Queenstown,
+      Machu Picchu, Dubrovnik, Serengeti, Provence, Halong Bay, Scottish Highlands)
+    - Exports: listDestinationMoods(), getDestinations({query, mood}),
+      getFeaturedDestinations()
+    - isFeatured: Bali, Maldives
+
+  features/explore/adapters.ts
+    - toFeaturedCardViewModel(d) — locationLine = "Country · summary"
+    - toGridCardViewModel(d)
+
+  features/explore/useExploreScreen.ts
+    - State: query, activeMood
+    - Derived: isFiltering, showFeatured, featuredCards, moreToConsiderCards,
+      filteredCards, hasResults
+
+  features/explore/ExploreHeader.tsx
+    - "EXPLORE" amber eyebrow (small caps, tracking-[0.16em])
+    - "Wander, gently." Playfair 32px headline
+    - Subtitle in text-text-muted
+
+  features/explore/ExploreSearchBar.tsx
+    - TextInput with search-outline Ionicon
+
+  features/explore/CategoryChips.tsx
+    - Horizontal ScrollView, gap-8
+    - Active: border-amber bg-amber text-white
+    - Inactive: border-border bg-surface text-text-muted
+    - Tap active chip deselects it (toggle off)
+
+  features/explore/FeaturedDestinationCard.tsx
+    - 196px tall, rounded-[20px], mx-4, full-bleed expo-image
+    - LinearGradient overlay (transparent → rgba(28,17,8,0.52) → rgba(28,17,8,0.82))
+    - Season badge: absolute top-right, bg-black/30 border-white/25
+    - Name in fontStyles.displaySemibold 24px white
+
+  features/explore/GridDestinationCard.tsx
+    - flex-1 for 2-column layout, 108px image, rounded-[16px] border border-border
+    - Name in fontStyles.uiSemibold + locationLine below
+
+  features/explore/ExploreScreen.tsx
+    - SafeAreaView → ScrollView (keyboardShouldPersistTaps="handled")
+    - Local DestinationGrid: pairs items into rows of 2 with spacer for odd items
+    - Featured section → grid sections (Results / More to Consider labels)
+    - EmptyState when no results
+
+Modified files:
+
+  app/(tabs)/explore.tsx
+    - Feature flag gate: shows ExploreScreen when enabled, ExploreComingSoon stub
+      when flag is off
+
+  app/(tabs)/_layout.tsx
+    - Added Explore tab between Trips and Companions (compass-outline icon)
+    - Conditionally hidden via href:null when flag is off
+
+  .env
+    - Added EXPO_PUBLIC_ENABLE_EXPLORE=true
+
+================================================================================
+SCREEN 2 — TRIPS LIST
+Figma nodes: 3:11820, 6:2894
+================================================================================
+
+New files created:
+
+  features/trips/useTripsListModel.ts
+    - TripsFilter type: "all" | "active" | "upcoming" | "drafts"
+    - TripsListModel interface
+    - Uses useTripsQuery, useTripSummariesQuery, useQueries for snapshots
+    - journeySubtitle: word form for 0–10 trips, numeric for >10
+    - "drafts" filter hides both active and upcoming (no draft concept in API)
+    - Past trips excluded from visible sections
+
+  features/trips/TripsListHeader.tsx
+    - todayLabel() → "SATURDAY · APR 23" from new Date()
+    - "Your trips." in fontStyles.displaySemibold 30px
+    - "+" FAB: rounded-full bg-espresso h-10 w-10
+
+  features/trips/TripsSearchBar.tsx
+    - TextInput with search-outline Ionicon
+    - placeholder "Search trips, places, dates"
+
+  features/trips/TripsFilterChips.tsx
+    - Chips: All | Active | Upcoming | Drafts
+    - Active chip: border-espresso bg-espresso text-ivory (espresso, not amber)
+
+  features/trips/ActiveTripHeroCard.tsx
+    - rounded-[24px] mx-4, 220px image area
+    - LinearGradient: transparent → rgba(28,17,8,0.55) → rgba(28,17,8,0.90)
+    - Meta row: location-outline + country + calendar-outline + dateRange (white/65)
+    - Title: fontStyles.displaySemibold 26px white
+    - Button row on bg-espresso: "Open On-Trip" (conditional) + "Workspace"
+      both border-white/20 bg-white/15
+
+  features/trips/UpcomingTripRow.tsx
+    - 60×68px thumbnail rounded-[12px]
+    - Status pill: olive for "Confirmed", amber for "Planning"
+    - "Readiness X%" right-aligned in text-text-soft
+    - Title: fontStyles.displaySemibold 16px
+    - "Open workspace ›" Pressable in amber
+
+Modified files:
+
+  features/trips/adapters.ts
+    - Added formatCompactDateRange(start, end) → "Apr 23 – May 1"
+    - Added buildReadinessPct(summary?) → 0-100 average from logistics metrics
+    - Added ActiveTripViewModel interface
+    - Added UpcomingTripViewModel interface
+    - Added toActiveTripViewModel(trip, canOpenOnTrip)
+    - Added toUpcomingTripViewModel(trip, summary)
+      Pill logic: "Confirmed" if readiness ≥ 70%, else "Planning"
+
+  app/(tabs)/trips/index.tsx
+    - Full rewrite using useTripsListModel
+    - States: loading, error, allTripsEmpty (empty state), main list
+    - Sections: Active (hero cards) → Upcoming (rows + "See all") → Drafts (CTA card)
+    - Drafts section always visible in "all" or "drafts" filter
+    - Pull-to-refresh via RefreshControl
+    - TripFormSheet wired to create flow with router.push on success
+
+================================================================================
+SCREEN 3 — TRIPS WORKSPACE
+Figma nodes: 3:11956, 6:2673
+================================================================================
+
+Modified files (all visual redesign — no logic/hook changes):
+
+  features/trips/workspace/WorkspaceTabBar.tsx
+    - Added "itinerary" to WorkspaceTab type
+    - Removed icons from tab bar — now text-only labels
+    - Tab order: Overview | Itinerary | Bookings | Budget | Packing | Members
+    - Amber underline on active tab preserved
+
+  features/trips/workspace/WorkspaceTripHeader.tsx
+    - Full rewrite — simplified to clean 190px hero image
+    - Removed: title overlay, stats strip (4d/Bookings/Budget/Packed), tagline,
+      meta pills, countdown pill with complex logic
+    - Added: subtle LinearGradient (top-dark → transparent → bottom-dark)
+    - Status badge top-left (In Progress green dot / Upcoming yellow dot)
+    - Glass action buttons top-right (add, people, pencil) on rgba(0,0,0,0.35) bg
+    - Whole image is Pressable → opens trip switcher
+    - Removed summary prop (no longer needed)
+
+  features/trips/workspace/WorkspaceScreen.tsx
+    - Removed summary prop from WorkspaceTripHeader
+    - Added "itinerary" tab to visibleTabs (when hasSavedItinerary)
+    - Simplified resolvedTab useMemo (single ternary)
+    - Both "overview" and "itinerary" tabs render OverviewTab with
+      showItineraryOnly={resolvedTab === "itinerary"}
+
+  features/trips/workspace/OverviewTab.tsx
+    - Full visual redesign — data models and hooks unchanged
+    - Added showItineraryOnly?: boolean prop
+    - Removed: TodayCard, SectionCard, StatusPill, SecondaryButton dependencies
+    - NEXT ACTION card: white bg shadow, Playfair 22px title, amber pill
+      (Building… / Unsaved edits / No plan yet), espresso primary + ghost buttons
+    - NEEDS ATTENTION: section label + amber item count + rows with
+      information-circle-outline + label/detail + chevron-forward; hidden when empty
+    - QUICK ACTIONS: 2×2 grid of tappable cards (icon in rounded square +
+      label + summary stat); icons: bed/card/bag/people per tab key
+    - ITINERARY: section label + "Open itinerary" amber link + day rows
+      (day number | date | day title, up to 3 days); "Generate with AI" CTA
+      when missing; streaming indicator when building
+    - TRIP BASICS: 2-column grid (Dates / Travelers / Destination / Duration)
+    - Itinerary-only mode (showItineraryOnly=true): full EditableItineraryDayCard
+      list + Publish button + Regenerate with AI; same state as overview model
+    - StopEditSheet + RegenerateSheet rendered unconditionally so sheet state
+      persists when user switches between Overview and Itinerary tabs
+
+================================================================================
+SCREEN 3 FOLLOW-UP — ITINERARY TAB VISUAL SOURCE OF TRUTH
+Figma node: 3:12177
+================================================================================
+
+New files created:
+
+  features/trips/workspace/itineraryPresentation.ts
+    - Pure itinerary presentation derivation for the itinerary tab
+    - Added ItineraryFilterKey: all | activities | transit | reservations
+    - Added Figma chip definitions: All, Activities, Transit, Reservations
+    - Builds ItineraryTabDay / ItineraryTabStop view models from saved itinerary
+      data; no static mock data
+    - Classifies stops into Activity, Walk, Transit, Lodging, Reservation using
+      existing itinerary item fields only
+    - Formats day dates like "OCT 14 · MON"
+
+  features/trips/workspace/ItineraryTimelineDay.tsx
+    - Reusable day section component matching Figma hierarchy
+    - Playfair "Day N" heading + compact uppercase date + stop count
+    - Rounded ivory stop list with divider rows
+    - Compact stop rows: time column, vertical divider, title/location, pill
+    - Stop rows remain tappable and open the existing StopEditSheet
+
+  features/trips/workspace/ItineraryTabView.tsx
+    - Figma-style itinerary tab surface
+    - Horizontal filter chips with espresso active state
+    - Top-right "+ Add" action wired to existing add-stop sheet
+    - Loading, missing itinerary, streaming, dirty, save, error, and empty-filter
+      states preserved
+    - Publish changes and Regenerate with AI actions retained
+
+Modified files:
+
+  features/trips/workspace/useWorkspaceOverviewModel.ts
+    - Added itineraryFilter state
+    - Added itineraryDays derived from buildItineraryTabDays(...)
+    - Reset itineraryFilter to "all" when trip changes
+    - Keeps screen rendering thin; presentation derivation lives in hook + pure
+      helper rather than route/component logic
+
+  features/trips/workspace/OverviewTab.tsx
+    - Itinerary-only mode now renders ItineraryTabView instead of the older
+      EditableItineraryDayCard list
+    - Existing StopEditSheet and RegenerateSheet wiring preserved
+    - Overview tab content unchanged
+
+  features/trips/workspace/WorkspaceTripHeader.tsx
+    - Tuned toward Figma node 3:12177:
+      140px image hero, warm overlay, trip switcher pill, circular ivory action
+      buttons, Playfair title overlay, date/traveler metadata
+    - Group button is hidden for solo trips; solo trips show add + edit actions
+    - Uses existing trip image helper and real trip data
+
+  features/trips/workspace/WorkspaceScreen.tsx
+    - Members tab label changed to "People" for Figma parity
+    - Members/People tab is hidden for solo trips per Solo-First Adaptive UI
+    - Header receives showMembersButton from workspace.showGroupCoordination
+
+Validation:
+
+  - npx tsc --noEmit --skipLibCheck — PASS
+  - npx eslint on changed workspace files — PASS
+  - npm run lint — BLOCKED by existing repo issues:
+      * Expo lint scans missing ui-mobile/components path unless
+        --no-error-on-unmatched-pattern is forwarded
+      * Pre-existing react/no-unescaped-entities errors in:
+        app/(auth)/forgot-password.tsx
+        app/(auth)/verify-email-request.tsx
+        app/(tabs)/archive.tsx
+
+Dev server:
+
+  - Expo started successfully outside sandbox at http://localhost:8082
+  - Expo reported existing package compatibility warnings:
+      expo-linear-gradient and react-native-svg versions differ from the
+      versions expected by the installed Expo SDK
+
+================================================================================
+SCREEN 3 FOLLOW-UP — ITINERARY TIMELINE POLISH
+================================================================================
+
+Modified files:
+
+  features/trips/workspace/itineraryPresentation.ts
+    - Added ItineraryStopTimeBlock view model for compact time rendering
+    - Added formatItineraryStopTime(time) pure helper
+    - Splits period + clock labels into stable two-line blocks, e.g.
+      "Morning" + "09:00"
+    - Normalizes Afternoon / Evening / Morning labels so they render cleanly
+      without mid-word wrapping
+    - Keeps stop type/badge derivation in pure helpers; no mock data added
+
+  features/trips/workspace/ItineraryTimelineDay.tsx
+    - Reworked stop rows into left time block, center title/location, right badge
+    - Removed the vertical divider that squeezed the title column
+    - Increased title emphasis with Inter semibold 14px
+    - Time block now has a fixed 62px width and numberOfLines={1} on each line
+    - Stop type badges are now small rounded capsules:
+      Activity/Lodging/Walk = quiet cream capsule
+      Reservation = subtle olive capsule
+      Transit = muted smoke/clay capsule
+    - Existing tap-to-edit behavior preserved
+
+  features/trips/workspace/ItineraryTabView.tsx
+    - "+ Add" now sits as a small amber outlined action pill aligned with the
+      filter chips
+    - Existing Add handler and filters preserved
+
+Validation:
+
+  - npx tsc --noEmit --skipLibCheck — PASS
+  - npx eslint on touched itinerary files — PASS
+
+================================================================================
+SCREEN 4 — ON-TRIP EXECUTION REDESIGN
+Figma node: 3:13438
+================================================================================
+
+New files created:
+
+  features/trips/onTrip/presentation.ts
+    - Pure presentation helpers for the OnTrip screen
+    - Added buildOnTripDayHeader(snapshot, tripTitle)
+      * Eyebrow: "ON TRIP" or "ON TRIP · DAY N" from real snapshot.today data
+      * Editorial title: weekday + real available place/trip title
+      * Metadata: real date + real today_stops count
+      * Does not add hardcoded weather or fake alerts
+    - Added buildBlockerStrip(blockers) for compact alert strip content
+    - Added buildNavigateUrl(stop), now using the required format:
+      https://maps.google.com/?q=${encodeURIComponent(location)}
+      and only returning a URL when a real location exists
+    - Added status label/tone helpers for confirmed/planned/skipped pills
+
+Modified files:
+
+  features/trips/onTrip/OnTripScreen.tsx
+    - Reworked layout to match Figma direction:
+      compact top bar, editorial day header, optional blocker strip, clean
+      vertical Today timeline, workspace link, full-width Log a stop CTA
+    - Removed separate heavy HappeningNowCard/NextPeek usage in favor of inline
+      timeline highlighting
+    - Preserved existing OnTrip snapshot query, mutation hook, optimistic status
+      updates, snapshot refresh flow, unplanned stop logging, unplanned stop
+      deletion, feedback toast, and workspace navigation
+    - Blocker strip is only rendered when real snapshot blockers exist
+    - No static/mock OnTrip data added
+
+  features/trips/onTrip/OnTripHeader.tsx
+    - Simplified to compact Figma-style top bar
+    - Left "Trips" back affordance preserved
+    - Center eyebrow provided by pure presentation helper
+
+  features/trips/onTrip/TimelineRow.tsx
+    - Rebuilt rows around a thin vertical timeline:
+      time column, dot/connector, title/location, status pill, Navigate action
+    - Current stop now gets inline warm highlight, stronger dot/title, and "Now"
+      pill
+    - Confirmed uses olive pill; Planned uses warm neutral pill; Skipped uses
+      muted pill and strikethrough title
+    - Existing Confirm/Skip mutation affordances preserved as compact controls
+    - Navigate hidden when no real location exists
+
+  features/trips/onTrip/NeedsAttentionCard.tsx
+    - Reworked into compact clay/terracotta strip using real blocker title/detail
+    - Multiple blockers show a count action label; no hardcoded alert examples
+
+  features/trips/onTrip/LogStopFab.tsx
+    - Converted floating FAB styling into full-width espresso "Log a stop" CTA
+      while preserving the same onPress behavior and LogStopSheet integration
+
+Removed files:
+
+  features/trips/onTrip/navigation.ts
+    - Replaced by buildNavigateUrl(...) in pure presentation.ts helper
+
+Validation:
+
+  - npx tsc --noEmit --skipLibCheck — PASS
+  - npx eslint on touched OnTrip files — PASS
+
+================================================================================
+SESSION — 2026-04-25: TRIP DESTINATION PLACE AUTOCOMPLETE (MOBILE)
+================================================================================
+
+Implemented destination/location autocomplete for the shared mobile trip form
+(used by both create and edit flows), while keeping existing submit behavior
+and NativeWind styling patterns intact.
+
+New files created:
+
+  features/trips/usePlaceAutocomplete.ts
+    - Reusable autocomplete data hook for places
+    - Owns query state, debounced query (300ms), loading, error, suggestions,
+      and selectedPlace
+    - Enforces min query length before search (2+ chars)
+    - Clears selectedPlace when user manually edits away from the selected label
+    - Clears suggestion list after a suggestion is selected
+    - Normalizes API responses into typed PlaceSuggestion objects only
+
+  features/trips/PlaceAutocompleteInput.tsx
+    - Reusable destination input + dropdown component
+    - Thin UI-only component: delegates fetch state/selection behavior to hook
+    - Lightweight list states:
+      * "Searching places…"
+      * "No places found."
+      * "We couldn't load places right now."
+    - Suggestion rows show label + optional secondary detail line
+
+Modified files:
+
+  features/trips/types.ts
+    - Added typed PlaceSuggestion shape
+    - Added PlaceSearchApiSuggestion / PlaceSearchApiResponse types for
+      normalization boundaries
+
+  features/trips/api.ts
+    - Added typed API client function:
+      GET /v1/search/places?q=
+      via searchPlaces(query)
+
+  features/trips/TripFormSheet.tsx
+    - Replaced destination TextInputField with PlaceAutocompleteInput
+    - Wired destination field to usePlaceAutocomplete hook
+    - Form value now carries selectedDestinationPlace (full selected object)
+    - Create/edit flows remain unchanged outside destination input behavior
+    - Submission still uses the typed buildCreateTripPayload /
+      buildTripUpdatePayload path
+
+Behavior covered:
+
+  - User types destination (e.g. "cal") and sees matching suggestions
+  - Tapping a suggestion fills destination input with selected label
+  - Selected full place object is stored in form state
+  - Suggestion list closes after selection
+  - Manual edits after selection clear selected place object
+  - No static/mock place suggestions were added
+  - UI components do not call third-party place services directly
+
+Validation:
+
+  - ./ui-mobile/node_modules/.bin/tsc --noEmit -p ui-mobile/tsconfig.json — PASS
+  - ./node_modules/.bin/eslint
+      features/trips/TripFormSheet.tsx
+      features/trips/usePlaceAutocomplete.ts
+      features/trips/PlaceAutocompleteInput.tsx
+      features/trips/api.ts
+      features/trips/types.ts
+    (run from ui-mobile/) — PASS
+
+================================================================================
+SESSION — 2026-04-25: WORKSPACE MAP TAB (FIGMA NODE 3:13165)
+File key: ysiFkm5bJQ9udwnIbaHmsG
+================================================================================
+
+Implemented the mobile Workspace Map tab using the provided Figma node as the
+visual target, while preserving existing architecture constraints:
+  - Thin renderer in screen components
+  - Data from real saved itinerary only (no static/mock place rows)
+  - Business logic in hook + pure presentation helpers
+  - Existing NativeWind + Desert Editorial styling direction
+
+New files created:
+
+  features/trips/workspace/mapPresentation.ts
+    - Pure map presentation derivation from Itinerary days/items
+    - Added typed filter model: today | lodging | food | activities
+    - Added stop classification, marker label shaping, search filtering
+    - Added marker coordinate normalization from real lat/lon
+    - Added nearby list derivation with day ranges + distance formatting
+    - No hardcoded place suggestions or static map stop data
+
+  features/trips/workspace/useWorkspaceMapModel.ts
+    - Dedicated map hook around useSavedItineraryQuery(tripId)
+    - Owns map tab UI state (search query + active filter)
+    - Exposes loading/missing/error + typed view models for markers/list
+    - Resets search/filter on trip change
+
+  features/trips/workspace/MapTab.tsx
+    - New Figma-style map tab renderer:
+      * map field with soft editorial backdrop and route lines
+      * search row ("Search places in this trip")
+      * pin bubbles from real itinerary coordinates
+      * compact filter chips (Today/Lodging/Food/Activities)
+      * "Nearby this trip" list from derived stop model + distances
+      * lightweight empty/error/missing states
+
+Modified files:
+
+  features/trips/workspace/WorkspaceScreen.tsx
+    - Wired Map tab into visibleTabs when:
+      hasSavedItinerary && EXPO_PUBLIC_ENABLE_MAP === "true"
+    - Added resolved render branch: resolvedTab === "map" -> <MapTab tripId={...} />
+
+  features/trips/workspace/WorkspaceTabBar.tsx
+    - Extended WorkspaceTab union to include "map"
+
+Validation:
+
+  - ./ui-mobile/node_modules/.bin/tsc --noEmit -p ui-mobile/tsconfig.json — PASS
+  - ./node_modules/.bin/eslint
+      features/trips/workspace/MapTab.tsx
+      features/trips/workspace/useWorkspaceMapModel.ts
+      features/trips/workspace/mapPresentation.ts
+      features/trips/workspace/WorkspaceScreen.tsx
+      features/trips/workspace/WorkspaceTabBar.tsx
+    (run from ui-mobile/) — PASS
+
+================================================================================
+SESSION — 2026-04-25: OVERVIEW ITINERARY PREVIEW ENRICHMENT (MOBILE)
+================================================================================
+
+Improved the Overview tab itinerary preview rows so each day now communicates
+what is actually planned, without turning Overview into a full itinerary editor.
+
+New files created:
+
+  features/trips/workspace/overviewItineraryPreview.ts
+    - Added typed OverviewItineraryDayPreview view model
+    - Added buildOverviewItineraryDayPreviews(itinerary, { maxDays })
+    - Derives compact day preview content from real itinerary data:
+      * day number/date/day title
+      * first 2–3 stop names (arrow-separated)
+      * stop count label
+      * location/area summary when available
+      * optional status summary when explicit stop statuses exist
+    - Handles empty days with "No stops planned yet."
+    - No static/mock itinerary data added
+
+Modified files:
+
+  features/trips/workspace/useWorkspaceOverviewModel.ts
+    - Added itineraryDayPreviews to WorkspaceOverviewModel
+    - Derives preview rows via buildOverviewItineraryDayPreviews(...)
+      from the same visible itinerary already used by workspace tabs
+
+  features/trips/workspace/OverviewTab.tsx
+    - Replaced old day-only rows (Day/date/title only) with compact preview rows
+    - New row structure:
+      * left column: large day index + uppercase date
+      * main content: day title + stop preview line + compact metadata line
+    - Rows are tappable and use existing behavior: open Itinerary tab
+      (no new navigation destination introduced)
+    - Header label updated to "View full itinerary"
+    - Added fallback row for empty/missing preview day data
+    - Loading/missing/streaming behavior preserved
+
+Validation:
+
+  - ./ui-mobile/node_modules/.bin/tsc --noEmit -p ui-mobile/tsconfig.json — PASS
+  - ./node_modules/.bin/eslint
+      features/trips/workspace/OverviewTab.tsx
+      features/trips/workspace/useWorkspaceOverviewModel.ts
+      features/trips/workspace/overviewItineraryPreview.ts
+    (run from ui-mobile/) — PASS
+
+================================================================================
+SESSION — 2026-04-25: BUDGET TAB REFINEMENT (MOBILE)
+================================================================================
+
+Refined the Workspace Budget tab to align with the Figma budget direction while
+keeping existing API/data flow and mobile tab behavior unchanged.
+
+Modified files:
+
+  features/trips/budget/adapters.ts
+    - Added typed budget view-model builders and normalization helpers:
+      * buildBudgetSummaryViewModel(limit, totalSpent)
+      * buildBudgetCategoryRows(expenses)
+      * buildBudgetTransactionRows(expenses, filter)
+      * buildFilteredTransactionEmptyLabel(filter)
+      * toExpenseCategory(rawCategory), formatExpenseDateLabel(...)
+    - Added typed category metadata and ordering:
+      * BUDGET_CATEGORY_ORDER
+      * getBudgetCategoryMeta(...)
+      * getCategoryFilterLabel(...)
+    - Clarified spending language in summary metrics:
+      "Spent so far", "Total budget", "Remaining budget" / "Over budget by"
+
+  features/trips/budget/ExpenseRow.tsx
+    - Upgraded transaction row UI to include:
+      * richer metadata (category badge + date label)
+      * stronger amount/title hierarchy
+      * icon-based category treatment
+      * Remove action with trash icon
+    - Kept delete behavior unchanged
+
+  features/trips/workspace/BudgetTab.tsx
+    - Added clear Add Expense CTA flow:
+      * compact CTA panel ("Add expense")
+      * expandable/collapsible quick-entry form
+    - Added tappable/filterable category rows:
+      * each row toggles transaction filter by category
+      * active filter clear action in Recent transactions header
+    - Added $0 empty treatments:
+      * each zero category row shows "No expenses yet."
+      * filtered transaction empty state is category-aware
+    - Improved wording and structure for spend summary:
+      * explicit spent / total budget / remaining semantics
+    - Preserved existing queries/mutations and trip workspace wiring
+
+Validation:
+
+  - npx tsc --noEmit --skipLibCheck (run from ui-mobile/) — PASS
+  - npx eslint
+      features/trips/workspace/BudgetTab.tsx
+      features/trips/budget/adapters.ts
+      features/trips/budget/ExpenseRow.tsx
+    (run from ui-mobile/) — PASS
+
+================================================================================
+DEFERRED / STILL PENDING (per CLAUDE.md)
+================================================================================
+
+  Slice 7  — Archive: search + year grouping; Profile: travel stats + change pw
+  Slice 8  — Companions / Matching: MatchingPage + TravelProfileForm
+  Slice 9  — Explore (DONE this session — base implementation shipped)
+  Slice 10 — Chat Collaboration: ChatTab (inverted FlatList + compose)
+  Slice 11 — Map Tab: native map SDK + pins from saved itinerary lat/lon
+
+  Ongoing: replace remaining emoji icons in BookingsTab TYPE_ICONS with Ionicons
+
+================================================================================
+SESSION — 2026-04-25: BOOKINGS TAB REDESIGN (FIGMA NODES 3:12398 + 6:3233)
+================================================================================
+
+Redesigned the Workspace Bookings tab to match the WaypointMobileUI Figma design
+using real API data throughout. No backend changes, no mock data added.
+
+New files created:
+
+  features/trips/reservations/BookingFormSheet.tsx
+    - Modal bottom sheet for adding a new booking
+    - Type chips (8 types): flight, hotel, train, bus, car, activity, restaurant, other
+    - All with BookingIconName-typed Ionicons icons (no emoji)
+    - Fields: title (required), type, provider (optional), amount (optional)
+    - Loading + error states; resets on open; closes on success
+    - Follows StopEditSheet/KeyboardAvoidingView pattern
+
+Modified files:
+
+  features/trips/reservations/adapters.ts
+    - Added BookingFilterKey: "all" | "flights" | "lodging" | "transit" | "activities"
+    - Added BookingFilterChip + BOOKING_FILTER_CHIPS array
+    - Added filterReservations(items, filter) pure helper
+    - Added StatusPillVariant: "confirmed" | "pending" | "muted"
+    - Expanded ReservationViewModel: confirmationCode, detailLine, statusVariant,
+      typeIconName (typed as BookingIconName union — no string cast needed)
+    - Added BookingIconName union type for all 8 reservation type icons
+    - Added buildConfirmationSummary(items) → confirmed/pending/unscheduled/total/confirmedLabel
+    - Type-specific detail lines:
+        flight:  "JAL 5 · Oct 14, 11:55"
+        hotel:   "Oct 14 — 18 · 4 nights"
+        train:   "Activate Oct 16" or "JR East · Oct 16"
+        activity/restaurant: "Oct 16, 11:00"
+    - Confirmation code surfaced only for flight type
+    - Status: Confirmed (olive) when has confirmation_code or in progress;
+      Pending (amber) when future booking without confirmation_code;
+      Muted (smoke) when unscheduled
+
+  features/trips/reservations/BookingRow.tsx
+    - Full Figma redesign — 3-column layout matching design spec
+    - Left: 36px icon square (parchment-soft bg, smoke border, rounded-[10px], Ionicons)
+    - Center: title + optional inline confirmation code in muted tracking text + detail line
+    - Right: price label + status pill (olive/amber/smoke) + discreet trash icon delete
+    - Removed old StatusPill wrapper and multi-pill layout
+
+  features/trips/workspace/BookingsTab.tsx
+    - Full redesign matching Figma:
+      * Header: "RESERVATIONS" small-caps eyebrow + Playfair "X of Y confirmed" headline
+      * "+ Add" amber Ionicons link top-right → opens BookingFormSheet
+      * 3-segment progress bar (olive=confirmed, amber=pending, smoke=unscheduled)
+      * Horizontal filter chips: All | Flights | Lodging | Transit | Activities
+        Active chip: espresso filled; inactive: smoke border + #4a3f37 text
+      * Filtered booking list using BookingRow
+      * Empty state for zero bookings; inline message for zero filtered results
+    - Removed: SectionCard wrapper, emoji TYPE_ICONS, inline add form, old type chips
+
+Validation:
+
+  - ./ui-mobile/node_modules/.bin/tsc --noEmit --skipLibCheck — PASS (0 errors)
+  - ./node_modules/.bin/eslint on all 4 changed files — PASS
+
+
+================================================================================
+SESSION — 2026-04-25: BOOKINGS TAB POLISH (Travel-utility surface)
+================================================================================
+
+Polished the mobile Bookings tab into a travel-utility surface with grouping,
+a Next Up hero card, detail sheet, Navigate action, and full edit support.
+No mock data, no new API endpoints. All 9 requirements satisfied.
+
+New files created:
+
+  features/trips/reservations/bookingPresentation.ts
+    - groupReservationsByTime(items) → { nextUpcoming, upcoming, past }
+        • "Past" = end_at < now, OR single-event start_at > 24 h ago with no end
+        • Unscheduled items (no start_at) always in upcoming
+        • nextUpcoming = first upcoming with a date, else first unscheduled
+    - buildNavigateUrl(location) → Google Maps deep-link URL
+    - openNavigate(location) → calls Linking.openURL (async)
+    - BookingDetailViewModel type + buildDetailViewModel(r: Reservation)
+        • Shows ALL fields (typeLabel, provider, confirmationCode, startLabel,
+          endLabel, location, navigateUrl, notes, priceLabel, statusLabel/Variant)
+        • Confirmation code shown for all types (not just flights)
+        • labelForIso() uses datetime format when time component is non-midnight
+
+  features/trips/reservations/BookingDetailSheet.tsx
+    - Read-only detail view of a reservation (receives BookingDetailViewModel)
+    - Shows: type icon + label, title (display font), status pill + price
+    - Navigate CTA button (amber, expo-linking) when location is set
+    - DetailRow component: icon | label (small-caps) | value
+    - Rows shown when non-null: start date, end date, provider,
+      confirmation code, location, notes
+    - Actions: Edit (opens BookingFormSheet in edit mode) + Delete (with
+      loading state + inline error)
+    - Modal + ScrollView pattern; max-h-[85%] prevents full-screen takeover
+
+Modified files:
+
+  features/trips/reservations/adapters.ts
+    - Exported previously-private getStatusVariant, getStatusLabel, TYPE_ICON_NAME
+      (needed by bookingPresentation.ts without duplicating logic)
+    - Added location: string | null to ReservationViewModel
+    - Updated toReservationViewModel to include reservation.location
+
+  features/trips/reservations/BookingFormSheet.tsx
+    - Added initialValues?: Reservation prop for edit mode
+    - Edit mode: pre-populates title, type, provider, confirmationCode,
+      location, notes, amount from initialValues; header reads "Edit booking"
+    - New optional fields added to both create and edit:
+        * Confirmation number (optional)
+        * Location / address (optional)
+        * Notes (optional, multiline TextInputField)
+    - handleSave sends all fields in ReservationPayload (parent decides
+      whether to call addReservation or editReservation)
+
+  features/trips/reservations/BookingRow.tsx
+    - Added onPress: () => void prop (required); row is now a Pressable
+    - Tapping the row opens the detail sheet via parent state
+    - Added location-outline Ionicons hint in center column when location set
+    - Delete Pressable uses e.stopPropagation() to prevent bubbling to row press
+
+  features/trips/workspace/BookingsTab.tsx
+    - Imported groupReservationsByTime + buildDetailViewModel + openNavigate
+      from bookingPresentation
+    - State: selectedItem (detail sheet), editItem (edit form), showAddSheet
+    - Grouping flow: filterReservations → groupReservationsByTime → sections
+    - heroItem = nextUpcoming when it has a start_at (unscheduled items skip hero)
+    - Layout: Next Up hero card → Upcoming section → Past section
+    - NextUpCard: amber accent strip, NEXT UP eyebrow, icon (40px), Playfair
+      title, start date, location, Navigate CTA button (when location set)
+    - SectionHeader: small-caps label + count
+    - Past items rendered at opacity-55 to visually distinguish from upcoming
+    - Detail sheet: wired to selectedItem + onEdit (closes detail, opens edit form)
+    - Edit form: wired to editItem; onSave calls editReservation(item.id, payload)
+    - Add form: unchanged; onSave calls addReservation(payload)
+
+Design decisions:
+
+  - heroItem requires start_at (not just any upcoming) to avoid a misleading
+    "NEXT UP" card for an unscheduled booking with no date
+  - When all upcoming items are unscheduled (no dates), grouping still works —
+    the upcoming list renders under "UPCOMING" without a hero
+  - openNavigate imported into NextUpCard; e.stopPropagation guards the navigate
+    Pressable inside the card Pressable from triggering the detail sheet
+  - BookingDetailSheet receives BookingDetailViewModel (not raw Reservation) to
+    keep the sheet component thin — all derivation happens in bookingPresentation
+  - Two BookingFormSheet instances rendered in BookingsTab (add + edit) rather
+    than one with mode switching — avoids shared state bleed between modes
+
+Validation:
+
+  - ./ui-mobile/node_modules/.bin/tsc --noEmit --skipLibCheck — PASS (0 errors)
+  - ./node_modules/.bin/eslint on all 6 changed files — PASS
+
+================================================================================
+SESSION — 2026-04-25: SMALL-GAP SWEEP (Accessibility + Budget Date + Solo Copy)
+================================================================================
+
+Completed a scoped mobile sweep for remaining small gaps only. No schema/API
+changes, no new feature surfaces, and no fake production data.
+
+Scope delivered:
+
+  1) Active-trip / itinerary execution accessibility labels
+     - Added missing accessibility metadata on execution controls without
+       visual redesign.
+
+  2) Budget Add Expense date behavior
+     - Implemented controlled date behavior using a clear mobile default date.
+     - Form now visibly communicates the expense date and applies it
+       consistently for optimistic transaction ordering.
+     - No budget splitting, no payer flow changes, no backend contract changes.
+
+  3) Solo-trip MembersTab copy
+     - Updated solo-member wording to frame collaboration as optional, not
+       required.
+
+  4) Packing empty state tone
+     - No additional copy edits made in this sweep because packing polish work
+       is already present in branch changes.
+
+Modified files:
+
+  features/trips/onTrip/OnTripHeader.tsx
+    - Added accessibilityRole="button" + accessibilityLabel="Back to trips"
+      on back control.
+
+  features/trips/onTrip/LogStopFab.tsx
+    - Added accessibilityRole="button" + accessibilityLabel="Log a stop".
+
+  features/trips/onTrip/HappeningNowCard.tsx
+    - Added accessibilityRole="button" +
+      accessibilityLabel="Navigate to current stop" on Navigate CTA.
+
+  features/trips/onTrip/TimelineRow.tsx
+    - Added accessibilityRole="button" +
+      accessibilityLabel="Navigate to this stop" for timeline navigate action.
+
+  features/trips/onTrip/OnTripScreen.tsx
+    - Added accessibilityRole="button" +
+      accessibilityLabel="Open full trip workspace" to workspace-open CTAs.
+
+  features/trips/budget/adapters.ts
+    - Added typed helpers:
+      * todayLocalISODate()
+      * normalizeExpenseInputDate()
+      * toLocalNoonISOString()
+      * formatExpenseComposerDate()
+    - Keeps date normalization/formatting logic out of render components.
+
+  features/trips/budget/hooks.ts
+    - Extended addExpense mutation input with optional createdAtOverride.
+    - Uses toLocalNoonISOString(createdAtOverride) for optimistic created_at
+      when supplied, preserving deterministic same-day ordering.
+
+  features/trips/workspace/BudgetTab.tsx
+    - Added controlled expenseDate state defaulted via todayLocalISODate().
+    - Added explicit “Date” display in expense composer.
+    - Validates date with normalizeExpenseInputDate(); safely resets to today
+      if invalid.
+    - Passes normalized date through addExpense(..., createdAtOverride).
+    - Resets date state on open/cancel/save.
+    - Copy clarifies mobile behavior: expenses save with current date.
+
+  features/trips/workspace/adapters.ts
+    - Updated collaboration groupDescription for solo trips:
+      "Planning solo for now. Invite travel companions when you want to
+      coordinate this trip with others."
+
+  features/trips/workspace/MembersTab.tsx
+    - Added solo-adaptive section framing:
+      * eyebrow: "Solo planning"
+      * title: "Planning solo for now"
+      * description: optional collaboration framing
+    - Status pill uses "Solo trip" when memberCount <= 1.
+
+Validation:
+
+  - npx tsc --noEmit --skipLibCheck (ui-mobile) — PASS
+  - npx eslint on changed files — PASS
+  - npx jest __tests__/workspace/RegenerateSheet.test.tsx --runInBand — PASS
+    (9 tests, 1 suite)

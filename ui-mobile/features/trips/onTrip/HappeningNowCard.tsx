@@ -112,6 +112,8 @@ export function HappeningNowCard({ stop, onNavigate, onConfirm, onSkip }: Props)
           <Pressable
             onPress={onNavigate}
             className="h-12 flex-row items-center justify-center gap-2 rounded-[14px] bg-on-dark active:opacity-90"
+            accessibilityRole="button"
+            accessibilityLabel="Navigate to current stop"
           >
             <Ionicons name="navigate" size={15} color="#2A1D13" />
             <Text className="text-[15px] text-ontrip" style={fontStyles.uiSemibold}>

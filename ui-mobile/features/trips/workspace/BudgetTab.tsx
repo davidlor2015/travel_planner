@@ -14,9 +14,12 @@ import {
   buildBudgetSummaryViewModel,
   buildBudgetTransactionRows,
   buildFilteredTransactionEmptyLabel,
+  formatExpenseComposerDate,
   formatBudgetAmount,
   getBudgetCategoryMeta,
   getCategoryFilterLabel,
+  normalizeExpenseInputDate,
+  todayLocalISODate,
   type BudgetCategoryFilter,
 } from "@/features/trips/budget/adapters";
 import {
@@ -43,6 +46,7 @@ export function BudgetTab({ tripId }: Props) {
   const [limitDraft, setLimitDraft] = useState("");
   const [expenseLabel, setExpenseLabel] = useState("");
   const [expenseAmount, setExpenseAmount] = useState("");
+  const [expenseDate, setExpenseDate] = useState(() => todayLocalISODate());
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [expenseCategory, setExpenseCategory] =
     useState<ExpenseCategory>("other");
@@ -65,6 +69,9 @@ export function BudgetTab({ tripId }: Props) {
   const showComposer = showExpenseComposer || budget.expenses.length === 0;
   const filterLabel = getCategoryFilterLabel(activeCategoryFilter);
   const filterEmptyLabel = buildFilteredTransactionEmptyLabel(activeCategoryFilter);
+  const expenseDateLabel = formatExpenseComposerDate(
+    normalizeExpenseInputDate(expenseDate) ?? todayLocalISODate(),
+  );
 
   if (budget.loading) {
     return <ScreenLoading label="Loading budget…" />;
@@ -93,12 +100,24 @@ export function BudgetTab({ tripId }: Props) {
 
   const handleAddExpense = async () => {
     const amount = parseFloat(expenseAmount);
+    const normalizedExpenseDate = normalizeExpenseInputDate(expenseDate);
+    if (!normalizedExpenseDate) {
+      setMutationError("Expense date is invalid. Reset and try again.");
+      setExpenseDate(todayLocalISODate());
+      return;
+    }
     if (!expenseLabel.trim() || Number.isNaN(amount) || amount <= 0) return;
     try {
       setMutationError(null);
-      await budget.addExpense(expenseLabel.trim(), amount, expenseCategory);
+      await budget.addExpense(
+        expenseLabel.trim(),
+        amount,
+        expenseCategory,
+        normalizedExpenseDate,
+      );
       setExpenseLabel("");
       setExpenseAmount("");
+      setExpenseDate(todayLocalISODate());
       setShowExpenseComposer(false);
     } catch {
       setMutationError("We couldn't add that expense. Try again.");
@@ -172,7 +191,10 @@ export function BudgetTab({ tripId }: Props) {
               </Text>
               <PrimaryButton
                 label="Add expense"
-                onPress={() => setShowExpenseComposer(true)}
+                onPress={() => {
+                  setExpenseDate(todayLocalISODate());
+                  setShowExpenseComposer(true);
+                }}
                 icon={<Ionicons name="add" size={16} color="#FFFFFF" />}
                 fullWidth
               />
@@ -192,6 +214,13 @@ export function BudgetTab({ tripId }: Props) {
                 value={expenseAmount}
                 onChangeText={setExpenseAmount}
               />
+              <View className="rounded-2xl border border-border bg-surface-muted px-4 py-3">
+                <Text className="text-[11px] uppercase tracking-[0.5px] text-text-soft">Date</Text>
+                <Text className="mt-1 text-sm font-semibold text-text">{expenseDateLabel}</Text>
+                <Text className="mt-1 text-[12px] text-text-soft">
+                  Mobile expenses are saved with the current date.
+                </Text>
+              </View>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -243,6 +272,7 @@ export function BudgetTab({ tripId }: Props) {
                       setShowExpenseComposer(false);
                       setExpenseLabel("");
                       setExpenseAmount("");
+                      setExpenseDate(todayLocalISODate());
                     }}
                     fullWidth
                   />

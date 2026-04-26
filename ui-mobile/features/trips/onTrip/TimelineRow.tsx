@@ -165,7 +165,12 @@ function getStatusToneClass(tone: OnTripStatusTone): { container: string; text: 
 
 function NavigateAction({ onPress }: { onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} className="flex-row items-center gap-1 active:opacity-70">
+    <Pressable
+      onPress={onPress}
+      className="flex-row items-center gap-1 active:opacity-70"
+      accessibilityRole="button"
+      accessibilityLabel="Navigate to this stop"
+    >
       <Ionicons name="navigate-outline" size={12} color="#B86845" />
       <Text className="text-[12px] leading-[18px] text-amber" style={fontStyles.uiMedium}>
         Navigate
