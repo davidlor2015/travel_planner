@@ -94,9 +94,10 @@ export function buildOnTripDayHeader(
   tripDestination?: string,
 ): OnTripDayHeaderVM {
   const dayNumber = snapshot.today.day_number;
+  const dayDate = formatHeaderDate(snapshot.today.day_date);
   const eyebrow =
     typeof dayNumber === "number" && dayNumber > 0
-      ? `ON TRIP · DAY ${dayNumber}`
+      ? ["ON TRIP", `DAY ${dayNumber}`, dayDate].filter(Boolean).join(" · ")
       : "ON TRIP";
 
   const weekday = formatWeekday(snapshot.today.day_date);
@@ -207,6 +208,16 @@ function formatShortDate(iso: string | null): string | null {
   const date = new Date(`${iso}T00:00:00`);
   if (Number.isNaN(date.getTime())) return iso;
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function formatHeaderDate(iso: string | null): string | null {
+  if (!iso) return null;
+  const date = new Date(`${iso}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return null;
+  const weekday = date.toLocaleDateString(undefined, { weekday: "short" }).toUpperCase();
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = date.toLocaleDateString(undefined, { month: "short" }).toUpperCase();
+  return `${weekday} ${day} ${month}`;
 }
 
 function formatStopCount(count: number): string {

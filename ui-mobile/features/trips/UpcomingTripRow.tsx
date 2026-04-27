@@ -1,8 +1,7 @@
 import { Image } from "expo-image";
-import { Ionicons } from "@expo/vector-icons";
 import { Pressable, Text, View } from "react-native";
 
-import { fontStyles } from "@/shared/theme/typography";
+import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
 
 import type { UpcomingTripViewModel } from "./adapters";
 
@@ -15,13 +14,33 @@ type Props = {
 export function UpcomingTripRow({ trip, onPress, onOpenWorkspace }: Props) {
   const isConfirmed = trip.statusPill === "Confirmed";
 
+  const pillBg = isConfirmed ? "#7A8B6E33" : "#231910";
+  const pillText = isConfirmed ? "#7A8B6E" : "#FEFCF9";
+
   return (
     <Pressable
       onPress={onPress}
-      className="flex-row gap-3 active:opacity-80"
+      accessibilityRole="button"
+      className="flex-row active:opacity-80"
+      style={{
+        borderRadius: 16,
+        padding: 14,
+        backgroundColor: "#FAF5EA",
+        borderWidth: 1,
+        borderColor: "#EAE2D6",
+        gap: 14,
+      }}
     >
       {/* Thumbnail */}
-      <View className="overflow-hidden rounded-[12px]" style={{ width: 60, height: 68 }}>
+      <View
+        style={{
+          width: 88,
+          height: 88,
+          borderRadius: 12,
+          overflow: "hidden",
+          flexShrink: 0,
+        }}
+      >
         <Image
           source={{ uri: trip.imageUrl }}
           style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
@@ -31,49 +50,94 @@ export function UpcomingTripRow({ trip, onPress, onOpenWorkspace }: Props) {
       </View>
 
       {/* Content */}
-      <View className="flex-1 justify-center gap-1">
-        {/* Status pill + readiness */}
+      <View className="flex-1" style={{ gap: 4 }}>
+        {/* Status pill + readiness label */}
         <View className="flex-row items-center justify-between">
           <View
-            className={[
-              "self-start rounded-full border px-2 py-0.5",
-              isConfirmed
-                ? "border-olive/25 bg-olive/10"
-                : "border-amber/30 bg-amber/10",
-            ].join(" ")}
+            style={{
+              paddingHorizontal: 10,
+              paddingVertical: 3,
+              borderRadius: 100,
+              backgroundColor: pillBg,
+            }}
           >
             <Text
-              className={[
-                "text-[11px] font-semibold",
-                isConfirmed ? "text-olive" : "text-amber",
-              ].join(" ")}
+              style={[
+                fontStyles.uiSemibold,
+                { fontSize: 10, color: pillText, letterSpacing: 0.3 },
+              ]}
             >
               {trip.statusPill}
             </Text>
           </View>
-          <Text className="text-[11px] text-text-soft">
-            Readiness {trip.readinessPct}%
+          <Text
+            style={[
+              textScaleStyles.caption,
+              { color: "#8A7E74", fontSize: 9.5, letterSpacing: 1.2 },
+            ]}
+          >
+            READINESS {trip.readinessPct}%
           </Text>
         </View>
 
-        {/* Trip title */}
+        {/* Title */}
         <Text
-          className="text-[16px] leading-[20px] text-text"
-          style={fontStyles.displaySemibold}
-          numberOfLines={1}
+          style={[
+            fontStyles.headMedium,
+            {
+              fontSize: 22,
+              color: "#231910",
+              letterSpacing: -0.4,
+              lineHeight: 25,
+            },
+          ]}
+          numberOfLines={2}
         >
           {trip.title}
         </Text>
 
-        {/* Date range */}
-        <Text className="text-[12px] text-text-muted">{trip.dateRange}</Text>
+        {/* Date + travelers */}
+        <Text
+          style={[
+            fontStyles.uiRegular,
+            { fontSize: 12, color: "#8A7E74" },
+          ]}
+        >
+          {trip.dateRange} · {trip.memberCount}{" "}
+          {trip.memberCount === 1 ? "traveler" : "travelers"}
+        </Text>
 
-        {/* Open workspace link */}
-        <Pressable onPress={onOpenWorkspace} hitSlop={6}>
-          <Text className="text-[12px] font-semibold text-amber">
-            Open workspace ›
-          </Text>
-        </Pressable>
+        {/* Readiness bar + open link */}
+        <View className="flex-row items-center" style={{ marginTop: 4, gap: 14 }}>
+          <View
+            style={{
+              flex: 1,
+              height: 3,
+              borderRadius: 2,
+              backgroundColor: "#EAE2D6",
+              overflow: "hidden",
+            }}
+          >
+            <View
+              style={{
+                width: `${trip.readinessPct}%`,
+                height: "100%",
+                backgroundColor: trip.readinessPct >= 80 ? "#7A8B6E" : "#B85A38",
+                borderRadius: 2,
+              }}
+            />
+          </View>
+          <Pressable onPress={onOpenWorkspace} hitSlop={8} accessibilityLabel="Open workspace">
+            <Text
+              style={[
+                fontStyles.uiSemibold,
+                { fontSize: 12, color: "#B85A38" },
+              ]}
+            >
+              Open ›
+            </Text>
+          </Pressable>
+        </View>
       </View>
     </Pressable>
   );

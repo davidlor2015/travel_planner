@@ -199,6 +199,7 @@ class TripOnTripStopSnapshotResponse(BaseModel):
     title: str | None = None
     time: str | None = None
     location: str | None = None
+    notes: str | None = None
     lat: float | None = None
     lon: float | None = None
     status: Literal["planned", "confirmed", "skipped"] | None = None

@@ -19,7 +19,7 @@ export type OnTripViewModel = {
   now: StopVM | null;
   next: StopVM | null;
   timeline: StopVM[];
-  unplanned: Array<TripOnTripUnplannedStop & { isPending: boolean }>;
+  unplanned: (TripOnTripUnplannedStop & { isPending: boolean })[];
   blockers: TripOnTripBlocker[];
   defaultLogDate: string;
   isReadOnly: boolean;
@@ -65,6 +65,24 @@ function deriveCurrentStop(
   return best?.stop ?? null;
 }
 
+function findStopIndex(
+  stops: TripOnTripStopSnapshot[],
+  target: TripOnTripStopSnapshot,
+): number {
+  if (target.stop_ref) {
+    const byRef = stops.findIndex((stop) => stop.stop_ref === target.stop_ref);
+    if (byRef >= 0) return byRef;
+  }
+
+  const byContent = stops.findIndex(
+    (stop) =>
+      stop.title === target.title &&
+      stop.time === target.time &&
+      stop.location === target.location,
+  );
+  return byContent >= 0 ? byContent : 0;
+}
+
 function toStopVM(
   stop: TripOnTripStopSnapshot,
   index: number,
@@ -93,18 +111,20 @@ export function deriveOnTripViewModel(
 
   const stops = snapshot.today_stops;
   const currentRaw = deriveCurrentStop(stops, nowMinutes);
-  const nextRaw = snapshot.next_stop;
+  const currentIndex = currentRaw ? findStopIndex(stops, currentRaw) : -1;
 
   const timeline = stops.map((s, i) => toStopVM(s, i, statusPending, isReadOnly));
 
   const nowVm = currentRaw
-    ? toStopVM(currentRaw, stops.indexOf(currentRaw), statusPending, isReadOnly)
+    ? toStopVM(currentRaw, currentIndex, statusPending, isReadOnly)
     : null;
 
+  const nowKey = nowVm?.key ?? null;
+  const nextRaw = snapshot.next_stop;
+  const nextIndex = nextRaw ? findStopIndex(stops, nextRaw) : -1;
+  const nextCandidate = nextRaw ? toStopVM(nextRaw, nextIndex, statusPending, isReadOnly) : null;
   const nextVm =
-    nextRaw && nextRaw.stop_ref !== currentRaw?.stop_ref
-      ? toStopVM(nextRaw, stops.indexOf(nextRaw), statusPending, isReadOnly)
-      : null;
+    nextCandidate && nextCandidate.key !== nowKey ? nextCandidate : null;
 
   const unplanned = snapshot.today_unplanned.map((u) => ({
     ...u,
@@ -145,6 +165,15 @@ export function deriveOnTripViewModel(
     defaultLogDate,
     isReadOnly,
   };
+}
+
+/** Builds a StopVM from a raw snapshot stop for the detail view. */
+export function toStopVmForDetail(
+  stop: TripOnTripStopSnapshot,
+  isPending: boolean,
+  isReadOnly: boolean,
+): StopVM {
+  return toStopVM(stop, 0, isPending ? { [stop.stop_ref ?? ""]: true } : {}, isReadOnly);
 }
 
 export function stopVariant(

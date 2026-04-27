@@ -191,6 +191,10 @@ export interface ActiveTripViewModel {
   dateRange: string;
   imageUrl: string;
   canOpenOnTrip: boolean;
+  dayNumber: number;
+  totalDays: number;
+  memberCount: number;
+  memberInitials: string[];
 }
 
 export interface UpcomingTripViewModel {
@@ -200,6 +204,7 @@ export interface UpcomingTripViewModel {
   imageUrl: string;
   statusPill: "Planning" | "Confirmed";
   readinessPct: number;
+  memberCount: number;
 }
 
 function extractCountry(destination: string): string {
@@ -207,10 +212,37 @@ function extractCountry(destination: string): string {
   return parts[1] ?? parts[0] ?? destination;
 }
 
+function computeDayProgress(
+  startDate: string,
+  endDate: string,
+): { dayNumber: number; totalDays: number } {
+  const [sy, sm, sd] = startDate.split("-").map(Number);
+  const [ey, em, ed] = endDate.split("-").map(Number);
+  const start = new Date(sy!, (sm ?? 1) - 1, sd ?? 1);
+  const end = new Date(ey!, (em ?? 1) - 1, ed ?? 1);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const totalDays = Math.max(1, Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1);
+  const dayNumber = Math.min(
+    totalDays,
+    Math.max(1, Math.round((today.getTime() - start.getTime()) / 86_400_000) + 1),
+  );
+  return { dayNumber, totalDays };
+}
+
+function emailInitial(email: string): string {
+  return (email[0] ?? "?").toUpperCase();
+}
+
 export function toActiveTripViewModel(
   trip: TripResponse,
   canOpenOnTrip: boolean,
 ): ActiveTripViewModel {
+  const { dayNumber, totalDays } = computeDayProgress(trip.start_date, trip.end_date);
+  const memberInitials = trip.members
+    .filter((m) => m.status === "accepted" || m.role === "owner")
+    .slice(0, 3)
+    .map((m) => emailInitial(m.email));
   return {
     id: trip.id,
     title: trip.title,
@@ -218,6 +250,10 @@ export function toActiveTripViewModel(
     dateRange: formatCompactDateRange(trip.start_date, trip.end_date),
     imageUrl: getTripImageUrl({ id: trip.id, destination: trip.destination }),
     canOpenOnTrip,
+    dayNumber,
+    totalDays,
+    memberCount: trip.member_count,
+    memberInitials,
   };
 }
 
@@ -233,6 +269,7 @@ export function toUpcomingTripViewModel(
     imageUrl: getTripImageUrl({ id: trip.id, destination: trip.destination }),
     statusPill: pct >= 70 ? "Confirmed" : "Planning",
     readinessPct: pct,
+    memberCount: trip.member_count,
   };
 }
 

@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, Text, View } from "react-native";
 
-import { fontStyles } from "@/shared/theme/typography";
+import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
 
 type Props = {
   subtitle: string;
@@ -10,35 +10,38 @@ type Props = {
 
 function todayLabel(): string {
   const now = new Date();
-  const day = now
-    .toLocaleDateString("en-US", { weekday: "long" })
-    .toUpperCase();
-  const date = now
-    .toLocaleDateString("en-US", { month: "short", day: "numeric" })
-    .toUpperCase();
+  const day = now.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
+  const date = now.toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase();
   return `${day} · ${date}`;
 }
 
 export function TripsListHeader({ subtitle, onNewTrip }: Props) {
   return (
-    <View className="flex-row items-start justify-between px-4 pt-5 pb-1">
-      <View className="flex-1 gap-1 pr-4">
-        <Text className="text-[11px] font-semibold uppercase tracking-[0.14em] text-text-soft">
+    <View className="flex-row items-start justify-between px-6 pt-5 pb-6">
+      <View className="flex-1 pr-3" style={{ gap: 10 }}>
+        <Text style={[textScaleStyles.caption, { color: "#8A7E74" }]}>
           {todayLabel()}
         </Text>
         <Text
-          className="text-[30px] leading-[36px] text-text"
-          style={fontStyles.displaySemibold}
+          className="text-[38px] text-text"
+          style={[fontStyles.headMedium, { lineHeight: 40, letterSpacing: -0.8 }]}
         >
-          Your trips.
+          Your trips
         </Text>
-        <Text className="text-[13px] leading-[18px] text-text-muted">{subtitle}</Text>
+        <Text
+          className="text-[16px] text-text-muted"
+          style={[fontStyles.headMediumItalic, { lineHeight: 22 }]}
+        >
+          {subtitle}
+        </Text>
       </View>
 
       <Pressable
         onPress={onNewTrip}
         hitSlop={8}
+        accessibilityLabel="New trip"
         className="h-10 w-10 items-center justify-center rounded-full bg-espresso active:opacity-70"
+        style={{ marginTop: 2 }}
       >
         <Ionicons name="add" size={20} color="#FEFCF9" />
       </Pressable>

@@ -40,9 +40,12 @@ type Props = {
   mode: "create" | "edit";
   trip?: TripResponse | null;
   submitting?: boolean;
+  deleting?: boolean;
   error?: string | null;
+  canDeleteTrip?: boolean;
   onClose: () => void;
   onSubmit: (value: TripFormValue) => Promise<void>;
+  onDeleteTrip?: () => void;
 };
 
 function toInitialValue(
@@ -110,9 +113,12 @@ export function TripFormSheet({
   mode,
   trip,
   submitting = false,
+  deleting = false,
   error,
+  canDeleteTrip = false,
   onClose,
   onSubmit,
+  onDeleteTrip,
 }: Props) {
   const {
     query: destinationQuery,
@@ -386,6 +392,29 @@ export function TripFormSheet({
                   />
                 </FormSection>
               )}
+
+              {mode === "edit" && canDeleteTrip && onDeleteTrip ? (
+                <FormSection
+                  eyebrow="Trip settings"
+                  description="Remove this trip from Waypoint when you no longer need it saved."
+                >
+                  <Pressable
+                    onPress={onDeleteTrip}
+                    disabled={submitting || deleting}
+                    accessibilityRole="button"
+                    accessibilityLabel="Delete trip"
+                    className={[
+                      "min-h-11 flex-row items-center justify-between rounded-2xl border border-danger/20 bg-white px-4 py-3 active:opacity-70",
+                      submitting || deleting ? "opacity-50" : "",
+                    ].join(" ")}
+                  >
+                    <Text className="text-sm font-semibold text-danger">
+                      {deleting ? "Deleting…" : "Delete trip"}
+                    </Text>
+                    <Text className="text-lg leading-5 text-danger">›</Text>
+                  </Pressable>
+                </FormSection>
+              ) : null}
 
               {error ? (
                 <View className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3">

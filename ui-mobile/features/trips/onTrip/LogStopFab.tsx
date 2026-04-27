@@ -1,6 +1,7 @@
 import { Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
+import { DE } from "@/shared/theme/desertEditorial";
 import { fontStyles } from "@/shared/theme/typography";
 
 export function LogStopFab({ onPress }: { onPress: () => void }) {
@@ -12,17 +13,18 @@ export function LogStopFab({ onPress }: { onPress: () => void }) {
       accessibilityLabel="Log a stop"
     >
       <View
-        className="h-[52px] flex-row items-center justify-center gap-3 rounded-full bg-espresso px-5"
+        className="h-[58px] flex-row items-center justify-center gap-3 rounded-full px-5"
         style={{
-          shadowColor: "#2A1D13",
+          backgroundColor: DE.ink,
+          shadowColor: DE.ink,
           shadowOffset: { width: 0, height: 12 },
           shadowOpacity: 0.32,
           shadowRadius: 24,
           elevation: 10,
         }}
       >
-        <Ionicons name="add" size={17} color="#FBF6EC" />
-        <Text className="text-[14px] text-ivory" style={fontStyles.uiMedium}>
+        <Ionicons name="add" size={17} color={DE.ivory} />
+        <Text className="text-[14px]" style={[fontStyles.uiSemibold, { color: DE.ivory }]}>
           Log a stop
         </Text>
       </View>

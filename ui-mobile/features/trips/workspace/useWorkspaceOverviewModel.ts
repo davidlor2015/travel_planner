@@ -244,6 +244,7 @@ export function useWorkspaceOverviewModel({
       if (!current) return current;
       return addDayToItinerary(current);
     });
+    setItineraryFilter("all");
   }
 
   function handleDeleteDay(dayIndex: number) {

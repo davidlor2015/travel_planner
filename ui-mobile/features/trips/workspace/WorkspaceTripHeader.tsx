@@ -3,20 +3,46 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { fontStyles } from "@/shared/theme/typography";
+import { DE } from "@/shared/theme/desertEditorial";
+import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
 
 import type { TripWorkspaceViewModel } from "./adapters";
 import { getTripImageUrl } from "./helpers/tripVisuals";
 
 type Props = {
   trip: TripWorkspaceViewModel;
-  /** Tap image to open the trip switcher. */
   onTripPress: () => void;
   onEditPress: () => void;
   onCreatePress: () => void;
   onMembersPress: () => void;
   showMembersButton?: boolean;
+  compact?: boolean;
 };
+
+const AVATAR_TONES = [DE.ink, DE.clay, DE.inkSoft, DE.sageDeep];
+
+function MemberAvatar({ email, index }: { email: string; index: number }) {
+  const initials = email.slice(0, 2).toUpperCase();
+  return (
+    <View
+      style={{
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        backgroundColor: AVATAR_TONES[index % AVATAR_TONES.length],
+        alignItems: "center",
+        justifyContent: "center",
+        marginLeft: index > 0 ? -7 : 0,
+        borderWidth: 1.5,
+        borderColor: "rgba(242, 235, 221, 0.70)",
+      }}
+    >
+      <Text style={[fontStyles.uiSemibold, { fontSize: 8, color: DE.ivory }]}>
+        {initials}
+      </Text>
+    </View>
+  );
+}
 
 export function WorkspaceTripHeader({
   trip,
@@ -25,74 +51,140 @@ export function WorkspaceTripHeader({
   onCreatePress,
   onMembersPress,
   showMembersButton = true,
+  compact = false,
 }: Props) {
   const imageUrl = getTripImageUrl({ id: trip.id, destination: trip.destination });
 
+  // Split last word for italic treatment
+  const words = trip.title.trim().split(" ");
+  const titleMain = words.length > 1 ? words.slice(0, -1).join(" ") : "";
+  const titleLast = words[words.length - 1] ?? trip.title;
+
+  const durationLabel = `${trip.durationDays} ${trip.durationDays === 1 ? "day" : "days"}`;
+  const travelerLabel = `${trip.memberCount} ${trip.memberCount === 1 ? "traveler" : "travelers"}`;
+  const kickerText = `${durationLabel} · ${travelerLabel}`.toUpperCase();
+
+  const avatarMembers = trip.members.slice(0, 3);
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, compact ? styles.compactContainer : undefined]}>
       <Image
         source={{ uri: imageUrl }}
         style={StyleSheet.absoluteFillObject}
         contentFit="cover"
         transition={200}
       />
+      {/* Gradient: light at top (for chrome), dark at bottom (for title) */}
       <LinearGradient
-        colors={["rgba(43,33,26,0.25)", "transparent", "rgba(43,33,26,0.70)"]}
-        locations={[0, 0.35, 1]}
+        colors={["rgba(35, 25, 16, 0.35)", "transparent", "rgba(35, 25, 16, 0.82)"]}
+        locations={[0, 0.38, 1]}
         style={StyleSheet.absoluteFillObject}
       />
 
+      {/* Top chrome: trip switcher + action icons */}
       <View className="absolute left-3 right-3 top-3 flex-row items-center justify-between">
         <Pressable
           onPress={onTripPress}
           accessibilityRole="button"
           accessibilityLabel="Switch trips"
-          className="max-w-[190px] flex-row items-center gap-1.5 rounded-full border border-divider bg-ivory/90 px-3 py-1.5 active:opacity-80"
+          className="max-w-[190px] flex-row items-center gap-1.5 rounded-full px-3 py-1.5 active:opacity-80"
+          style={{ backgroundColor: "rgba(35, 25, 16, 0.50)" }}
         >
           <Text
-            className="text-[12px] leading-[18px] text-espresso"
-            style={fontStyles.uiMedium}
+            className="text-[12px] leading-[18px]"
+            style={[fontStyles.uiMedium, { color: DE.paper }]}
             numberOfLines={1}
           >
             {trip.title}
           </Text>
-          <Ionicons name="chevron-down" size={13} color="#2B211A" />
+          <Ionicons name="chevron-down" size={13} color="rgba(250, 245, 234, 0.85)" />
         </Pressable>
 
-        <View className="flex-row items-center gap-2">
-          {showMembersButton ? (
+        {!compact ? (
+          <View className="flex-row items-center gap-2">
+            {showMembersButton ? (
+              <GlassButton
+                icon="people-outline"
+                onPress={onMembersPress}
+                accessibilityLabel="View trip members"
+              />
+            ) : (
+              <GlassButton
+                icon="add-outline"
+                onPress={onCreatePress}
+                accessibilityLabel="Create a new trip"
+              />
+            )}
             <GlassButton
-              icon="people-outline"
-              onPress={onMembersPress}
-              accessibilityLabel="View trip members"
+              icon="pencil-outline"
+              onPress={onEditPress}
+              accessibilityLabel="Edit trip details"
             />
-          ) : (
-            <GlassButton
-              icon="add-outline"
-              onPress={onCreatePress}
-              accessibilityLabel="Create a new trip"
-            />
-          )}
-          <GlassButton
-            icon="pencil-outline"
-            onPress={onEditPress}
-            accessibilityLabel="Edit trip details"
-          />
-        </View>
+          </View>
+        ) : null}
       </View>
 
-      <View className="absolute bottom-3 left-4 right-4">
+      {/* Bottom: kicker + title + date + avatars */}
+      <View className={compact ? "absolute bottom-4 left-5 right-5" : "absolute bottom-4 left-4 right-4"} style={{ gap: compact ? 5 : 6 }}>
+        {!compact ? (
+          <Text
+            style={[
+              textScaleStyles.caption,
+              { color: "rgba(242, 235, 221, 0.80)", letterSpacing: 2.2, fontSize: 9.5 },
+            ]}
+          >
+            {kickerText}
+          </Text>
+        ) : null}
+
+        {/* Title with italic last word */}
         <Text
-          className="text-[22px] leading-[24px] text-white"
-          style={fontStyles.displayMedium}
-          numberOfLines={1}
+          style={{ lineHeight: compact ? 32 : 42 }}
+          numberOfLines={2}
         >
-          {trip.title}
+          <Text
+            style={[
+              fontStyles.headMedium,
+              {
+                fontSize: compact ? 30 : 38,
+                color: DE.paper,
+                letterSpacing: compact ? -0.5 : -0.8,
+                lineHeight: compact ? 32 : 42,
+              },
+            ]}
+          >
+            {titleMain ? `${titleMain} ` : ""}
+          </Text>
+          <Text
+            style={[
+              fontStyles.headMediumItalic,
+              {
+                fontSize: compact ? 30 : 38,
+                color: DE.paper,
+                letterSpacing: compact ? -0.5 : -0.8,
+                lineHeight: compact ? 32 : 42,
+              },
+            ]}
+          >
+            {titleLast}
+          </Text>
         </Text>
-        <Text className="mt-0.5 text-[12px] leading-[18px] text-white/90">
-          {trip.dateRange} · {trip.memberCount}{" "}
-          {trip.memberCount === 1 ? "traveler" : "travelers"}
-        </Text>
+
+        {/* Date + avatar stack */}
+        <View className="flex-row items-center" style={{ gap: 10, marginTop: 2 }}>
+          <Text
+            style={[fontStyles.uiRegular, { fontSize: 12, color: "rgba(242, 235, 221, 0.85)" }]}
+          >
+            {compact ? `${trip.dateRange} · ${travelerLabel}` : trip.dateRange}
+          </Text>
+          {!compact && avatarMembers.length > 0 && (
+            <View className="flex-row">
+              {avatarMembers.map((m, i) => (
+                <MemberAvatar key={m.email} email={m.email} index={i} />
+              ))}
+            </View>
+          )}
+        </View>
       </View>
     </View>
   );
@@ -113,20 +205,19 @@ function GlassButton({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       className="h-8 w-8 items-center justify-center rounded-full active:opacity-80"
-      style={{
-        backgroundColor: "rgba(253,250,243,0.85)",
-        borderWidth: 1,
-        borderColor: "#E6DCCB",
-      }}
+      style={{ backgroundColor: "rgba(35, 25, 16, 0.50)" }}
     >
-      <Ionicons name={icon} size={14} color="#2B211A" />
+      <Ionicons name={icon} size={14} color="rgba(250, 245, 234, 0.90)" />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    height: 140,
+    height: 240,
     overflow: "hidden",
+  },
+  compactContainer: {
+    height: 180,
   },
 });

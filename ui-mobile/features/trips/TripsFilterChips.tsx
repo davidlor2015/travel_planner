@@ -1,5 +1,6 @@
 import { Pressable, ScrollView, Text } from "react-native";
 
+import { fontStyles } from "@/shared/theme/typography";
 import type { TripsFilter } from "./useTripsListModel";
 
 const FILTERS: { id: TripsFilter; label: string }[] = [
@@ -19,7 +20,7 @@ export function TripsFilterChips({ active, onChange }: Props) {
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      className="px-4"
+      className="px-6"
       contentContainerStyle={{ gap: 8 }}
     >
       {FILTERS.map(({ id, label }) => {
@@ -28,16 +29,25 @@ export function TripsFilterChips({ active, onChange }: Props) {
           <Pressable
             key={id}
             onPress={() => onChange(id)}
-            className={[
-              "rounded-full border px-4 py-2 active:opacity-75",
-              isActive ? "border-espresso bg-espresso" : "border-border bg-surface",
-            ].join(" ")}
+            accessibilityRole="button"
+            className="active:opacity-75"
+            style={{
+              paddingHorizontal: 14,
+              paddingVertical: 7,
+              borderRadius: 100,
+              backgroundColor: isActive ? "#231910" : "transparent",
+              borderWidth: 1,
+              borderColor: isActive ? "#231910" : "#D4C7B1",
+            }}
           >
             <Text
-              className={[
-                "text-[13px] font-semibold",
-                isActive ? "text-ivory" : "text-text-muted",
-              ].join(" ")}
+              style={[
+                fontStyles.uiMedium,
+                {
+                  fontSize: 12,
+                  color: isActive ? "#FEFCF9" : "#3D2E22",
+                },
+              ]}
             >
               {label}
             </Text>

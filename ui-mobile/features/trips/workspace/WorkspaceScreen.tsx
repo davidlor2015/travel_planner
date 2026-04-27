@@ -1,6 +1,6 @@
 import { type Href, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Alert, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useSavedItineraryQuery } from "@/features/ai/hooks";
@@ -47,6 +47,12 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
     tripId,
     currentUserEmail: user?.email ?? "",
   });
+  const tripData = workspace.tripRaw;
+  const trip = workspace.trip;
+  const collaboration = workspace.collaboration;
+  const deleteCurrentTrip = workspace.deleteTrip;
+  const isDeletingTrip = workspace.isDeletingTrip;
+  const isSoloTrip = workspace.isSolo;
 
   const { streams, start, reset } = useStreamingItinerary();
   const streamState = streams[tripId];
@@ -61,6 +67,43 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
     workspace.trip?.status ?? "upcoming",
     onTripSnapshotQuery.data ?? null,
   );
+
+  const confirmDeleteTrip = useCallback(() => {
+    if (!tripData || !trip?.isOwner || isDeletingTrip) return;
+
+    Alert.alert(
+      isSoloTrip ? "Delete trip?" : "Delete trip for everyone?",
+      isSoloTrip
+        ? "This permanently removes this trip, including its itinerary, budget, packing list, and reservations."
+        : "This permanently removes the trip for all members, including its itinerary, budget, packing list, and reservations.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete trip",
+          style: "destructive",
+          onPress: () => {
+            void (async () => {
+              try {
+                setEditError(null);
+                await deleteCurrentTrip();
+                setEditOpen(false);
+                router.replace("/(tabs)/trips" as Href);
+              } catch {
+                setEditError("We couldn't delete the trip. Try again.");
+              }
+            })();
+          },
+        },
+      ],
+    );
+  }, [
+    router,
+    deleteCurrentTrip,
+    isDeletingTrip,
+    isSoloTrip,
+    trip?.isOwner,
+    tripData,
+  ]);
 
   // Mirror web's ?from=create: auto-start AI stream once when a freshly created
   // trip has no itinerary yet, so creation → draft is one uninterrupted arc.
@@ -137,13 +180,10 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
     );
   }
 
-  const tripData = workspace.tripRaw;
-  const trip = workspace.trip;
-  const collaboration = workspace.collaboration;
   if (!collaboration || !tripData || !trip) return null;
 
   return (
-    <SafeAreaView className="flex-1 bg-bg" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>
       <WorkspaceTripHeader
         trip={trip}
         onTripPress={() => setSwitcherOpen(true)}
@@ -151,6 +191,7 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
         onEditPress={() => setEditOpen(true)}
         onMembersPress={() => setActiveTab("members")}
         showMembersButton={workspace.showGroupCoordination}
+        compact={resolvedTab === "itinerary"}
       />
 
       {canOpenLiveView ? (
@@ -242,7 +283,9 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
         mode="edit"
         trip={tripData}
         submitting={workspace.isUpdatingTrip}
+        deleting={workspace.isDeletingTrip}
         error={editError}
+        canDeleteTrip={trip.isOwner}
         onClose={() => {
           setEditOpen(false);
           setEditError(null);
@@ -256,6 +299,7 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
             setEditError("We couldn't update the trip. Try again.");
           }
         }}
+        onDeleteTrip={confirmDeleteTrip}
       />
     </SafeAreaView>
   );

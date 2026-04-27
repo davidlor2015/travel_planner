@@ -12,7 +12,7 @@
 
 5. **Solo-First Adaptive UI:** Hide collaboration-only features such as handled-by metadata, group chat, balances, shared ownership, and collaborator activity when the trip has only one member.
 
-6. **Design System:** Use the Desert Editorial aesthetic. Typography is exclusively `Inter` for UI text and `Playfair Display` for editorial headings. Do not introduce new fonts, unrelated palettes, heavy shadows, bright gradients, or generic SaaS styling.
+6. **Design System:** Use the Desert Editorial aesthetic. Typography is **Cormorant Garamond** for editorial headings and display text, **Manrope** for UI text, and **JetBrains Mono** for kickers, metadata labels, and timestamps (as defined in `STYLE.MD.md`). Do not introduce unrelated palettes, heavy shadows, bright gradients, or generic SaaS styling.
 
 7. **NativeWind Styling:** Use NativeWind/Tailwind-style class names for normal layout and styling. Do not introduce new StyleSheet-heavy patterns unless required for platform-specific behavior or an existing file already uses that pattern.
 

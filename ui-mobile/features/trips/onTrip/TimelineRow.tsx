@@ -1,55 +1,63 @@
 import { Pressable, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 
+import { DE } from "@/shared/theme/desertEditorial";
 import { fontStyles } from "@/shared/theme/typography";
 import type { StopVM, TimelineVariant } from "./adapters";
 import {
   splitStopTimeDisplay,
   getStatusLabel,
-  getStatusTone,
   isStopNow,
   shouldMuteStop,
-  type OnTripStatusTone,
 } from "./presentation";
 
 type Props = {
   stop: StopVM;
   variant: TimelineVariant;
   isLast: boolean;
-  onNavigate?: () => void;
-  /** Called when the user wants to confirm this stop. Omit for read-only trips. */
-  onConfirm?: () => void;
-  /** Called when the user wants to skip this stop. Omit for read-only trips. */
-  onSkip?: () => void;
-  /** Called when the user wants to revert a confirmed/skipped stop back to planned. */
-  onReset?: () => void;
+  onPress?: () => void;
 };
 
 export function TimelineRow({
   stop,
   variant,
   isLast,
-  onNavigate,
-  onConfirm,
-  onSkip,
-  onReset,
+  onPress,
 }: Props) {
   const isNow = isStopNow(variant);
   const isMuted = shouldMuteStop(stop);
   const timeDisplay = splitStopTimeDisplay(stop.time);
 
   return (
-    <View className={["flex-row", isNow ? "rounded-[14px] bg-[#FBF1E8]/70" : ""].join(" ")}>
-      {/* ── Time column (two-line: period / clock) ─────────────────────── */}
-      <View className="w-[52px] items-end pt-3">
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      className="flex-row"
+      style={({ pressed }) => [
+        {
+          borderBottomWidth: isLast ? 0 : 1,
+          borderBottomColor: DE.rule,
+          borderStyle: "dashed",
+          opacity: isMuted ? 0.55 : pressed && onPress ? 0.75 : 1,
+        },
+      ]}
+      accessibilityRole={onPress ? "button" : "text"}
+      accessibilityLabel={stop.title ?? "Stop"}
+      accessibilityHint={onPress ? "Tap to view stop details" : undefined}
+    >
+      {/* ── Time column ────────────────────────────────────────────────── */}
+      <View className="w-11 items-start py-3.5">
         {timeDisplay.period ? (
           <Text
             numberOfLines={1}
-            className={[
-              "text-[10px] leading-[14px]",
-              isNow ? "text-ontrip" : "text-ontrip-muted",
-            ].join(" ")}
-            style={fontStyles.uiRegular}
+            style={[
+              fontStyles.monoRegular,
+              {
+                fontSize: 9,
+                letterSpacing: 0.5,
+                textTransform: "uppercase",
+                color: isNow ? DE.clay : DE.muted,
+              },
+            ]}
           >
             {timeDisplay.period}
           </Text>
@@ -57,11 +65,14 @@ export function TimelineRow({
         {timeDisplay.clock ? (
           <Text
             numberOfLines={1}
-            className={[
-              "text-[12px] leading-[18px]",
-              isNow ? "text-ontrip" : "text-ontrip-muted",
-            ].join(" ")}
-            style={isNow ? fontStyles.uiSemibold : fontStyles.uiMedium}
+            style={[
+              isNow ? fontStyles.monoMedium : fontStyles.monoRegular,
+              {
+                fontSize: 12,
+                letterSpacing: 0.5,
+                color: isNow ? DE.clay : DE.muted,
+              },
+            ]}
           >
             {timeDisplay.clock}
           </Text>
@@ -71,101 +82,45 @@ export function TimelineRow({
       {/* ── Dot + connector ────────────────────────────────────────────── */}
       <View className="mx-3 items-center" style={{ width: 14 }}>
         <DotForVariant variant={variant} effectiveStatus={stop.effectiveStatus} />
-        {!isLast ? <View className="mt-1 w-px flex-1 bg-divider" /> : null}
       </View>
 
       {/* ── Content ────────────────────────────────────────────────────── */}
-      <View className="min-w-0 flex-1 pb-5 pt-3">
-        {/* Title + Now pill */}
+      <View className="min-w-0 flex-1 py-3.5">
+        {/* Title row */}
         <View className="min-w-0 flex-row items-center gap-2">
           <Text
-            className={[
-              "min-w-0 flex-1 text-[14px] leading-[21px]",
-              isMuted ? "line-through text-ontrip-muted" : "text-ontrip",
-            ].join(" ")}
-            style={isNow ? fontStyles.uiSemibold : fontStyles.uiMedium}
+            style={[
+              isNow ? fontStyles.uiBold : fontStyles.uiMedium,
+              {
+                fontSize: 14,
+                lineHeight: 21,
+                flex: 1,
+                color: DE.ink,
+                textDecorationLine: isMuted ? "line-through" : "none",
+                textDecorationColor: DE.mutedLight,
+              },
+            ]}
             numberOfLines={1}
           >
             {stop.title?.trim() || "Untitled stop"}
           </Text>
-          {isNow ? <NowPill /> : null}
         </View>
 
-        {/* Location */}
-        {stop.location ? (
+        {stop.notes?.trim() && !isMuted ? (
           <Text
-            className="mt-0.5 text-[12px] leading-[18px] text-ontrip-muted"
-            style={fontStyles.uiRegular}
+            style={[fontStyles.uiRegular, { fontSize: 12, lineHeight: 18, color: DE.clay, marginTop: 2 }]}
             numberOfLines={1}
           >
-            {stop.location}
+            <Text style={{ color: DE.clay }}>• </Text>
+            {stop.notes.trim()}
           </Text>
         ) : null}
-
-        {/* Status controls + Navigate */}
-        <View className="mt-2.5 flex-row flex-wrap items-center gap-2">
-          {stop.effectiveStatus === "planned" ? (
-            // Planned: actionable Confirm / Skip buttons (or passive pill if read-only)
-            <>
-              {onConfirm ? (
-                <Pressable
-                  onPress={onConfirm}
-                  disabled={stop.isPending}
-                  className={[
-                    "rounded-full border border-olive/40 bg-olive/10 px-2.5 py-1 active:opacity-70",
-                    stop.isPending ? "opacity-50" : "",
-                  ].join(" ")}
-                  accessibilityRole="button"
-                  accessibilityLabel="Confirm this stop"
-                >
-                  <Text className="text-[11px] text-olive" style={fontStyles.uiMedium}>
-                    Confirm
-                  </Text>
-                </Pressable>
-              ) : (
-                <StatusPill status={stop.effectiveStatus} />
-              )}
-              {onSkip ? (
-                <Pressable
-                  onPress={onSkip}
-                  disabled={stop.isPending}
-                  className={[
-                    "rounded-full border border-divider bg-surface-ontrip px-2.5 py-1 active:opacity-70",
-                    stop.isPending ? "opacity-50" : "",
-                  ].join(" ")}
-                  accessibilityRole="button"
-                  accessibilityLabel="Skip this stop"
-                >
-                  <Text className="text-[11px] text-ontrip-muted" style={fontStyles.uiMedium}>
-                    Skip
-                  </Text>
-                </Pressable>
-              ) : null}
-            </>
-          ) : onReset ? (
-            // Confirmed or skipped: tappable pill reverts to planned
-            <Pressable
-              onPress={onReset}
-              disabled={stop.isPending}
-              className={stop.isPending ? "opacity-50" : "active:opacity-70"}
-              accessibilityRole="button"
-              accessibilityLabel={`${getStatusLabel(stop.effectiveStatus)} — tap to revert`}
-            >
-              <StatusPill status={stop.effectiveStatus} />
-            </Pressable>
-          ) : (
-            <StatusPill status={stop.effectiveStatus} />
-          )}
-
-          {/* Navigate sits after status controls */}
-          {onNavigate ? (
-            <View className="ml-1">
-              <NavigateAction onPress={onNavigate} />
-            </View>
-          ) : null}
-        </View>
       </View>
-    </View>
+
+      <View className="items-end py-3.5">
+        <TimelineStatus variant={variant} status={stop.effectiveStatus} />
+      </View>
+    </Pressable>
   );
 }
 
@@ -179,70 +134,69 @@ function DotForVariant({
   effectiveStatus: StopVM["effectiveStatus"];
 }) {
   if (variant === "now") {
-    return <View className="mt-[17px] h-3 w-3 rounded-full bg-accent-ontrip" />;
+    return (
+      <View
+        className="mt-[16px] h-[14px] w-[14px] items-center justify-center rounded-full"
+        style={{ backgroundColor: "rgba(184, 90, 56, 0.14)" }}
+      >
+        <View className="h-2 w-2 rounded-full" style={{ backgroundColor: DE.clay }} />
+      </View>
+    );
   }
   if (variant === "done" && effectiveStatus === "confirmed") {
-    return <View className="mt-[18px] h-2.5 w-2.5 rounded-full bg-olive" />;
+    return (
+      <View
+        className="mt-[18px] h-3 w-3 items-center justify-center rounded-full border"
+        style={{ borderColor: DE.mutedLight }}
+      >
+        <Text style={[fontStyles.uiMedium, { fontSize: 8, lineHeight: 9, color: DE.muted }]}>✓</Text>
+      </View>
+    );
   }
   if (variant === "done") {
     return (
-      <View className="mt-[18px] h-2.5 w-2.5 rounded-full border border-ontrip-soft bg-transparent" />
+      <View
+        className="mt-[18px] h-2.5 w-2.5 rounded-full border bg-transparent"
+        style={{ borderColor: DE.mutedLight }}
+      />
     );
   }
   if (variant === "next") {
     return (
-      <View className="mt-[18px] h-2.5 w-2.5 rounded-full border border-accent-ontrip bg-surface-ontrip" />
+      <View
+        className="mt-[18px] h-2.5 w-2.5 rounded-full border bg-surface-ontrip"
+        style={{ borderColor: DE.mutedLight, backgroundColor: DE.ivory }}
+      />
     );
   }
   return (
-    <View className="mt-[18px] h-2.5 w-2.5 rounded-full border border-divider bg-surface-ontrip" />
+    <View
+      className="mt-[18px] h-2.5 w-2.5 rounded-full border bg-surface-ontrip"
+      style={{ borderColor: DE.mutedLight, backgroundColor: DE.ivory }}
+    />
   );
 }
 
-function NowPill() {
-  return (
-    <View className="rounded-full bg-[#EAD7C9] px-2.5 py-0.5">
-      <Text className="text-[11px] leading-[14px] text-amber" style={fontStyles.uiMedium}>
-        Now
+function TimelineStatus({
+  variant,
+  status,
+}: {
+  variant: TimelineVariant;
+  status: StopVM["effectiveStatus"];
+}) {
+  if (variant === "done") {
+    return (
+      <Text style={[fontStyles.monoRegular, { fontSize: 10, letterSpacing: 1.5, textTransform: "uppercase", color: DE.sageDeep }]}>
+        {status === "skipped" ? getStatusLabel(status) : "Done"}
       </Text>
-    </View>
-  );
-}
-
-function StatusPill({ status }: { status: StopVM["effectiveStatus"] }) {
-  const tone = getStatusTone(status);
-  const cls = getStatusToneClass(tone);
-  return (
-    <View className={`rounded-full border px-2.5 py-1 ${cls.container}`}>
-      <Text className={`text-[11px] leading-[14px] ${cls.text}`} style={fontStyles.uiMedium}>
-        {getStatusLabel(status)}
-      </Text>
-    </View>
-  );
-}
-
-function getStatusToneClass(tone: OnTripStatusTone): { container: string; text: string } {
-  if (tone === "confirmed") {
-    return { container: "border-transparent bg-olive/15", text: "text-olive" };
+    );
   }
-  if (tone === "skipped") {
-    return { container: "border-divider bg-transparent", text: "text-ontrip-muted" };
-  }
-  return { container: "border-divider bg-cream/60", text: "text-ontrip-muted" };
-}
-
-function NavigateAction({ onPress }: { onPress: () => void }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      className="flex-row items-center gap-1 active:opacity-70"
-      accessibilityRole="button"
-      accessibilityLabel="Navigate to this stop"
-    >
-      <Ionicons name="navigate-outline" size={12} color="#B86845" />
-      <Text className="text-[12px] leading-[18px] text-amber" style={fontStyles.uiMedium}>
-        Navigate
+  if (variant === "next") {
+    return (
+      <Text style={[fontStyles.monoRegular, { fontSize: 10, letterSpacing: 1.5, textTransform: "uppercase", color: DE.muted }]}>
+        Next
       </Text>
-    </Pressable>
-  );
+    );
+  }
+  return null;
 }

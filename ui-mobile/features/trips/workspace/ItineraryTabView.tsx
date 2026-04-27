@@ -1,7 +1,9 @@
-import { Ionicons } from "@expo/vector-icons";
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { useRef } from "react";
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 
 import { PrimaryButton } from "@/shared/ui/Button";
+import { DE } from "@/shared/theme/desertEditorial";
+import { fontStyles } from "@/shared/theme/typography";
 
 import { ItineraryTimelineDay } from "./ItineraryTimelineDay";
 import {
@@ -25,7 +27,6 @@ type Props = {
   onAddStop: (dayIndex: number) => void;
   onEditStop: (dayIndex: number, stopIndex: number) => void;
   onAddDay: () => void;
-  onDeleteDay: (dayIndex: number) => void;
   onPublish: () => void;
   onRegenerateAll: () => void;
   onCancelStream: () => void;
@@ -46,42 +47,41 @@ export function ItineraryTabView({
   onAddStop,
   onEditStop,
   onAddDay,
-  onDeleteDay,
   onPublish,
   onRegenerateAll,
   onCancelStream,
 }: Props) {
-  const firstDayIndex = days[0]?.dayIndex ?? 0;
+  const scrollRef = useRef<ScrollView>(null);
+  const firstVisibleDayIndex = days[0]?.dayIndex ?? null;
   const canEditItinerary = !isLoading && !isMissing && !isStreaming;
-  const canAddStop = allDayCount > 0 && canEditItinerary;
-  const canDeleteDay = allDayCount > 1 && canEditItinerary;
+  const canAddStop = canEditItinerary && firstVisibleDayIndex !== null;
 
-  function confirmDeleteDay(day: ItineraryTabDay) {
-    if (!canDeleteDay) return;
+  function handleAddDayPress() {
+    if (!canEditItinerary) return;
+    if (filter !== "all") {
+      onFilterChange("all");
+    }
+    onAddDay();
+    setTimeout(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    }, 0);
+  }
 
-    const stopCount = day.day.items.length;
-    Alert.alert(
-      `Remove ${day.dayLabel}?`,
-      stopCount > 0
-        ? `This removes the day and deletes ${stopCount} ${stopCount === 1 ? "stop" : "stops"} from your local draft.`
-        : "This removes the empty day from your local draft.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove day",
-          style: "destructive",
-          onPress: () => onDeleteDay(day.dayIndex),
-        },
-      ],
-    );
+  function handleAddPress() {
+    if (canAddStop) {
+      onAddStop(firstVisibleDayIndex);
+      return;
+    }
+    handleAddDayPress();
   }
 
   return (
     <ScrollView
+      ref={scrollRef}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingBottom: 40 }}
     >
-      <View className="flex-row items-center justify-between px-5 pt-4">
+      <View className="flex-row items-center justify-between px-[22px] py-4">
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -94,18 +94,18 @@ export function ItineraryTabView({
               <Pressable
                 key={item.key}
                 onPress={() => onFilterChange(item.key)}
-                className={[
-                  "h-7 justify-center rounded-full border px-3 active:opacity-70",
-                  isActive
-                    ? "border-espresso bg-espresso"
-                    : "border-divider bg-transparent",
-                ].join(" ")}
+                className="h-[30px] justify-center rounded-full border px-3.5 active:opacity-70"
+                style={{
+                  backgroundColor: isActive ? DE.ink : "transparent",
+                  borderColor: isActive ? DE.ink : DE.ruleStrong,
+                }}
               >
                 <Text
-                  className={[
-                    "text-[11px] leading-[16px]",
-                    isActive ? "font-semibold text-ivory" : "font-medium text-flint",
-                  ].join(" ")}
+                  className="text-[12px] leading-[16px]"
+                  style={[
+                    isActive ? fontStyles.uiSemibold : fontStyles.uiMedium,
+                    { color: isActive ? DE.ivory : DE.inkSoft },
+                  ]}
                 >
                   {item.label}
                 </Text>
@@ -116,30 +116,22 @@ export function ItineraryTabView({
 
         <View className="shrink-0 flex-row gap-2">
           <Pressable
-            onPress={onAddDay}
+            onPress={handleAddPress}
             disabled={!canEditItinerary}
             className={[
-              "h-7 flex-row items-center justify-center gap-1 rounded-full border border-amber/40 bg-amber/10 px-3 active:opacity-70",
+              "h-[30px] flex-row items-center justify-center rounded-full border border-dashed bg-transparent px-3.5 active:opacity-70",
               canEditItinerary ? "" : "opacity-40",
             ].join(" ")}
+            style={{ borderColor: "rgba(184, 90, 56, 0.40)" }}
             accessibilityRole="button"
-            accessibilityLabel="Add itinerary day"
+            accessibilityLabel={canAddStop ? "Add itinerary stop" : "Add itinerary day"}
           >
-            <Ionicons name="add" size={13} color="#B86845" />
-            <Text className="text-[11px] font-semibold text-amber">Day</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => onAddStop(firstDayIndex)}
-            disabled={!canAddStop}
-            className={[
-              "h-7 flex-row items-center justify-center gap-1 rounded-full border border-divider bg-transparent px-3 active:opacity-70",
-              canAddStop ? "" : "opacity-40",
-            ].join(" ")}
-            accessibilityRole="button"
-            accessibilityLabel="Add itinerary stop"
-          >
-            <Ionicons name="add" size={13} color="#8A7E74" />
-            <Text className="text-[11px] font-semibold text-flint">Stop</Text>
+            <Text
+              className="text-[12px]"
+              style={[fontStyles.uiSemibold, { color: DE.clay }]}
+            >
+              + Add
+            </Text>
           </Pressable>
         </View>
       </View>
@@ -151,85 +143,108 @@ export function ItineraryTabView({
       ) : null}
 
       {isLoading && !isStreaming ? (
-        <ActivityIndicator className="py-8" color="#B86845" />
+        <ActivityIndicator className="py-8" color={DE.clay} />
       ) : isStreaming ? (
-        <View className="mx-5 mt-4 gap-2 rounded-[16px] border border-amber/25 bg-amber/5 px-4 py-4">
+        <View
+          className="mx-[22px] mt-2 gap-2 rounded-[16px] border px-4 py-4"
+          style={{
+            backgroundColor: "rgba(184, 90, 56, 0.05)",
+            borderColor: "rgba(184, 90, 56, 0.25)",
+          }}
+        >
           <View className="flex-row items-center gap-2">
-            <ActivityIndicator size="small" color="#B86845" />
-            <Text className="text-[13px] font-semibold text-amber">Generating itinerary...</Text>
+            <ActivityIndicator size="small" color={DE.clay} />
+            <Text className="text-[13px]" style={[fontStyles.uiSemibold, { color: DE.clay }]}>
+              Generating itinerary...
+            </Text>
           </View>
-          <Text className="text-[11px] leading-[16px] text-muted" numberOfLines={4}>
+          <Text className="text-[11px] leading-[16px]" style={{ color: DE.muted }} numberOfLines={4}>
             {streamText ? streamText.slice(-280) : "Connecting to AI..."}
           </Text>
           <Pressable
             onPress={onCancelStream}
-            className="self-start rounded-full border border-divider px-4 py-2 active:opacity-70"
+            className="self-start rounded-full border px-4 py-2 active:opacity-70"
+            style={{ borderColor: DE.rule }}
           >
-            <Text className="text-[12px] font-semibold text-flint">Cancel</Text>
+            <Text className="text-[12px]" style={[fontStyles.uiSemibold, { color: DE.inkSoft }]}>
+              Cancel
+            </Text>
           </Pressable>
         </View>
       ) : isMissing ? (
-        <View className="mx-5 mt-5 gap-3 rounded-[16px] border border-divider bg-ivory px-4 py-5">
-          <Text className="text-[13px] leading-5 text-muted">
+        <View
+          className="mx-[22px] mt-2 gap-3 rounded-[16px] border px-4 py-5"
+          style={{ backgroundColor: DE.paper, borderColor: DE.rule }}
+        >
+          <Text className="text-[13px] leading-5" style={{ color: DE.muted }}>
             No itinerary saved yet. Generate one to start planning day-by-day.
           </Text>
           <Pressable
             onPress={onRegenerateAll}
-            className="self-start rounded-full bg-amber px-4 py-2 active:opacity-75"
+            className="self-start rounded-[12px] px-4 py-2 active:opacity-75"
+            style={{ backgroundColor: DE.clay }}
           >
-            <Text className="text-[13px] font-semibold text-white">Generate with AI</Text>
+            <Text className="text-[13px]" style={[fontStyles.uiSemibold, { color: DE.ivory }]}>
+              Generate with AI
+            </Text>
           </Pressable>
         </View>
       ) : days.length > 0 ? (
-        <View className="mt-5 gap-5 px-5">
+        <View className="gap-7">
           {days.map((day) => (
             <ItineraryTimelineDay
               key={day.day.day_number}
               day={day}
-              onAddStop={() => onAddStop(day.dayIndex)}
               onEditStop={(stopIndex) => onEditStop(day.dayIndex, stopIndex)}
-              onDeleteDay={() => confirmDeleteDay(day)}
-              canDeleteDay={canDeleteDay}
             />
           ))}
 
           {isDirty ? (
-            <PrimaryButton
-              label={isSaving ? "Publishing..." : "Publish changes"}
-              onPress={onPublish}
-              disabled={isSaving}
-              fullWidth
-            />
+            <View className="mx-[22px]">
+              <PrimaryButton
+                label={isSaving ? "Publishing..." : "Publish changes"}
+                onPress={onPublish}
+                disabled={isSaving}
+                fullWidth
+              />
+            </View>
           ) : null}
 
           <Pressable
             onPress={onRegenerateAll}
             disabled={isDirty}
             className={[
-              "items-center justify-center rounded-full border border-border-strong py-2.5 active:opacity-70",
+              "mx-[22px] items-center justify-center rounded-[12px] border py-2.5 active:opacity-70",
               isDirty ? "opacity-50" : "",
             ].join(" ")}
+            style={{ borderColor: DE.ruleStrong }}
           >
-            <Text className="text-[12px] font-semibold text-muted">
+            <Text className="text-[12px]" style={[fontStyles.uiSemibold, { color: DE.muted }]}>
               {isDirty ? "Publish changes before regenerating" : "Regenerate with AI"}
             </Text>
           </Pressable>
         </View>
       ) : (
-        <View className="mx-5 mt-5 gap-3 rounded-[16px] border border-divider bg-ivory px-4 py-5">
-          <Text className="text-[13px] leading-5 text-muted">
+        <View
+          className="mx-[22px] mt-2 gap-3 rounded-[16px] border px-4 py-5"
+          style={{ backgroundColor: DE.paper, borderColor: DE.rule }}
+        >
+          <Text className="text-[13px] leading-5" style={{ color: DE.muted }}>
             {allDayCount === 0
               ? "No itinerary days yet. Add a day to start building the trip."
               : "No stops match this filter."}
           </Text>
           {allDayCount === 0 && canEditItinerary ? (
             <Pressable
-              onPress={onAddDay}
-              className="self-start rounded-full bg-amber px-4 py-2 active:opacity-75"
+              onPress={handleAddDayPress}
+              className="self-start rounded-[12px] px-4 py-2 active:opacity-75"
+              style={{ backgroundColor: DE.clay }}
               accessibilityRole="button"
-              accessibilityLabel="Add itinerary day"
+              accessibilityLabel="Add first itinerary day"
             >
-              <Text className="text-[13px] font-semibold text-white">Add day</Text>
+              <Text className="text-[13px]" style={[fontStyles.uiSemibold, { color: DE.ivory }]}>
+                Add day
+              </Text>
             </Pressable>
           ) : null}
         </View>

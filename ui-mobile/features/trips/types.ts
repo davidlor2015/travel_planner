@@ -131,6 +131,7 @@ export type TripOnTripStopSnapshot = {
   title: string | null;
   time: string | null;
   location: string | null;
+  notes: string | null;
   lat: number | null;
   lon: number | null;
   status: "planned" | "confirmed" | "skipped" | null;

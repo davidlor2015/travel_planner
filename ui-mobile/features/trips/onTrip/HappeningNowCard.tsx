@@ -1,24 +1,33 @@
 import { useEffect, useRef } from "react";
 import { Animated, Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 
+import { DE } from "@/shared/theme/desertEditorial";
 import { fontStyles } from "@/shared/theme/typography";
-
 import type { StopVM } from "./adapters";
 
 type Props = {
   stop: StopVM;
+  tone?: "now" | "next";
+  onPress?: () => void;
   onNavigate?: () => void;
   onConfirm: () => void;
   onSkip: () => void;
 };
 
-export function HappeningNowCard({ stop, onNavigate, onConfirm, onSkip }: Props) {
-  const isConfirmed = stop.effectiveStatus === "confirmed";
-  const isSkipped = stop.effectiveStatus === "skipped";
+export function HappeningNowCard({
+  stop,
+  tone = "now",
+  onPress,
+  onNavigate,
+  onConfirm,
+  onSkip,
+}: Props) {
   const disableStatus = stop.isPending || !stop.stop_ref;
   const pulseAnim = useRef(new Animated.Value(0)).current;
+  const title = formatCardTitle(stop.title);
+  const description = formatCardDescription(stop);
+  const stripLabel = tone === "now" ? "Happening now" : "Up next";
 
   useEffect(() => {
     const loop = Animated.loop(
@@ -33,31 +42,29 @@ export function HappeningNowCard({ stop, onNavigate, onConfirm, onSkip }: Props)
 
   const ringOpacity = pulseAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0.1, 0.35],
+    outputRange: [0.12, 0.38],
   });
 
   return (
-    <LinearGradient
-      colors={["#3A2A1F", "#2A1D13"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
+    <Pressable
+      onPress={onPress}
       style={{
-        borderRadius: 24,
+        borderRadius: 20,
         overflow: "hidden",
-        shadowColor: "#3A2A1F",
-        shadowOffset: { width: 0, height: 16 },
-        shadowOpacity: 0.38,
-        shadowRadius: 36,
+        backgroundColor: DE.ink,
+        shadowColor: DE.ink,
+        shadowOffset: { width: 0, height: 14 },
+        shadowOpacity: 0.36,
+        shadowRadius: 32,
         elevation: 14,
       }}
     >
       {/* Status strip */}
       <View
         className="flex-row items-center justify-between px-5 py-3.5"
-        style={{ borderBottomWidth: 1, borderBottomColor: "rgba(242,235,221,0.10)" }}
+        style={{ borderBottomWidth: 1, borderBottomColor: "rgba(242, 235, 221, 0.12)" }}
       >
         <View className="flex-row items-center gap-2">
-          {/* Pulsing dot */}
           <View className="h-4 w-4 items-center justify-center">
             <Animated.View
               style={{
@@ -65,115 +72,156 @@ export function HappeningNowCard({ stop, onNavigate, onConfirm, onSkip }: Props)
                 width: 14,
                 height: 14,
                 borderRadius: 7,
-                backgroundColor: "#B4532A",
+                backgroundColor: DE.clay,
                 opacity: ringOpacity,
               }}
             />
-            <View className="h-[7px] w-[7px] rounded-full bg-accent-ontrip" />
+            <View
+              className="h-[7px] w-[7px] rounded-full"
+              style={{ backgroundColor: DE.clay }}
+            />
           </View>
           <Text
-            className="text-[10px] uppercase tracking-[2.5px] text-on-dark-soft"
-            style={fontStyles.uiMedium}
+            style={[
+              fontStyles.monoMedium,
+              { fontSize: 10, letterSpacing: 2.2, textTransform: "uppercase", color: DE.claySoft },
+            ]}
           >
-            Happening now
+            {stripLabel}
           </Text>
         </View>
-        <Text className="text-[11px] tracking-[0.5px] text-on-dark-muted" style={fontStyles.uiRegular}>
-          {localTimeHHMM()}
+        <Text style={[fontStyles.monoRegular, { fontSize: 11, color: DE.mutedLight, letterSpacing: 1.2 }]}>
+          {stop.time?.trim() || localTimeHHMM()}
         </Text>
       </View>
 
-      {/* Content */}
-      <View className="px-5 pt-5 pb-2">
+      {/* Content — tap this area to open detail */}
+      <View className="px-5 pt-6 pb-2">
         <Text
-          className="text-[30px] leading-[1.15] text-on-dark"
-          style={fontStyles.displaySemibold}
+          style={[
+            fontStyles.headMediumItalic,
+            { fontSize: 30, lineHeight: 35, color: DE.ivory, letterSpacing: -0.6 },
+          ]}
         >
-          {stop.title ?? "Untitled stop"}
+          {title}
         </Text>
 
-        {(stop.location?.trim() || stop.time?.trim()) ? (
-          <View className="mt-3 flex-row items-center gap-1.5">
-            <Ionicons name="location-outline" size={13} color="#C9BCA8" />
-            <Text
-              className="flex-1 text-[13px] leading-5 text-on-dark-muted"
-              style={fontStyles.uiRegular}
-              numberOfLines={1}
-            >
-              {[stop.location?.trim(), stop.time?.trim()].filter(Boolean).join(" · ")}
-            </Text>
-          </View>
+        {description ? (
+          <Text
+            className="mt-3"
+            style={[
+              fontStyles.uiRegular,
+              { fontSize: 13, lineHeight: 20, color: "rgba(242, 235, 221, 0.70)" },
+            ]}
+            numberOfLines={2}
+          >
+            {description}
+          </Text>
         ) : null}
+
+        <View
+          className="mt-5 flex-row items-center rounded-[10px] px-3.5 py-3"
+          style={{ backgroundColor: "rgba(242, 235, 221, 0.06)" }}
+        >
+          <MetaItem label={tone === "now" && stop.time ? `Since ${stop.time}` : stop.time ? `At ${stop.time}` : "Time TBD"} />
+          <View className="mx-3 h-3 w-px" style={{ backgroundColor: "rgba(242, 235, 221, 0.18)" }} />
+          <MetaItem label={stop.location?.trim() ? "Open route" : "Add location"} />
+          <View className="mx-3 h-3 w-px" style={{ backgroundColor: "rgba(242, 235, 221, 0.18)" }} />
+          <MetaItem label={tone === "now" ? "Needs action" : "Coming up"} accent />
+        </View>
       </View>
 
       {/* Actions */}
-      <View className="gap-2.5 px-5 pb-5 pt-3">
+      <View className="flex-row gap-2.5 px-5 pb-5 pt-4">
         {onNavigate ? (
           <Pressable
             onPress={onNavigate}
-            className="h-12 flex-row items-center justify-center gap-2 rounded-[14px] bg-on-dark active:opacity-90"
+            className="h-[58px] flex-1 flex-row items-center justify-center gap-2 rounded-[12px] active:opacity-90"
+            style={{ backgroundColor: DE.ivory }}
             accessibilityRole="button"
             accessibilityLabel="Navigate to current stop"
           >
-            <Ionicons name="navigate" size={15} color="#2A1D13" />
-            <Text className="text-[15px] text-ontrip" style={fontStyles.uiSemibold}>
+            <Ionicons name="navigate" size={15} color={DE.ink} />
+            <Text style={[fontStyles.uiSemibold, { fontSize: 15, color: DE.ink }]}>
               Navigate
             </Text>
           </Pressable>
         ) : null}
 
         {!stop.isReadOnly ? (
-          <View className="flex-row gap-2">
-            <ActionButton
-              label={isConfirmed ? "Confirmed" : "I'm here"}
-              variant={isConfirmed ? "filled" : "outline"}
-              disabled={disableStatus}
-              onPress={onConfirm}
-            />
-            <ActionButton
-              label={isSkipped ? "Skipped" : "Skip"}
-              variant="outline"
-              muted={isSkipped}
+          <>
+            <IconAction
+              icon="close"
+              label="Skip current stop"
               disabled={disableStatus}
               onPress={onSkip}
             />
-          </View>
+            <IconAction
+              icon="checkmark"
+              label="Confirm current stop"
+              disabled={disableStatus}
+              onPress={onConfirm}
+            />
+          </>
         ) : null}
       </View>
-    </LinearGradient>
+    </Pressable>
   );
 }
 
-function ActionButton({
+function formatCardTitle(title: string | null | undefined): string {
+  const raw = title?.trim();
+  if (!raw) return "Untitled stop";
+  return raw.replace(/^(breakfast|brunch|lunch|dinner|coffee|drinks|visit|tour|stop)\s+(at|in)\s+/i, "");
+}
+
+function formatCardDescription(stop: StopVM): string | null {
+  const location = stop.location?.trim();
+  const notes = stop.notes?.trim();
+  if (location && notes) return `${location}. ${notes}`;
+  return location || notes || null;
+}
+
+function MetaItem({ label, accent }: { label: string; accent?: boolean }) {
+  return (
+    <Text
+      className="min-w-0 flex-1"
+      style={[fontStyles.uiMedium, { fontSize: 12, color: accent ? DE.claySoft : "rgba(242, 235, 221, 0.75)" }]}
+      numberOfLines={2}
+    >
+      {label}
+    </Text>
+  );
+}
+
+function IconAction({
+  icon,
   label,
-  variant,
-  muted,
   disabled,
   onPress,
 }: {
+  icon: React.ComponentProps<typeof Ionicons>["name"];
   label: string;
-  variant: "filled" | "outline";
-  muted?: boolean;
   disabled?: boolean;
   onPress: () => void;
 }) {
-  const bg = variant === "filled" ? "bg-on-dark" : "border border-border-exec";
-  const textColor =
-    variant === "filled" ? "text-ontrip" : muted ? "text-on-dark-muted" : "text-on-dark-soft";
-
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      className={[
-        "flex-1 items-center justify-center rounded-[12px] py-2.5",
-        bg,
-        disabled ? "opacity-50" : "",
-      ].join(" ")}
+      style={{
+        width: 58,
+        height: 58,
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 12,
+        backgroundColor: "rgba(242, 235, 221, 0.10)",
+        opacity: disabled ? 0.5 : 1,
+      }}
+      accessibilityRole="button"
+      accessibilityLabel={label}
     >
-      <Text className={`text-sm ${textColor}`} style={fontStyles.uiMedium}>
-        {label}
-      </Text>
+      <Ionicons name={icon} size={17} color={DE.ivory} />
     </Pressable>
   );
 }

@@ -1,8 +1,15 @@
-import { fireEvent, render } from "@testing-library/react-native";
-import { Alert } from "react-native";
+import { fireEvent, render, within } from "@testing-library/react-native";
+import { useState } from "react";
 
 import type { DayPlan, Itinerary, ItineraryItem } from "@/features/ai/api";
 import { ItineraryTabView } from "@/features/trips/workspace/ItineraryTabView";
+import { StopFormSheet } from "@/features/trips/workspace/StopFormSheet";
+import {
+  addDayToItinerary,
+  buildDayOptions,
+  buildTimeOptions,
+  getStopMoveAvailability,
+} from "@/features/trips/workspace/itineraryDraftMutations";
 import { buildItineraryTabDays } from "@/features/trips/workspace/itineraryPresentation";
 
 jest.mock("@expo/vector-icons", () => {
@@ -70,7 +77,6 @@ function renderView(days: DayPlan[]) {
       onAddStop={jest.fn()}
       onEditStop={jest.fn()}
       onAddDay={jest.fn()}
-      onDeleteDay={jest.fn()}
       onPublish={jest.fn()}
       onRegenerateAll={jest.fn()}
       onCancelStream={jest.fn()}
@@ -78,33 +84,124 @@ function renderView(days: DayPlan[]) {
   );
 }
 
+function StatefulItineraryHarness({
+  initialDays,
+  onAddDay = jest.fn(),
+}: {
+  initialDays: DayPlan[];
+  onAddDay?: () => void;
+}) {
+  const [current, setCurrent] = useState(() => itinerary(initialDays));
+
+  return (
+    <ItineraryTabView
+      days={buildItineraryTabDays(current, "all")}
+      allDayCount={current.days.length}
+      filter="all"
+      onFilterChange={jest.fn()}
+      isLoading={false}
+      isMissing={false}
+      isStreaming={false}
+      isDirty={false}
+      isSaving={false}
+      streamText={null}
+      error={null}
+      onAddStop={jest.fn()}
+      onEditStop={jest.fn()}
+      onAddDay={() => {
+        onAddDay();
+        setCurrent((value) => addDayToItinerary(value));
+      }}
+      onPublish={jest.fn()}
+      onRegenerateAll={jest.fn()}
+      onCancelStream={jest.fn()}
+    />
+  );
+}
+
+function AddStopSheetHarness() {
+  const [current] = useState(() =>
+    itinerary([
+      day(1, [stop({ title: "Museum" })]),
+      day(2, []),
+    ]),
+  );
+  const [editingDayIndex, setEditingDayIndex] = useState<number | null>(null);
+  const selectedSource = editingDayIndex === null ? null : { dayIndex: editingDayIndex, stopIndex: 0 };
+
+  return (
+    <>
+      <ItineraryTabView
+        days={buildItineraryTabDays(current, "all")}
+        allDayCount={current.days.length}
+        filter="all"
+        onFilterChange={jest.fn()}
+        isLoading={false}
+        isMissing={false}
+        isStreaming={false}
+        isDirty={false}
+        isSaving={false}
+        streamText={null}
+        error={null}
+        onAddStop={(dayIndex) => setEditingDayIndex(dayIndex)}
+        onEditStop={jest.fn()}
+        onAddDay={jest.fn()}
+        onPublish={jest.fn()}
+        onRegenerateAll={jest.fn()}
+        onCancelStream={jest.fn()}
+      />
+      <StopFormSheet
+        visible={editingDayIndex !== null}
+        item={null}
+        initialDayIndex={editingDayIndex ?? 0}
+        dayOptions={buildDayOptions(current.days)}
+        timeOptions={buildTimeOptions(30)}
+        moveAvailability={getStopMoveAvailability(current, selectedSource)}
+        onSave={jest.fn()}
+        onDelete={jest.fn()}
+        onMoveUp={jest.fn()}
+        onMoveDown={jest.fn()}
+        onMoveToPreviousDay={jest.fn()}
+        onMoveToNextDay={jest.fn()}
+        onClose={() => setEditingDayIndex(null)}
+      />
+    </>
+  );
+}
+
 describe("ItineraryTabView day controls", () => {
-  afterEach(() => {
-    jest.restoreAllMocks();
+  it("adds an initial day from the header add action when the itinerary is empty", () => {
+    const onAddDay = jest.fn();
+    const { getByLabelText, getByText } = render(
+      <StatefulItineraryHarness
+        initialDays={[]}
+        onAddDay={onAddDay}
+      />,
+    );
+
+    fireEvent.press(getByLabelText("Add itinerary day"));
+
+    expect(onAddDay).toHaveBeenCalledTimes(1);
+    expect(getByText("Day 1")).toBeTruthy();
   });
 
-  it("warns clearly before removing a day with stops", () => {
-    const alertSpy = jest.spyOn(Alert, "alert").mockImplementation();
-    const { getByLabelText } = renderView([
-      day(1, [stop({ title: "Museum" }), stop({ title: "Dinner" })]),
-      day(2, []),
+  it("does not render dense per-day add or remove actions", () => {
+    const { queryByLabelText } = renderView([
+      day(1, [stop({ title: "Museum" })]),
     ]);
 
-    fireEvent.press(getByLabelText("Remove Day 1"));
-
-    expect(alertSpy).toHaveBeenCalledWith(
-      "Remove Day 1?",
-      "This removes the day and deletes 2 stops from your local draft.",
-      expect.any(Array),
-    );
+    expect(queryByLabelText("Add stop to Day 1")).toBeNull();
+    expect(queryByLabelText("Remove Day 1")).toBeNull();
   });
 
-  it("blocks removing the only remaining day", () => {
-    const alertSpy = jest.spyOn(Alert, "alert").mockImplementation();
-    const { getByLabelText } = renderView([day(1, [])]);
+  it("opens add-stop from the header add action with the first visible day preselected", () => {
+    const { getByLabelText, getByPlaceholderText } = render(<AddStopSheetHarness />);
 
-    fireEvent.press(getByLabelText("Remove Day 1"));
+    fireEvent.press(getByLabelText("Add itinerary stop"));
 
-    expect(alertSpy).not.toHaveBeenCalled();
+    expect(getByPlaceholderText("Stop title")).toBeTruthy();
+    expect(
+      within(getByLabelText("Choose itinerary day")).getByText("Day 1 · Apr 21 · Tue"),
+    ).toBeTruthy();
   });
 });

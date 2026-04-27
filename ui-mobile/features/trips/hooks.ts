@@ -11,7 +11,7 @@ import {
   getTrips,
   updateTrip,
 } from "./api";
-import type { TripCreate, TripUpdate } from "./types";
+import type { TripCreate, TripResponse, TripSummary, TripUpdate } from "./types";
 
 export const tripKeys = {
   all: ["trips"] as const,
@@ -99,8 +99,17 @@ export function useDeleteTripMutation() {
   return useMutation({
     mutationFn: (tripId: number) => deleteTrip(tripId),
     onSuccess: (_data, tripId) => {
+      queryClient.setQueryData<TripResponse[]>(tripKeys.all, (current) =>
+        current?.filter((trip) => trip.id !== tripId),
+      );
+      queryClient.setQueryData<TripSummary[]>(tripKeys.summaries, (current) =>
+        current?.filter((summary) => summary.trip_id !== tripId),
+      );
       queryClient.removeQueries({ queryKey: tripKeys.detail(tripId) });
+      queryClient.removeQueries({ queryKey: tripKeys.memberReadiness(tripId) });
+      queryClient.removeQueries({ queryKey: tripKeys.onTripSnapshot(tripId) });
       void queryClient.invalidateQueries({ queryKey: tripKeys.all });
+      void queryClient.invalidateQueries({ queryKey: tripKeys.summaries });
     },
   });
 }

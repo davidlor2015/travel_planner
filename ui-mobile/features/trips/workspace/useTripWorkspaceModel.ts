@@ -2,6 +2,7 @@ import { useMemo } from "react";
 
 import {
   useCreateTripMutation,
+  useDeleteTripMutation,
   useTripDetailQuery,
   useTripsQuery,
   useTripSummariesQuery,
@@ -35,8 +36,10 @@ export type TripWorkspaceModel = {
   switcherTrips: ReturnType<typeof toTripListItem>[];
   isCreatingTrip: boolean;
   isUpdatingTrip: boolean;
+  isDeletingTrip: boolean;
   createTrip: (value: TripFormValue) => Promise<{ id: number }>;
   updateTrip: (value: TripFormValue) => Promise<unknown>;
+  deleteTrip: () => Promise<void>;
   isSolo: boolean;
   showGroupCoordination: boolean;
   isNotFound: boolean;
@@ -52,6 +55,7 @@ export function useTripWorkspaceModel({
   const summariesQuery = useTripSummariesQuery();
   const createTripMutation = useCreateTripMutation();
   const updateTripMutation = useUpdateTripMutation();
+  const deleteTripMutation = useDeleteTripMutation();
   const collaborationQuery = useWorkspaceCollaboration(
     tripId,
     tripQuery.data ?? null,
@@ -99,6 +103,10 @@ export function useTripWorkspaceModel({
     });
   };
 
+  const deleteTrip = async () => {
+    await deleteTripMutation.mutateAsync(tripId);
+  };
+
   return {
     tripQuery,
     tripRaw: tripQuery.data ?? null,
@@ -111,8 +119,10 @@ export function useTripWorkspaceModel({
     switcherTrips,
     isCreatingTrip: createTripMutation.isPending,
     isUpdatingTrip: updateTripMutation.isPending,
+    isDeletingTrip: deleteTripMutation.isPending,
     createTrip,
     updateTrip,
+    deleteTrip,
     isSolo,
     showGroupCoordination,
     isNotFound,

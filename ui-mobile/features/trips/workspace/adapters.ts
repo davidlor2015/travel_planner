@@ -17,6 +17,7 @@ export type TripWorkspaceViewModel = {
   status: TripStatus;
   statusLabel: string;
   memberCount: number;
+  members: { email: string }[];
   isOwner: boolean;
 };
 
@@ -101,6 +102,7 @@ export function toTripWorkspaceViewModel(
     status: getTripStatus(trip.start_date, trip.end_date),
     statusLabel: tripStatusLabel(getTripStatus(trip.start_date, trip.end_date)),
     memberCount: trip.member_count,
+    members: trip.members.map((member) => ({ email: member.email })),
     isOwner: trip.members.some(
       (m) => m.email.toLowerCase() === currentUserEmail.toLowerCase() && m.role === "owner",
     ),

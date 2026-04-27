@@ -146,8 +146,9 @@ class TripService:
     def delete(self, trip_id: int, user_id: int) -> None:
         context = self.access_service.require_membership(trip_id, user_id, owner_only=True)
         trip = context.trip
-        self.repo.delete(trip)
-        self.matching_service._invalidate(trip.user_id)
+        owner_id = trip.user_id
+        self.repo.delete_workspace(trip)
+        self.matching_service._invalidate(owner_id)
 
     def list_members(self, trip_id: int, user_id: int) -> list[TripMemberResponse]:
         self.access_service.require_membership(trip_id, user_id)
@@ -386,6 +387,7 @@ class TripService:
             title=resolution.get("title"),
             time=resolution.get("time"),
             location=resolution.get("location"),
+            notes=resolution.get("notes"),
             lat=resolution.get("lat"),
             lon=resolution.get("lon"),
             status=resolution.get("status"),
@@ -445,6 +447,7 @@ class TripService:
                     title=item.title,
                     time=item.time,
                     location=item.location,
+                    notes=item.notes,
                     lat=item.lat,
                     lon=item.lon,
                     status=item.status,
@@ -469,6 +472,7 @@ class TripService:
             title=None,
             time=None,
             location=None,
+            notes=None,
             status=None,
             source="none",
             confidence="low",
@@ -565,6 +569,7 @@ class TripService:
                 "title": None,
                 "time": None,
                 "location": None,
+                "notes": None,
                 "lat": None,
                 "lon": None,
                 "status": None,
@@ -587,6 +592,7 @@ class TripService:
                 "title": None,
                 "time": None,
                 "location": None,
+                "notes": None,
                 "lat": None,
                 "lon": None,
                 "status": None,
@@ -630,6 +636,7 @@ class TripService:
             "title": selected_item.title,
             "time": selected_item.time,
             "location": selected_item.location,
+            "notes": selected_item.notes,
             "lat": selected_item.lat,
             "lon": selected_item.lon,
             "status": selected_item.status,
@@ -666,6 +673,7 @@ class TripService:
                     "title": item.title,
                     "time": item.time,
                     "location": item.location,
+                    "notes": item.notes,
                     "lat": item.lat,
                     "lon": item.lon,
                     "status": item.status,
@@ -679,6 +687,7 @@ class TripService:
             "title": None,
             "time": None,
             "location": None,
+            "notes": None,
             "lat": None,
             "lon": None,
             "status": None,
