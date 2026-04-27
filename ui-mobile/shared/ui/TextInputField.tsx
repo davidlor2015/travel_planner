@@ -1,5 +1,7 @@
 import { TextInput, type TextInputProps } from "react-native";
 
+import { fontStyles } from "@/shared/theme/typography";
+
 import { Field } from "./Field";
 
 type Props = TextInputProps & {
@@ -14,6 +16,7 @@ export function TextInputField({
   error,
   multiline,
   className,
+  style,
   ...props
 }: Props) {
   return (
@@ -27,6 +30,7 @@ export function TextInputField({
           error ? "border-danger" : "",
           className ?? "",
         ].join(" ")}
+        style={[fontStyles.uiRegular, style]}
         {...props}
       />
     </Field>

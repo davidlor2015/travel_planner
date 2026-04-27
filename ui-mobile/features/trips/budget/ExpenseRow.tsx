@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, Text, View } from "react-native";
 
+import { fontStyles } from "@/shared/theme/typography";
+
 import type { ExpenseCategory } from "./hooks";
 import {
   getBudgetCategoryMeta,
@@ -32,12 +34,20 @@ export function ExpenseRow({ transaction, onDelete }: Props) {
     >
       <View className="flex-row items-start justify-between gap-3">
         <View className="min-w-0 flex-1">
-          <Text className="text-[15px] font-semibold text-text" numberOfLines={1}>
+          <Text
+            className="text-[15px] text-text"
+            style={fontStyles.uiSemibold}
+            numberOfLines={1}
+          >
             {transaction.label}
           </Text>
-          <Text className="mt-1 text-[12px] text-text-soft">{transaction.dateLabel}</Text>
+          <Text className="mt-1 text-[12px] text-text-soft" style={fontStyles.uiRegular}>
+            {transaction.dateLabel}
+          </Text>
         </View>
-        <Text className="text-sm font-semibold text-text">{transaction.amountLabel}</Text>
+        <Text className="text-sm text-text" style={fontStyles.uiSemibold}>
+          {transaction.amountLabel}
+        </Text>
       </View>
 
       <View className="flex-row items-center justify-between gap-2">
@@ -48,7 +58,10 @@ export function ExpenseRow({ transaction, onDelete }: Props) {
           ].join(" ")}
         >
           <Ionicons name={transaction.categoryIcon} size={12} color={categoryMeta.iconColor} />
-          <Text className={["text-[11px] font-semibold", categoryMeta.badgeTextClassName].join(" ")}>
+          <Text
+            className={["text-[11px]", categoryMeta.badgeTextClassName].join(" ")}
+            style={fontStyles.uiSemibold}
+          >
             {transaction.categoryLabel}
           </Text>
         </View>
@@ -60,7 +73,9 @@ export function ExpenseRow({ transaction, onDelete }: Props) {
           accessibilityLabel={`Remove ${transaction.label}`}
         >
           <Ionicons name="trash-outline" size={13} color="#8A7E74" />
-          <Text className="text-[12px] font-semibold text-text-soft">Remove</Text>
+          <Text className="text-[12px] text-text-soft" style={fontStyles.uiSemibold}>
+            Remove
+          </Text>
         </Pressable>
       </View>
     </View>

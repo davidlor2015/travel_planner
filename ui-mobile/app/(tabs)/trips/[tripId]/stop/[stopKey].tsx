@@ -2,6 +2,7 @@ import { Text, View } from "react-native";
 import { Tabs, useLocalSearchParams } from "expo-router";
 
 import { StopDetailScreen } from "@/features/trips/onTrip/StopDetailScreen";
+import { fontStyles } from "@/shared/theme/typography";
 
 function parseTripId(value: string | string[] | undefined): number | null {
   const raw = Array.isArray(value) ? value[0] : value;
@@ -22,7 +23,10 @@ export default function StopDetailPage() {
   if (tripId === null || !stopKey) {
     return (
       <View className="flex-1 items-center justify-center bg-surface-ontrip px-6">
-        <Text className="text-center text-sm text-ontrip-muted">
+        <Text
+          className="text-center text-sm text-ontrip-muted"
+          style={fontStyles.uiRegular}
+        >
           We could not open that stop.
         </Text>
       </View>

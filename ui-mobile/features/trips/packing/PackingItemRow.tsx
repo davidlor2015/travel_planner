@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, Text, TextInput, View } from "react-native";
 
+import { fontStyles } from "@/shared/theme/typography";
+
 import type { PackingItem } from "./api";
 
 type Props = {
@@ -40,7 +42,10 @@ export function PackingItemRow({
       >
         <View className="flex-row items-center gap-2">
           <Ionicons name="create-outline" size={14} color="#8A7E74" />
-          <Text className="text-[10px] font-semibold uppercase tracking-[1.4px] text-text-soft">
+          <Text
+            className="text-[10px] uppercase tracking-[1.4px] text-text-soft"
+            style={fontStyles.uiSemibold}
+          >
             Edit item
           </Text>
         </View>
@@ -54,6 +59,7 @@ export function PackingItemRow({
           returnKeyType="done"
           onSubmitEditing={() => onSaveEdit?.()}
           className="mt-2 rounded-[12px] border border-border bg-white px-3.5 py-3 text-[15px] text-text"
+          style={fontStyles.uiRegular}
         />
 
         <View className="mt-3 flex-row justify-end gap-2">
@@ -63,7 +69,9 @@ export function PackingItemRow({
             accessibilityRole="button"
             accessibilityLabel={`Cancel editing ${displayLabel}`}
           >
-            <Text className="text-[12px] font-semibold text-text-soft">Cancel</Text>
+            <Text className="text-[12px] text-text-soft" style={fontStyles.uiSemibold}>
+              Cancel
+            </Text>
           </Pressable>
           <Pressable
             onPress={onSaveEdit}
@@ -77,9 +85,10 @@ export function PackingItemRow({
           >
             <Text
               className={[
-                "text-[12px] font-semibold",
+                "text-[12px]",
                 editDraft.trim() ? "text-on-dark" : "text-text-soft",
               ].join(" ")}
+              style={fontStyles.uiSemibold}
             >
               Save
             </Text>
@@ -121,6 +130,7 @@ export function PackingItemRow({
             "text-[15px]",
             item.checked ? "text-text-soft line-through" : "text-text",
           ].join(" ")}
+          style={fontStyles.uiRegular}
           numberOfLines={2}
         >
           {displayLabel}

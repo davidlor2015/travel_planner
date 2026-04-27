@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Redirect, Tabs } from "expo-router";
 
 import { useAuth } from "@/providers/AuthProvider";
+import { AppFontFamily } from "@/shared/theme/typography";
 
 function TabsLayoutInner() {
   return (
@@ -17,7 +18,7 @@ function TabsLayoutInner() {
         },
         tabBarLabelStyle: {
           fontSize: 10,
-          fontWeight: "500",
+          fontFamily: AppFontFamily.uiMedium,
           letterSpacing: 0.2,
         },
       }}

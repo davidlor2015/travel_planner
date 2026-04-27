@@ -1,5 +1,7 @@
 import { Pressable, ScrollView, Text } from "react-native";
 
+import { fontStyles } from "@/shared/theme/typography";
+
 import type { DestinationMood } from "./types";
 
 type Props = {
@@ -51,10 +53,8 @@ function Chip({
       ].join(" ")}
     >
       <Text
-        className={[
-          "text-[13px] font-semibold",
-          active ? "text-white" : "text-text-muted",
-        ].join(" ")}
+        className={["text-[13px]", active ? "text-white" : "text-text-muted"].join(" ")}
+        style={fontStyles.uiSemibold}
         numberOfLines={1}
       >
         {label}

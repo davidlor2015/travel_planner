@@ -4,6 +4,7 @@ import { Tabs, useLocalSearchParams } from "expo-router";
 import { useTripDetailQuery } from "@/features/trips/hooks";
 import { OnTripScreen } from "@/features/trips/onTrip/OnTripScreen";
 import { ScreenLoading } from "@/shared/ui/ScreenLoading";
+import { fontStyles } from "@/shared/theme/typography";
 
 function parseTripId(value: string | string[] | undefined): number | null {
   const raw = Array.isArray(value) ? value[0] : value;
@@ -26,7 +27,10 @@ export default function LiveViewPage() {
   if (tripId === null) {
     return (
       <View className="flex-1 items-center justify-center bg-bg px-6">
-        <Text className="text-center text-sm text-text-muted">
+        <Text
+          className="text-center text-sm text-text-muted"
+          style={fontStyles.uiRegular}
+        >
           We could not open that trip.
         </Text>
       </View>

@@ -2,6 +2,7 @@ import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { EmptyState } from "@/shared/ui/EmptyState";
+import { fontStyles } from "@/shared/theme/typography";
 
 import { CategoryChips } from "./CategoryChips";
 import { ExploreHeader } from "./ExploreHeader";
@@ -38,7 +39,10 @@ export function ExploreScreen() {
         {/* Featured — always visible when not filtering */}
         {model.showFeatured && (
           <View className="mt-6 gap-3">
-            <Text className="px-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-text-soft">
+            <Text
+              className="px-4 text-[11px] uppercase tracking-[0.12em] text-text-soft"
+              style={fontStyles.uiSemibold}
+            >
               Featured
             </Text>
             {model.featuredCards.map((item) => (
@@ -50,11 +54,17 @@ export function ExploreScreen() {
         {/* Grid section — title changes based on filter state */}
         <View className="mt-6 px-4 gap-3">
           {model.isFiltering ? (
-            <Text className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-soft">
+            <Text
+              className="text-[11px] uppercase tracking-[0.12em] text-text-soft"
+              style={fontStyles.uiSemibold}
+            >
               Results
             </Text>
           ) : (
-            <Text className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-soft">
+            <Text
+              className="text-[11px] uppercase tracking-[0.12em] text-text-soft"
+              style={fontStyles.uiSemibold}
+            >
               More to Consider
             </Text>
           )}

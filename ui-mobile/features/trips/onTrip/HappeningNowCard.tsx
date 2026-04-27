@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Animated, Pressable, Text, View } from "react-native";
+import { Animated, Platform, Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { DE } from "@/shared/theme/desertEditorial";
@@ -29,36 +29,52 @@ export function HappeningNowCard({
   const description = formatCardDescription(stop);
   const stripLabel = tone === "now" ? "Happening now" : "Up next";
 
+  const pulseUseNativeDriver = Platform.OS !== "web";
+
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 0, duration: 900, useNativeDriver: true }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 900,
+          useNativeDriver: pulseUseNativeDriver,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 0,
+          duration: 900,
+          useNativeDriver: pulseUseNativeDriver,
+        }),
       ]),
     );
     loop.start();
     return () => loop.stop();
-  }, [pulseAnim]);
+  }, [pulseAnim, pulseUseNativeDriver]);
 
   const ringOpacity = pulseAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0.12, 0.38],
   });
 
+  const cardSurfaceStyle =
+    Platform.OS === "web"
+      ? {
+          borderRadius: 20,
+          backgroundColor: DE.ink,
+          boxShadow: "0px 14px 32px rgba(35, 25, 16, 0.36)",
+        }
+      : {
+          borderRadius: 20,
+          overflow: "hidden" as const,
+          backgroundColor: DE.ink,
+          shadowColor: DE.ink,
+          shadowOffset: { width: 0, height: 14 },
+          shadowOpacity: 0.36,
+          shadowRadius: 32,
+          elevation: 14,
+        };
+
   return (
-    <Pressable
-      onPress={onPress}
-      style={{
-        borderRadius: 20,
-        overflow: "hidden",
-        backgroundColor: DE.ink,
-        shadowColor: DE.ink,
-        shadowOffset: { width: 0, height: 14 },
-        shadowOpacity: 0.36,
-        shadowRadius: 32,
-        elevation: 14,
-      }}
-    >
+    <Pressable onPress={onPress} style={cardSurfaceStyle}>
       {/* Status strip */}
       <View
         className="flex-row items-center justify-between px-5 py-3.5"

@@ -4,6 +4,7 @@ import { KeyboardAvoidingView, Modal, Platform, ScrollView, Text, View } from "r
 import { PrimaryButton, SecondaryButton } from "@/shared/ui/Button";
 import { ScreenHeader } from "@/shared/ui/ScreenHeader";
 import { TextInputField } from "@/shared/ui/TextInputField";
+import { fontStyles } from "@/shared/theme/typography";
 
 type Props = {
   visible: boolean;
@@ -66,7 +67,9 @@ export function InviteTravelerSheet({
 
               {error ? (
                 <View className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3">
-                  <Text className="text-sm font-medium text-danger">{error}</Text>
+                  <Text className="text-sm text-danger" style={fontStyles.uiMedium}>
+                    {error}
+                  </Text>
                 </View>
               ) : null}
 

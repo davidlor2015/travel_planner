@@ -90,7 +90,9 @@ function ArchiveTripCard({
             <Text style={fontStyles.uiMedium} className="text-[11px] text-flint">
               {trip.dateRange}
             </Text>
-            <Text className="text-[11px] text-flint opacity-40">·</Text>
+            <Text style={fontStyles.uiMedium} className="text-[11px] text-flint opacity-40">
+              ·
+            </Text>
             <Text style={fontStyles.uiMedium} className="text-[11px] text-flint">
               {trip.duration}
             </Text>

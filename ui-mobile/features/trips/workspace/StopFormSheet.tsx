@@ -16,6 +16,7 @@ import { PrimaryButton, SecondaryButton } from "@/shared/ui/Button";
 import { Field } from "@/shared/ui/Field";
 import { MultilineInputField } from "@/shared/ui/MultilineInputField";
 import { TextInputField } from "@/shared/ui/TextInputField";
+import { fontStyles } from "@/shared/theme/typography";
 
 import type { DayOption, TimeOption } from "./itineraryDraftMutations";
 
@@ -158,10 +159,10 @@ export function StopFormSheet({
             contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}
           >
             <View className="mb-4">
-              <Text className="text-lg font-semibold text-text">
+              <Text className="text-lg text-text" style={fontStyles.uiSemibold}>
                 {isEditMode ? "Edit stop" : "Add stop"}
               </Text>
-              <Text className="mt-1 text-sm text-text-muted">
+              <Text className="mt-1 text-sm text-text-muted" style={fontStyles.uiRegular}>
                 Changes stay local until you publish the itinerary.
               </Text>
             </View>
@@ -213,7 +214,10 @@ export function StopFormSheet({
               </Field>
 
               <Field label="Time" hint="Trip local time">
-                <Text className="mb-2 text-xs leading-4 text-text-muted">
+                <Text
+                  className="mb-2 text-xs leading-4 text-text-muted"
+                  style={fontStyles.uiRegular}
+                >
                   Times are shown in the trip&apos;s local time.
                 </Text>
                 <View className="gap-2">
@@ -294,7 +298,9 @@ export function StopFormSheet({
                 accessibilityLabel="Delete stop"
                 className="min-h-10 items-center justify-center rounded-full px-4 py-2 active:opacity-70"
               >
-                <Text className="text-sm font-semibold text-danger">Delete stop</Text>
+                <Text className="text-sm text-danger" style={fontStyles.uiSemibold}>
+                  Delete stop
+                </Text>
               </Pressable>
             ) : null}
             <PrimaryButton label="Save stop" onPress={handleSave} fullWidth />
@@ -325,10 +331,14 @@ function SelectorButton({
       accessibilityState={{ expanded }}
       className="min-h-12 flex-row items-center justify-between rounded-2xl border border-border bg-white px-4 py-3 active:opacity-70"
     >
-      <Text className="flex-1 pr-3 text-sm font-semibold text-text" numberOfLines={1}>
+      <Text
+        className="flex-1 pr-3 text-sm text-text"
+        style={fontStyles.uiSemibold}
+        numberOfLines={1}
+      >
         {label}
       </Text>
-      <Text className="text-lg leading-5 text-text-muted">
+      <Text className="text-lg leading-5 text-text-muted" style={fontStyles.uiRegular}>
         {expanded ? "−" : "+"}
       </Text>
     </Pressable>
@@ -357,7 +367,10 @@ function OptionRow({
         selected ? "bg-surface-muted" : "bg-white",
       ].join(" ")}
     >
-      <Text className={selected ? "text-sm font-semibold text-espresso" : "text-sm font-medium text-text"}>
+      <Text
+        className={selected ? "text-sm text-espresso" : "text-sm text-text"}
+        style={selected ? fontStyles.uiSemibold : fontStyles.uiMedium}
+      >
         {label}
       </Text>
     </Pressable>
@@ -384,7 +397,9 @@ function MoveButton({
         disabled ? "bg-surface-muted opacity-40" : "bg-white",
       ].join(" ")}
     >
-      <Text className="text-xs font-semibold text-text-muted">{label}</Text>
+      <Text className="text-xs text-text-muted" style={fontStyles.uiSemibold}>
+        {label}
+      </Text>
     </Pressable>
   );
 }

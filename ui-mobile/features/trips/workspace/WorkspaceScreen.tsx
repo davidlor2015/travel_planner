@@ -13,6 +13,7 @@ import { canOpenOnTrip } from "@/features/trips/onTrip/eligibility";
 import { useAuth } from "@/providers/AuthProvider";
 import { ScreenError } from "@/shared/ui/ScreenError";
 import { ScreenLoading } from "@/shared/ui/ScreenLoading";
+import { fontStyles } from "@/shared/theme/typography";
 
 import { BookingsTab } from "./BookingsTab";
 import { BudgetTab } from "./BudgetTab";
@@ -202,13 +203,17 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
           <View>
             <View className="flex-row items-center gap-2">
               <View className="h-2 w-2 rounded-full bg-accent-ontrip" />
-              <Text className="text-sm font-semibold text-ontrip">Trip in progress</Text>
+              <Text className="text-sm text-ontrip" style={fontStyles.uiSemibold}>
+                Trip in progress
+              </Text>
             </View>
-            <Text className="mt-0.5 text-xs text-ontrip-muted">
+            <Text className="mt-0.5 text-xs text-ontrip-muted" style={fontStyles.uiRegular}>
               Today: stops, status updates, and unplanned moments.
             </Text>
           </View>
-          <Text className="ml-3 text-sm font-semibold text-accent-ontrip">Live →</Text>
+          <Text className="ml-3 text-sm text-accent-ontrip" style={fontStyles.uiSemibold}>
+            Live →
+          </Text>
         </Pressable>
       ) : null}
 

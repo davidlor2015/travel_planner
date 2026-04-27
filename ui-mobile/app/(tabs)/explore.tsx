@@ -21,7 +21,10 @@ function ExploreComingSoon() {
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={["top"]}>
       <View className="flex-1 items-center justify-center gap-5 px-8">
-        <Text className="text-[11px] font-semibold uppercase tracking-[0.16em] text-amber">
+        <Text
+          className="text-[11px] uppercase tracking-[0.16em] text-amber"
+          style={fontStyles.uiSemibold}
+        >
           Explore
         </Text>
         <Text
@@ -30,7 +33,10 @@ function ExploreComingSoon() {
         >
           Something wonderful{"\n"}is coming.
         </Text>
-        <Text className="text-center text-[14px] leading-[22px] text-text-muted">
+        <Text
+          className="text-center text-[14px] leading-[22px] text-text-muted"
+          style={fontStyles.uiRegular}
+        >
           Curated destinations and travel inspiration — arriving soon.
         </Text>
       </View>

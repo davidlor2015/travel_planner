@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { Text, View } from "react-native";
 
+import { fontStyles } from "@/shared/theme/typography";
+
 type Props = {
   label: string;
   hint?: string;
@@ -11,13 +13,22 @@ type Props = {
 export function Field({ label, hint, error, children }: Props) {
   return (
     <View className="gap-1.5">
-      <Text className="text-sm font-semibold text-text">
+      <Text className="text-sm text-text" style={fontStyles.uiSemibold}>
         {label}
-        {hint ? <Text className="font-normal text-text-soft"> {hint}</Text> : null}
+        {hint ? (
+          <Text className="text-text-soft" style={fontStyles.uiRegular}>
+            {" "}
+            {hint}
+          </Text>
+        ) : null}
       </Text>
       {children}
       {error ? (
-        <Text className="text-xs font-medium text-danger" accessibilityRole="alert">
+        <Text
+          className="text-xs text-danger"
+          style={fontStyles.uiMedium}
+          accessibilityRole="alert"
+        >
           {error}
         </Text>
       ) : null}

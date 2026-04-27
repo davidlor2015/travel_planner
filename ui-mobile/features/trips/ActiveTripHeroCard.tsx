@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, Text, View } from "react-native";
+import { Platform, Pressable, Text, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 
 import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
@@ -157,16 +157,26 @@ export function ActiveTripHeroCard({ trip, onOpenWorkspace, onOpenOnTrip }: Prop
           {/* Live dot + label */}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
             <View
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: 3,
-                backgroundColor: "#B85A38",
-                shadowColor: "#B85A38",
-                shadowOpacity: 0.35,
-                shadowRadius: 4,
-                shadowOffset: { width: 0, height: 0 },
-              }}
+              style={
+                Platform.OS === "web"
+                  ? {
+                      width: 6,
+                      height: 6,
+                      borderRadius: 3,
+                      backgroundColor: "#B85A38",
+                      boxShadow: "0 0 0 4px rgba(184, 90, 56, 0.2)",
+                    }
+                  : {
+                      width: 6,
+                      height: 6,
+                      borderRadius: 3,
+                      backgroundColor: "#B85A38",
+                      shadowColor: "#B85A38",
+                      shadowOpacity: 0.35,
+                      shadowRadius: 4,
+                      shadowOffset: { width: 0, height: 0 },
+                    }
+              }
             />
             <Text style={[fontStyles.monoMedium, { fontSize: 9, color: "#B85A38", letterSpacing: 1.8 }]}>
               Live

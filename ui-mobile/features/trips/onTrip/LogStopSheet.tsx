@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Modal, Pressable, Text, View } from "react-native";
 
 import { TextInputField } from "@/shared/ui/TextInputField";
+import { fontStyles } from "@/shared/theme/typography";
 
 type Props = {
   visible: boolean;
@@ -51,8 +52,10 @@ export function LogStopSheet({
           <View className="mb-4 items-center">
             <View className="h-1.5 w-12 rounded-full bg-border-ontrip-strong" />
           </View>
-          <Text className="text-xl font-semibold text-ontrip">Log a stop</Text>
-          <Text className="mt-1 text-sm text-ontrip-muted">
+          <Text className="text-xl text-ontrip" style={fontStyles.uiSemibold}>
+            Log a stop
+          </Text>
+          <Text className="mt-1 text-sm text-ontrip-muted" style={fontStyles.uiRegular}>
             Capture something that actually happened. Logged for {defaultDate}.
           </Text>
           <View className="mt-4 gap-3">
@@ -98,7 +101,7 @@ export function LogStopSheet({
                 canSubmit ? "active:opacity-90" : "opacity-50",
               ].join(" ")}
             >
-              <Text className="text-sm font-semibold text-white">
+              <Text className="text-sm text-white" style={fontStyles.uiSemibold}>
                 {disabled ? "Saving…" : "Save stop"}
               </Text>
             </Pressable>
@@ -106,7 +109,9 @@ export function LogStopSheet({
               onPress={onClose}
               className="min-h-11 items-center justify-center rounded-full border border-border-ontrip-strong bg-surface-ontrip px-4 py-3"
             >
-              <Text className="text-sm font-semibold text-ontrip-strong">Cancel</Text>
+              <Text className="text-sm text-ontrip-strong" style={fontStyles.uiSemibold}>
+                Cancel
+              </Text>
             </Pressable>
           </View>
         </View>

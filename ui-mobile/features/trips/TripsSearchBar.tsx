@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { TextInput, View } from "react-native";
 
+import { fontStyles } from "@/shared/theme/typography";
+
 type Props = {
   value: string;
   onChangeText: (text: string) => void;
@@ -16,6 +18,7 @@ export function TripsSearchBar({ value, onChangeText }: Props) {
         placeholder="Search trips, places, dates"
         placeholderTextColor="#8A7E74"
         className="flex-1 text-[14px] text-text"
+        style={fontStyles.uiRegular}
         autoCorrect={false}
         autoCapitalize="none"
         returnKeyType="search"

@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { Pressable, Text } from "react-native";
 
+import { fontStyles } from "@/shared/theme/typography";
+
 type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 
 type Props = {
@@ -46,7 +48,10 @@ export function Button({
       ].join(" ")}
     >
       {icon}
-      <Text className={["text-sm font-semibold", textClasses[variant]].join(" ")}>
+      <Text
+        className={["text-sm", textClasses[variant]].join(" ")}
+        style={fontStyles.uiSemibold}
+      >
         {label}
       </Text>
     </Pressable>

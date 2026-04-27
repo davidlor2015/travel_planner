@@ -2,7 +2,13 @@ import { useMemo } from "react";
 
 import { getTripStatus } from "@/features/trips/adapters";
 import { useTripsQuery, useOnTripSnapshotQuery } from "@/features/trips/hooks";
-import type { TripOnTripStopSnapshot, TripResponse } from "@/features/trips/types";
+import type {
+  TripOnTripSnapshot,
+  TripOnTripStopSnapshot,
+  TripResponse,
+} from "@/features/trips/types";
+
+import { resolveTodayStopIndex, totalTripDaysInclusive } from "./todayPresentation";
 
 export interface TodayModel {
   isLoading: boolean;
@@ -11,6 +17,11 @@ export interface TodayModel {
   daysUntilNextTrip: number | null;
   nextStop: TripOnTripStopSnapshot | null;
   laterStop: TripOnTripStopSnapshot | null;
+  snapshot: TripOnTripSnapshot | null;
+  totalTripDays: number;
+  snapshotIsError: boolean;
+  snapshotErrorMessage: string | null;
+  refetchSnapshot: () => Promise<unknown>;
 }
 
 export function useTodayModel(): TodayModel {
@@ -52,22 +63,38 @@ export function useTodayModel(): TodayModel {
   const laterStop = useMemo(() => {
     if (!snapshot?.next_stop?.title) return null;
     const stops = snapshot.today_stops;
-    const ref = snapshot.next_stop.stop_ref;
-    let startIdx = 0;
-    if (ref) {
-      const idx = stops.findIndex((s) => s.stop_ref === ref);
-      if (idx !== -1) startIdx = idx + 1;
-    }
-    const candidate = stops[startIdx];
-    return candidate?.title ? candidate : null;
+    const idx = resolveTodayStopIndex(stops, snapshot.next_stop);
+    if (idx < 0 || idx + 1 >= stops.length) return null;
+    const later = stops[idx + 1]!;
+    return later.title ? later : null;
   }, [snapshot]);
 
+  const totalTripDays = activeTrip
+    ? totalTripDaysInclusive(activeTrip.start_date, activeTrip.end_date)
+    : 1;
+
+  const isLoading =
+    tripsQuery.isLoading ||
+    (!!activeTrip && snapshotQuery.isLoading && !snapshotQuery.data);
+
+  const snapshotIsError = !!activeTrip && snapshotQuery.isError;
+  const snapshotErrorMessage = snapshotQuery.error
+    ? snapshotQuery.error instanceof Error
+      ? snapshotQuery.error.message
+      : "Could not load today’s plan."
+    : null;
+
   return {
-    isLoading: tripsQuery.isLoading,
+    isLoading,
     activeTrip,
     nextUpcomingTrip,
     daysUntilNextTrip,
     nextStop,
     laterStop,
+    snapshot,
+    totalTripDays,
+    snapshotIsError,
+    snapshotErrorMessage,
+    refetchSnapshot: () => snapshotQuery.refetch(),
   };
 }

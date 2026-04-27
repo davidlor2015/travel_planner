@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
 import type { DayPlan } from "@/features/ai/api";
+import { fontStyles } from "@/shared/theme/typography";
 
 type Props = {
   day: DayPlan;
@@ -29,17 +30,21 @@ export function EditableItineraryDayCard({
         className="flex-row items-start gap-3 active:opacity-70"
       >
         <View className="h-9 w-9 items-center justify-center rounded-full bg-text">
-          <Text className="text-xs font-bold text-ivory">{day.day_number}</Text>
+          <Text className="text-xs text-ivory" style={fontStyles.uiBold}>
+            {day.day_number}
+          </Text>
         </View>
         <View className="flex-1">
-          <Text className="text-base font-semibold text-text">{title}</Text>
-          <Text className="mt-1 text-sm text-text-muted">
+          <Text className="text-base text-text" style={fontStyles.uiSemibold}>
+            {title}
+          </Text>
+          <Text className="mt-1 text-sm text-text-muted" style={fontStyles.uiRegular}>
             {[day.date, `${stopCount} ${stopCount === 1 ? "stop" : "stops"}`]
               .filter(Boolean)
               .join(" · ")}
           </Text>
         </View>
-        <Text className="text-xl leading-6 text-text-muted">
+        <Text className="text-xl leading-6 text-text-muted" style={fontStyles.uiRegular}>
           {expanded ? "−" : "+"}
         </Text>
       </Pressable>
@@ -56,21 +61,24 @@ export function EditableItineraryDayCard({
                 className="flex-row gap-3 py-1 active:opacity-70"
               >
                 <View className="w-16 pt-3">
-                  <Text className="text-xs uppercase tracking-[0.4px] text-text-soft">
+                  <Text
+                    className="text-xs uppercase tracking-[0.4px] text-text-soft"
+                    style={fontStyles.monoRegular}
+                  >
                     {item.time?.trim() || "TBD"}
                   </Text>
                 </View>
                 <View className="flex-1 rounded-2xl border border-border bg-white px-3 py-3">
-                  <Text className="text-sm font-semibold text-text">
+                  <Text className="text-sm text-text" style={fontStyles.uiSemibold}>
                     {item.title?.trim() || "Untitled stop"}
                   </Text>
                   {item.location?.trim() ? (
-                    <Text className="mt-1 text-sm text-text-muted">
+                    <Text className="mt-1 text-sm text-text-muted" style={fontStyles.uiRegular}>
                       {item.location.trim()}
                     </Text>
                   ) : null}
                   {item.notes?.trim() ? (
-                    <Text className="mt-1 text-xs text-text-soft">
+                    <Text className="mt-1 text-xs text-text-soft" style={fontStyles.uiRegular}>
                       {item.notes.trim()}
                     </Text>
                   ) : null}
@@ -78,7 +86,10 @@ export function EditableItineraryDayCard({
               </Pressable>
             ))
           ) : (
-            <Text className="rounded-2xl border border-border bg-white px-4 py-4 text-sm text-text-muted">
+            <Text
+              className="rounded-2xl border border-border bg-white px-4 py-4 text-sm text-text-muted"
+              style={fontStyles.uiRegular}
+            >
               Nothing scheduled for this day.
             </Text>
           )}
@@ -89,7 +100,9 @@ export function EditableItineraryDayCard({
               accessibilityRole="button"
               className="flex-1 flex-row items-center justify-center rounded-full border border-border-strong py-2.5 active:opacity-70"
             >
-              <Text className="text-xs font-semibold text-text-muted">Add stop</Text>
+              <Text className="text-xs text-text-muted" style={fontStyles.uiSemibold}>
+                Add stop
+              </Text>
             </Pressable>
             {onRegenerate ? (
               <Pressable
@@ -98,7 +111,9 @@ export function EditableItineraryDayCard({
                 accessibilityLabel={`Regenerate ${day.day_title?.trim() || `Day ${day.day_number}`}`}
                 className="flex-row items-center justify-center rounded-full border border-border-strong px-4 py-2.5 active:opacity-70"
               >
-                <Text className="text-xs font-semibold text-text-muted">Improve day</Text>
+                <Text className="text-xs text-text-muted" style={fontStyles.uiSemibold}>
+                  Improve day
+                </Text>
               </Pressable>
             ) : null}
           </View>

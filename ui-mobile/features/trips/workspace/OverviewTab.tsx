@@ -440,15 +440,21 @@ function OverviewItineraryPreviewRow({
   showBorder: boolean;
   onPress: () => void;
 }) {
+  const stopPreview = preview.stopPreviewLine?.trim() ?? "";
+  const a11ySummary = [preview.dayTitle, stopPreview]
+    .filter(Boolean)
+    .join(". ")
+    .slice(0, 200);
+
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`View ${preview.dayTitle}`}
+      accessibilityLabel={a11ySummary ? `View itinerary: ${a11ySummary}` : `View ${preview.dayTitle}`}
       className="active:opacity-75"
       style={{
         flexDirection: "row",
-        alignItems: "center",
+        alignItems: "flex-start",
         paddingHorizontal: 18,
         paddingVertical: 14,
         gap: 16,
@@ -473,15 +479,33 @@ function OverviewItineraryPreviewRow({
       </View>
 
       {/* Vertical divider */}
-      <View style={{ width: 1, height: 32, backgroundColor: "rgba(35,25,16,0.10)", flexShrink: 0 }} />
+      <View
+        style={{
+          width: 1,
+          alignSelf: "stretch",
+          minHeight: 40,
+          backgroundColor: "rgba(35,25,16,0.10)",
+          flexShrink: 0,
+        }}
+      />
 
-      {/* Day title */}
-      <Text
-        style={[fontStyles.uiMedium, { flex: 1, fontSize: 14, color: "#231910" }]}
-        numberOfLines={1}
-      >
-        {preview.dayTitle}
-      </Text>
+      {/* Day title + stop preview */}
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text
+          style={[fontStyles.uiMedium, { fontSize: 14, color: "#231910", lineHeight: 19 }]}
+          numberOfLines={2}
+        >
+          {preview.dayTitle}
+        </Text>
+        {stopPreview ? (
+          <Text
+            style={[fontStyles.uiRegular, { fontSize: 12.5, lineHeight: 18, color: "#8A7B6A", marginTop: 4 }]}
+            numberOfLines={3}
+          >
+            {stopPreview}
+          </Text>
+        ) : null}
+      </View>
     </Pressable>
   );
 }

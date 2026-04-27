@@ -12,6 +12,7 @@ import {
 import { PrimaryButton, SecondaryButton } from "@/shared/ui/Button";
 import { ScreenHeader } from "@/shared/ui/ScreenHeader";
 import { TextInputField } from "@/shared/ui/TextInputField";
+import { fontStyles } from "@/shared/theme/typography";
 
 import { PlaceAutocompleteInput } from "./PlaceAutocompleteInput";
 import type { PlaceSuggestion, TripCreate, TripResponse, TripUpdate } from "./types";
@@ -282,7 +283,7 @@ export function TripFormSheet({
                 >
                   {/* Budget */}
                   <View className="gap-2">
-                    <Text className="text-sm font-semibold text-text">
+                    <Text className="text-sm text-text" style={fontStyles.uiSemibold}>
                       Budget
                     </Text>
                     <View className="flex-row gap-2">
@@ -299,9 +300,10 @@ export function TripFormSheet({
                             }`}
                           >
                             <Text
-                              className={`text-sm font-semibold ${
+                              className={`text-sm ${
                                 active ? "text-ivory" : "text-text-muted"
                               }`}
+                              style={fontStyles.uiSemibold}
                             >
                               {opt.label}
                             </Text>
@@ -313,7 +315,7 @@ export function TripFormSheet({
 
                   {/* Pace */}
                   <View className="mt-4 gap-2">
-                    <Text className="text-sm font-semibold text-text">
+                    <Text className="text-sm text-text" style={fontStyles.uiSemibold}>
                       Pace
                     </Text>
                     <View className="flex-row gap-2">
@@ -330,9 +332,10 @@ export function TripFormSheet({
                             }`}
                           >
                             <Text
-                              className={`text-sm font-semibold ${
+                              className={`text-sm ${
                                 active ? "text-ivory" : "text-text-muted"
                               }`}
+                              style={fontStyles.uiSemibold}
                             >
                               {opt.label}
                             </Text>
@@ -344,7 +347,7 @@ export function TripFormSheet({
 
                   {/* Interests */}
                   <View className="mt-4 gap-2">
-                    <Text className="text-sm font-semibold text-text">
+                    <Text className="text-sm text-text" style={fontStyles.uiSemibold}>
                       Interests
                     </Text>
                     <View className="flex-row flex-wrap gap-2">
@@ -362,9 +365,10 @@ export function TripFormSheet({
                             }`}
                           >
                             <Text
-                              className={`text-xs font-medium capitalize ${
+                              className={`text-xs capitalize ${
                                 active ? "text-ivory" : "text-text-muted"
                               }`}
+                              style={fontStyles.uiMedium}
                             >
                               {interest}
                             </Text>
@@ -408,17 +412,19 @@ export function TripFormSheet({
                       submitting || deleting ? "opacity-50" : "",
                     ].join(" ")}
                   >
-                    <Text className="text-sm font-semibold text-danger">
+                    <Text className="text-sm text-danger" style={fontStyles.uiSemibold}>
                       {deleting ? "Deleting…" : "Delete trip"}
                     </Text>
-                    <Text className="text-lg leading-5 text-danger">›</Text>
+                    <Text className="text-lg leading-5 text-danger" style={fontStyles.uiSemibold}>
+                      ›
+                    </Text>
                   </Pressable>
                 </FormSection>
               ) : null}
 
               {error ? (
                 <View className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3">
-                  <Text className="text-sm font-medium text-danger">
+                  <Text className="text-sm text-danger" style={fontStyles.uiMedium}>
                     {error}
                   </Text>
                 </View>
@@ -459,10 +465,15 @@ function FormSection({
   return (
     <View className="gap-4 rounded-2xl border border-border bg-surface-muted px-4 py-4">
       <View>
-        <Text className="text-[10px] font-bold uppercase tracking-[1.2px] text-text-soft">
+        <Text
+          className="text-[10px] uppercase tracking-[1.2px] text-text-soft"
+          style={fontStyles.monoMedium}
+        >
           {eyebrow}
         </Text>
-        <Text className="mt-1 text-sm leading-5 text-text-muted">{description}</Text>
+        <Text className="mt-1 text-sm leading-5 text-text-muted" style={fontStyles.uiRegular}>
+          {description}
+        </Text>
       </View>
       <View className="gap-4">{children}</View>
     </View>

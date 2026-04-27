@@ -3,6 +3,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { SectionCard } from "@/shared/ui/SectionCard";
 import { StatusPill } from "@/shared/ui/StatusPill";
+import { fontStyles } from "@/shared/theme/typography";
 
 import type {
   TripWorkspaceCollaborationViewModel,
@@ -45,7 +46,9 @@ export function MembersTab({
           action={
             collaboration.canInvite ? (
               <Pressable onPress={() => setInviteOpen(true)}>
-                <Text className="text-sm font-semibold text-accent">Invite</Text>
+                <Text className="text-sm text-accent" style={fontStyles.uiSemibold}>
+                  Invite
+                </Text>
               </Pressable>
             ) : undefined
           }
@@ -76,7 +79,9 @@ export function MembersTab({
 
             {inviteSuccess ? (
               <View className="rounded-2xl border border-olive/20 bg-olive/10 px-3 py-3">
-                <Text className="text-sm font-medium text-olive">{inviteSuccess}</Text>
+                <Text className="text-sm text-olive" style={fontStyles.uiMedium}>
+                  {inviteSuccess}
+                </Text>
               </View>
             ) : null}
 
@@ -87,14 +92,17 @@ export function MembersTab({
               >
                 <View className="flex-row items-start justify-between gap-3">
                   <View className="flex-1">
-                    <Text className="text-sm font-medium text-text">
+                    <Text className="text-sm text-text" style={fontStyles.uiMedium}>
                       {member.email}
                       {member.isCurrentUser ? " · You" : ""}
                     </Text>
-                    <Text className="mt-1 text-xs uppercase tracking-[0.4px] text-text-soft">
+                    <Text
+                      className="mt-1 text-xs uppercase tracking-[0.4px] text-text-soft"
+                      style={fontStyles.monoRegular}
+                    >
                       {member.roleLabel}
                     </Text>
-                    <Text className="mt-2 text-sm text-text-muted">
+                    <Text className="mt-2 text-sm text-text-muted" style={fontStyles.uiRegular}>
                       {member.readinessDetail}
                     </Text>
                   </View>
@@ -108,7 +116,10 @@ export function MembersTab({
 
             {collaboration.pendingInvites.length > 0 ? (
               <View className="gap-2">
-                <Text className="text-[11px] font-semibold uppercase tracking-[0.5px] text-text-soft">
+                <Text
+                  className="text-[11px] uppercase tracking-[0.5px] text-text-soft"
+                  style={fontStyles.uiSemibold}
+                >
                   Pending invites
                 </Text>
                 {collaboration.pendingInvites.map((invite) => (
@@ -116,8 +127,10 @@ export function MembersTab({
                     key={invite.id}
                     className="rounded-2xl border border-border bg-white px-3 py-3"
                   >
-                    <Text className="text-sm font-medium text-text">{invite.email}</Text>
-                    <Text className="mt-1 text-xs text-text-soft">
+                    <Text className="text-sm text-text" style={fontStyles.uiMedium}>
+                      {invite.email}
+                    </Text>
+                    <Text className="mt-1 text-xs text-text-soft" style={fontStyles.uiRegular}>
                       {invite.statusLabel} · Expires {invite.expiresAtLabel}
                     </Text>
                   </View>
@@ -126,7 +139,9 @@ export function MembersTab({
             ) : null}
 
             {memberReadinessError ? (
-              <Text className="text-sm text-danger">{memberReadinessError}</Text>
+              <Text className="text-sm text-danger" style={fontStyles.uiRegular}>
+                {memberReadinessError}
+              </Text>
             ) : null}
           </View>
         </SectionCard>
