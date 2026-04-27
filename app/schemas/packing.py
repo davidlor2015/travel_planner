@@ -1,3 +1,6 @@
+# Path: app/schemas/packing.py
+# Summary: Defines Pydantic schemas for packing payloads.
+
 from __future__ import annotations
 
 from datetime import datetime

@@ -1,3 +1,6 @@
+// Path: ui/src/shared/ui/FormField.tsx
+// Summary: Implements FormField module logic.
+
 import { AnimatePresence, motion } from 'framer-motion';
 
 

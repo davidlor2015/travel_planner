@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/explore/catalog.ts
+// Summary: Implements catalog module logic.
+
 // Ported from ui/src/features/explore/adapters/destinationExploreAdapter.ts.
 // This catalog is the single source of truth for explore destinations on both web and mobile.
 // It is only accessible when EXPO_PUBLIC_ENABLE_EXPLORE=true; it is not ungated mock data.

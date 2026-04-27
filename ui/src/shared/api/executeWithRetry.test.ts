@@ -1,3 +1,6 @@
+// Path: ui/src/shared/api/executeWithRetry.test.ts
+// Summary: Covers automated tests for executeWithRetry.test behavior.
+
 import { describe, expect, it, vi } from "vitest";
 
 import { ApiError } from "./errors";

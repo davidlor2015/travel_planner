@@ -1,3 +1,6 @@
+// Path: ui/src/shared/api/trips.ts
+// Summary: Implements trips module logic.
+
 import { API_URL } from '../../app/config';
 import { apiFetch } from './client';
 import { executeWithRetry } from './executeWithRetry';

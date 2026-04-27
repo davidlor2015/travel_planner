@@ -1,3 +1,6 @@
+// Path: ui/src/shared/ui/travelPrimitives.tsx
+// Summary: Implements travelPrimitives module logic.
+
 import type { ReactNode } from "react";
 import { WaypointLogo } from "./WaypointLogo";
 

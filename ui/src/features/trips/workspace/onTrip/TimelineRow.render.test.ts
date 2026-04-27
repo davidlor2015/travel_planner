@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/onTrip/TimelineRow.render.test.ts
+// Summary: Covers automated tests for TimelineRow.render.test behavior.
+
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";

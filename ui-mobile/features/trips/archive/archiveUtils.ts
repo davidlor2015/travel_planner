@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/archive/archiveUtils.ts
+// Summary: Implements archiveUtils module logic.
+
 import { toTripListItem, type TripListItemViewModel } from "../adapters";
 import type { TripResponse, TripSummary } from "../types";
 

@@ -1,3 +1,6 @@
+# Path: app/api/routes/auth.py
+# Summary: Defines auth API route handlers.
+
 from typing import Annotated
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status

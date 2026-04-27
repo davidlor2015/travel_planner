@@ -1,3 +1,6 @@
+// Path: ui/src/shared/ui/WishlistButton.tsx
+// Summary: Implements WishlistButton module logic.
+
 import { motion } from 'framer-motion';
 
 interface WishlistButtonProps {

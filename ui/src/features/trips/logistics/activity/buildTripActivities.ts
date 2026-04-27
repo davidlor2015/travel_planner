@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/logistics/activity/buildTripActivities.ts
+// Summary: Implements buildTripActivities module logic.
+
 import type { Itinerary } from '../../../../shared/api/ai';
 import type { Trip } from '../../../../shared/api/trips';
 import type { EditableItinerary } from '../../itinerary/itineraryDraft';

@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/itinerary/draftMutationState.test.ts
+// Summary: Covers automated tests for draftMutationState.test behavior.
+
 import { describe, expect, it } from "vitest";
 
 import {

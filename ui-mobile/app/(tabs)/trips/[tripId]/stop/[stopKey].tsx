@@ -1,3 +1,6 @@
+// Path: ui-mobile/app/(tabs)/trips/[tripId]/stop/[stopKey].tsx
+// Summary: Implements [stopKey] module logic.
+
 import { Text, View } from "react-native";
 import { Tabs, useLocalSearchParams } from "expo-router";
 

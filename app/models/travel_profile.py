@@ -1,3 +1,6 @@
+# Path: app/models/travel_profile.py
+# Summary: Defines the travel profile data model.
+
 from __future__ import annotations
 
 from enum import Enum

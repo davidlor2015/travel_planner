@@ -1,3 +1,6 @@
+// Path: ui/e2e/archive.spec.ts
+// Summary: Covers automated tests for archive.spec behavior.
+
 import { test, expect } from '@playwright/test';
 import { registerAndLogin, createTrip } from './helpers';
 

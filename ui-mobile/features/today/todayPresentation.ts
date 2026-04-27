@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/today/todayPresentation.ts
+// Summary: Implements todayPresentation module logic.
+
 import type { TripOnTripStopSnapshot } from "@/features/trips/types";
 
 /** First segment of "City, Country" for compact labels. */

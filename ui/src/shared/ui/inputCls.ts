@@ -1,3 +1,6 @@
+// Path: ui/src/shared/ui/inputCls.ts
+// Summary: Implements inputCls module logic.
+
 /**
  * Generates the base class string for all text inputs, textareas, and selects.
  * Import and call in any component that renders a form control.

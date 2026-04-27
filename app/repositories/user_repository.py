@@ -1,3 +1,6 @@
+# Path: app/repositories/user_repository.py
+# Summary: Implements data access for user repository operations.
+
 from typing import Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import select

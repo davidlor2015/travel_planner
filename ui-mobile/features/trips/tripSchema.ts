@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/tripSchema.ts
+// Summary: Implements tripSchema module logic.
+
 export const BUDGET_OPTIONS = [
   { value: "budget",   label: "Budget"    },
   { value: "moderate", label: "Moderate"  },

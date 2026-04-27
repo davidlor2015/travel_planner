@@ -1,3 +1,6 @@
+// Path: ui/src/App.tsx
+// Summary: Implements App module logic.
+
 import {
   Suspense,
   createContext,

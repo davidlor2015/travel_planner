@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/onTrip/DayTimeline.tsx
+// Summary: Implements DayTimeline module logic.
+
 import { useEffect, useMemo, useRef } from "react";
 
 import type { TimelineRowVM } from "./types";

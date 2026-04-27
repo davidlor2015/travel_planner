@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/onTrip/StopDetailScreen.tsx
+// Summary: Implements StopDetailScreen module logic.
+
 import { useMemo } from "react";
 import * as Linking from "expo-linking";
 import { Ionicons } from "@expo/vector-icons";

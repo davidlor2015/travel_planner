@@ -1,3 +1,6 @@
+# Path: app/schemas/user.py
+# Summary: Defines Pydantic schemas for user payloads.
+
 from pydantic import BaseModel, EmailStr, field_validator
 
 class UserBase(BaseModel):

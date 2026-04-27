@@ -1,3 +1,6 @@
+# Path: app/repositories/travel_profile_repository.py
+# Summary: Implements data access for travel profile repository operations.
+
 from typing import Any, Optional
 
 from sqlalchemy import select

@@ -1,3 +1,6 @@
+// Path: ui/src/features/explore/sections/EditorsPicksCarousel.tsx
+// Summary: Implements EditorsPicksCarousel module logic.
+
 import { PageSection } from "../../../shared/ui";
 import type { Destination } from "../types";
 import { EditorialPickCard } from "../components/EditorialPickCard";

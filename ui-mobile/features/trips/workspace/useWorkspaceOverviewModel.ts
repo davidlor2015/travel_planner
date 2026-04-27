@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/useWorkspaceOverviewModel.ts
+// Summary: Provides useWorkspaceOverviewModel hook behavior.
+
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useApplyItineraryMutation, useSavedItineraryQuery } from "@/features/ai/hooks";

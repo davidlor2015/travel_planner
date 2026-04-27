@@ -1,3 +1,6 @@
+# Path: app/schemas/trip.py
+# Summary: Defines Pydantic schemas for trip payloads.
+
 # app/schemas/trip.py
 from __future__ import annotations
 

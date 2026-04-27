@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/onTrip/OnTripHeader.tsx
+// Summary: Implements OnTripHeader module logic.
+
 import type { Trip } from "../../../../shared/api/trips";
 
 function formatDayDate(dayDate: string | null): string {

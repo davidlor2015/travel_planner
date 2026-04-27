@@ -1,3 +1,6 @@
+// Path: ui-mobile/app/(auth)/forgot-password.tsx
+// Summary: Implements forgot-password module logic.
+
 import { useState } from "react";
 import {
   KeyboardAvoidingView,

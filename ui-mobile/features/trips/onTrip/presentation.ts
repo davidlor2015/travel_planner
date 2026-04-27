@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/onTrip/presentation.ts
+// Summary: Implements presentation module logic.
+
 import type { TripExecutionStatus, TripOnTripBlocker, TripOnTripSnapshot } from "../types";
 import type { StopVM, TimelineVariant } from "./adapters";
 

@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/WorkspaceTabBar.tsx
+// Summary: Implements WorkspaceTabBar module logic.
+
 import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { DE } from "@/shared/theme/desertEditorial";

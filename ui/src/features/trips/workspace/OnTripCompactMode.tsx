@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/OnTripCompactMode.tsx
+// Summary: Implements OnTripCompactMode module logic.
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type {

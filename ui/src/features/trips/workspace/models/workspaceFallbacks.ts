@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/models/workspaceFallbacks.ts
+// Summary: Defines the workspaceFallbacks data model.
+
 import type {
   BudgetSummary,
   PackingSummary,

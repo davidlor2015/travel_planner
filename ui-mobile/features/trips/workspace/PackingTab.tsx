@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/PackingTab.tsx
+// Summary: Implements PackingTab module logic.
+
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";

@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/tabs/MapTab.tsx
+// Summary: Implements MapTab module logic.
+
 import { ItineraryMap } from "../../map";
 import type { Itinerary, ItineraryItem } from "../../../../shared/api/ai";
 

@@ -1,3 +1,6 @@
+// Path: ui-mobile/shared/ui/TextInputField.tsx
+// Summary: Implements TextInputField module logic.
+
 import { TextInput, type TextInputProps } from "react-native";
 
 import { fontStyles } from "@/shared/theme/typography";

@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/BudgetTab.tsx
+// Summary: Implements BudgetTab module logic.
+
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
 import {

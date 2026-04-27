@@ -1,3 +1,6 @@
+# Path: app/schemas/ai.py
+# Summary: Defines Pydantic schemas for ai payloads.
+
 
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import List, Optional, Any, Literal

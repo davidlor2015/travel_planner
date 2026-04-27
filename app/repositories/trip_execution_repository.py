@@ -1,3 +1,6 @@
+# Path: app/repositories/trip_execution_repository.py
+# Summary: Implements data access for trip execution repository operations.
+
 from __future__ import annotations
 
 from datetime import date

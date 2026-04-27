@@ -1,3 +1,6 @@
+// Path: ui/src/features/archive/components/ArchiveTripRow.tsx
+// Summary: Renders the ArchiveTripRow UI component.
+
 import { AvatarStack, StatusPill } from "../../../shared/ui";
 import { formatArchiveDateRange } from "../adapters/archiveAdapter";
 import type { ArchiveTripItem } from "../types";

@@ -1,3 +1,6 @@
+// Path: ui-mobile/app/(auth)/verify-email-request.tsx
+// Summary: Implements verify-email-request module logic.
+
 import { useState } from "react";
 import {
   KeyboardAvoidingView,

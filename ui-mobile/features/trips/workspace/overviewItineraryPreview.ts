@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/overviewItineraryPreview.ts
+// Summary: Implements overviewItineraryPreview module logic.
+
 import type { Itinerary, ItineraryItem, ItineraryStopStatus } from "@/features/ai/api";
 
 export type OverviewItineraryDayPreview = {

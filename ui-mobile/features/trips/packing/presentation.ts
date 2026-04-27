@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/packing/presentation.ts
+// Summary: Implements presentation module logic.
+
 import type { PackingItem, PackingSuggestion } from "./api";
 
 export type PackingFilterKey = "all" | "unpacked" | "packed";

@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/ActiveTripHeroCard.tsx
+// Summary: Implements ActiveTripHeroCard module logic.
+
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";

@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/helpers/collaborationGate.ts
+// Summary: Implements collaborationGate module logic.
+
 import type { Trip } from "../../../../shared/api/trips";
 
 export function getJoinedMemberCount(trip: Trip): number {

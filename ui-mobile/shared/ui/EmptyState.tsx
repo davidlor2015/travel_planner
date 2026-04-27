@@ -1,3 +1,6 @@
+// Path: ui-mobile/shared/ui/EmptyState.tsx
+// Summary: Implements EmptyState module logic.
+
 import { type ReactNode } from "react";
 import { Text, View } from "react-native";
 

@@ -1,3 +1,6 @@
+// Path: ui-mobile/shared/ui/Button.tsx
+// Summary: Implements Button module logic.
+
 import type { ReactNode } from "react";
 import { Pressable, Text } from "react-native";
 

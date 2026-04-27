@@ -1,3 +1,6 @@
+// Path: ui/src/features/landing/sections/LandingOnTripSection.tsx
+// Summary: Implements LandingOnTripSection module logic.
+
 import { motion, useReducedMotion } from "framer-motion";
 
 function ClockIcon({ className }: { className?: string }) {

@@ -1,3 +1,6 @@
+// Path: ui-mobile/app/(auth)/change-password.tsx
+// Summary: Implements change-password module logic.
+
 import { useState } from "react";
 import {
   KeyboardAvoidingView,

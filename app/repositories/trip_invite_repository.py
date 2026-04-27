@@ -1,3 +1,6 @@
+# Path: app/repositories/trip_invite_repository.py
+# Summary: Implements data access for trip invite repository operations.
+
 from __future__ import annotations
 
 from datetime import datetime, timezone

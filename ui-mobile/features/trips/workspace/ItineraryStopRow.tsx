@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/ItineraryStopRow.tsx
+// Summary: Implements ItineraryStopRow module logic.
+
 import { Text, View } from "react-native";
 
 import { fontStyles } from "@/shared/theme/typography";

@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/matching/TravelProfileForm.tsx
+// Summary: Implements TravelProfileForm module logic.
+
 import { useState } from "react";
 import { Pressable, Switch, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";

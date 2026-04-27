@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/OverviewTab.tsx
+// Summary: Implements OverviewTab module logic.
+
 import { Ionicons } from "@expo/vector-icons";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 

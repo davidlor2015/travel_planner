@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/profile/useProfileScreen.ts
+// Summary: Provides useProfileScreen hook behavior.
+
 import { useMemo } from "react";
 
 import { useAuth } from "@/providers/AuthProvider";

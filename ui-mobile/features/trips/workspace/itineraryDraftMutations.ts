@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/itineraryDraftMutations.ts
+// Summary: Implements itineraryDraftMutations module logic.
+
 import type { DayPlan, Itinerary, ItineraryItem } from "@/features/ai/api";
 
 export type StopSource = {

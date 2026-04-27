@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/models/normalizeTripWorkspace.ts
+// Summary: Defines the normalizeTripWorkspace data model.
+
 import type { Itinerary } from "../../../../shared/api/ai";
 
 const JSON_MARKER = "DETAILS (JSON): ";

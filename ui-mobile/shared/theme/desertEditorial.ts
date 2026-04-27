@@ -1,3 +1,6 @@
+// Path: ui-mobile/shared/theme/desertEditorial.ts
+// Summary: Implements desertEditorial module logic.
+
 export const DE = {
   ivory: "#F2EBDD",
   ivoryDeep: "#E8E0CE",

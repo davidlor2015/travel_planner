@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/InviteTravelerSheet.tsx
+// Summary: Implements InviteTravelerSheet module logic.
+
 import { useEffect, useState } from "react";
 import { KeyboardAvoidingView, Modal, Platform, ScrollView, Text, View } from "react-native";
 

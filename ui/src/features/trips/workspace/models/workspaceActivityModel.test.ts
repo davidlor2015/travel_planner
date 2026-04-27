@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/models/workspaceActivityModel.test.ts
+// Summary: Defines the workspaceActivityModel.test data model.
+
 import { describe, expect, it } from "vitest";
 
 import type { Itinerary } from "../../../../shared/api/ai";

@@ -1,3 +1,6 @@
+// Path: ui-mobile/app/_layout.tsx
+// Summary: Implements  layout module logic.
+
 import "../global.css";
 
 import { useEffect } from "react";

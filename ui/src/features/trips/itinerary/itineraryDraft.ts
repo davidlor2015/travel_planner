@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/itinerary/itineraryDraft.ts
+// Summary: Implements itineraryDraft module logic.
+
 import type {
   DayPlan,
   Itinerary,

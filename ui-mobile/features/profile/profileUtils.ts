@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/profile/profileUtils.ts
+// Summary: Implements profileUtils module logic.
+
 import type { TripListItemViewModel } from "../trips/adapters";
 
 export type TravelStats = {

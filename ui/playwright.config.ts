@@ -1,3 +1,6 @@
+// Path: ui/playwright.config.ts
+// Summary: Implements playwright.config module logic.
+
 import { defineConfig, devices } from '@playwright/test';
 
 /**

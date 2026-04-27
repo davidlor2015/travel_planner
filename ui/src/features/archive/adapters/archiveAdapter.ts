@@ -1,3 +1,6 @@
+// Path: ui/src/features/archive/adapters/archiveAdapter.ts
+// Summary: Implements archiveAdapter module logic.
+
 import type { Trip } from "../../../shared/api/trips";
 import { getTripImageUrl } from "../../trips/workspace/helpers/tripVisuals";
 import type {

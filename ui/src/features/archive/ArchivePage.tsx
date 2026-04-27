@@ -1,3 +1,6 @@
+// Path: ui/src/features/archive/ArchivePage.tsx
+// Summary: Implements ArchivePage module logic.
+
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 

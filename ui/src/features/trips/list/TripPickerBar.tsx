@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/list/TripPickerBar.tsx
+// Summary: Implements TripPickerBar module logic.
+
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 

@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/reservations/bookingPresentation.ts
+// Summary: Implements bookingPresentation module logic.
+
 import { Linking } from "react-native";
 
 import type { Reservation } from "./api";

@@ -1,3 +1,6 @@
+// Path: ui/src/instrument.ts
+// Summary: Implements instrument module logic.
+
 import * as Sentry from '@sentry/react';
 import posthog from 'posthog-js';
 

@@ -1,3 +1,6 @@
+# Path: app/services/packing_service.py
+# Summary: Implements packing service business logic.
+
 from __future__ import annotations
 
 from datetime import date

@@ -1,3 +1,6 @@
+# Path: app/services/explore_destination_service.py
+# Summary: Implements explore destination service business logic.
+
 from __future__ import annotations
 
 from cachetools import TTLCache

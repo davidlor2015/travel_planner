@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/explore/useExploreScreen.ts
+// Summary: Provides useExploreScreen hook behavior.
+
 import { useMemo, useState } from "react";
 
 import { toFeaturedCardViewModel, toGridCardViewModel } from "./adapters";

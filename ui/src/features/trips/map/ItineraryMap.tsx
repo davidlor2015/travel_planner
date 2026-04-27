@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/map/ItineraryMap.tsx
+// Summary: Implements ItineraryMap module logic.
+
 import "leaflet/dist/leaflet.css";
 import { useEffect, useMemo } from "react";
 import L from "leaflet";

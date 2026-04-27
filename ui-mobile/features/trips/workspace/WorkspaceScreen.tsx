@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/WorkspaceScreen.tsx
+// Summary: Implements WorkspaceScreen module logic.
+
 import { type Href, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Pressable, Text, View } from "react-native";

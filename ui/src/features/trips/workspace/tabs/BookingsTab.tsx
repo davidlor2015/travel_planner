@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/tabs/BookingsTab.tsx
+// Summary: Implements BookingsTab module logic.
+
 import { useCallback, useMemo } from "react";
 import { ReservationsPanel } from "../../logistics/reservations";
 import type { ReservationSummary } from "../types";

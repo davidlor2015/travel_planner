@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/onTrip/adapters.ts
+// Summary: Implements adapters module logic.
+
 import type {
   TripExecutionStatus,
   TripOnTripBlocker,

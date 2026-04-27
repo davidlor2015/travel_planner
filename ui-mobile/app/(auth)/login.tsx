@@ -1,3 +1,6 @@
+// Path: ui-mobile/app/(auth)/login.tsx
+// Summary: Implements login module logic.
+
 import { useState } from "react";
 import {
   KeyboardAvoidingView,

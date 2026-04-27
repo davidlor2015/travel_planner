@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/logistics/packing/usePackingList.ts
+// Summary: Provides usePackingList hook behavior.
+
 import { useReducer, useEffect, useCallback } from 'react';
 import {
   getPackingItems,

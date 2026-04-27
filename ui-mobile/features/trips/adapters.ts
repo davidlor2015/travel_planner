@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/adapters.ts
+// Summary: Implements adapters module logic.
+
 import { getTripImageUrl } from "./workspace/helpers/tripVisuals";
 import type { TripListItem, TripResponse, TripSummary } from "./types";
 

@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/onTrip/UnplannedStopRow.tsx
+// Summary: Implements UnplannedStopRow module logic.
+
 import { Pressable, Text, View } from "react-native";
 
 import { fontStyles } from "@/shared/theme/typography";

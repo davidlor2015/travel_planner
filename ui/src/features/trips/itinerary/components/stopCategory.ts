@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/itinerary/components/stopCategory.ts
+// Summary: Renders the stopCategory UI component.
+
 /**
  * Lightweight category label for timeline metadata pills (no emojis).
  * Heuristic only — same spirit as read-only itinerary categorization.

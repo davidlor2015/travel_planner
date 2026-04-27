@@ -1,3 +1,6 @@
+# Path: app/services/llm/ollama_client.py
+# Summary: Implements ollama client business logic.
+
 import json
 import time
 import threading

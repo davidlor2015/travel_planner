@@ -1,3 +1,6 @@
+// Path: ui/src/features/explore/sections/ExploreHeroSection.tsx
+// Summary: Implements ExploreHeroSection module logic.
+
 import { SectionHeading } from "../../../shared/ui";
 
 export function ExploreHeroSection() {

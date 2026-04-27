@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/explore/CategoryChips.tsx
+// Summary: Implements CategoryChips module logic.
+
 import { Pressable, ScrollView, Text } from "react-native";
 
 import { fontStyles } from "@/shared/theme/typography";

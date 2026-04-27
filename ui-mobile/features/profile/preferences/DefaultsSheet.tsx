@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/profile/preferences/DefaultsSheet.tsx
+// Summary: Implements DefaultsSheet module logic.
+
 import { useEffect, useState } from "react";
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 

@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/onTrip/eligibility.ts
+// Summary: Implements eligibility module logic.
+
 import type { TripListItem, TripOnTripSnapshot, TripOnTripStopSnapshot } from "../types";
 
 export function hasResolvedTodayStop(snapshot: TripOnTripSnapshot | null): boolean {

@@ -1,3 +1,6 @@
+// Path: ui/src/features/profile/ProfilePage.tsx
+// Summary: Implements ProfilePage module logic.
+
 import { motion } from 'framer-motion';
 import type { Trip } from '../../shared/api/trips';
 import { useProfileStats, type JourneyEntry, type TravelStats } from './useProfileStats';

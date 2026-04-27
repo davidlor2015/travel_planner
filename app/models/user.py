@@ -1,3 +1,6 @@
+# Path: app/models/user.py
+# Summary: Defines the user data model.
+
 from __future__ import annotations
 
 from datetime import datetime

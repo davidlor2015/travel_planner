@@ -1,3 +1,6 @@
+// Path: ui-mobile/app/(tabs)/profile.tsx
+// Summary: Implements profile module logic.
+
 import { useState } from "react";
 import { Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";

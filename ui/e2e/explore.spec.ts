@@ -1,3 +1,6 @@
+// Path: ui/e2e/explore.spec.ts
+// Summary: Covers automated tests for explore.spec behavior.
+
 import { test, expect } from '@playwright/test';
 import { registerAndLogin } from './helpers';
 

@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/models/deriveTripActionItems.test.ts
+// Summary: Defines the deriveTripActionItems.test data model.
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Itinerary } from "../../../../shared/api/ai";

@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/workspaceCommandModel.ts
+// Summary: Implements workspaceCommandModel module logic.
+
 import type { DayPlan, Itinerary, ItineraryItem } from "@/features/ai/api";
 import type { TripOnTripSnapshot, TripOnTripStopSnapshot } from "../types";
 

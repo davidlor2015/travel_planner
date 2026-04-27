@@ -1,3 +1,6 @@
+// Path: ui-mobile/app/(tabs)/explore.tsx
+// Summary: Implements explore module logic.
+
 import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 

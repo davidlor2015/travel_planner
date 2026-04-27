@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/helpers/tripVisuals.ts
+// Summary: Implements tripVisuals module logic.
+
 const UNSPLASH_PARAMS =
   "crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080&q=80&auto=format";
 

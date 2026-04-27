@@ -1,3 +1,6 @@
+// Path: ui/e2e/core-loop.spec.ts
+// Summary: Covers automated tests for core-loop.spec behavior.
+
 import { test, expect } from '@playwright/test';
 import type { Route } from '@playwright/test';
 import { registerAndLogin, createTrip } from './helpers';

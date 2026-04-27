@@ -1,3 +1,6 @@
+# Path: app/api/v1/routes/trips.py
+# Summary: Defines trips API route handlers.
+
 from typing import List
 from fastapi import APIRouter, Response
 

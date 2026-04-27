@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/models/tripOverviewViewModel.ts
+// Summary: Defines the tripOverviewViewModel data model.
+
 import type { Trip, TripMemberReadinessItem } from "../../../../shared/api/trips";
 import type { DayAnchorType, Itinerary, ItineraryItem } from "../../../../shared/api/ai";
 import {

@@ -1,3 +1,6 @@
+// Path: ui-mobile/app/(tabs)/_layout.tsx
+// Summary: Implements  layout module logic.
+
 import { Ionicons } from "@expo/vector-icons";
 import { Redirect, Tabs } from "expo-router";
 

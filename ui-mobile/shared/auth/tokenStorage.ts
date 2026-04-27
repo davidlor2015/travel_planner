@@ -1,3 +1,6 @@
+// Path: ui-mobile/shared/auth/tokenStorage.ts
+// Summary: Implements tokenStorage module logic.
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";

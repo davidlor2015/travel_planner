@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/list/useTripWorkspaceModel.ts
+// Summary: Provides useTripWorkspaceModel hook behavior.
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {

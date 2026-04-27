@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/explore/ExploreSearchBar.tsx
+// Summary: Implements ExploreSearchBar module logic.
+
 import { Ionicons } from "@expo/vector-icons";
 import { TextInput, View } from "react-native";
 

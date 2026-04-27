@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/profile/preferences/preferencePresentation.ts
+// Summary: Implements preferencePresentation module logic.
+
 import type { AppPreferences } from "./useAppPreferences";
 
 export function buildDefaultsSubtext(prefs: AppPreferences): string {

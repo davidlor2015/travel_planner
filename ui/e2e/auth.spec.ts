@@ -1,3 +1,6 @@
+// Path: ui/e2e/auth.spec.ts
+// Summary: Covers automated tests for auth.spec behavior.
+
 import { test, expect } from '@playwright/test';
 import {
   expectAuthenticatedApp,

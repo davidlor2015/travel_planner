@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/TripFormSheet.tsx
+// Summary: Implements TripFormSheet module logic.
+
 import { useEffect, useState, type ReactNode } from "react";
 import {
   KeyboardAvoidingView,

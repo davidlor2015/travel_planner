@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/PlaceAutocompleteInput.tsx
+// Summary: Implements PlaceAutocompleteInput module logic.
+
 import { useEffect, useRef, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 

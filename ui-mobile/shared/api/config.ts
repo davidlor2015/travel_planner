@@ -1,3 +1,6 @@
+// Path: ui-mobile/shared/api/config.ts
+// Summary: Implements config module logic.
+
 import { Platform } from "react-native";
 
 const DEFAULT_WEB_DEV_API_BASE_URL = "http://127.0.0.1:8000";

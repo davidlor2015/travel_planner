@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/onTrip/hooks.ts
+// Summary: Implements hooks module logic.
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppState, type AppStateStatus } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";

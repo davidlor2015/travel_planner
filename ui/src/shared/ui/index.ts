@@ -1,3 +1,6 @@
+// Path: ui/src/shared/ui/index.ts
+// Summary: Implements index module logic.
+
 export { ErrorBoundary } from './ErrorBoundary';
 export { FormField } from './FormField';
 export { inputCls } from './inputCls';

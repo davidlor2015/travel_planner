@@ -1,3 +1,6 @@
+# Path: app/services/budget_service.py
+# Summary: Implements budget service business logic.
+
 from __future__ import annotations
 
 from fastapi import HTTPException

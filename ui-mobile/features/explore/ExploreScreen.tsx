@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/explore/ExploreScreen.tsx
+// Summary: Implements ExploreScreen module logic.
+
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 

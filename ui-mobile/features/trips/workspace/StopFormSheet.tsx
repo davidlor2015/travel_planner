@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/StopFormSheet.tsx
+// Summary: Implements StopFormSheet module logic.
+
 import { useEffect, useMemo, useState } from "react";
 import {
   Alert,

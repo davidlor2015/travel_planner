@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/onTrip/OnTripScreen.tsx
+// Summary: Implements OnTripScreen module logic.
+
 import { useEffect, useMemo, useState } from "react";
 import * as Linking from "expo-linking";
 import { Ionicons } from "@expo/vector-icons";

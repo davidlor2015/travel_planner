@@ -1,3 +1,6 @@
+# Path: app/schemas/prep.py
+# Summary: Defines Pydantic schemas for prep payloads.
+
 from __future__ import annotations
 
 from datetime import date, datetime

@@ -1,3 +1,6 @@
+// Path: ui/src/features/archive/components/ArchiveToolbar.tsx
+// Summary: Renders the ArchiveToolbar UI component.
+
 import { SearchInput, ViewToggle } from "../../../shared/ui";
 import type { ArchiveViewMode } from "../types";
 

@@ -1,3 +1,6 @@
+# Path: app/api/v1/routes/packing.py
+# Summary: Defines packing API route handlers.
+
 from typing import List
 
 from fastapi import APIRouter, Response

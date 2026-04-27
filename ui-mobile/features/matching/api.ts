@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/matching/api.ts
+// Summary: Implements api module logic.
+
 import { ApiError, apiFetch, apiRequest } from "@/shared/api/client";
 
 export type TravelStyle = "adventure" | "relaxed" | "cultural" | "party";

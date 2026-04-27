@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/onTrip/OnTripHeader.tsx
+// Summary: Implements OnTripHeader module logic.
+
 import { Pressable, Text, View } from "react-native";
 
 import { DE } from "@/shared/theme/desertEditorial";

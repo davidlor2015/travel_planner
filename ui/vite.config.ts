@@ -1,3 +1,6 @@
+// Path: ui/vite.config.ts
+// Summary: Implements vite.config module logic.
+
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'

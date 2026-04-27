@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/BookingsTab.tsx
+// Summary: Implements BookingsTab module logic.
+
 import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";

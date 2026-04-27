@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/profile/EditDisplayNameSheet.tsx
+// Summary: Implements EditDisplayNameSheet module logic.
+
 import { useEffect, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,

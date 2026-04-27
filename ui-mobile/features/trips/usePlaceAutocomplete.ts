@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/usePlaceAutocomplete.ts
+// Summary: Provides usePlaceAutocomplete hook behavior.
+
 import { useCallback, useEffect, useState } from "react";
 
 import { searchPlaces } from "./api";

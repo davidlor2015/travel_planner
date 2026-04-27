@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/today/useTodayModel.ts
+// Summary: Provides useTodayModel hook behavior.
+
 import { useMemo } from "react";
 
 import { getTripStatus } from "@/features/trips/adapters";

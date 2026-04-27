@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/reservations/BookingDetailSheet.tsx
+// Summary: Implements BookingDetailSheet module logic.
+
 import { useState } from "react";
 import {
   Modal,

@@ -1,3 +1,6 @@
+# Path: app/models/packing_item.py
+# Summary: Defines the packing item data model.
+
 from __future__ import annotations
 
 from datetime import datetime

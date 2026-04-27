@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/reservations/BookingFormSheet.tsx
+// Summary: Implements BookingFormSheet module logic.
+
 import { useEffect, useState } from "react";
 import {
   KeyboardAvoidingView,

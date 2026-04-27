@@ -1,3 +1,6 @@
+// Path: ui-mobile/app/(tabs)/trips/[tripId]/live.tsx
+// Summary: Implements live module logic.
+
 import { Text, View } from "react-native";
 import { Tabs, useLocalSearchParams } from "expo-router";
 

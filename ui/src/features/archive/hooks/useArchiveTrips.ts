@@ -1,3 +1,6 @@
+// Path: ui/src/features/archive/hooks/useArchiveTrips.ts
+// Summary: Provides useArchiveTrips hook behavior.
+
 import { useMemo } from "react";
 import type { Trip } from "../../../shared/api/trips";
 import type {

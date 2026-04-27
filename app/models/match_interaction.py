@@ -1,3 +1,6 @@
+# Path: app/models/match_interaction.py
+# Summary: Defines the match interaction data model.
+
 from __future__ import annotations
 
 from datetime import datetime

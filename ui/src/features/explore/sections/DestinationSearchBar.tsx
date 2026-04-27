@@ -1,3 +1,6 @@
+// Path: ui/src/features/explore/sections/DestinationSearchBar.tsx
+// Summary: Implements DestinationSearchBar module logic.
+
 import { SearchInput } from "../../../shared/ui";
 
 interface DestinationSearchBarProps {

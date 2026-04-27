@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/itineraryPresentation.ts
+// Summary: Implements itineraryPresentation module logic.
+
 import type { DayPlan, Itinerary, ItineraryItem } from "@/features/ai/api";
 
 export type ItineraryFilterKey = "all" | "activities" | "transit" | "reservations";

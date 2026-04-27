@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/budget/adapters.ts
+// Summary: Implements adapters module logic.
+
 import type { BudgetExpense } from "./api";
 import type { ExpenseCategory } from "./hooks";
 

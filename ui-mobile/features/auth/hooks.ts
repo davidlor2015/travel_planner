@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/auth/hooks.ts
+// Summary: Implements hooks module logic.
+
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import {

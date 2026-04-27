@@ -1,3 +1,6 @@
+# Path: app/api/v1/routes/prep.py
+# Summary: Defines prep API route handlers.
+
 from fastapi import APIRouter, Response
 
 from app.api.deps import CurrentUser, SessionDep

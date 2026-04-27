@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/onTrip/LogStopFAB.tsx
+// Summary: Implements LogStopFAB module logic.
+
 export function LogStopFAB({
   disabled,
   onClick,

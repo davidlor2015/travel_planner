@@ -1,3 +1,6 @@
+// Path: ui-mobile/shared/ui/ScreenLoading.tsx
+// Summary: Implements ScreenLoading module logic.
+
 import { ActivityIndicator, Text, View } from "react-native";
 
 import { fontStyles } from "@/shared/theme/typography";

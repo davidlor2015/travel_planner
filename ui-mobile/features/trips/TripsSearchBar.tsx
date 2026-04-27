@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/TripsSearchBar.tsx
+// Summary: Implements TripsSearchBar module logic.
+
 import { Ionicons } from "@expo/vector-icons";
 import { TextInput, View } from "react-native";
 

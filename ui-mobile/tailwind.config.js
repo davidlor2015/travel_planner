@@ -1,3 +1,6 @@
+// Path: ui-mobile/tailwind.config.js
+// Summary: Implements tailwind.config module logic.
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [

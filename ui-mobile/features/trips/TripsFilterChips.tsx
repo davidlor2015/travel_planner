@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/TripsFilterChips.tsx
+// Summary: Implements TripsFilterChips module logic.
+
 import { Pressable, ScrollView, Text } from "react-native";
 
 import { fontStyles } from "@/shared/theme/typography";

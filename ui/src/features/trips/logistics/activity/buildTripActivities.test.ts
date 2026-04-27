@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/logistics/activity/buildTripActivities.test.ts
+// Summary: Covers automated tests for buildTripActivities.test behavior.
+
 import { describe, expect, it } from "vitest";
 
 import type { Trip } from "../../../../shared/api/trips";

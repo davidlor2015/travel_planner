@@ -1,3 +1,6 @@
+// Path: ui/src/features/static/StaticPageLayout.tsx
+// Summary: Implements StaticPageLayout module logic.
+
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 

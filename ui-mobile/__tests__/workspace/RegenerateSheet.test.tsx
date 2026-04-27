@@ -1,3 +1,6 @@
+// Path: ui-mobile/__tests__/workspace/RegenerateSheet.test.tsx
+// Summary: Covers automated tests for RegenerateSheet.test behavior.
+
 /**
  * Tests for the RegenerateSheet component and the day-refinement flow in OverviewTab.
  *

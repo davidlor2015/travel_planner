@@ -1,3 +1,6 @@
+# Path: app/api/v1/routes/trip_execution.py
+# Summary: Defines trip execution API route handlers.
+
 from fastapi import APIRouter, Request, Response
 
 from app.api.deps import CurrentUser, SessionDep

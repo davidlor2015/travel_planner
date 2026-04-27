@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/profile/preferences/useAppPreferences.ts
+// Summary: Provides useAppPreferences hook behavior.
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCallback, useEffect, useRef, useState } from "react";
 

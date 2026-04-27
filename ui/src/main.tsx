@@ -1,3 +1,6 @@
+// Path: ui/src/main.tsx
+// Summary: Implements main module logic.
+
 import "./instrument";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";

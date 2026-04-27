@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/ItineraryTimelineDay.tsx
+// Summary: Implements ItineraryTimelineDay module logic.
+
 import { Pressable, Text, View } from "react-native";
 
 import { DE } from "@/shared/theme/desertEditorial";

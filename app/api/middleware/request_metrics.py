@@ -1,3 +1,6 @@
+# Path: app/api/middleware/request_metrics.py
+# Summary: Implements request metrics functionality.
+
 from __future__ import annotations
 
 import logging

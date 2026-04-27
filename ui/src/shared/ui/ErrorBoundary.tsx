@@ -1,3 +1,6 @@
+// Path: ui/src/shared/ui/ErrorBoundary.tsx
+// Summary: Implements ErrorBoundary module logic.
+
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { captureUiError } from '../analytics';
 

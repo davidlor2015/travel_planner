@@ -1,3 +1,6 @@
+// Path: ui-mobile/shared/api/executeWithRetry.ts
+// Summary: Implements executeWithRetry module logic.
+
 import { ApiError } from "./client";
 
 export interface RetryOptions {

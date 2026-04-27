@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/onTrip/HappeningNowCard.tsx
+// Summary: Implements HappeningNowCard module logic.
+
 import { useEffect, useRef } from "react";
 import { Animated, Platform, Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";

@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/explore/GridDestinationCard.tsx
+// Summary: Implements GridDestinationCard module logic.
+
 import { Image } from "expo-image";
 import { Pressable, Text, View } from "react-native";
 

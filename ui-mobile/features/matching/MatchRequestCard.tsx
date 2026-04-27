@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/matching/MatchRequestCard.tsx
+// Summary: Implements MatchRequestCard module logic.
+
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";

@@ -1,3 +1,6 @@
+// Path: ui/src/features/matching/adapters/matchingInsights.ts
+// Summary: Implements matchingInsights module logic.
+
 import type { MatchResult, TravelProfile } from '../../../shared/api/matching';
 
 

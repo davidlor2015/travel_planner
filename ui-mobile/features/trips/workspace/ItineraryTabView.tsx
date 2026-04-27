@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/ItineraryTabView.tsx
+// Summary: Implements ItineraryTabView module logic.
+
 import { useRef } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 

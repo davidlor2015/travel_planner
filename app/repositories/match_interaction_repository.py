@@ -1,3 +1,6 @@
+# Path: app/repositories/match_interaction_repository.py
+# Summary: Implements data access for match interaction repository operations.
+
 from typing import List
 
 from sqlalchemy import delete, or_, select

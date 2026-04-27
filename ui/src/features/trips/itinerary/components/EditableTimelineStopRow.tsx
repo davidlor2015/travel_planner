@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/itinerary/components/EditableTimelineStopRow.tsx
+// Summary: Renders the EditableTimelineStopRow UI component.
+
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { inputCls } from "../../../../shared/ui/inputCls";

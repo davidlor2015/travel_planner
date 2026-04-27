@@ -1,3 +1,6 @@
+// Path: ui/src/features/explore/sections/index.ts
+// Summary: Implements index module logic.
+
 export { CategoryChipRow } from "./CategoryChipRow";
 export { DestinationGridSection } from "./DestinationGridSection";
 export { DestinationSearchBar } from "./DestinationSearchBar";

@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/matching/useCompanionsScreen.ts
+// Summary: Provides useCompanionsScreen hook behavior.
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useTripsQuery } from "../trips/hooks";

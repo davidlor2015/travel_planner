@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/onTrip/ReturnToWorkspaceLink.tsx
+// Summary: Implements ReturnToWorkspaceLink module logic.
+
 export function ReturnToWorkspaceLink({ onClick }: { onClick: () => void }) {
   return (
     <button

@@ -1,3 +1,6 @@
+# Path: app/models/trip_membership.py
+# Summary: Defines the trip membership data model.
+
 from __future__ import annotations
 
 import json

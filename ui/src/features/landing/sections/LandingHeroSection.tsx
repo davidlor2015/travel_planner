@@ -1,3 +1,6 @@
+// Path: ui/src/features/landing/sections/LandingHeroSection.tsx
+// Summary: Implements LandingHeroSection module logic.
+
 import { motion, useReducedMotion } from "framer-motion";
 
 interface LandingHeroSectionProps {

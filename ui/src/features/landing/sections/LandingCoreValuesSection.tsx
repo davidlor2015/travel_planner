@@ -1,3 +1,6 @@
+// Path: ui/src/features/landing/sections/LandingCoreValuesSection.tsx
+// Summary: Implements LandingCoreValuesSection module logic.
+
 import { motion, useReducedMotion } from "framer-motion";
 
 // ─── Shared mini-components ──────────────────────────────────────────────────

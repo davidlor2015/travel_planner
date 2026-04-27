@@ -1,3 +1,6 @@
+// Path: ui/src/features/matching/hooks/useMatchingProfile.ts
+// Summary: Provides useMatchingProfile hook behavior.
+
 import { useEffect, useState } from 'react';
 
 import {

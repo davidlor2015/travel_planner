@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/packing/api.ts
+// Summary: Implements api module logic.
+
 import { apiRequest } from "@/shared/api/client";
 
 export type PackingItem = {

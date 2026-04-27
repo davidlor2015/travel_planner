@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/useTripWorkspaceModel.ts
+// Summary: Provides useTripWorkspaceModel hook behavior.
+
 import { useMemo } from "react";
 
 import {

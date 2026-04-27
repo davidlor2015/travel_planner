@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/helpers/mapLinks.ts
+// Summary: Implements mapLinks module logic.
+
 export type MapLinkStop = {
   title?: string | null;
   location?: string | null;

@@ -1,3 +1,6 @@
+# Path: app/services/travel_profile_service.py
+# Summary: Implements travel profile service business logic.
+
 from fastapi import HTTPException
 from typing import Any
 

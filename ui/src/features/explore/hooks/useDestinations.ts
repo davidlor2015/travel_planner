@@ -1,3 +1,6 @@
+// Path: ui/src/features/explore/hooks/useDestinations.ts
+// Summary: Provides useDestinations hook behavior.
+
 import { useMemo } from "react";
 import type {
   Destination,

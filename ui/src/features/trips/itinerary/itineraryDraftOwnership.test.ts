@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/itinerary/itineraryDraftOwnership.test.ts
+// Summary: Covers automated tests for itineraryDraftOwnership.test behavior.
+
 import { describe, expect, it } from "vitest";
 
 import {

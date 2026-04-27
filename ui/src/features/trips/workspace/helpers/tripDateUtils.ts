@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/helpers/tripDateUtils.ts
+// Summary: Implements tripDateUtils module logic.
+
 import type { TripStatus } from "../types";
 
 export function getTripStatus(startIso: string, endIso: string): TripStatus {

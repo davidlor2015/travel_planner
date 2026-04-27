@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/hooks.ts
+// Summary: Implements hooks module logic.
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {

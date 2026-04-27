@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/RegenerateSheet.tsx
+// Summary: Implements RegenerateSheet module logic.
+
 import { useRef, useState } from "react";
 import {
   ActivityIndicator,

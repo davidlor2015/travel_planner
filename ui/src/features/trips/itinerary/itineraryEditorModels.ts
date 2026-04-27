@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/itinerary/itineraryEditorModels.ts
+// Summary: Implements itineraryEditorModels module logic.
+
 import type { EditableDayPlan, EditableItineraryItem } from "./itineraryDraft";
 import { normalizeStopStatus } from "./itineraryDraft";
 import { extractStopOwnershipMetadata } from "./itineraryDraft";

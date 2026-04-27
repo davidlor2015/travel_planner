@@ -1,3 +1,6 @@
+# Path: app/api/v1/routes/reservations.py
+# Summary: Defines reservations API route handlers.
+
 from fastapi import APIRouter, Response
 
 from app.api.deps import CurrentUser, SessionDep

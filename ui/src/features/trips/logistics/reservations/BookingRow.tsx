@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/logistics/reservations/BookingRow.tsx
+// Summary: Implements BookingRow module logic.
+
 import { motion } from "framer-motion";
 
 interface BookingRowProps {

@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/TripsListHeader.tsx
+// Summary: Implements TripsListHeader module logic.
+
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, Text, View } from "react-native";
 

@@ -1,3 +1,6 @@
+# Path: app/core/normalization.py
+# Summary: Implements normalization functionality.
+
 from __future__ import annotations
 
 import re

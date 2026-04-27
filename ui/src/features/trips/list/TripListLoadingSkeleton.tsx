@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/list/TripListLoadingSkeleton.tsx
+// Summary: Implements TripListLoadingSkeleton module logic.
+
 export function TripListLoadingSkeleton() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6">

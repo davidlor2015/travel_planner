@@ -1,3 +1,6 @@
+# Path: app/api/v1/routes/auth.py
+# Summary: Defines auth API route handlers.
+
 from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 from fastapi.security import OAuth2PasswordRequestForm

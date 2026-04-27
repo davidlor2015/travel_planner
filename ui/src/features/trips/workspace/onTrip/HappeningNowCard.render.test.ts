@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/onTrip/HappeningNowCard.render.test.ts
+// Summary: Covers automated tests for HappeningNowCard.render.test behavior.
+
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";

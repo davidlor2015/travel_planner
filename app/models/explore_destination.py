@@ -1,3 +1,6 @@
+# Path: app/models/explore_destination.py
+# Summary: Defines the explore destination data model.
+
 from __future__ import annotations
 
 from datetime import datetime

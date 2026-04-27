@@ -1,3 +1,6 @@
+// Path: ui-mobile/providers/QueryProvider.tsx
+// Summary: Implements QueryProvider module logic.
+
 import { PropsWithChildren, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 

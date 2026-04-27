@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/types.ts
+// Summary: Implements types module logic.
+
 export type TripMember = {
   user_id: number;
   email: string;

@@ -1,3 +1,6 @@
+// Path: ui-mobile/app/(auth)/verify-email.tsx
+// Summary: Implements verify-email module logic.
+
 import { useEffect, useRef, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";

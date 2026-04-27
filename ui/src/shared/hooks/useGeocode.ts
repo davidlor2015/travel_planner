@@ -1,3 +1,6 @@
+// Path: ui/src/shared/hooks/useGeocode.ts
+// Summary: Provides useGeocode hook behavior.
+
 import { useState, useEffect, useMemo } from 'react';
 
 

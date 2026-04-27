@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/useWorkspaceMapModel.ts
+// Summary: Provides useWorkspaceMapModel hook behavior.
+
 import { useEffect, useMemo, useState } from "react";
 
 import { useSavedItineraryQuery } from "@/features/ai/hooks";

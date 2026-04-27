@@ -1,3 +1,6 @@
+// Path: ui/src/features/explore/components/RatingBadge.tsx
+// Summary: Renders the RatingBadge UI component.
+
 export function RatingBadge({ rating }: { rating?: number }) {
   if (!rating) return null;
 

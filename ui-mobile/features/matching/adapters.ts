@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/matching/adapters.ts
+// Summary: Implements adapters module logic.
+
 import type { MatchResult, TravelProfile, MatchInteractionStatus } from "./api";
 
 // ─── Label helpers ────────────────────────────────────────────────────────────

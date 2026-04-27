@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/explore/ExploreHeader.tsx
+// Summary: Implements ExploreHeader module logic.
+
 import { Text, View } from "react-native";
 
 import { fontStyles } from "@/shared/theme/typography";

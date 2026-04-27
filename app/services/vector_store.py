@@ -1,3 +1,6 @@
+# Path: app/services/vector_store.py
+# Summary: Implements vector store business logic.
+
 """
 Low-level interface to the itinerary_chunks Postgres/pgvector table.
 

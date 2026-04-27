@@ -1,3 +1,6 @@
+// Path: ui-mobile/shared/ui/ScreenHeader.tsx
+// Summary: Implements ScreenHeader module logic.
+
 import type { ReactNode } from "react";
 import { Pressable, Text, View } from "react-native";
 

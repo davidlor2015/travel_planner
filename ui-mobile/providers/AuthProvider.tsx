@@ -1,3 +1,6 @@
+// Path: ui-mobile/providers/AuthProvider.tsx
+// Summary: Implements AuthProvider module logic.
+
 import {
   createContext,
   PropsWithChildren,

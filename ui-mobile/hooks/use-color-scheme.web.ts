@@ -1,3 +1,6 @@
+// Path: ui-mobile/hooks/use-color-scheme.web.ts
+// Summary: Provides use-color-scheme.web hook behavior.
+
 import { useEffect, useState } from 'react';
 import { useColorScheme as useRNColorScheme } from 'react-native';
 

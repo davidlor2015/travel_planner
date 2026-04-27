@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/TripSwitcherSheet.tsx
+// Summary: Implements TripSwitcherSheet module logic.
+
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 
 import { Button } from "@/shared/ui/Button";

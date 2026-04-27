@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/profile/FeedbackSheet.tsx
+// Summary: Implements FeedbackSheet module logic.
+
 import { useEffect, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,

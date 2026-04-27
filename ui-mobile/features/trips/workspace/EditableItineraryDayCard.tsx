@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/EditableItineraryDayCard.tsx
+// Summary: Implements EditableItineraryDayCard module logic.
+
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 

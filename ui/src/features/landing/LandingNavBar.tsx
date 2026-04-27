@@ -1,3 +1,6 @@
+// Path: ui/src/features/landing/LandingNavBar.tsx
+// Summary: Implements LandingNavBar module logic.
+
 import { WaypointLogo } from "../../shared/ui";
 
 interface LandingNavBarProps {

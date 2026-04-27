@@ -1,3 +1,6 @@
+// Path: ui/src/features/explore/components/EditorialPickCard.tsx
+// Summary: Renders the EditorialPickCard UI component.
+
 import type { Destination } from "../types";
 
 interface EditorialPickCardProps {

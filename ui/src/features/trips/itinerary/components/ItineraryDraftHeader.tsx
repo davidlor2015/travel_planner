@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/itinerary/components/ItineraryDraftHeader.tsx
+// Summary: Renders the ItineraryDraftHeader UI component.
+
 import { useId, useState } from "react";
 
 export interface ItineraryDraftHeaderProps {

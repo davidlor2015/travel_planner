@@ -1,3 +1,6 @@
+# Path: app/repositories/trip_repository.py
+# Summary: Implements data access for trip repository operations.
+
 from typing import Optional, List
 
 from sqlalchemy import delete, or_, select

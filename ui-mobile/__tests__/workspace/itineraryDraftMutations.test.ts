@@ -1,3 +1,6 @@
+// Path: ui-mobile/__tests__/workspace/itineraryDraftMutations.test.ts
+// Summary: Covers automated tests for itineraryDraftMutations.test behavior.
+
 import type { DayPlan, Itinerary, ItineraryItem } from "@/features/ai/api";
 import {
   addDayToItinerary,

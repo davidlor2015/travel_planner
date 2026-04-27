@@ -1,3 +1,6 @@
+# Path: app/schemas/budget.py
+# Summary: Defines Pydantic schemas for budget payloads.
+
 from __future__ import annotations
 
 from datetime import datetime

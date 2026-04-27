@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/adapters.ts
+// Summary: Implements adapters module logic.
+
 import { getTripStatus } from "../adapters";
 import type {
   TripMemberReadiness,

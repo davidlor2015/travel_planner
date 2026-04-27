@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/reservations/adapters.ts
+// Summary: Implements adapters module logic.
+
 import type { Reservation, ReservationType } from "./api";
 
 // ─── Filter types ────────────────────────────────────────────────────────────

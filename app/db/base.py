@@ -1,3 +1,6 @@
+# Path: app/db/base.py
+# Summary: Implements base functionality.
+
 from app.db.base_class import Base
 
 from app.models.user import User  # noqa: F401

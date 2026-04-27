@@ -1,3 +1,6 @@
+# Path: app/schemas/auth.py
+# Summary: Defines Pydantic schemas for auth payloads.
+
 from pydantic import BaseModel, ConfigDict, EmailStr
 
 class Token(BaseModel):

@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/profile/preferences/LanguageSheet.tsx
+// Summary: Implements LanguageSheet module logic.
+
 import { Linking, Modal, Text, View } from "react-native";
 
 import { fontStyles } from "@/shared/theme/typography";

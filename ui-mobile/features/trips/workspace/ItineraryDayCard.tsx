@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/ItineraryDayCard.tsx
+// Summary: Implements ItineraryDayCard module logic.
+
 import type { ReactNode } from "react";
 import { Text, View } from "react-native";
 

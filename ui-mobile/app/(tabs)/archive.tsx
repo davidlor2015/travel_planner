@@ -1,3 +1,6 @@
+// Path: ui-mobile/app/(tabs)/archive.tsx
+// Summary: Implements archive module logic.
+
 import { useCallback, useRef } from "react";
 import {
   Pressable,

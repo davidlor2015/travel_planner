@@ -1,3 +1,6 @@
+// Path: ui-mobile/shared/ui/StatusPill.tsx
+// Summary: Implements StatusPill module logic.
+
 import { Text, View } from "react-native";
 
 import { fontStyles } from "@/shared/theme/typography";

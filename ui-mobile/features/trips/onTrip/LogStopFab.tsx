@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/onTrip/LogStopFab.tsx
+// Summary: Implements LogStopFab module logic.
+
 import { Platform, Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 

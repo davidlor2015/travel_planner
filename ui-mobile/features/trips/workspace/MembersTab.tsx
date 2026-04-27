@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/MembersTab.tsx
+// Summary: Implements MembersTab module logic.
+
 import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 

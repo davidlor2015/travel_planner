@@ -1,3 +1,6 @@
+# Path: app/services/trip_service.py
+# Summary: Implements trip service business logic.
+
 from datetime import date, datetime, timedelta, timezone
 import json
 from typing import Any

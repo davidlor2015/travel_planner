@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/explore/adapters.ts
+// Summary: Implements adapters module logic.
+
 import type { Destination, FeaturedCardViewModel, GridCardViewModel } from "./types";
 
 export function toFeaturedCardViewModel(d: Destination): FeaturedCardViewModel {

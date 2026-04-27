@@ -1,3 +1,6 @@
+# Path: app/scripts/generate_itineraries.py
+# Summary: Implements generate itineraries functionality.
+
 # app/scripts/generate_itineraries.py
 """
 Mass-generate itinerary records using the local Ollama model and save them to

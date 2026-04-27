@@ -1,3 +1,6 @@
+// Path: ui-mobile/__tests__/workspace/StopFormSheet.test.tsx
+// Summary: Covers automated tests for StopFormSheet.test behavior.
+
 import { fireEvent, render } from "@testing-library/react-native";
 
 import { StopFormSheet } from "@/features/trips/workspace/StopFormSheet";

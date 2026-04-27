@@ -1,3 +1,6 @@
+# Path: app/models/prep_item.py
+# Summary: Defines the prep item data model.
+
 from __future__ import annotations
 
 from datetime import date, datetime

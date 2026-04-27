@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/matching/MatchResultsPanel.tsx
+// Summary: Implements MatchResultsPanel module logic.
+
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,

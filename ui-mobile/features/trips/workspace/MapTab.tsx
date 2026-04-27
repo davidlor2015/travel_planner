@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/MapTab.tsx
+// Summary: Implements MapTab module logic.
+
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import {

@@ -1,3 +1,6 @@
+// Path: ui-mobile/app/(tabs)/trips/index.tsx
+// Summary: Implements index module logic.
+
 import { useState } from "react";
 import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";

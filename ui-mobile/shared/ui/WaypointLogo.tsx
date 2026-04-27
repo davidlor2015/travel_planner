@@ -1,3 +1,6 @@
+// Path: ui-mobile/shared/ui/WaypointLogo.tsx
+// Summary: Implements WaypointLogo module logic.
+
 import { View, Text } from "react-native";
 import Svg, { Path, G, Defs, ClipPath, Rect } from "react-native-svg";
 

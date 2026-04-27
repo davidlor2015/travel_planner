@@ -1,3 +1,6 @@
+// Path: ui/src/features/matching/components/MatchRequestList.tsx
+// Summary: Renders the MatchRequestList UI component.
+
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 

@@ -1,3 +1,6 @@
+// Path: ui/src/features/explore/sections/CategoryChipRow.tsx
+// Summary: Implements CategoryChipRow module logic.
+
 import { CategoryChip } from "../../../shared/ui";
 import type { DestinationMood } from "../types";
 

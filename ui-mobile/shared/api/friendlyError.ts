@@ -1,3 +1,6 @@
+// Path: ui-mobile/shared/api/friendlyError.ts
+// Summary: Implements friendlyError module logic.
+
 import { ApiError } from "./client";
 
 export type ErrorDomain = "auth" | "trips" | "ai" | "budget" | "packing" | "bookings" | "profile";

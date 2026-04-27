@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/packing/PackingItemRow.tsx
+// Summary: Implements PackingItemRow module logic.
+
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, Text, TextInput, View } from "react-native";
 

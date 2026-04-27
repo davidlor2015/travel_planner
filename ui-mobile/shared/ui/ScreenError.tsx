@@ -1,3 +1,6 @@
+// Path: ui-mobile/shared/ui/ScreenError.tsx
+// Summary: Implements ScreenError module logic.
+
 import { Text, View } from "react-native";
 
 import { fontStyles } from "@/shared/theme/typography";

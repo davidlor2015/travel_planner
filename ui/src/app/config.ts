@@ -1,3 +1,6 @@
+// Path: ui/src/app/config.ts
+// Summary: Implements config module logic.
+
 // src/app/config.ts
 // default localhost:8000
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'

@@ -1,3 +1,6 @@
+// Path: ui-mobile/app/(auth)/reset-password.tsx
+// Summary: Implements reset-password module logic.
+
 import { useState } from "react";
 import {
   KeyboardAvoidingView,

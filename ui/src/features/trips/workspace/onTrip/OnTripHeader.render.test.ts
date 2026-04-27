@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/onTrip/OnTripHeader.render.test.ts
+// Summary: Covers automated tests for OnTripHeader.render.test behavior.
+
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";

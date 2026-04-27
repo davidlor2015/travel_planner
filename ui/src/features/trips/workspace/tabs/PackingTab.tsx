@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/tabs/PackingTab.tsx
+// Summary: Implements PackingTab module logic.
+
 import { PackingList } from "../../logistics/packing";
 import type { PackingSummary } from "../types";
 

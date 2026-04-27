@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/onTrip/NeedsAttentionCard.tsx
+// Summary: Implements NeedsAttentionCard module logic.
+
 import type { TripOnTripBlocker } from "../../../../shared/api/trips";
 
 function AlertIcon() {

@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/onTrip/TimelineRow.tsx
+// Summary: Implements TimelineRow module logic.
+
 import { Pressable, Text, View } from "react-native";
 
 import { DE } from "@/shared/theme/desertEditorial";

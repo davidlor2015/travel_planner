@@ -1,3 +1,6 @@
+# Path: app/services/ollama_service.py
+# Summary: Implements ollama service business logic.
+
 """
 Synchronous Ollama client for offline pipeline scripts.
 

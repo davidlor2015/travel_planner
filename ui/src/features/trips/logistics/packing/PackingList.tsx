@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/logistics/packing/PackingList.tsx
+// Summary: Implements PackingList module logic.
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {

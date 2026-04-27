@@ -1,3 +1,6 @@
+// Path: ui-mobile/__tests__/workspace/ItineraryTabView.test.tsx
+// Summary: Covers automated tests for ItineraryTabView.test behavior.
+
 import { fireEvent, render, within } from "@testing-library/react-native";
 import { useState } from "react";
 

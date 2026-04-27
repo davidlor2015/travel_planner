@@ -1,3 +1,6 @@
+// Path: ui/src/features/profile/useProfileStats.ts
+// Summary: Provides useProfileStats hook behavior.
+
 import { useMemo, useState } from 'react';
 import type { Trip } from '../../shared/api/trips';
 

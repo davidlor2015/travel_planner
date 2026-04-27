@@ -1,3 +1,6 @@
+// Path: ui/src/features/archive/components/ArchiveHeader.tsx
+// Summary: Renders the ArchiveHeader UI component.
+
 import { SectionHeading } from "../../../shared/ui";
 
 interface ArchiveHeaderProps {

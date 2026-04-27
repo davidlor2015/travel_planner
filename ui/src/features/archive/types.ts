@@ -1,3 +1,6 @@
+// Path: ui/src/features/archive/types.ts
+// Summary: Implements types module logic.
+
 export type ArchiveViewMode = "grid" | "list";
 
 export interface ArchiveTripItem {

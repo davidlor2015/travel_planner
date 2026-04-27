@@ -1,3 +1,6 @@
+// Path: ui/e2e/v1-scope.spec.ts
+// Summary: Covers automated tests for v1-scope.spec behavior.
+
 /**
  * Assertions that v1 scope-cleanup UI changes are live.
  * Each test targets a specific surface that was added, removed, or renamed.

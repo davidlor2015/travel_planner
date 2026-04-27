@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/auth/api.ts
+// Summary: Implements api module logic.
+
 import { API_BASE_URL } from "@/shared/api/config";
 import { ApiError, apiRequest } from "@/shared/api/client";
 

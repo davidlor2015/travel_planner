@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/itinerary/itineraryReadinessModel.ts
+// Summary: Implements itineraryReadinessModel module logic.
+
 import type { DayAnchorType, EditableItinerary } from "./itineraryDraft";
 
 export type ItineraryReadinessSeverity = "blocker" | "watch" | "unknown";

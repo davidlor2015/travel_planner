@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/archive/useArchiveScreen.ts
+// Summary: Provides useArchiveScreen hook behavior.
+
 import { useMemo, useState } from "react";
 
 import { useTripsQuery, useTripSummariesQuery } from "../hooks";

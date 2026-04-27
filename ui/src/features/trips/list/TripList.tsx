@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/list/TripList.tsx
+// Summary: Implements TripList module logic.
+
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";

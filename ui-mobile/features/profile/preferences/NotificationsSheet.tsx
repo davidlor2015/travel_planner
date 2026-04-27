@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/profile/preferences/NotificationsSheet.tsx
+// Summary: Implements NotificationsSheet module logic.
+
 import { Modal, ScrollView, Switch, Text, View } from "react-native";
 
 import { fontStyles } from "@/shared/theme/typography";

@@ -1,3 +1,6 @@
+// Path: ui-mobile/shared/api/client.ts
+// Summary: Implements client module logic.
+
 import { API_BASE_URL } from "@/shared/api/config";
 import {
   clearSessionTokens,

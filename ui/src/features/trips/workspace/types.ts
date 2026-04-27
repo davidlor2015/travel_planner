@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/types.ts
+// Summary: Implements types module logic.
+
 export type TripStatus = 'upcoming' | 'active' | 'past';
 
 export interface PackingSummary {

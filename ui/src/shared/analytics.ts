@@ -1,3 +1,6 @@
+// Path: ui/src/shared/analytics.ts
+// Summary: Implements analytics module logic.
+
 import * as Sentry from '@sentry/react';
 import posthog from 'posthog-js';
 

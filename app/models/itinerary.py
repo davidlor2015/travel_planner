@@ -1,3 +1,6 @@
+# Path: app/models/itinerary.py
+# Summary: Defines the itinerary data model.
+
 from __future__ import annotations
 
 from sqlalchemy import Float, ForeignKey, Integer, String, Text

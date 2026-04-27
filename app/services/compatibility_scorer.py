@@ -1,3 +1,6 @@
+# Path: app/services/compatibility_scorer.py
+# Summary: Implements compatibility scorer business logic.
+
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass

@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/logistics/chat/TripChatPanel.tsx
+// Summary: Implements TripChatPanel module logic.
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 

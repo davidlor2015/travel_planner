@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/WorkspaceTabBar.tsx
+// Summary: Implements WorkspaceTabBar module logic.
+
 import { useRef, type KeyboardEvent } from "react";
 
 export type WorkspaceTab =

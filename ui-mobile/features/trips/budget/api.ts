@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/budget/api.ts
+// Summary: Implements api module logic.
+
 import { ApiError, apiFetch, apiRequest } from "@/shared/api/client";
 
 export type BudgetExpense = {

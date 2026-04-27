@@ -1,3 +1,6 @@
+// Path: ui/src/features/matching/MatchingPage.tsx
+// Summary: Implements MatchingPage module logic.
+
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 

@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/api.ts
+// Summary: Implements api module logic.
+
 import { apiFetch, apiRequest } from "@/shared/api/client";
 import { executeWithRetry } from "@/shared/api/executeWithRetry";
 

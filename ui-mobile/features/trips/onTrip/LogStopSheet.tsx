@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/onTrip/LogStopSheet.tsx
+// Summary: Implements LogStopSheet module logic.
+
 import { useEffect, useState } from "react";
 import { Modal, Pressable, Text, View } from "react-native";
 

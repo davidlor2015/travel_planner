@@ -1,3 +1,6 @@
+// Path: ui/src/features/matching/components/ScoreBar.tsx
+// Summary: Renders the ScoreBar UI component.
+
 import { motion } from 'framer-motion';
 
 

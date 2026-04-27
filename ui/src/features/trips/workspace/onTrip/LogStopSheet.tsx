@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/onTrip/LogStopSheet.tsx
+// Summary: Implements LogStopSheet module logic.
+
 import { useMemo, useState } from "react";
 
 export type LogStopPayload = {

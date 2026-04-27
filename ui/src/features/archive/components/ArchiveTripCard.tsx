@@ -1,3 +1,6 @@
+// Path: ui/src/features/archive/components/ArchiveTripCard.tsx
+// Summary: Renders the ArchiveTripCard UI component.
+
 import { AvatarStack, StatusPill } from "../../../shared/ui";
 import { formatArchiveDateRange } from "../adapters/archiveAdapter";
 import type { ArchiveTripItem } from "../types";

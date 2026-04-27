@@ -1,3 +1,6 @@
+// Path: ui-mobile/shared/theme/typography.ts
+// Summary: Implements typography module logic.
+
 import type { TextStyle } from "react-native";
 
 /**

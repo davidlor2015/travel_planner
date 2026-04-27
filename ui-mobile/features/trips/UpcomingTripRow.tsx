@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/UpcomingTripRow.tsx
+// Summary: Implements UpcomingTripRow module logic.
+
 import { Image } from "expo-image";
 import { Pressable, Text, View } from "react-native";
 

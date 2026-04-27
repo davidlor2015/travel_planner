@@ -1,3 +1,6 @@
+# Path: app/services/reservation_service.py
+# Summary: Implements reservation service business logic.
+
 from __future__ import annotations
 
 from fastapi import HTTPException

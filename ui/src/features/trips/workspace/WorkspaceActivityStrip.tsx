@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/WorkspaceActivityStrip.tsx
+// Summary: Implements WorkspaceActivityStrip module logic.
+
 import type { WorkspaceActivityStripItem } from "./models/workspaceActivityModel";
 
 interface WorkspaceActivityStripProps {

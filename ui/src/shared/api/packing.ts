@@ -1,3 +1,6 @@
+// Path: ui/src/shared/api/packing.ts
+// Summary: Implements packing module logic.
+
 import { API_URL } from '../../app/config';
 import { apiFetch } from './client';
 

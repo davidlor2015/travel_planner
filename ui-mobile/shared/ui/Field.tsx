@@ -1,3 +1,6 @@
+// Path: ui-mobile/shared/ui/Field.tsx
+// Summary: Implements Field module logic.
+
 import type { ReactNode } from "react";
 import { Text, View } from "react-native";
 

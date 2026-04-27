@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/itinerary/tripItineraryDraftWorkspace.ts
+// Summary: Implements tripItineraryDraftWorkspace module logic.
+
 import type { Itinerary } from "../../../shared/api/ai";
 import type { Trip } from "../../../shared/api/trips";
 import type {

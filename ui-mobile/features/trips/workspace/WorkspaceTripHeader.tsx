@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/WorkspaceTripHeader.tsx
+// Summary: Implements WorkspaceTripHeader module logic.
+
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";

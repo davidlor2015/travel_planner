@@ -1,3 +1,6 @@
+# Path: app/services/trip_access_service.py
+# Summary: Implements trip access service business logic.
+
 from __future__ import annotations
 
 from dataclasses import dataclass

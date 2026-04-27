@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/itinerary/draftPublishStateMachine.ts
+// Summary: Implements draftPublishStateMachine module logic.
+
 export type DraftMutationState = "idle" | "saving" | "saved";
 
 export interface DraftPublishMachineState {
