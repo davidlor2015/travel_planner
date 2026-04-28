@@ -31,11 +31,11 @@ test.describe('Archive', () => {
     await page.getByRole('button', { name: 'List' }).click();
     await expect(page).toHaveURL(/view=list/);
 
-    await page.getByPlaceholder('Search past trips...').fill('kyoto');
+    await page.getByPlaceholder('Search memories...').fill('kyoto');
     await expect(page.getByText('Kyoto Memories').first()).toBeVisible();
 
-    await page.getByPlaceholder('Search past trips...').fill('rome');
-    await expect(page.getByRole('heading', { name: 'No past trips match that search.' })).toBeVisible();
+    await page.getByPlaceholder('Search memories...').fill('rome');
+    await expect(page.getByRole('heading', { name: 'No memories match that search.' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Clear Search' }).click();
     await expect(page.getByText('Kyoto Memories').first()).toBeVisible();

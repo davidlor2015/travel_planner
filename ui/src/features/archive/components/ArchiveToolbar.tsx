@@ -19,13 +19,13 @@ export function ArchiveToolbar({
 }: ArchiveToolbarProps) {
   return (
     <section
-      aria-label="Archive filters"
+      aria-label="Memories filters"
       className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
     >
       <SearchInput
         value={query}
         onChange={onQueryChange}
-        placeholder="Search past trips..."
+        placeholder="Search memories..."
         className="w-full sm:max-w-md"
       />
 

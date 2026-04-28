@@ -57,6 +57,28 @@ export function ArchiveTripRow({
           </span>
           {rating ? <span>{rating}/5 rated</span> : null}
         </div>
+        {(trip.itineraryDayCount || trip.itineraryStopCount || trip.notesPreview) ? (
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-flint">
+            {trip.itineraryDayCount ? (
+              <span className="rounded-full border border-smoke bg-parchment/40 px-2.5 py-1">
+                {trip.itineraryDayCount} day plan
+              </span>
+            ) : null}
+            {trip.itineraryStopCount ? (
+              <span className="rounded-full border border-smoke bg-parchment/40 px-2.5 py-1">
+                {trip.itineraryStopCount} saved stop{trip.itineraryStopCount === 1 ? "" : "s"}
+              </span>
+            ) : null}
+            {trip.notesPreview ? (
+              <span className="rounded-full border border-smoke bg-parchment/40 px-2.5 py-1">
+                Notes captured
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+        {trip.notesPreview ? (
+          <p className="mt-2 text-xs text-muted">{trip.notesPreview}</p>
+        ) : null}
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <button

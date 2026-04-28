@@ -1,5 +1,17 @@
 # Copilot instructions for Waypoint
 
+## Required pre-change checklist
+
+Before making changes:
+
+1. Read `V1_SCOPE.md`.
+2. Read `AGENTS.md` (if present).
+3. Read and follow `COPILOT_CHECKLIST.md`.
+
+If the request conflicts with `V1_SCOPE.md`, stop and report the conflict before implementation.
+
+Hard constraint: do not change colors, fonts, or typography in `ui/` or `ui-mobile/` unless explicitly requested.
+
 ## Build, test, and lint commands
 
 Run from `travel-planner/` unless noted.

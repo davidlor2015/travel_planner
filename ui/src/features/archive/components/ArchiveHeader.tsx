@@ -32,7 +32,7 @@ export function ArchiveHeader({ heroImage, metadata }: ArchiveHeaderProps) {
 
       <div className="relative mx-auto max-w-3xl">
         <SectionHeading
-          eyebrow="Archive"
+          eyebrow="Memories"
           title="Your Travel Story"
           align="center"
           description={

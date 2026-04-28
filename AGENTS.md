@@ -1,5 +1,16 @@
 # Waypoint Mobile - Agent Instructions
 
+## Required global checklist
+
+Before implementation, read and follow:
+
+1. `V1_SCOPE.md` (source of truth for in/out-of-scope decisions)
+2. `COPILOT_CHECKLIST.md` (cross-surface implementation checklist)
+
+If a request conflicts with `V1_SCOPE.md`, stop and report the conflict before coding.
+
+Additional hard constraint from the global checklist: do not change colors, fonts, or typography in `ui/` or `ui-mobile/` unless explicitly requested.
+
 ## Hard Constraints
 
 1. **Mobile Product Goal:** The mobile app is for fast execution and lightweight trip management, not deep planning. Heavy itinerary restructuring, AI planning, and complex editing should remain in the web workspace unless the user explicitly asks for mobile support.

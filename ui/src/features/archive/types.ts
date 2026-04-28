@@ -17,6 +17,9 @@ export interface ArchiveTripItem {
   memberCount: number;
   memberInitials: string[];
   hasSavedItinerary: boolean;
+  itineraryDayCount: number | null;
+  itineraryStopCount: number | null;
+  notesPreview: string | null;
 }
 
 export interface ArchiveYearGroup {

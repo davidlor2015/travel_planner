@@ -63,6 +63,23 @@ export function ArchiveTripCard({
           ) : null}
         </div>
 
+        {(trip.itineraryDayCount || trip.itineraryStopCount || trip.notesPreview) ? (
+          <div className="space-y-2 rounded-xl border border-smoke bg-parchment/35 px-3 py-2">
+            <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-flint">
+              {trip.itineraryDayCount ? (
+                <span>{trip.itineraryDayCount} day plan</span>
+              ) : null}
+              {trip.itineraryStopCount ? (
+                <span>{trip.itineraryStopCount} saved stop{trip.itineraryStopCount === 1 ? "" : "s"}</span>
+              ) : null}
+              {trip.notesPreview ? <span>Trip notes captured</span> : null}
+            </div>
+            {trip.notesPreview ? (
+              <p className="text-xs leading-relaxed text-muted">{trip.notesPreview}</p>
+            ) : null}
+          </div>
+        ) : null}
+
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"

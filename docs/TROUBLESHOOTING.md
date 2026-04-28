@@ -82,9 +82,10 @@ Checks:
 
 ## Mobile (`ui-mobile/`)
 
-- `EXPO_PUBLIC_API_BASE_URL` is required for native development
-- only web-dev path has fallback (`http://127.0.0.1:8000`)
-- missing native base URL throws at runtime in `ui-mobile/shared/api/config.ts`
+- preferred env var is `EXPO_PUBLIC_API_BASE_URL` (legacy alias `EXPO_PUBLIC_API_URL` is also supported)
+- in Android emulator, localhost values are remapped to `10.0.2.2` automatically
+- web-dev path still falls back to `http://127.0.0.1:8000`
+- if native base URL env vars are missing, runtime falls back to Android emulator default (`http://10.0.2.2:8000`) in dev; otherwise config throws in native
 
 Checks:
 

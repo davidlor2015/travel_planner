@@ -20,6 +20,12 @@ Waypoint is a full-stack travel planning project with:
 - Web (`ui/`): landing/auth, trips/workspace, matching, archive, profile, optional explore route (`VITE_ENABLE_EXPLORE`)
 - Mobile (`ui-mobile/`): auth flow, tabs (Trips, Archive, Profile, Companions, optional Explore), trip workspace, and live on-trip screen
 
+## Contributor/Copilot guardrails
+
+- Scope source of truth: `V1_SCOPE.md`
+- Implementation checklist: `COPILOT_CHECKLIST.md`
+- Agent-specific constraints: `AGENTS.md`
+
 ## Screenshots
 
 
