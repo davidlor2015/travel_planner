@@ -145,19 +145,17 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
       tabs.push({ key: "bookings", label: "Bookings" });
       tabs.push({ key: "budget", label: "Budget" });
       tabs.push({ key: "packing", label: "Packing" });
-      if (ENABLE_MAP) {
-        tabs.push({ key: "map", label: "Map" });
-      }
     }
-    if (workspace.showGroupCoordination) {
-      tabs.push({ key: "members", label: "People" });
+    tabs.push({ key: "members", label: "People" });
+    if (ENABLE_MAP) {
+      tabs.push({ key: "map", label: "Map" });
     }
     // Chat tab: only when collaboration active (>1 joined member), mirrors web collaborationGate
     if (collaborationActive) {
       // Chat tab not yet ported (web uses local storage); placeholder for future slice
     }
     return tabs;
-  }, [hasSavedItinerary, workspace.showGroupCoordination, workspace.tripRaw]);
+  }, [hasSavedItinerary, workspace.tripRaw]);
 
   // Keep activeTab valid when visible set changes
   const resolvedTab: WorkspaceTab = useMemo(
@@ -184,7 +182,7 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
     );
   }
 
-  if (!collaboration || !tripData || !trip) return null;
+  if (!collaboration || !tripData || !trip) return <ScreenLoading />;
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={["top"]}>

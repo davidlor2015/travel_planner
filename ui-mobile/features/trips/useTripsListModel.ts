@@ -64,7 +64,7 @@ export function useTripsListModel(): TripsListModel {
     return map;
   }, [summariesQuery.data]);
 
-  const allTrips = tripsQuery.data ?? [];
+  const allTrips = useMemo(() => tripsQuery.data ?? [], [tripsQuery.data]);
 
   const activeTripIds = useMemo(
     () =>

@@ -4,7 +4,7 @@
 const UNSPLASH_PARAMS =
   "crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080&q=80&auto=format";
 
-const DESTINATION_IMAGES: Array<{ match: RegExp; url: string }> = [
+const DESTINATION_IMAGES: { match: RegExp; url: string }[] = [
   { match: /rome|amalfi|naples|sicily|florence|venice|italy/i, url: `https://images.unsplash.com/photo-1516483638261-f4dbaf036963?${UNSPLASH_PARAMS}` },
   { match: /athens|santorini|mykonos|crete|greece/i, url: `https://images.unsplash.com/photo-1533105079780-92b9be482077?${UNSPLASH_PARAMS}` },
   { match: /barcelona|madrid|mallorca|seville|spain/i, url: `https://images.unsplash.com/photo-1464790719320-516ecd75af6c?${UNSPLASH_PARAMS}` },

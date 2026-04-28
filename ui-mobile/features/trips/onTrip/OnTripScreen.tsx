@@ -93,7 +93,7 @@ export function OnTripScreen({ tripId, tripTitle, tripDestination, members }: Pr
     );
   }
 
-  if (!rawSnapshot || !vm || !dayHeader) return null;
+  if (!rawSnapshot || !vm || !dayHeader) return <ScreenLoading label="Loading your trip..." />;
 
   const nowKey = vm.now?.key ?? null;
   const nextKey = vm.next?.key ?? null;

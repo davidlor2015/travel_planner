@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppState, type AppStateStatus } from "react-native";
+import * as Haptics from "expo-haptics";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { ApiError } from "@/shared/api/client";
@@ -108,10 +109,28 @@ export function useOnTripMutations({
   const [isLoggingUnplanned, setIsLoggingUnplanned] = useState(false);
   const [feedback, setFeedback] = useState<MutationFeedback | null>(null);
 
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const statusQueueRef = useRef<Map<string, Promise<unknown>>>(new Map());
   const requestIdRef = useRef(0);
   const lastRefreshAtRef = useRef(0);
   const lastInteractionAtRef = useRef(0);
+
+  // Auto-dismiss the feedback toast after 3 seconds so the user doesn't have
+  // to tap it away after every confirm/skip.
+  useEffect(() => {
+    if (!feedback) return;
+    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    feedbackTimerRef.current = setTimeout(() => {
+      setFeedback(null);
+      feedbackTimerRef.current = null;
+    }, 3000);
+    return () => {
+      if (feedbackTimerRef.current) {
+        clearTimeout(feedbackTimerRef.current);
+        feedbackTimerRef.current = null;
+      }
+    };
+  }, [feedback]);
 
   const markInteraction = useCallback(() => {
     lastInteractionAtRef.current = Date.now();
@@ -231,6 +250,11 @@ export function useOnTripMutations({
               },
             };
           });
+          if (nextStatus === "confirmed") {
+            void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          } else if (nextStatus === "skipped") {
+            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }
           await refreshSnapshot();
         } catch (err) {
           setOptimistic((prev) => {

@@ -61,8 +61,8 @@ export function useCompanionsScreen(): UseCompanionsScreenResult {
   const [selectedTripId, setSelectedTripId] = useState<number | null>(null);
 
   const profile = profileQuery.data ?? null;
-  const requests = requestsQuery.data ?? [];
-  const trips = tripsQuery.data ?? [];
+  const requests = useMemo(() => requestsQuery.data ?? [], [requestsQuery.data]);
+  const trips = useMemo(() => tripsQuery.data ?? [], [tripsQuery.data]);
 
   const tripsById = useMemo(
     () => new Map(trips.map((t) => [t.id, t])),

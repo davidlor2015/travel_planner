@@ -11,9 +11,10 @@ import type { GridCardViewModel } from "./types";
 type Props = {
   item: GridCardViewModel;
   onPress?: () => void;
+  onPlanTrip?: (destination: string) => void;
 };
 
-export function GridDestinationCard({ item, onPress }: Props) {
+export function GridDestinationCard({ item, onPress, onPlanTrip }: Props) {
   return (
     <Pressable
       onPress={onPress}
@@ -38,6 +39,19 @@ export function GridDestinationCard({ item, onPress }: Props) {
         <Text className="text-[11px] leading-[15px] text-text-muted" numberOfLines={2}>
           {item.locationLine}
         </Text>
+        {onPlanTrip && (
+          <Pressable
+            onPress={() => onPlanTrip(item.destination)}
+            className="mt-1 active:opacity-70"
+            accessibilityRole="button"
+            accessibilityLabel={`Plan a trip to ${item.name}`}
+            hitSlop={8}
+          >
+            <Text className="text-[11px] leading-[15px] text-amber" style={fontStyles.uiSemibold}>
+              Plan a trip →
+            </Text>
+          </Pressable>
+        )}
       </View>
     </Pressable>
   );

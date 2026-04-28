@@ -3,11 +3,6 @@
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
-
-jest.mock("@react-native-async-storage/async-storage", () =>
-  require("@react-native-async-storage/async-storage/jest/async-storage-mock"),
-);
-
 import {
   DEFAULT_PREFERENCES,
   STORAGE_KEY,
@@ -18,6 +13,10 @@ import {
   buildDefaultsSubtext,
   buildNotificationsSubtext,
 } from "@/features/profile/preferences/preferencePresentation";
+
+jest.mock("@react-native-async-storage/async-storage", () =>
+  jest.requireActual("@react-native-async-storage/async-storage/jest/async-storage-mock"),
+);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

@@ -44,7 +44,7 @@ export default function VerifyEmailPage() {
       <View className="flex-1 px-7">
         {/* Logo row */}
         <View className="pt-10 pb-2">
-          <WaypointLogo size={24} />
+          <WaypointLogo size={36} />
         </View>
 
         {/* Editorial headline */}

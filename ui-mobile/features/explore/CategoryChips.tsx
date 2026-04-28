@@ -5,15 +5,15 @@ import { Pressable, ScrollView, Text } from "react-native";
 
 import { fontStyles } from "@/shared/theme/typography";
 
-import type { DestinationMood } from "./types";
+import type { DestinationTheme } from "./types";
 
 type Props = {
-  moods: DestinationMood[];
-  activeMood: DestinationMood | null;
-  onSelectMood: (mood: DestinationMood | null) => void;
+  themes: DestinationTheme[];
+  activeTheme: DestinationTheme | null;
+  onSelectTheme: (theme: DestinationTheme | null) => void;
 };
 
-export function CategoryChips({ moods, activeMood, onSelectMood }: Props) {
+export function CategoryChips({ themes, activeTheme, onSelectTheme }: Props) {
   return (
     <ScrollView
       horizontal
@@ -23,15 +23,15 @@ export function CategoryChips({ moods, activeMood, onSelectMood }: Props) {
     >
       <Chip
         label="All"
-        active={activeMood === null}
-        onPress={() => onSelectMood(null)}
+        active={activeTheme === null}
+        onPress={() => onSelectTheme(null)}
       />
-      {moods.map((mood) => (
+      {themes.map((theme) => (
         <Chip
-          key={mood}
-          label={mood}
-          active={activeMood === mood}
-          onPress={() => onSelectMood(activeMood === mood ? null : mood)}
+          key={theme}
+          label={theme}
+          active={activeTheme === theme}
+          onPress={() => onSelectTheme(activeTheme === theme ? null : theme)}
         />
       ))}
     </ScrollView>

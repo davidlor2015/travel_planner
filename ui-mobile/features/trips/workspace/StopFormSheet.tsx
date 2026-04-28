@@ -15,6 +15,8 @@ import {
 } from "react-native";
 
 import type { ItineraryItem } from "@/features/ai/api";
+import { PlaceAutocompleteInput } from "@/features/trips/PlaceAutocompleteInput";
+import { usePlaceAutocomplete } from "@/features/trips/usePlaceAutocomplete";
 import { PrimaryButton, SecondaryButton } from "@/shared/ui/Button";
 import { Field } from "@/shared/ui/Field";
 import { MultilineInputField } from "@/shared/ui/MultilineInputField";
@@ -76,12 +78,23 @@ export function StopFormSheet({
   const [selectedDayIndex, setSelectedDayIndex] = useState(initialDayIndex);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [title, setTitle] = useState("");
-  const [location, setLocation] = useState("");
   const [notes, setNotes] = useState("");
   const [titleError, setTitleError] = useState<string | null>(null);
   const [dayPickerOpen, setDayPickerOpen] = useState(false);
   const [timePickerOpen, setTimePickerOpen] = useState(false);
   const { height: windowHeight } = useWindowDimensions();
+
+  const {
+    query: locationQuery,
+    suggestions: locationSuggestions,
+    isLoading: isSearchingLocation,
+    error: locationSearchError,
+    hasSearched: hasSearchedLocation,
+    minQueryLength: locationMinQueryLength,
+    onQueryChange: onLocationQueryChange,
+    selectSuggestion: onLocationSuggestionSelect,
+    reset: resetLocationAutocomplete,
+  } = usePlaceAutocomplete({ debounceMs: 300, minQueryLength: 2 });
 
   const effectiveTimeOptions = useMemo(() => {
     const current = item?.time?.trim() || null;
@@ -97,12 +110,12 @@ export function StopFormSheet({
     setSelectedDayIndex(initialDayIndex);
     setSelectedTime(item?.time?.trim() || null);
     setTitle(item?.title ?? "");
-    setLocation(item?.location ?? "");
+    resetLocationAutocomplete(item?.location ?? "");
     setNotes(item?.notes ?? "");
     setTitleError(null);
     setDayPickerOpen(false);
     setTimePickerOpen(false);
-  }, [initialDayIndex, item, visible]);
+  }, [initialDayIndex, item, visible, resetLocationAutocomplete]);
 
   function handleSave() {
     const trimmedTitle = title.trim();
@@ -118,7 +131,7 @@ export function StopFormSheet({
       dayIndex: selectedDayIndex,
       time: selectedTime,
       title: trimmedTitle,
-      location: nullableText(location),
+      location: nullableText(locationQuery),
       notes: nullableText(notes),
     });
   }
@@ -181,12 +194,18 @@ export function StopFormSheet({
                 placeholder="Stop title"
                 error={titleError}
               />
-              <TextInputField
+              <PlaceAutocompleteInput
                 label="Location"
                 hint="Optional"
-                value={location}
-                onChangeText={setLocation}
-                placeholder="Location"
+                placeholder="Search or type a location"
+                value={locationQuery}
+                minQueryLength={locationMinQueryLength}
+                loading={isSearchingLocation}
+                searchError={locationSearchError}
+                hasSearched={hasSearchedLocation}
+                suggestions={locationSuggestions}
+                onChangeText={onLocationQueryChange}
+                onSelectSuggestion={onLocationSuggestionSelect}
               />
 
               <Field label="Day">

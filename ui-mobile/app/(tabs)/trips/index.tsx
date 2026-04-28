@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { type Href, router } from "expo-router";
+import * as Haptics from "expo-haptics";
 
 import {
   TripFormSheet,
@@ -64,6 +65,7 @@ export default function TripsPage() {
     try {
       setCreateError(null);
       const created = await createMutation.mutateAsync(buildCreateTripPayload(value));
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setCreateOpen(false);
       router.push(`/(tabs)/trips/${created.id}?from=create` as Href);
     } catch {

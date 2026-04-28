@@ -39,7 +39,7 @@ function item(overrides: Partial<ItineraryItem> = {}): ItineraryItem {
 describe("StopFormSheet", () => {
   it("requires a title before saving", () => {
     const onSave = jest.fn();
-    const { getByLabelText, getByText, getByPlaceholderText } = render(
+    const { getByText, getByPlaceholderText } = render(
       <StopFormSheet
         visible
         item={null}

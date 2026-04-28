@@ -16,6 +16,7 @@ import { PrimaryButton, SecondaryButton } from "@/shared/ui/Button";
 import { ScreenHeader } from "@/shared/ui/ScreenHeader";
 import { TextInputField } from "@/shared/ui/TextInputField";
 import { fontStyles } from "@/shared/theme/typography";
+import { formatDateInput } from "@/shared/utils/formatDateInput";
 
 import { PlaceAutocompleteInput } from "./PlaceAutocompleteInput";
 import type { PlaceSuggestion, TripCreate, TripResponse, TripUpdate } from "./types";
@@ -43,6 +44,7 @@ type Props = {
   visible: boolean;
   mode: "create" | "edit";
   trip?: TripResponse | null;
+  initialDestination?: string;
   submitting?: boolean;
   deleting?: boolean;
   error?: string | null;
@@ -55,10 +57,11 @@ type Props = {
 function toInitialValue(
   mode: "create" | "edit",
   trip?: TripResponse | null,
+  initialDestination?: string,
 ): TripFormValue {
   return {
     title:       trip?.title                    ?? "",
-    destination: trip?.destination              ?? "",
+    destination: trip?.destination              ?? initialDestination ?? "",
     start_date:  trip?.start_date?.slice(0, 10) ?? "",
     end_date:    trip?.end_date?.slice(0, 10)   ?? "",
     notes:       mode === "edit" ? (trip?.notes ?? "") : "",
@@ -116,6 +119,7 @@ export function TripFormSheet({
   visible,
   mode,
   trip,
+  initialDestination,
   submitting = false,
   deleting = false,
   error,
@@ -146,11 +150,11 @@ export function TripFormSheet({
 
   useEffect(() => {
     if (!visible) return;
-    const initial = toInitialValue(mode, trip);
+    const initial = toInitialValue(mode, trip, initialDestination);
     setValue(initial);
     resetDestinationAutocomplete(initial.destination);
     setErrors({});
-  }, [trip, visible, mode, resetDestinationAutocomplete]);
+  }, [trip, visible, mode, initialDestination, resetDestinationAutocomplete]);
 
   useEffect(() => {
     setValue((current) => {
@@ -258,8 +262,9 @@ export function TripFormSheet({
                       placeholder="2026-07-10"
                       value={value.start_date}
                       onChangeText={(v) =>
-                        setValue((c) => ({ ...c, start_date: v }))
+                        setValue((c) => ({ ...c, start_date: formatDateInput(v) }))
                       }
+                      keyboardType="numeric"
                       autoCapitalize="none"
                       error={errors.start_date}
                     />
@@ -270,7 +275,10 @@ export function TripFormSheet({
                       hint="YYYY-MM-DD"
                       placeholder="2026-07-16"
                       value={value.end_date}
-                      onChangeText={(v) => setValue((c) => ({ ...c, end_date: v }))}
+                      onChangeText={(v) =>
+                        setValue((c) => ({ ...c, end_date: formatDateInput(v) }))
+                      }
+                      keyboardType="numeric"
                       autoCapitalize="none"
                       error={errors.end_date}
                     />
