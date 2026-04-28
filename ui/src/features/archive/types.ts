@@ -3,6 +3,12 @@
 
 export type ArchiveViewMode = "grid" | "list";
 
+export interface ArchiveExecutionSummary {
+  confirmedStopsCount: number;
+  skippedStopsCount: number;
+  unplannedStopsCount: number;
+}
+
 export interface ArchiveTripItem {
   id: number;
   title: string;
@@ -20,6 +26,7 @@ export interface ArchiveTripItem {
   itineraryDayCount: number | null;
   itineraryStopCount: number | null;
   notesPreview: string | null;
+  executionSummary: ArchiveExecutionSummary | null;
 }
 
 export interface ArchiveYearGroup {

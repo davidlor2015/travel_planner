@@ -1,7 +1,7 @@
 // Path: ui/src/features/archive/adapters/archiveAdapter.ts
 // Summary: Implements archiveAdapter module logic.
 
-import type { Trip } from "../../../shared/api/trips";
+import type { Trip, TripExecutionSummary } from "../../../shared/api/trips";
 import { parseTripItineraryPayload } from "../../trips/workspace/models/normalizeTripWorkspace";
 import { getTripImageUrl } from "../../trips/workspace/helpers/tripVisuals";
 import type {
@@ -93,13 +93,31 @@ export function toArchiveTrip(trip: Trip): ArchiveTripItem {
     itineraryDayCount,
     itineraryStopCount,
     notesPreview: extractNotesPreview(trip.notes),
+    executionSummary: null,
   };
 }
 
-export function getArchiveTrips(trips: Trip[]): ArchiveTripItem[] {
+function toArchiveExecutionSummary(
+  executionSummary: TripExecutionSummary | null | undefined,
+) {
+  if (!executionSummary) return null;
+  return {
+    confirmedStopsCount: executionSummary.confirmed_stops_count,
+    skippedStopsCount: executionSummary.skipped_stops_count,
+    unplannedStopsCount: executionSummary.unplanned_stops_count,
+  };
+}
+
+export function getArchiveTrips(
+  trips: Trip[],
+  executionSummaryByTripId: Record<number, TripExecutionSummary | null> = {},
+): ArchiveTripItem[] {
   return trips
     .filter(isPastTrip)
-    .map(toArchiveTrip)
+    .map((trip) => ({
+      ...toArchiveTrip(trip),
+      executionSummary: toArchiveExecutionSummary(executionSummaryByTripId[trip.id]),
+    }))
     .sort((a, b) => b.endDate.getTime() - a.endDate.getTime());
 }
 

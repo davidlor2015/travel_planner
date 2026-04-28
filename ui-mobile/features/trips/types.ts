@@ -91,6 +91,12 @@ export type TripSummary = {
   budget_expense_count: number;
 };
 
+export type TripExecutionSummary = {
+  confirmed_stops_count: number;
+  skipped_stops_count: number;
+  unplanned_stops_count: number;
+};
+
 export type WorkspaceLastSeenPayload = {
   signature: string;
   snapshot: Record<string, unknown>;

@@ -8,6 +8,7 @@ import type {
   PlaceSearchApiResponse,
   TripCreate,
   TripExecutionEvent,
+  TripExecutionSummary,
   TripExecutionStatus,
   TripInviteAcceptResponse,
   TripInviteCreateResponse,
@@ -60,6 +61,12 @@ export async function deleteTrip(tripId: number): Promise<void> {
 
 export async function getTripSummaries(): Promise<TripSummary[]> {
   return apiRequest<TripSummary[]>("/v1/trips/summaries");
+}
+
+export async function getTripExecutionSummary(
+  tripId: number,
+): Promise<TripExecutionSummary> {
+  return apiRequest<TripExecutionSummary>(`/v1/trips/${tripId}/execution-summary`);
 }
 
 export async function searchPlaces(query: string): Promise<PlaceSearchApiResponse> {

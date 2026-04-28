@@ -1,9 +1,11 @@
 // Path: ui-mobile/features/trips/archive/useArchiveScreen.ts
 // Summary: Provides useArchiveScreen hook behavior.
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import { getTripExecutionSummary } from "../api";
 import { useTripsQuery, useTripSummariesQuery } from "../hooks";
+import type { TripExecutionSummary } from "../types";
 import {
   filterArchiveTrips,
   groupTripsByYear,
@@ -25,6 +27,47 @@ export function useArchiveScreen(): UseArchiveScreenResult {
   const tripsQuery = useTripsQuery();
   const summariesQuery = useTripSummariesQuery();
   const [searchQuery, setSearchQuery] = useState("");
+  const [executionSummaryByTripId, setExecutionSummaryByTripId] = useState<
+    Record<number, TripExecutionSummary | null>
+  >({});
+
+  useEffect(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const pastTripIds = (tripsQuery.data ?? [])
+      .filter((trip) => today > new Date(trip.end_date))
+      .map((trip) => trip.id);
+
+    if (pastTripIds.length === 0) return;
+
+    const missingTripIds = pastTripIds.filter(
+      (tripId) => executionSummaryByTripId[tripId] === undefined,
+    );
+    if (missingTripIds.length === 0) return;
+
+    let cancelled = false;
+
+    void Promise.all(
+      missingTripIds.map(async (tripId) => {
+        try {
+          const summary = await getTripExecutionSummary(tripId);
+          return [tripId, summary] as const;
+        } catch {
+          return [tripId, null] as const;
+        }
+      }),
+    ).then((rows) => {
+      if (cancelled) return;
+      setExecutionSummaryByTripId((prev) => ({
+        ...prev,
+        ...Object.fromEntries(rows),
+      }));
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [executionSummaryByTripId, tripsQuery.data]);
 
   const { yearGroups, allPastCount } = useMemo(() => {
     const summariesById = new Map(
@@ -36,7 +79,13 @@ export function useArchiveScreen(): UseArchiveScreenResult {
 
     const pastTrips = (tripsQuery.data ?? [])
       .filter((t) => today > new Date(t.end_date))
-      .map((t) => toArchiveTripViewModel(t, summariesById.get(t.id)));
+      .map((t) =>
+        toArchiveTripViewModel(
+          t,
+          summariesById.get(t.id),
+          executionSummaryByTripId[t.id],
+        ),
+      );
 
     const filtered = filterArchiveTrips(pastTrips, searchQuery);
 
@@ -44,7 +93,7 @@ export function useArchiveScreen(): UseArchiveScreenResult {
       yearGroups: groupTripsByYear(filtered),
       allPastCount: pastTrips.length,
     };
-  }, [tripsQuery.data, summariesQuery.data, searchQuery]);
+  }, [executionSummaryByTripId, searchQuery, summariesQuery.data, tripsQuery.data]);
 
   const totalCount = yearGroups.reduce((sum, g) => sum + g.data.length, 0);
 

@@ -307,11 +307,12 @@ function ProfileRoute() {
 }
 
 function ArchiveRoute() {
-  const { trips, navigateToView } = useAppLayoutContext();
+  const { token, trips, navigateToView } = useAppLayoutContext();
   const navigate = useNavigate();
 
   return (
     <ArchivePage
+      token={token}
       trips={trips}
       onNavigate={navigateToView}
       onCreateFromDestination={(destination) => {

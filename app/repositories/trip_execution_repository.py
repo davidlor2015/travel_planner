@@ -171,3 +171,26 @@ class TripExecutionRepository:
                 .order_by(TripExecutionEvent.time.is_(None), TripExecutionEvent.time, TripExecutionEvent.created_at)
             ).all()
         )
+
+    def get_execution_summary_counts(self, trip_id: int) -> dict[str, int]:
+        latest_statuses = self.latest_stop_statuses(trip_id)
+        confirmed_stops_count = sum(
+            1 for status in latest_statuses.values() if status == "confirmed"
+        )
+        skipped_stops_count = sum(
+            1 for status in latest_statuses.values() if status == "skipped"
+        )
+        unplanned_stops_count = (
+            self.db.scalar(
+                select(func.count(TripExecutionEvent.id)).where(
+                    TripExecutionEvent.trip_id == trip_id,
+                    TripExecutionEvent.kind == self.UNPLANNED_STOP,
+                )
+            )
+            or 0
+        )
+        return {
+            "confirmed_stops_count": confirmed_stops_count,
+            "skipped_stops_count": skipped_stops_count,
+            "unplanned_stops_count": int(unplanned_stops_count),
+        }

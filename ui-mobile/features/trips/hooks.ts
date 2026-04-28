@@ -8,6 +8,7 @@ import {
   createTripInvite,
   deleteTrip,
   getTripById,
+  getTripExecutionSummary,
   getTripMemberReadiness,
   getTripOnTripSnapshot,
   getTripSummaries,
@@ -19,6 +20,8 @@ import type { TripCreate, TripResponse, TripSummary, TripUpdate } from "./types"
 export const tripKeys = {
   all: ["trips"] as const,
   detail: (tripId: number) => ["trips", tripId] as const,
+  executionSummary: (tripId: number) =>
+    ["trips", tripId, "execution-summary"] as const,
   summaries: ["trips", "summaries"] as const,
   memberReadiness: (tripId: number) => ["trips", tripId, "readiness"] as const,
   onTripSnapshot: (tripId: number) => ["trips", tripId, "on-trip-snapshot"] as const,
@@ -48,6 +51,17 @@ export function useTripSummariesQuery(options?: { enabled?: boolean }) {
     queryKey: tripKeys.summaries,
     queryFn: getTripSummaries,
     enabled: options?.enabled ?? true,
+  });
+}
+
+export function useTripExecutionSummaryQuery(
+  tripId: number | null,
+  options?: { enabled?: boolean },
+) {
+  return useQuery({
+    queryKey: tripKeys.executionSummary(tripId as number),
+    queryFn: () => getTripExecutionSummary(tripId as number),
+    enabled: (options?.enabled ?? true) && typeof tripId === "number",
   });
 }
 

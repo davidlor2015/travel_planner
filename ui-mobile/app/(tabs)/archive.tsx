@@ -54,6 +54,24 @@ function MemoryStats({ trip }: { trip: ArchiveTripViewModel }) {
   );
 }
 
+function MemoryExecutionSummary({ trip }: { trip: ArchiveTripViewModel }) {
+  const executionSummary = trip.executionSummary;
+  if (!executionSummary) return null;
+
+  const hasExecutionHistory =
+    executionSummary.confirmedStopsCount > 0 ||
+    executionSummary.skippedStopsCount > 0 ||
+    executionSummary.unplannedStopsCount > 0;
+
+  return (
+    <Text style={fontStyles.uiRegular} className="mt-1 text-[11px] text-muted">
+      {hasExecutionHistory
+        ? `Visited ${executionSummary.confirmedStopsCount} · Skipped ${executionSummary.skippedStopsCount} · Added ${executionSummary.unplannedStopsCount}`
+        : "No execution history yet"}
+    </Text>
+  );
+}
+
 // ─── Archive trip card ───────────────────────────────────────────────────────
 
 function ArchiveTripCard({
@@ -101,6 +119,7 @@ function ArchiveTripCard({
             </Text>
           </View>
           <MemoryStats trip={trip} />
+          <MemoryExecutionSummary trip={trip} />
         </View>
 
         <Ionicons name="chevron-forward" size={14} color="#8A7E74" />

@@ -26,6 +26,7 @@ const TRIP_RATINGS_STORAGE_KEY = "waypoint.archive.tripRatings.v1";
 type TripRatingsMap = Record<number, number>;
 
 interface ArchivePageProps {
+  token: string;
   trips: Trip[];
   onNavigate: (view: AppView, tripId?: number) => void;
   onCreateFromDestination: (destination: string) => void;
@@ -65,6 +66,7 @@ function saveTripRatings(ratings: TripRatingsMap) {
 }
 
 export function ArchivePage({
+  token,
   trips,
   onNavigate,
   onCreateFromDestination,
@@ -84,7 +86,7 @@ export function ArchivePage({
     groupedTrips,
     heroTrip,
     summaryText,
-  } = useArchiveTrips(trips, query);
+  } = useArchiveTrips(trips, query, token);
 
   useEffect(() => {
     saveTripRatings(tripRatings);

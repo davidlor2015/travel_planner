@@ -26,6 +26,13 @@ export function ArchiveTripCard({
     id: `${trip.id}-${index}`,
     label: initial,
   }));
+  const executionSummary = trip.executionSummary;
+  const hasExecutionHistory = Boolean(
+    executionSummary &&
+      (executionSummary.confirmedStopsCount > 0 ||
+        executionSummary.skippedStopsCount > 0 ||
+        executionSummary.unplannedStopsCount > 0),
+  );
 
   return (
     <article className="overflow-hidden rounded-2xl border border-smoke bg-white shadow-[0_14px_36px_rgba(28,17,8,0.06)]">
@@ -78,6 +85,13 @@ export function ArchiveTripCard({
               <p className="text-xs leading-relaxed text-muted">{trip.notesPreview}</p>
             ) : null}
           </div>
+        ) : null}
+        {executionSummary ? (
+          <p className="text-xs text-muted">
+            {hasExecutionHistory
+              ? `Visited ${executionSummary.confirmedStopsCount} · Skipped ${executionSummary.skippedStopsCount} · Added ${executionSummary.unplannedStopsCount}`
+              : "No execution history yet"}
+          </p>
         ) : null}
 
         <div className="flex flex-wrap items-center gap-2">

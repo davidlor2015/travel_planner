@@ -26,6 +26,13 @@ export function ArchiveTripRow({
     id: `${trip.id}-${index}`,
     label: initial,
   }));
+  const executionSummary = trip.executionSummary;
+  const hasExecutionHistory = Boolean(
+    executionSummary &&
+      (executionSummary.confirmedStopsCount > 0 ||
+        executionSummary.skippedStopsCount > 0 ||
+        executionSummary.unplannedStopsCount > 0),
+  );
 
   return (
     <article className="grid gap-4 rounded-2xl border border-smoke bg-white px-4 py-4 shadow-[0_6px_18px_rgba(28,17,8,0.04)] sm:grid-cols-[112px_minmax(0,1fr)_auto] sm:items-center">
@@ -78,6 +85,13 @@ export function ArchiveTripRow({
         ) : null}
         {trip.notesPreview ? (
           <p className="mt-2 text-xs text-muted">{trip.notesPreview}</p>
+        ) : null}
+        {executionSummary ? (
+          <p className="mt-2 text-xs text-muted">
+            {hasExecutionHistory
+              ? `Visited ${executionSummary.confirmedStopsCount} · Skipped ${executionSummary.skippedStopsCount} · Added ${executionSummary.unplannedStopsCount}`
+              : "No execution history yet"}
+          </p>
         ) : null}
       </div>
       <div className="flex flex-wrap items-center gap-2">

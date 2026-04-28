@@ -296,3 +296,9 @@ class TripExecutionEventResponse(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class TripExecutionSummaryResponse(BaseModel):
+    confirmed_stops_count: int
+    skipped_stops_count: int
+    unplanned_stops_count: int

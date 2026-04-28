@@ -22,6 +22,7 @@ from app.models.trip import Trip
 from app.models.trip_membership import TripMembership, TripMemberState
 from app.repositories.trip_execution_repository import TripExecutionRepository
 from app.schemas.trip import (
+    TripExecutionSummaryResponse,
     TripOnTripBlockerResponse,
     TripOnTripSnapshotResponse,
     TripOnTripStopSnapshotResponse,
@@ -375,6 +376,16 @@ class TripService:
             today_stops=today_stops,
             today_unplanned=today_unplanned,
             blockers=blockers,
+        )
+
+    def get_execution_summary(
+        self,
+        trip_id: int,
+        user_id: int,
+    ) -> TripExecutionSummaryResponse:
+        self.access_service.require_membership(trip_id, user_id)
+        return TripExecutionSummaryResponse(
+            **self.execution_repo.get_execution_summary_counts(trip_id)
         )
 
     def _to_stop_response(
