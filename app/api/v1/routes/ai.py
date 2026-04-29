@@ -1,3 +1,6 @@
+# Path: app/api/v1/routes/ai.py
+# Summary: Defines ai API route handlers.
+
 import logging
 from typing import Any, Optional
 

@@ -1,3 +1,6 @@
+// Path: ui/src/features/archive/ArchivePage.tsx
+// Summary: Implements ArchivePage module logic.
+
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
@@ -23,6 +26,7 @@ const TRIP_RATINGS_STORAGE_KEY = "waypoint.archive.tripRatings.v1";
 type TripRatingsMap = Record<number, number>;
 
 interface ArchivePageProps {
+  token: string;
   trips: Trip[];
   onNavigate: (view: AppView, tripId?: number) => void;
   onCreateFromDestination: (destination: string) => void;
@@ -62,6 +66,7 @@ function saveTripRatings(ratings: TripRatingsMap) {
 }
 
 export function ArchivePage({
+  token,
   trips,
   onNavigate,
   onCreateFromDestination,
@@ -81,7 +86,7 @@ export function ArchivePage({
     groupedTrips,
     heroTrip,
     summaryText,
-  } = useArchiveTrips(trips, query);
+  } = useArchiveTrips(trips, query, token);
 
   useEffect(() => {
     saveTripRatings(tripRatings);
@@ -144,8 +149,8 @@ export function ArchivePage({
 
       {archiveTrips.length === 0 ? (
         <EmptyState
-          title="Your archive is waiting for its first return."
-          description="Past trips will settle here after the journey ends, so you can revisit the dates, places, companions, and saved plans that shaped them."
+          title="Your memories are waiting for the first return."
+          description="Finished trips settle here so you can revisit dates, places, companions, and saved plans from each journey."
           action={
             <ActionButton onClick={() => onNavigate("trips")}>
               Open Trips
@@ -154,8 +159,8 @@ export function ArchivePage({
         />
       ) : groupedTrips.length === 0 ? (
         <EmptyState
-          title="No past trips match that search."
-          description="Try a destination, year, or trip name from your archive."
+          title="No memories match that search."
+          description="Try a destination, year, or trip name from your memories."
           action={
             <ActionButton onClick={() => updateSearchParam("q", "")}>
               Clear Search

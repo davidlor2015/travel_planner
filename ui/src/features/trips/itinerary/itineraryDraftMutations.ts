@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/itinerary/itineraryDraftMutations.ts
+// Summary: Implements itineraryDraftMutations module logic.
+
 import type { Dispatch, SetStateAction } from 'react';
 
 import {

@@ -1,3 +1,6 @@
+// Path: ui/src/features/auth/VerifyEmailPage.tsx
+// Summary: Implements VerifyEmailPage module logic.
+
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';

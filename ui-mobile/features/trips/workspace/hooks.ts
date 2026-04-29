@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/hooks.ts
+// Summary: Implements hooks module logic.
+
 import { useCallback, useMemo } from "react";
 
 import {

@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/tabs/ChatTab.tsx
+// Summary: Implements ChatTab module logic.
+
 import type { DayPlan } from "../../../../shared/api/ai";
 import type { TripMember } from "../../../../shared/api/trips";
 import { TripChatPanel } from "../../logistics/chat/TripChatPanel";

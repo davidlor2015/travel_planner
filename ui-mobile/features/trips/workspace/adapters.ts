@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/adapters.ts
+// Summary: Implements adapters module logic.
+
 import { getTripStatus } from "../adapters";
 import type {
   TripMemberReadiness,
@@ -17,6 +20,7 @@ export type TripWorkspaceViewModel = {
   status: TripStatus;
   statusLabel: string;
   memberCount: number;
+  members: { email: string }[];
   isOwner: boolean;
 };
 
@@ -84,6 +88,7 @@ function inviteStatusLabel(status: string): string {
 export function toTripWorkspaceViewModel(
   trip: TripResponse,
   currentUserEmail: string,
+  currentUserId?: number | null,
 ): TripWorkspaceViewModel {
   const start = new Date(trip.start_date);
   const end = new Date(trip.end_date);
@@ -101,9 +106,11 @@ export function toTripWorkspaceViewModel(
     status: getTripStatus(trip.start_date, trip.end_date),
     statusLabel: tripStatusLabel(getTripStatus(trip.start_date, trip.end_date)),
     memberCount: trip.member_count,
-    isOwner: trip.members.some(
-      (m) => m.email.toLowerCase() === currentUserEmail.toLowerCase() && m.role === "owner",
-    ),
+    members: trip.members.map((member) => ({ email: member.email })),
+    isOwner:
+      trip.members.some(
+        (m) => m.email.toLowerCase() === currentUserEmail.toLowerCase() && m.role === "owner",
+      ) || (typeof currentUserId === "number" && trip.user_id === currentUserId),
   };
 }
 
@@ -122,12 +129,15 @@ export function toTripWorkspaceCollaborationViewModel(args: {
     (member) =>
       member.email.trim().toLowerCase() === normalizedCurrentUserEmail && member.role === "owner",
   );
+  const isSoloTrip = trip.member_count <= 1;
 
   return {
     canInvite,
-    groupDescription: canInvite
-      ? "Track readiness, manage invites, and add travelers to the group."
-      : "See who's joined and how ready the group looks from here.",
+    groupDescription: isSoloTrip
+      ? "Planning solo for now. Invite travel companions when you want to coordinate this trip with others."
+      : canInvite
+        ? "Track readiness, manage invites, and add travelers to the group."
+        : "See who's joined and how ready the group looks from here.",
     members: trip.members.map((member) => {
       const readinessItem = readinessByUserId.get(member.user_id);
       const isCurrentUser =

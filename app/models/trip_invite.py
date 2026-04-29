@@ -1,3 +1,6 @@
+# Path: app/models/trip_invite.py
+# Summary: Defines the trip invite data model.
+
 from __future__ import annotations
 
 from datetime import datetime, timezone

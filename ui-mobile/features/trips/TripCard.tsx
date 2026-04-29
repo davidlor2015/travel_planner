@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/TripCard.tsx
+// Summary: Implements TripCard module logic.
+
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, Text, View } from "react-native";

@@ -1,3 +1,6 @@
+// Path: ui-mobile/app/(auth)/verify-email-request.tsx
+// Summary: Implements verify-email-request module logic.
+
 import { useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -76,7 +79,7 @@ export default function VerifyEmailRequestPage() {
             {"Verify your\nemail."}
           </Text>
           <Text className="mt-2 text-sm leading-5 text-muted" style={fontStyles.uiRegular}>
-            We'll send a fresh verification link to confirm your account.
+            {"We'll send a fresh verification link to confirm your account."}
           </Text>
         </View>
 

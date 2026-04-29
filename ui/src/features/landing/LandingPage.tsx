@@ -1,3 +1,6 @@
+// Path: ui/src/features/landing/LandingPage.tsx
+// Summary: Implements LandingPage module logic.
+
 import { LandingNavBar } from "./LandingNavBar";
 import {
   LandingCoreValuesSection,

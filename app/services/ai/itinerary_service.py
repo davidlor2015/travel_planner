@@ -1,3 +1,6 @@
+# Path: app/services/ai/itinerary_service.py
+# Summary: Implements itinerary service business logic.
+
 import json
 import logging
 import re

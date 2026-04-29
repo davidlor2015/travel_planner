@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/mapPresentation.ts
+// Summary: Implements mapPresentation module logic.
+
 import type { Itinerary, ItineraryItem } from "@/features/ai/api";
 
 export type MapFilterKey = "today" | "lodging" | "food" | "activities";

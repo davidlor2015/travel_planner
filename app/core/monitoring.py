@@ -1,3 +1,6 @@
+# Path: app/core/monitoring.py
+# Summary: Implements monitoring functionality.
+
 from __future__ import annotations
 
 import sentry_sdk

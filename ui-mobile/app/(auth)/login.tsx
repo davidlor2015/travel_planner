@@ -1,3 +1,6 @@
+// Path: ui-mobile/app/(auth)/login.tsx
+// Summary: Implements login module logic.
+
 import { useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -55,11 +58,11 @@ export default function LoginPage() {
         >
           {/* Logo row */}
           <View className="px-7 pt-10 pb-2">
-            <WaypointLogo size={24} />
+            <WaypointLogo size={44} />
           </View>
 
-          {/* Spacer */}
-          <View className="flex-1" style={{ minHeight: 48 }} />
+          {/* Fixed gap between logo and headline */}
+          <View className="h-14" />
 
           {/* Editorial headline */}
           <View className="px-7">

@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/useOnTripMutations.ts
+// Summary: Provides useOnTripMutations hook behavior.
+
 import { useMemo } from "react";
 
 import {

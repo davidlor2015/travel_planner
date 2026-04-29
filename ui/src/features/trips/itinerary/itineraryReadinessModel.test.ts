@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/itinerary/itineraryReadinessModel.test.ts
+// Summary: Covers automated tests for itineraryReadinessModel.test behavior.
+
 import { describe, expect, it } from "vitest";
 
 import type { EditableItinerary } from "./itineraryDraft";

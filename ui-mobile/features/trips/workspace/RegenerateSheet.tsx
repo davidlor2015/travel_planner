@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/RegenerateSheet.tsx
+// Summary: Implements RegenerateSheet module logic.
+
 import { useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -12,6 +15,7 @@ import {
 
 import type { DayPlan, Itinerary, RefinementVariant } from "@/features/ai/api";
 import { useRefineItineraryMutation } from "@/features/ai/hooks";
+import { formatTripStopTime } from "@/features/trips/stopTime";
 import { fontStyles } from "@/shared/theme/typography";
 
 type RefineState =
@@ -163,12 +167,12 @@ export function RegenerateSheet({
                         className={[
                           "rounded-full border px-4 py-2 active:opacity-70",
                           active
-                            ? "border-espresso bg-espresso"
+                            ? "border-ontrip bg-ontrip"
                             : "border-border-strong bg-transparent",
                         ].join(" ")}
                       >
                         <Text
-                          className={active ? "text-[13px] text-ivory" : "text-[13px] text-espresso"}
+                          className={active ? "text-[13px] text-on-dark" : "text-[13px] text-espresso"}
                           style={fontStyles.uiMedium}
                         >
                           {v.label}
@@ -341,7 +345,7 @@ function RefinedDayPreview({
               className="w-12 text-right text-[11px] text-muted"
               style={fontStyles.uiRegular}
             >
-              {item.time?.trim() || "TBD"}
+              {formatTripStopTime(item.time)}
             </Text>
             <View className="flex-1">
               <Text

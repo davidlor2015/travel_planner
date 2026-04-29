@@ -1,3 +1,6 @@
+# Path: app/schemas/trip.py
+# Summary: Defines Pydantic schemas for trip payloads.
+
 # app/schemas/trip.py
 from __future__ import annotations
 
@@ -199,6 +202,7 @@ class TripOnTripStopSnapshotResponse(BaseModel):
     title: str | None = None
     time: str | None = None
     location: str | None = None
+    notes: str | None = None
     lat: float | None = None
     lon: float | None = None
     status: Literal["planned", "confirmed", "skipped"] | None = None
@@ -292,3 +296,9 @@ class TripExecutionEventResponse(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class TripExecutionSummaryResponse(BaseModel):
+    confirmed_stops_count: int
+    skipped_stops_count: int
+    unplanned_stops_count: int

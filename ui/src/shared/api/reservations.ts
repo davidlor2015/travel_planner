@@ -1,3 +1,6 @@
+// Path: ui/src/shared/api/reservations.ts
+// Summary: Implements reservations module logic.
+
 import { API_URL } from '../../app/config';
 import { apiFetch } from './client';
 

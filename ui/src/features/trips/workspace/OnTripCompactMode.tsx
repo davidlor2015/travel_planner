@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/OnTripCompactMode.tsx
+// Summary: Implements OnTripCompactMode module logic.
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type {
@@ -89,9 +92,11 @@ export function OnTripCompactMode({
     return () => window.clearInterval(id);
   }, []);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const nowStop = useMemo(
-    () => deriveCurrentStop(viewSnapshot.today_stops, currentLocalMinutes()),
+    () => {
+      void clockTick; // re-derive on each minute tick
+      return deriveCurrentStop(viewSnapshot.today_stops, currentLocalMinutes());
+    },
     [viewSnapshot.today_stops, clockTick],
   );
   const nowStopRef = nowStop?.stop_ref ?? null;

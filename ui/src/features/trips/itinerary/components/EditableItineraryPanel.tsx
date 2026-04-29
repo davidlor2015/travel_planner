@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/itinerary/components/EditableItineraryPanel.tsx
+// Summary: Renders the EditableItineraryPanel UI component.
+
 import { Fragment, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { EditableItineraryDayCard } from "./EditableItineraryDayCard";

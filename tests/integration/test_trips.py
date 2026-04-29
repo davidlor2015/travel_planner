@@ -8,8 +8,17 @@ Trip CRUD integration tests.
 5. Updates only provided fields (partial PATCH)
 6. Delete removes the trip
 """
-from datetime import date
+from datetime import date, datetime, timezone
+
+from app.models.budget_expense import BudgetExpense
+from app.models.itinerary import ItineraryDay, ItineraryEvent
+from app.models.packing_item import PackingItem
+from app.models.prep_item import PrepItem
+from app.models.reservation import Reservation
 from app.models.trip import Trip
+from app.models.trip_execution_event import TripExecutionEvent
+from app.models.trip_invite import TripInvite
+from app.models.trip_membership import TripMembership
 
 
 def test_requires_auth(client):
@@ -158,6 +167,147 @@ def test_delete_trip_204(client, auth_headers_user_a):
 
     get_res = client.get(f"/v1/trips/{trip_id}", headers=auth_headers_user_a)
     assert get_res.status_code == 404
+
+    list_res = client.get("/v1/trips/", headers=auth_headers_user_a)
+    assert list_res.status_code == 200
+    assert all(trip["id"] != trip_id for trip in list_res.json())
+
+
+def test_member_cannot_delete_trip(client, user_b, auth_headers_user_a, auth_headers_user_b):
+    create_res = client.post(
+        "/v1/trips/",
+        json={
+            "title": "Shared keep",
+            "destination": "Lisbon",
+            "description": None,
+            "start_date": "2026-06-10",
+            "end_date": "2026-06-15",
+            "notes": None,
+        },
+        headers=auth_headers_user_a,
+    )
+    assert create_res.status_code == 201, create_res.text
+    trip_id = create_res.json()["id"]
+
+    add_member_res = client.post(
+        f"/v1/trips/{trip_id}/members",
+        json={"email": user_b.email},
+        headers=auth_headers_user_a,
+    )
+    assert add_member_res.status_code == 201, add_member_res.text
+
+    del_res = client.delete(f"/v1/trips/{trip_id}", headers=auth_headers_user_b)
+    assert del_res.status_code == 403
+
+    owner_get_res = client.get(f"/v1/trips/{trip_id}", headers=auth_headers_user_a)
+    assert owner_get_res.status_code == 200
+
+
+def test_non_member_cannot_delete_trip(client, auth_headers_user_a, auth_headers_user_b):
+    create_res = client.post(
+        "/v1/trips/",
+        json={
+            "title": "Private keep",
+            "destination": "Kyoto",
+            "description": None,
+            "start_date": "2026-09-10",
+            "end_date": "2026-09-15",
+            "notes": None,
+        },
+        headers=auth_headers_user_a,
+    )
+    assert create_res.status_code == 201, create_res.text
+    trip_id = create_res.json()["id"]
+
+    del_res = client.delete(f"/v1/trips/{trip_id}", headers=auth_headers_user_b)
+    assert del_res.status_code == 404
+
+    owner_get_res = client.get(f"/v1/trips/{trip_id}", headers=auth_headers_user_a)
+    assert owner_get_res.status_code == 200
+
+
+def test_delete_trip_removes_related_workspace_data(client, db, user_a, auth_headers_user_a):
+    create_res = client.post(
+        "/v1/trips/",
+        json={
+            "title": "Full cleanup",
+            "destination": "Rome",
+            "description": None,
+            "start_date": "2026-10-10",
+            "end_date": "2026-10-15",
+            "notes": None,
+        },
+        headers=auth_headers_user_a,
+    )
+    assert create_res.status_code == 201, create_res.text
+    trip_id = create_res.json()["id"]
+
+    membership = (
+        db.query(TripMembership)
+        .filter(TripMembership.trip_id == trip_id, TripMembership.user_id == user_a.id)
+        .one()
+    )
+    state = membership.member_state
+    state_id = state.id
+
+    day = ItineraryDay(trip_id=trip_id, day_number=1, day_date="2026-10-10")
+    db.add(day)
+    db.flush()
+    db.add(ItineraryEvent(day_id=day.id, sort_order=1, title="Arrival"))
+    reservation = Reservation(
+        trip_id=trip_id,
+        title="Hotel",
+        reservation_type="hotel",
+        start_at=datetime(2026, 10, 10, tzinfo=timezone.utc),
+    )
+    db.add(reservation)
+    db.flush()
+    db.add(PackingItem(member_state_id=state.id, label="Passport"))
+    db.add(
+        BudgetExpense(
+            member_state_id=state.id,
+            reservation_id=reservation.id,
+            label="Hotel",
+            amount=200,
+            category="lodging",
+        )
+    )
+    db.add(PrepItem(member_state_id=state.id, title="Check visa", prep_type="document"))
+    db.add(
+        TripInvite(
+            trip_id=trip_id,
+            email="guest@example.com",
+            invited_by_user_id=user_a.id,
+            token_hash="cleanup-token",
+            expires_at=datetime(2026, 10, 1, tzinfo=timezone.utc),
+        )
+    )
+    db.add(
+        TripExecutionEvent(
+            trip_id=trip_id,
+            created_by_user_id=user_a.id,
+            kind="unplanned_stop",
+            title="Coffee",
+        )
+    )
+    db.commit()
+
+    del_res = client.delete(f"/v1/trips/{trip_id}", headers=auth_headers_user_a)
+    assert del_res.status_code == 204, del_res.text
+
+    assert db.query(Trip).filter(Trip.id == trip_id).count() == 0
+    assert db.query(ItineraryDay).filter(ItineraryDay.trip_id == trip_id).count() == 0
+    assert db.query(Reservation).filter(Reservation.trip_id == trip_id).count() == 0
+    assert db.query(TripInvite).filter(TripInvite.trip_id == trip_id).count() == 0
+    assert db.query(TripExecutionEvent).filter(TripExecutionEvent.trip_id == trip_id).count() == 0
+    assert db.query(TripMembership).filter(TripMembership.trip_id == trip_id).count() == 0
+    assert db.query(PackingItem).filter(PackingItem.member_state_id == state_id).count() == 0
+    assert db.query(BudgetExpense).filter(BudgetExpense.member_state_id == state_id).count() == 0
+    assert db.query(PrepItem).filter(PrepItem.member_state_id == state_id).count() == 0
+
+    list_res = client.get("/v1/trips/", headers=auth_headers_user_a)
+    assert list_res.status_code == 200
+    assert all(trip["id"] != trip_id for trip in list_res.json())
 
 
 def test_owner_can_add_member_by_email(

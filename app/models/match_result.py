@@ -1,3 +1,6 @@
+# Path: app/models/match_result.py
+# Summary: Defines the match result data model.
+
 from __future__ import annotations
 
 from sqlalchemy import Float, ForeignKey, Integer, JSON, UniqueConstraint

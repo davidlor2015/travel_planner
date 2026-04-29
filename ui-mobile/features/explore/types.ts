@@ -1,22 +1,29 @@
-export type DestinationMood =
-  | "Trending"
-  | "Beach & Islands"
-  | "Adventure"
-  | "Culture & History"
-  | "Culinary"
-  | "Slow Travel";
+// Path: ui-mobile/features/explore/types.ts
+// Summary: Implements types module logic.
+
+export type DestinationTheme =
+  | "Coastal"
+  | "Food"
+  | "Culture"
+  | "Slow City"
+  | "Desert"
+  | "Mountain"
+  | "Light Adventure"
+  | "Off-the-beaten-path";
 
 export interface Destination {
-  id: number;
+  id: string;
   name: string;
   country: string;
   region: string;
-  summary: string;
-  bestFor: string;
-  season: string;
-  dailyBudget?: string;
-  rating?: number;
-  moods: DestinationMood[];
+  tagline: string;
+  description: string;
+  bestSeason: string;
+  suggestedLength: string;
+  pace: string;
+  themes: DestinationTheme[];
+  goodFor: string[];
+  startingNotes: string;
   destination: string;
   imageUrl: string;
   isEditorsPick?: boolean;
@@ -24,16 +31,18 @@ export interface Destination {
 }
 
 export interface FeaturedCardViewModel {
-  id: number;
+  id: string;
   name: string;
   locationLine: string;
-  season: string;
+  bestSeason: string;
   imageUrl: string;
+  destination: string;
 }
 
 export interface GridCardViewModel {
-  id: number;
+  id: string;
   name: string;
   locationLine: string;
   imageUrl: string;
+  destination: string;
 }

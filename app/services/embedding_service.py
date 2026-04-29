@@ -1,3 +1,6 @@
+# Path: app/services/embedding_service.py
+# Summary: Implements embedding service business logic.
+
 """
 Embedding service — wraps Ollama's mxbai-embed-large model.
 

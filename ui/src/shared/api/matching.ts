@@ -1,3 +1,6 @@
+// Path: ui/src/shared/api/matching.ts
+// Summary: Implements matching module logic.
+
 import { API_URL } from '../../app/config';
 import { apiFetch } from './client';
 

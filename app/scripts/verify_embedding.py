@@ -1,3 +1,6 @@
+# Path: app/scripts/verify_embedding.py
+# Summary: Implements verify embedding functionality.
+
 """
 Quick smoke-test for the Ollama mxbai-embed-large embedding service.
 

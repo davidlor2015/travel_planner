@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/logistics/budget/useBudgetTracker.ts
+// Summary: Provides useBudgetTracker hook behavior.
+
 import { useReducer, useEffect, useCallback } from 'react';
 import {
   getBudget,

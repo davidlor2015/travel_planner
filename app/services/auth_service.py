@@ -1,3 +1,6 @@
+# Path: app/services/auth_service.py
+# Summary: Implements auth service business logic.
+
 from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status

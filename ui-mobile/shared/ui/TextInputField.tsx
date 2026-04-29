@@ -1,4 +1,9 @@
+// Path: ui-mobile/shared/ui/TextInputField.tsx
+// Summary: Implements TextInputField module logic.
+
 import { TextInput, type TextInputProps } from "react-native";
+
+import { fontStyles } from "@/shared/theme/typography";
 
 import { Field } from "./Field";
 
@@ -14,6 +19,7 @@ export function TextInputField({
   error,
   multiline,
   className,
+  style,
   ...props
 }: Props) {
   return (
@@ -27,6 +33,7 @@ export function TextInputField({
           error ? "border-danger" : "",
           className ?? "",
         ].join(" ")}
+        style={[fontStyles.uiRegular, style]}
         {...props}
       />
     </Field>

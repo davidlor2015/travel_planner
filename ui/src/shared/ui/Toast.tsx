@@ -1,3 +1,6 @@
+// Path: ui/src/shared/ui/Toast.tsx
+// Summary: Implements Toast module logic.
+
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 

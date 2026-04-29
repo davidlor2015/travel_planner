@@ -1,5 +1,10 @@
+// Path: ui-mobile/shared/ui/SectionCard.tsx
+// Summary: Implements SectionCard module logic.
+
 import type { ReactNode } from "react";
 import { Text, View } from "react-native";
+
+import { fontStyles } from "@/shared/theme/typography";
 
 type Props = {
   eyebrow?: string;
@@ -29,13 +34,25 @@ export function SectionCard({
         <View className="flex-row items-start justify-between gap-3">
           <View className="flex-1 gap-1">
             {eyebrow ? (
-              <Text className="text-[10px] font-bold uppercase tracking-[1.4px] text-text-soft">
+              <Text
+                className="text-[10px] uppercase tracking-[1.4px] text-text-soft"
+                style={fontStyles.monoMedium}
+              >
                 {eyebrow}
               </Text>
             ) : null}
-            {title ? <Text className="text-lg font-semibold text-text">{title}</Text> : null}
+            {title ? (
+              <Text className="text-lg text-text" style={fontStyles.uiSemibold}>
+                {title}
+              </Text>
+            ) : null}
             {description ? (
-              <Text className="text-[13px] leading-5 text-text-muted">{description}</Text>
+              <Text
+                className="text-[13px] leading-5 text-text-muted"
+                style={fontStyles.uiRegular}
+              >
+                {description}
+              </Text>
             ) : null}
           </View>
           {action ? <View>{action}</View> : null}

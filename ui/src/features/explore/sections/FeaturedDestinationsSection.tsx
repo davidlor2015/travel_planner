@@ -1,3 +1,6 @@
+// Path: ui/src/features/explore/sections/FeaturedDestinationsSection.tsx
+// Summary: Implements FeaturedDestinationsSection module logic.
+
 import { PageSection } from "../../../shared/ui";
 import type { Destination } from "../types";
 import { FeaturedDestinationCard } from "../components/FeaturedDestinationCard";

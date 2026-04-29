@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/ai/api.ts
+// Summary: Implements api module logic.
+
 import { ApiError, apiRequest } from "@/shared/api/client";
 
 export type ItineraryStopStatus = "planned" | "confirmed" | "skipped";

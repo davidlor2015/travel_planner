@@ -1,3 +1,6 @@
+// Path: ui/e2e/v1-scope.spec.ts
+// Summary: Covers automated tests for v1-scope.spec behavior.
+
 /**
  * Assertions that v1 scope-cleanup UI changes are live.
  * Each test targets a specific surface that was added, removed, or renamed.
@@ -23,17 +26,16 @@ test.describe('V1 scope: removed / renamed surfaces', () => {
     // The AppShell nav is only rendered outside the trips view.
     await page.goto('/app/dashboard');
 
-    // Companions (matching) is present; Explore has been removed.
-    await expect(page.getByRole('button', { name: 'Companions' })).toBeVisible({ timeout: 8_000 });
+    // Explore is now secondary-nav only (avatar menu), not a primary tab.
     await expect(page.getByRole('button', { name: 'Explore' })).not.toBeVisible();
   });
 
-  test('Companions entry point is visible in the top-level navigation', async ({ page }) => {
+  test('Companions entry point is not visible in the top-level navigation', async ({ page }) => {
     await registerAndLogin(page);
 
     await page.goto('/app/dashboard');
 
-    await expect(page.getByRole('button', { name: 'Companions' })).toBeVisible({ timeout: 8_000 });
+    await expect(page.getByRole('button', { name: 'Companions' })).not.toBeVisible();
   });
 
   test('Explore route redirects back to Trips', async ({ page }) => {

@@ -1,3 +1,6 @@
+# Path: app/models/reservation.py
+# Summary: Defines the reservation data model.
+
 from __future__ import annotations
 
 from datetime import datetime

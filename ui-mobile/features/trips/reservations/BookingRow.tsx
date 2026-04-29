@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/reservations/BookingRow.tsx
+// Summary: Implements BookingRow module logic.
+
 import { Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 

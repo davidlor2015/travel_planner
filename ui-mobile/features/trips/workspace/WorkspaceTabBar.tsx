@@ -1,4 +1,10 @@
+// Path: ui-mobile/features/trips/workspace/WorkspaceTabBar.tsx
+// Summary: Implements WorkspaceTabBar module logic.
+
 import { Pressable, ScrollView, Text, View } from "react-native";
+
+import { DE } from "@/shared/theme/desertEditorial";
+import { fontStyles } from "@/shared/theme/typography";
 
 export type WorkspaceTab =
   | "overview"
@@ -30,11 +36,11 @@ export function WorkspaceTabBar({
   };
 
   return (
-    <View className="border-b border-smoke bg-ivory">
+    <View style={{ backgroundColor: DE.ivory, borderBottomWidth: 1, borderBottomColor: DE.rule }}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 16 }}
+        contentContainerStyle={{ paddingHorizontal: 22, paddingTop: 4 }}
       >
         {visibleTabs.map((tab) => {
           const isActive = activeTab === tab.key;
@@ -44,14 +50,13 @@ export function WorkspaceTabBar({
             <Pressable
               key={tab.key}
               onPress={() => onTabChange(tab.key)}
-              className="relative mr-5 flex-row items-center gap-1.5 py-3"
+              className="relative mr-[18px] flex-row items-center gap-1.5 py-3.5"
             >
               <Text
-                className={
-                  isActive
-                    ? "text-[13px] font-semibold text-espresso"
-                    : "text-[13px] font-medium text-muted"
-                }
+                style={[
+                  isActive ? fontStyles.uiBold : fontStyles.uiMedium,
+                  { fontSize: 13.5, color: isActive ? DE.ink : DE.muted },
+                ]}
               >
                 {tab.label}
               </Text>
@@ -73,7 +78,10 @@ export function WorkspaceTabBar({
                 </View>
               )}
               {isActive && (
-                <View className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-amber" />
+                <View
+                  className="absolute bottom-[-1px] left-0 right-0 h-0.5 rounded-full"
+                  style={{ backgroundColor: DE.clay }}
+                />
               )}
             </Pressable>
           );

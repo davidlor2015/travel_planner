@@ -1,7 +1,11 @@
+// Path: ui-mobile/app/(tabs)/trips/[tripId]/index.tsx
+// Summary: Implements index module logic.
+
 import { Text, View } from "react-native";
 import { Tabs, useLocalSearchParams } from "expo-router";
 
 import { WorkspaceScreen } from "@/features/trips/workspace/WorkspaceScreen";
+import { fontStyles } from "@/shared/theme/typography";
 
 function parseTripId(value: string | string[] | undefined): number | null {
   const raw = Array.isArray(value) ? value[0] : value;
@@ -21,7 +25,9 @@ export default function TripDetailPage() {
   if (tripId === null) {
     return (
       <View className="flex-1 items-center justify-center">
-        <Text className="text-sm text-red-700">Invalid trip.</Text>
+        <Text className="text-sm text-red-700" style={fontStyles.uiRegular}>
+          Invalid trip.
+        </Text>
       </View>
     );
   }

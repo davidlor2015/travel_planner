@@ -1,6 +1,9 @@
+// Path: ui-mobile/shared/api/friendlyError.ts
+// Summary: Implements friendlyError module logic.
+
 import { ApiError } from "./client";
 
-export type ErrorDomain = "auth" | "trips" | "ai" | "budget" | "packing" | "bookings";
+export type ErrorDomain = "auth" | "trips" | "ai" | "budget" | "packing" | "bookings" | "profile";
 
 const MESSAGES: Record<ErrorDomain, Record<number | "default", string>> = {
   auth: {
@@ -32,6 +35,10 @@ const MESSAGES: Record<ErrorDomain, Record<number | "default", string>> = {
   bookings: {
     404: "No bookings found for this trip.",
     default: "We couldn't load your bookings. Try again in a moment.",
+  },
+  profile: {
+    422: "That name isn't valid. Please try something shorter.",
+    default: "We couldn't save your changes. Try again in a moment.",
   },
 };
 

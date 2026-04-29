@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/logistics/reservations/ReservationsPanel.tsx
+// Summary: Implements ReservationsPanel module logic.
+
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useReservations } from "./useReservations";

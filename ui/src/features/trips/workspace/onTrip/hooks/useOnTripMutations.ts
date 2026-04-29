@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/onTrip/hooks/useOnTripMutations.ts
+// Summary: Provides useOnTripMutations hook behavior.
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {

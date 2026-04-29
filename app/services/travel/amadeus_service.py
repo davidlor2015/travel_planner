@@ -1,3 +1,6 @@
+# Path: app/services/travel/amadeus_service.py
+# Summary: Implements amadeus service business logic.
+
 """
 Thin async wrapper around the synchronous Amadeus Python SDK.
 

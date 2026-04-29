@@ -1,3 +1,6 @@
+// Path: ui-mobile/__tests__/workspace/RegenerateSheet.test.tsx
+// Summary: Covers automated tests for RegenerateSheet.test behavior.
+
 /**
  * Tests for the RegenerateSheet component and the day-refinement flow in OverviewTab.
  *
@@ -9,9 +12,10 @@
  * 5. Dismissing ("Keep original") leaves the itinerary unchanged
  */
 import React from "react";
-import { act, fireEvent, render, waitFor } from "@testing-library/react-native";
+import { fireEvent, render, waitFor } from "@testing-library/react-native";
 
 import type { DayPlan, Itinerary } from "@/features/ai/api";
+import { RegenerateSheet } from "@/features/trips/workspace/RegenerateSheet";
 
 // ─── Shared fixtures ──────────────────────────────────────────────────────────
 
@@ -62,10 +66,6 @@ jest.mock("@/features/ai/hooks", () => ({
     error: null,
   }),
 }));
-
-// ─── Import component AFTER mocking ──────────────────────────────────────────
-
-import { RegenerateSheet } from "@/features/trips/workspace/RegenerateSheet";
 
 // ─── 1. Mutation called with correct parameters ───────────────────────────────
 

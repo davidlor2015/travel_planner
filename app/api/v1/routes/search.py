@@ -1,3 +1,6 @@
+# Path: app/api/v1/routes/search.py
+# Summary: Defines search API route handlers.
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.deps import SessionDep, get_current_user

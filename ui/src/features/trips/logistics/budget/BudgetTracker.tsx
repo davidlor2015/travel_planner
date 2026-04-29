@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/logistics/budget/BudgetTracker.tsx
+// Summary: Implements BudgetTracker module logic.
+
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useBudgetTracker, type ExpenseCategory } from "./useBudgetTracker";

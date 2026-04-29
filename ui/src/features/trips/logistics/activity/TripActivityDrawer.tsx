@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/logistics/activity/TripActivityDrawer.tsx
+// Summary: Implements TripActivityDrawer module logic.
+
 import { useEffect, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 

@@ -1,7 +1,11 @@
+// Path: ui-mobile/features/trips/workspace/useTripWorkspaceModel.ts
+// Summary: Provides useTripWorkspaceModel hook behavior.
+
 import { useMemo } from "react";
 
 import {
   useCreateTripMutation,
+  useDeleteTripMutation,
   useTripDetailQuery,
   useTripsQuery,
   useTripSummariesQuery,
@@ -21,6 +25,7 @@ import { useWorkspaceCollaboration } from "./hooks";
 type Options = {
   tripId: number;
   currentUserEmail: string;
+  currentUserId?: number | null;
 };
 
 export type TripWorkspaceModel = {
@@ -35,8 +40,10 @@ export type TripWorkspaceModel = {
   switcherTrips: ReturnType<typeof toTripListItem>[];
   isCreatingTrip: boolean;
   isUpdatingTrip: boolean;
+  isDeletingTrip: boolean;
   createTrip: (value: TripFormValue) => Promise<{ id: number }>;
   updateTrip: (value: TripFormValue) => Promise<unknown>;
+  deleteTrip: () => Promise<void>;
   isSolo: boolean;
   showGroupCoordination: boolean;
   isNotFound: boolean;
@@ -45,6 +52,7 @@ export type TripWorkspaceModel = {
 export function useTripWorkspaceModel({
   tripId,
   currentUserEmail,
+  currentUserId,
 }: Options): TripWorkspaceModel {
   // Queries and mutations
   const tripQuery = useTripDetailQuery(tripId);
@@ -52,6 +60,7 @@ export function useTripWorkspaceModel({
   const summariesQuery = useTripSummariesQuery();
   const createTripMutation = useCreateTripMutation();
   const updateTripMutation = useUpdateTripMutation();
+  const deleteTripMutation = useDeleteTripMutation();
   const collaborationQuery = useWorkspaceCollaboration(
     tripId,
     tripQuery.data ?? null,
@@ -65,8 +74,11 @@ export function useTripWorkspaceModel({
     tripQuery.error.status === 404;
 
   const trip = useMemo(
-    () => (tripQuery.data ? toTripWorkspaceViewModel(tripQuery.data, currentUserEmail) : null),
-    [tripQuery.data, currentUserEmail],
+    () =>
+      tripQuery.data
+        ? toTripWorkspaceViewModel(tripQuery.data, currentUserEmail, currentUserId)
+        : null,
+    [tripQuery.data, currentUserEmail, currentUserId],
   );
 
   const summary = useMemo(() => {
@@ -99,6 +111,10 @@ export function useTripWorkspaceModel({
     });
   };
 
+  const deleteTrip = async () => {
+    await deleteTripMutation.mutateAsync(tripId);
+  };
+
   return {
     tripQuery,
     tripRaw: tripQuery.data ?? null,
@@ -111,8 +127,10 @@ export function useTripWorkspaceModel({
     switcherTrips,
     isCreatingTrip: createTripMutation.isPending,
     isUpdatingTrip: updateTripMutation.isPending,
+    isDeletingTrip: deleteTripMutation.isPending,
     createTrip,
     updateTrip,
+    deleteTrip,
     isSolo,
     showGroupCoordination,
     isNotFound,

@@ -1,3 +1,6 @@
+# Path: app/core/logging.py
+# Summary: Implements logging functionality.
+
 import logging
 import sys
 

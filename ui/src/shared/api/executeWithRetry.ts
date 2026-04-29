@@ -1,3 +1,6 @@
+// Path: ui/src/shared/api/executeWithRetry.ts
+// Summary: Implements executeWithRetry module logic.
+
 import { ApiError } from './errors';
 
 /**

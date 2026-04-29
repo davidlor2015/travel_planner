@@ -1,3 +1,6 @@
+// Path: ui-mobile/shared/ui/MultilineInputField.tsx
+// Summary: Implements MultilineInputField module logic.
+
 import type { TextInputProps } from "react-native";
 
 import { TextInputField } from "./TextInputField";

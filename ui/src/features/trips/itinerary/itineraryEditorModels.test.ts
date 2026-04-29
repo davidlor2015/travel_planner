@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/itinerary/itineraryEditorModels.test.ts
+// Summary: Covers automated tests for itineraryEditorModels.test behavior.
+
 import { describe, expect, it } from "vitest";
 
 import type { EditableDayPlan, EditableItineraryItem } from "./itineraryDraft";

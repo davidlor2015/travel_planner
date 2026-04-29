@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/onTrip/HappeningNowCard.tsx
+// Summary: Implements HappeningNowCard module logic.
+
 import { mapsDirectionsHref } from "../helpers/mapLinks";
 import type { StopVM } from "./types";
 

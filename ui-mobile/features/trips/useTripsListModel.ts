@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/useTripsListModel.ts
+// Summary: Provides useTripsListModel hook behavior.
+
 import { useQueries } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
@@ -61,7 +64,7 @@ export function useTripsListModel(): TripsListModel {
     return map;
   }, [summariesQuery.data]);
 
-  const allTrips = tripsQuery.data ?? [];
+  const allTrips = useMemo(() => tripsQuery.data ?? [], [tripsQuery.data]);
 
   const activeTripIds = useMemo(
     () =>

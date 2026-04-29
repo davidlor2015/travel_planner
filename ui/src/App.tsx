@@ -1,3 +1,6 @@
+// Path: ui/src/App.tsx
+// Summary: Implements App module logic.
+
 import {
   Suspense,
   createContext,
@@ -304,11 +307,12 @@ function ProfileRoute() {
 }
 
 function ArchiveRoute() {
-  const { trips, navigateToView } = useAppLayoutContext();
+  const { token, trips, navigateToView } = useAppLayoutContext();
   const navigate = useNavigate();
 
   return (
     <ArchivePage
+      token={token}
       trips={trips}
       onNavigate={navigateToView}
       onCreateFromDestination={(destination) => {

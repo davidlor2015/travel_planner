@@ -1,3 +1,6 @@
+// Path: ui/src/shared/api/ai.ts
+// Summary: Implements ai module logic.
+
 import { API_URL } from '../../app/config';
 import { apiFetch } from './client';
 

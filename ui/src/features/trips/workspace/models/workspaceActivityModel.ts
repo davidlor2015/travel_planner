@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/models/workspaceActivityModel.ts
+// Summary: Defines the workspaceActivityModel data model.
+
 import type { Itinerary } from "../../../../shared/api/ai";
 import type { Trip } from "../../../../shared/api/trips";
 import type { TripActivityItem } from "../../logistics/activity";

@@ -1,30 +1,37 @@
+// Path: ui-mobile/features/explore/useExploreScreen.ts
+// Summary: Provides useExploreScreen hook behavior.
+
 import { useMemo, useState } from "react";
 
 import { toFeaturedCardViewModel, toGridCardViewModel } from "./adapters";
-import { getFeaturedDestinations, getDestinations, listDestinationMoods } from "./catalog";
-import type { DestinationMood, FeaturedCardViewModel, GridCardViewModel } from "./types";
+import { getFeaturedDestinations, getDestinations, listDestinationThemes } from "./catalog";
+import type { DestinationTheme, FeaturedCardViewModel, GridCardViewModel } from "./types";
 
 export interface ExploreScreenModel {
   query: string;
   setQuery: (q: string) => void;
-  activeMood: DestinationMood | null;
-  setActiveMood: (mood: DestinationMood | null) => void;
-  moods: DestinationMood[];
+  activeTheme: DestinationTheme | null;
+  setActiveTheme: (theme: DestinationTheme | null) => void;
+  themes: DestinationTheme[];
   isFiltering: boolean;
   showFeatured: boolean;
   featuredCards: FeaturedCardViewModel[];
   moreToConsiderCards: GridCardViewModel[];
   filteredCards: GridCardViewModel[];
   hasResults: boolean;
+  planTripDestination: string | null;
+  openPlanTrip: (destination: string) => void;
+  closePlanTrip: () => void;
 }
 
 export function useExploreScreen(): ExploreScreenModel {
   const [query, setQuery] = useState("");
-  const [activeMood, setActiveMood] = useState<DestinationMood | null>(null);
+  const [activeTheme, setActiveTheme] = useState<DestinationTheme | null>(null);
+  const [planTripDestination, setPlanTripDestination] = useState<string | null>(null);
 
-  const moods = useMemo(() => listDestinationMoods(), []);
+  const themes = useMemo(() => listDestinationThemes(), []);
 
-  const isFiltering = query.trim().length > 0 || activeMood !== null;
+  const isFiltering = query.trim().length > 0 || activeTheme !== null;
 
   const featuredCards = useMemo(
     () => getFeaturedDestinations().map(toFeaturedCardViewModel),
@@ -32,8 +39,8 @@ export function useExploreScreen(): ExploreScreenModel {
   );
 
   const filtered = useMemo(
-    () => getDestinations({ query, mood: activeMood }),
-    [query, activeMood],
+    () => getDestinations({ query, theme: activeTheme }),
+    [query, activeTheme],
   );
 
   // When not filtering: exclude featured destinations from the grid to avoid duplication.
@@ -54,14 +61,17 @@ export function useExploreScreen(): ExploreScreenModel {
   return {
     query,
     setQuery,
-    activeMood,
-    setActiveMood,
-    moods,
+    activeTheme,
+    setActiveTheme,
+    themes,
     isFiltering,
     showFeatured,
     featuredCards,
     moreToConsiderCards,
     filteredCards,
     hasResults,
+    planTripDestination,
+    openPlanTrip: setPlanTripDestination,
+    closePlanTrip: () => setPlanTripDestination(null),
   };
 }

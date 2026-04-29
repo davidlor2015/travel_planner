@@ -1,9 +1,13 @@
+# Path: app/api/v1/routes/trips.py
+# Summary: Defines trips API route handlers.
+
 from typing import List
 from fastapi import APIRouter, Response
 
 from app.api.deps import CurrentUser, SessionDep
 from app.schemas.trip import (
     TripCreate,
+    TripExecutionSummaryResponse,
     TripInviteCreateResponse,
     TripInviteCreateRequest,
     TripMemberAddRequest,
@@ -59,6 +63,15 @@ def read_trip_on_trip_snapshot(
     tz: str | None = None,
 ):
     return TripService(db).get_on_trip_snapshot(trip_id, current_user.id, tz=tz)
+
+
+@router.get("/{trip_id}/execution-summary", response_model=TripExecutionSummaryResponse)
+def read_trip_execution_summary(
+    trip_id: int,
+    db: SessionDep,
+    current_user: CurrentUser,
+):
+    return TripService(db).get_execution_summary(trip_id, current_user.id)
 
 
 @router.post("/{trip_id}/members", response_model=TripMemberResponse, status_code=201)

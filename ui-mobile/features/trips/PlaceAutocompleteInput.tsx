@@ -1,7 +1,11 @@
+// Path: ui-mobile/features/trips/PlaceAutocompleteInput.tsx
+// Summary: Implements PlaceAutocompleteInput module logic.
+
 import { useEffect, useRef, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 
 import { Field } from "@/shared/ui/Field";
+import { fontStyles } from "@/shared/theme/typography";
 
 import type { PlaceSuggestion } from "./types";
 
@@ -89,19 +93,24 @@ export function PlaceAutocompleteInput({
             "rounded-2xl border border-border bg-white px-4 py-3 text-[15px] text-text",
             error ? "border-danger" : "",
           ].join(" ")}
+          style={fontStyles.uiRegular}
         />
 
         {shouldShowDropdown ? (
           <View className="overflow-hidden rounded-2xl border border-border bg-white">
             {loading ? (
               <View className="px-4 py-3">
-                <Text className="text-sm text-text-muted">Searching places…</Text>
+                <Text className="text-sm text-text-muted" style={fontStyles.uiRegular}>
+                  Searching places…
+                </Text>
               </View>
             ) : null}
 
             {!loading && searchError ? (
               <View className="px-4 py-3">
-                <Text className="text-sm text-danger">{searchError}</Text>
+                <Text className="text-sm text-danger" style={fontStyles.uiRegular}>
+                  {searchError}
+                </Text>
               </View>
             ) : null}
 
@@ -125,9 +134,16 @@ export function PlaceAutocompleteInput({
                         showDivider ? "border-b border-border/70" : "",
                       ].join(" ")}
                     >
-                      <Text className="text-sm font-medium text-text">{suggestion.label}</Text>
+                      <Text className="text-sm text-text" style={fontStyles.uiMedium}>
+                        {suggestion.label}
+                      </Text>
                       {detailLine ? (
-                        <Text className="mt-0.5 text-xs text-text-soft">{detailLine}</Text>
+                        <Text
+                          className="mt-0.5 text-xs text-text-soft"
+                          style={fontStyles.uiRegular}
+                        >
+                          {detailLine}
+                        </Text>
                       ) : null}
                     </Pressable>
                   );
@@ -136,7 +152,9 @@ export function PlaceAutocompleteInput({
 
             {shouldShowEmpty ? (
               <View className="px-4 py-3">
-                <Text className="text-sm text-text-muted">No places found.</Text>
+                <Text className="text-sm text-text-muted" style={fontStyles.uiRegular}>
+                  No places found.
+                </Text>
               </View>
             ) : null}
           </View>

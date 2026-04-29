@@ -1,4 +1,8 @@
+// Path: ui-mobile/features/trips/workspace/workspaceCommandModel.ts
+// Summary: Implements workspaceCommandModel module logic.
+
 import type { DayPlan, Itinerary, ItineraryItem } from "@/features/ai/api";
+import { formatTripStopTime } from "@/features/trips/stopTime";
 import type { TripOnTripSnapshot, TripOnTripStopSnapshot } from "../types";
 
 import type {
@@ -81,7 +85,7 @@ function formatMoney(value: number): string {
 function stopLabel(stop: ItineraryItem | TripOnTripStopSnapshot | null | undefined): string | null {
   const title = stop?.title?.trim();
   if (!title) return null;
-  const parts = [stop?.time?.trim(), title].filter(Boolean);
+  const parts = [stop?.time ? formatTripStopTime(stop.time) : null, title].filter(Boolean);
   return parts.join(" · ");
 }
 
@@ -187,7 +191,7 @@ export function buildQuickActions(args: {
     },
     {
       key: "members",
-      label: "People",
+      label: "Travelers",
       summary: plural(trip.memberCount, "traveler"),
       detail: trip.isOwner ? "Invite and readiness" : "Group readiness",
       tone: "neutral",

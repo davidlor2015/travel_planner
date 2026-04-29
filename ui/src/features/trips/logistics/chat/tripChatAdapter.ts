@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/logistics/chat/tripChatAdapter.ts
+// Summary: Implements tripChatAdapter module logic.
+
 import type { TripChatAdapter, TripChatMessage, TripChatSendInput } from './types';
 
 const STORAGE_KEY = 'wp_trip_chat_messages_v1';

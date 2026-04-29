@@ -1,3 +1,8 @@
+/*
+ * Path: ui-mobile/global.css
+ * Summary: Defines stylesheet rules for this surface.
+ */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

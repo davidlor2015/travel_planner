@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/auth/types.ts
+// Summary: Implements types module logic.
+
 import type { SessionTokens } from "@/shared/auth/tokenStorage";
 
 export type LoginRequest = {

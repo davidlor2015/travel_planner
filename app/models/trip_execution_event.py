@@ -1,3 +1,6 @@
+# Path: app/models/trip_execution_event.py
+# Summary: Defines the trip execution event data model.
+
 from __future__ import annotations
 
 from datetime import datetime

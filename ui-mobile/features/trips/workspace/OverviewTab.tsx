@@ -1,9 +1,12 @@
+// Path: ui-mobile/features/trips/workspace/OverviewTab.tsx
+// Summary: Implements OverviewTab module logic.
+
 import { Ionicons } from "@expo/vector-icons";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 
 import type { StreamState } from "@/features/ai/useStreamingItinerary";
 import type { TripOnTripSnapshot } from "../types";
-import { fontStyles } from "@/shared/theme/typography";
+import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
 
 import type {
   TripSummaryViewModel,
@@ -12,18 +15,11 @@ import type {
 } from "./adapters";
 import { ItineraryTabView } from "./ItineraryTabView";
 import { RegenerateSheet } from "./RegenerateSheet";
-import { StopEditSheet } from "./StopEditSheet";
+import { StopFormSheet } from "./StopFormSheet";
 import { useWorkspaceOverviewModel } from "./useWorkspaceOverviewModel";
-import type { WorkspaceAttentionItem, WorkspaceQuickAction } from "./workspaceCommandModel";
+import type { WorkspaceAttentionItem } from "./workspaceCommandModel";
 import type { OverviewItineraryDayPreview } from "./overviewItineraryPreview";
 import type { WorkspaceTab } from "./WorkspaceTabBar";
-
-const QUICK_ACTION_ICONS: Partial<Record<WorkspaceTab, keyof typeof Ionicons.glyphMap>> = {
-  bookings: "bed-outline",
-  budget: "card-outline",
-  packing: "bag-outline",
-  members: "people-outline",
-};
 
 type Props = {
   trip: TripWorkspaceViewModel;
@@ -64,7 +60,6 @@ export function OverviewTab({
   const command = overview.command;
   const previewDays = overview.itineraryDayPreviews;
 
-  // Pill text for NEXT ACTION header
   const nextActionPill = overview.isStreaming
     ? "Building…"
     : overview.isItineraryDirty
@@ -73,7 +68,6 @@ export function OverviewTab({
         ? "No plan yet"
         : null;
 
-  // Action buttons for NEXT ACTION card
   let primaryLabel: string | null = null;
   let primaryHandler: (() => void) | null = null;
   let ghostLabel: string | null = null;
@@ -112,177 +106,267 @@ export function OverviewTab({
           onEditStop={(dayIndex, stopIndex) =>
             overview.setEditingStop({ dayIndex, stopIndex })
           }
+          onAddDay={overview.handleAddDay}
           onPublish={() => void overview.handlePublishChanges()}
           onRegenerateAll={onStartStream}
           onCancelStream={onCancelStream}
         />
       ) : (
-        /* ── Overview tab ──────────────────────────────────────────── */
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
 
-          {/* NEXT ACTION ─────────────────────────────────────────── */}
-          <View className="mx-4 mt-4">
+          {/* NEXT ACTION ─────────────────────────────────────── */}
+          <View style={{ paddingHorizontal: 22, paddingTop: 20, paddingBottom: 8 }}>
+            <Text style={[textScaleStyles.caption, { color: "#B85A38", letterSpacing: 2.2, fontSize: 9.5 }]}>
+              NEXT ACTION
+            </Text>
+          </View>
+          <View style={{ paddingHorizontal: 22, paddingBottom: 24 }}>
             <View
-              className="rounded-[20px] overflow-hidden bg-white"
-              style={{ shadowColor: "#1C1108", shadowOpacity: 0.06, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 3 }}
+              style={{
+                padding: 20,
+                borderRadius: 16,
+                backgroundColor: "#FAF5EA",
+                borderWidth: 1,
+                borderColor: "rgba(35,25,16,0.10)",
+              }}
             >
-              {/* Section label row */}
-              <View className="flex-row items-center justify-between px-4 pt-4 pb-2">
-                <Text className="text-[10px] font-semibold uppercase tracking-[1.4px] text-text-soft">
-                  Next action
+              {/* Title + pill */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  marginBottom: 8,
+                }}
+              >
+                <Text
+                  style={[
+                    fontStyles.headMedium,
+                    { fontSize: 24, color: "#231910", letterSpacing: -0.4, lineHeight: 28, flex: 1, paddingRight: 12 },
+                  ]}
+                >
+                  {command.nextActionTitle}
                 </Text>
                 {nextActionPill ? (
-                  <View className="rounded-full border border-amber/30 bg-amber/10 px-2.5 py-0.5">
-                    <Text className="text-[11px] font-semibold text-amber">{nextActionPill}</Text>
+                  <View
+                    style={{
+                      paddingHorizontal: 10,
+                      paddingVertical: 4,
+                      borderRadius: 100,
+                      backgroundColor: "#EFD8C9",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Text style={[fontStyles.uiSemibold, { fontSize: 10.5, color: "#231910", letterSpacing: 0.3 }]}>
+                      {nextActionPill}
+                    </Text>
                   </View>
                 ) : null}
               </View>
 
-              <View className="gap-3 px-4 pb-4">
-                {/* Title + body */}
-                <View className="gap-1">
-                  <Text
-                    className="leading-tight text-espresso"
-                    style={[fontStyles.displaySemibold, { fontSize: 22, lineHeight: 27 }]}
-                  >
-                    {command.nextActionTitle}
-                  </Text>
-                  <Text className="text-[14px] leading-[20px] text-text-muted">
-                    {command.nextActionBody}
-                  </Text>
-                  {command.nextActionMeta && !overview.isStreaming ? (
-                    <Text className="text-[12px] text-flint" style={fontStyles.uiMedium}>
-                      {command.nextActionMeta}
+              {/* Body */}
+              <Text
+                style={[fontStyles.uiRegular, { fontSize: 13, color: "#8A7B6A", lineHeight: 20, marginBottom: 16 }]}
+              >
+                {command.nextActionBody}
+              </Text>
+
+              {/* Streaming banner */}
+              {overview.isStreaming ? (
+                <View
+                  style={{
+                    borderRadius: 14,
+                    paddingHorizontal: 12,
+                    paddingVertical: 12,
+                    marginBottom: 12,
+                    borderWidth: 1,
+                    borderColor: "rgba(184,90,56,0.25)",
+                    backgroundColor: "rgba(184,90,56,0.05)",
+                    gap: 8,
+                  }}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <ActivityIndicator size="small" color="#B85A38" />
+                    <Text style={[fontStyles.uiSemibold, { fontSize: 13, color: "#B85A38" }]}>
+                      Generating itinerary…
                     </Text>
+                  </View>
+                  <Text
+                    style={[fontStyles.uiRegular, { fontSize: 11, lineHeight: 16, color: "#8A7B6A" }]}
+                    numberOfLines={4}
+                  >
+                    {overview.streamText ? overview.streamText.slice(-280) : "Connecting to AI…"}
+                  </Text>
+                </View>
+              ) : null}
+
+              {/* Saving indicator */}
+              {overview.isSavingItinerary && !overview.isStreaming ? (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                  <ActivityIndicator size="small" color="#B85A38" />
+                  <Text style={[fontStyles.uiRegular, { fontSize: 13, color: "#8A7B6A" }]}>
+                    Saving itinerary…
+                  </Text>
+                </View>
+              ) : null}
+
+              {/* Buttons */}
+              {primaryLabel || ghostLabel ? (
+                <View style={{ flexDirection: "row", gap: 8 }}>
+                  {primaryLabel && primaryHandler ? (
+                    <Pressable
+                      onPress={primaryHandler}
+                      disabled={overview.isSavingItinerary}
+                      className="active:opacity-75"
+                      style={[
+                        {
+                          flex: 1,
+                          height: 46,
+                          borderRadius: 12,
+                          backgroundColor: "#231910",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        },
+                        overview.isSavingItinerary ? { opacity: 0.5 } : undefined,
+                      ]}
+                    >
+                      <Text style={[fontStyles.uiSemibold, { fontSize: 13.5, color: "#F2EBDD" }]}>
+                        {primaryLabel}
+                      </Text>
+                    </Pressable>
+                  ) : null}
+                  {ghostLabel && ghostHandler ? (
+                    <Pressable
+                      onPress={ghostHandler}
+                      className="active:opacity-75"
+                      style={{
+                        paddingHorizontal: 22,
+                        height: 46,
+                        borderRadius: 12,
+                        borderWidth: 1,
+                        borderColor: "rgba(35,25,16,0.18)",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Text style={[fontStyles.uiMedium, { fontSize: 13.5, color: "#231910" }]}>
+                        {ghostLabel}
+                      </Text>
+                    </Pressable>
                   ) : null}
                 </View>
-
-                {/* Streaming progress */}
-                {overview.isStreaming ? (
-                  <View
-                    className="gap-2 rounded-[14px] px-3 py-3"
-                    style={{ borderWidth: 1, borderColor: "rgba(184,104,69,0.25)", backgroundColor: "rgba(184,104,69,0.05)" }}
-                  >
-                    <View className="flex-row items-center gap-2">
-                      <ActivityIndicator size="small" color="#B86845" />
-                      <Text className="text-[13px] font-semibold text-amber">Generating itinerary…</Text>
-                    </View>
-                    <Text className="text-[11px] leading-[16px] text-text-soft" numberOfLines={4}>
-                      {overview.streamText
-                        ? overview.streamText.slice(-280)
-                        : "Connecting to AI…"}
-                    </Text>
-                  </View>
-                ) : null}
-
-                {/* Saving indicator */}
-                {overview.isSavingItinerary && !overview.isStreaming ? (
-                  <View className="flex-row items-center gap-2">
-                    <ActivityIndicator size="small" color="#B86845" />
-                    <Text className="text-[13px] text-text-muted">Saving itinerary…</Text>
-                  </View>
-                ) : null}
-
-                {/* Action buttons */}
-                {primaryLabel || ghostLabel ? (
-                  <View className="mt-1 flex-row gap-2">
-                    {primaryLabel && primaryHandler ? (
-                      <Pressable
-                        onPress={primaryHandler}
-                        disabled={overview.isSavingItinerary}
-                        className="flex-1 items-center justify-center rounded-full bg-espresso py-3 active:opacity-75"
-                        style={overview.isSavingItinerary ? { opacity: 0.5 } : undefined}
-                      >
-                        <Text className="text-[13px] font-semibold text-ivory">
-                          {primaryLabel}
-                        </Text>
-                      </Pressable>
-                    ) : null}
-                    {ghostLabel && ghostHandler ? (
-                      <Pressable
-                        onPress={ghostHandler}
-                        className="flex-1 items-center justify-center rounded-full border border-border py-3 active:opacity-75"
-                      >
-                        <Text className="text-[13px] font-semibold text-text">{ghostLabel}</Text>
-                      </Pressable>
-                    ) : null}
-                  </View>
-                ) : null}
-              </View>
+              ) : null}
             </View>
           </View>
 
-          {/* NEEDS ATTENTION ─────────────────────────────────────── */}
+          {/* NEEDS ATTENTION ─────────────────────────────────── */}
           {command.attentionItems.length > 0 ? (
-            <View className="mx-4 mt-5 gap-2">
-              <View className="flex-row items-center justify-between">
-                <Text className="text-[10px] font-semibold uppercase tracking-[1.4px] text-text-soft">
-                  Needs attention
+            <>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "baseline",
+                  justifyContent: "space-between",
+                  paddingHorizontal: 22,
+                  paddingBottom: 8,
+                }}
+              >
+                <Text style={[textScaleStyles.caption, { color: "#8A7B6A", letterSpacing: 2.2, fontSize: 9.5 }]}>
+                  NEEDS ATTENTION
                 </Text>
-                <Text className="text-[12px] font-semibold text-amber">
+                <Text style={[fontStyles.uiMedium, { fontSize: 12, color: "#B85A38" }]}>
                   {command.attentionItems.length}{" "}
                   {command.attentionItems.length === 1 ? "item" : "items"}
                 </Text>
               </View>
-              <View className="gap-2">
-                {command.attentionItems.map((item, index) => (
-                  <AttentionRow key={`${item.label}-${index}`} item={item} />
-                ))}
-              </View>
-            </View>
-          ) : null}
-
-          {/* QUICK ACTIONS 2×2 grid ───────────────────────────── */}
-          <View className="mx-4 mt-5 gap-2">
-            <Text className="text-[10px] font-semibold uppercase tracking-[1.4px] text-text-soft">
-              Quick actions
-            </Text>
-            <View className="gap-2">
-              {chunkArray(command.quickActions, 2).map((row, rowIndex) => (
-                <View key={rowIndex} className="flex-row gap-2">
-                  {row.map((action) => (
-                    <QuickActionCell
-                      key={action.key}
-                      action={action}
-                      onPress={() => onOpenTab(action.key)}
+              <View style={{ paddingHorizontal: 22, paddingBottom: 28 }}>
+                <View
+                  style={{
+                    borderRadius: 16,
+                    backgroundColor: "#FAF5EA",
+                    borderWidth: 1,
+                    borderColor: "rgba(35,25,16,0.10)",
+                    overflow: "hidden",
+                  }}
+                >
+                  {command.attentionItems.map((item, index) => (
+                    <AttentionRow
+                      key={`${item.label}-${index}`}
+                      item={item}
+                      showBorder={index > 0}
                     />
                   ))}
-                  {row.length === 1 ? <View className="flex-1" /> : null}
                 </View>
-              ))}
-            </View>
-          </View>
+              </View>
+            </>
+          ) : null}
 
-          {/* ITINERARY ───────────────────────────────────────────── */}
-          <View className="mx-4 mt-5 gap-2">
-            <View className="flex-row items-center justify-between">
-              <Text className="text-[10px] font-semibold uppercase tracking-[1.4px] text-text-soft">
-                Itinerary
-              </Text>
-              {previewDays.length > 0 ? (
-                <Pressable onPress={() => onOpenTab("itinerary")}>
-                  <Text className="text-[12px] font-semibold text-amber">View full itinerary</Text>
-                </Pressable>
-              ) : null}
-            </View>
-            <View className="overflow-hidden rounded-[16px] border border-border bg-surface">
+          {/* ITINERARY ───────────────────────────────────────── */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "baseline",
+              justifyContent: "space-between",
+              paddingHorizontal: 22,
+              paddingBottom: 8,
+            }}
+          >
+            <Text style={[textScaleStyles.caption, { color: "#8A7B6A", letterSpacing: 2.2, fontSize: 9.5 }]}>
+              ITINERARY
+            </Text>
+            {previewDays.length > 0 ? (
+              <Pressable onPress={() => onOpenTab("itinerary")} hitSlop={8}>
+                <Text style={[fontStyles.uiMedium, { fontSize: 12, color: "#B85A38" }]}>
+                  Open itinerary ›
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+          <View style={{ paddingHorizontal: 22, paddingBottom: 28 }}>
+            <View
+              style={{
+                borderRadius: 16,
+                backgroundColor: "#FAF5EA",
+                borderWidth: 1,
+                borderColor: "rgba(35,25,16,0.10)",
+                paddingVertical: 4,
+              }}
+            >
               {overview.isItineraryLoading && !overview.isStreaming ? (
-                <ActivityIndicator className="py-6" />
+                <ActivityIndicator style={{ paddingVertical: 24 }} />
               ) : overview.isStreaming ? (
-                <View className="flex-row items-center gap-2 px-4 py-4">
-                  <ActivityIndicator size="small" color="#B86845" />
-                  <Text className="text-[13px] text-text-muted">Generating itinerary…</Text>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 8,
+                    paddingHorizontal: 18,
+                    paddingVertical: 16,
+                  }}
+                >
+                  <ActivityIndicator size="small" color="#B85A38" />
+                  <Text style={[fontStyles.uiRegular, { fontSize: 13, color: "#8A7B6A" }]}>
+                    Generating itinerary…
+                  </Text>
                 </View>
               ) : overview.isItineraryMissing ? (
-                <View className="gap-3 px-4 py-5">
-                  <Text className="text-[13px] leading-5 text-text-muted">
+                <View style={{ gap: 12, paddingHorizontal: 18, paddingVertical: 20 }}>
+                  <Text style={[fontStyles.uiRegular, { fontSize: 13, lineHeight: 20, color: "#8A7B6A" }]}>
                     No itinerary saved yet. Generate one to start planning day-by-day.
                   </Text>
                   <Pressable
                     onPress={onStartStream}
-                    className="self-start rounded-full bg-amber px-4 py-2 active:opacity-75"
+                    className="self-start active:opacity-75"
+                    style={{
+                      paddingHorizontal: 16,
+                      paddingVertical: 8,
+                      borderRadius: 12,
+                      backgroundColor: "#B85A38",
+                    }}
                   >
-                    <Text className="text-[13px] font-semibold text-white">Generate with AI</Text>
+                    <Text style={[fontStyles.uiSemibold, { fontSize: 13, color: "#F2EBDD" }]}>
+                      Generate with AI
+                    </Text>
                   </Pressable>
                 </View>
               ) : previewDays.length > 0 ? (
@@ -290,13 +374,13 @@ export function OverviewTab({
                   <OverviewItineraryPreviewRow
                     key={`${day.dayNumber}-${day.dayTitle}-${index}`}
                     preview={day}
-                    isLast={index === previewDays.length - 1}
+                    showBorder={index > 0}
                     onPress={() => onOpenTab("itinerary")}
                   />
                 ))
               ) : (
-                <View className="px-4 py-5">
-                  <Text className="text-[13px] leading-5 text-text-muted">
+                <View style={{ paddingHorizontal: 18, paddingVertical: 20 }}>
+                  <Text style={[fontStyles.uiRegular, { fontSize: 13, lineHeight: 20, color: "#8A7B6A" }]}>
                     No itinerary days available yet.
                   </Text>
                 </View>
@@ -304,24 +388,32 @@ export function OverviewTab({
             </View>
           </View>
 
-          {/* TRIP BASICS ─────────────────────────────────────────── */}
-          <View className="mx-4 mt-5 gap-2">
-            <Text className="text-[10px] font-semibold uppercase tracking-[1.4px] text-text-soft">
-              Trip basics
+          {/* TRIP BASICS ─────────────────────────────────────── */}
+          <View style={{ paddingHorizontal: 22, paddingBottom: 8 }}>
+            <Text style={[textScaleStyles.caption, { color: "#8A7B6A", letterSpacing: 2.2, fontSize: 9.5 }]}>
+              TRIP BASICS
             </Text>
-            <TripBasicsGrid trip={trip} />
           </View>
+          <TripBasicsGrid trip={trip} />
         </ScrollView>
       )}
 
       {/* Sheets — always rendered so state persists across tab switches */}
       {overview.itinerary ? (
         <>
-          <StopEditSheet
+          <StopFormSheet
             visible={Boolean(overview.editingStop)}
             item={overview.selectedStop}
+            initialDayIndex={overview.editingStop?.dayIndex ?? 0}
+            dayOptions={overview.dayOptions}
+            timeOptions={overview.timeOptions}
+            moveAvailability={overview.stopMoveAvailability}
             onSave={overview.handleSaveStop}
             onDelete={overview.handleDeleteStop}
+            onMoveUp={overview.handleMoveStopUp}
+            onMoveDown={overview.handleMoveStopDown}
+            onMoveToPreviousDay={overview.handleMoveStopToPreviousDay}
+            onMoveToNextDay={overview.handleMoveStopToNextDay}
             onClose={() => overview.setEditingStop(null)}
           />
           <RegenerateSheet
@@ -344,187 +436,213 @@ export function OverviewTab({
 
 function OverviewItineraryPreviewRow({
   preview,
-  isLast,
+  showBorder,
   onPress,
 }: {
   preview: OverviewItineraryDayPreview;
-  isLast: boolean;
+  showBorder: boolean;
   onPress: () => void;
 }) {
+  const stopPreview = preview.stopPreviewLine?.trim() ?? "";
+  const a11ySummary = [preview.dayTitle, stopPreview]
+    .filter(Boolean)
+    .join(". ")
+    .slice(0, 200);
+
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`View ${preview.dayTitle}`}
-      className={[
-        "flex-row px-4 py-3 active:opacity-75",
-        isLast ? "" : "border-b border-border",
-      ].join(" ")}
+      accessibilityLabel={a11ySummary ? `View itinerary: ${a11ySummary}` : `View ${preview.dayTitle}`}
+      className="active:opacity-75"
+      style={{
+        flexDirection: "row",
+        alignItems: "flex-start",
+        paddingHorizontal: 18,
+        paddingVertical: 14,
+        gap: 16,
+        borderTopWidth: showBorder ? 1 : 0,
+        borderTopColor: "rgba(35,25,16,0.10)",
+      }}
     >
-      <View className="mr-3 w-12">
+      {/* Day number + date */}
+      <View style={{ width: 44, flexShrink: 0, alignItems: "center" }}>
         <Text
-          className="text-[22px] leading-[24px] text-espresso"
-          style={fontStyles.displayMedium}
+          style={[fontStyles.headMedium, { fontSize: 22, color: "#231910", letterSpacing: -0.3, lineHeight: 22 }]}
         >
           {preview.dayNumber}
         </Text>
         {preview.dateLabel ? (
-          <Text className="mt-0.5 text-[10px] uppercase tracking-[0.9px] text-text-soft">
-            {preview.dateLabel}
+          <Text
+            style={[fontStyles.monoRegular, { fontSize: 9, color: "#8A7B6A", letterSpacing: 1.5, marginTop: 4 }]}
+          >
+            {preview.dateLabel.toUpperCase()}
           </Text>
         ) : null}
       </View>
 
-      <View className="mr-3 w-px self-stretch bg-border" />
+      {/* Vertical divider */}
+      <View
+        style={{
+          width: 1,
+          alignSelf: "stretch",
+          minHeight: 40,
+          backgroundColor: "rgba(35,25,16,0.10)",
+          flexShrink: 0,
+        }}
+      />
 
-      <View className="min-w-0 flex-1">
+      {/* Day title + stop preview */}
+      <View style={{ flex: 1, minWidth: 0 }}>
         <Text
-          className="text-[13px] leading-[19px] text-espresso"
-          style={fontStyles.uiSemibold}
-          numberOfLines={1}
+          style={[fontStyles.uiMedium, { fontSize: 14, color: "#231910", lineHeight: 19 }]}
+          numberOfLines={2}
         >
           {preview.dayTitle}
         </Text>
-        <Text
-          className={[
-            "mt-0.5 text-[12px] leading-[18px]",
-            preview.hasStops ? "text-text-muted" : "text-text-soft",
-          ].join(" ")}
-          numberOfLines={1}
-        >
-          {preview.stopPreviewLine}
-        </Text>
-        <Text className="mt-0.5 text-[11px] leading-[16px] text-text-soft" numberOfLines={1}>
-          {preview.metaLine}
-        </Text>
-      </View>
-
-      <View className="ml-2 items-center justify-center">
-        <Ionicons name="chevron-forward" size={14} color="#8A7E74" />
+        {stopPreview ? (
+          <Text
+            style={[fontStyles.uiRegular, { fontSize: 12.5, lineHeight: 18, color: "#8A7B6A", marginTop: 4 }]}
+            numberOfLines={3}
+          >
+            {stopPreview}
+          </Text>
+        ) : null}
       </View>
     </Pressable>
   );
 }
 
-function AttentionRow({ item }: { item: WorkspaceAttentionItem }) {
-  const isWarning = item.variant === "warning" || item.variant === "error";
+function AttentionRow({ item, showBorder }: { item: WorkspaceAttentionItem; showBorder: boolean }) {
+  const isError = item.variant === "warning" || item.variant === "error";
+  const iconChar = isError ? "!" : item.variant === "info" ? "i" : "?";
+  const iconColor = isError ? "#B85A38" : "#8A7B6A";
+  const badgeBorder = isError ? "rgba(184,90,56,0.33)" : "rgba(138,123,106,0.33)";
+
   return (
-    <View className="flex-row items-center gap-3 rounded-[14px] border border-border bg-surface px-3 py-3">
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 18,
+        paddingVertical: 14,
+        gap: 14,
+        borderTopWidth: showBorder ? 1 : 0,
+        borderTopColor: "rgba(35,25,16,0.10)",
+      }}
+    >
+      {/* Circular badge with italic Cormorant icon character */}
       <View
-        className="h-8 w-8 items-center justify-center rounded-full"
         style={{
-          backgroundColor: isWarning
-            ? "rgba(184,104,69,0.10)"
-            : "rgba(28,17,8,0.05)",
+          width: 24,
+          height: 24,
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: badgeBorder,
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
         }}
       >
-        <Ionicons
-          name="information-circle-outline"
-          size={16}
-          color={isWarning ? "#B86845" : "#8A7E74"}
-        />
-      </View>
-      <View className="flex-1">
-        <Text className="text-[13px] font-semibold text-espresso">{item.label}</Text>
-        <Text className="mt-0.5 text-[12px] leading-[16px] text-text-muted">{item.detail}</Text>
-      </View>
-      <Ionicons name="chevron-forward" size={14} color="#8A7E74" />
-    </View>
-  );
-}
-
-function QuickActionCell({
-  action,
-  onPress,
-}: {
-  action: WorkspaceQuickAction;
-  onPress: () => void;
-}) {
-  const icon = QUICK_ACTION_ICONS[action.key] ?? "grid-outline";
-  const iconColor = action.tone === "success" ? "#6A7A43" : "#B86845";
-  const iconBg =
-    action.tone === "success"
-      ? "rgba(106,122,67,0.10)"
-      : action.tone === "warning"
-        ? "rgba(184,104,69,0.10)"
-        : "rgba(28,17,8,0.06)";
-
-  return (
-    <Pressable
-      onPress={onPress}
-      className="flex-1 gap-2 rounded-[16px] border border-border bg-surface p-3 active:opacity-75"
-    >
-      <View
-        className="h-9 w-9 items-center justify-center rounded-[10px]"
-        style={{ backgroundColor: iconBg }}
-      >
-        <Ionicons name={icon} size={17} color={iconColor} />
-      </View>
-      <View>
-        <Text className="text-[13px] font-semibold text-espresso">{action.label}</Text>
-        <Text className="mt-0.5 text-[11px] text-text-muted" numberOfLines={1}>
-          {action.summary}
+        <Text style={[fontStyles.headMediumItalic, { fontSize: 13, color: iconColor, lineHeight: 16 }]}>
+          {iconChar}
         </Text>
       </View>
-    </Pressable>
+
+      {/* Label + detail */}
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text style={[fontStyles.uiSemibold, { fontSize: 14, color: "#231910", lineHeight: 18 }]}>
+          {item.label}
+        </Text>
+        <Text style={[fontStyles.uiRegular, { fontSize: 12, color: "#8A7B6A", marginTop: 2 }]}>
+          {item.detail}
+        </Text>
+      </View>
+
+      <Ionicons name="chevron-forward" size={14} color="#8A7B6A" />
+    </View>
   );
 }
 
 function TripBasicsGrid({ trip }: { trip: TripWorkspaceViewModel }) {
-  const cells = [
+  const topRow = [
     { label: "Dates", value: trip.dateRange },
-    {
-      label: "Travelers",
-      value: `${trip.memberCount} ${trip.memberCount === 1 ? "traveler" : "travelers"}`,
-    },
+    { label: "Travelers", value: `${trip.memberCount} ${trip.memberCount === 1 ? "traveler" : "travelers"}` },
+  ];
+  const bottomRow = [
     { label: "Destination", value: trip.destination },
-    {
-      label: "Duration",
-      value: `${trip.durationDays} ${trip.durationDays === 1 ? "day" : "days"}`,
-    },
+    { label: "Duration", value: `${trip.durationDays} ${trip.durationDays === 1 ? "day" : "days"}` },
   ];
 
   return (
-    <View className="overflow-hidden rounded-[16px] border border-border bg-surface">
-      {chunkArray(cells, 2).map((row, rowIndex) => (
+    <View
+      style={{
+        marginHorizontal: 22,
+        paddingBottom: 24,
+        borderTopWidth: 1,
+        borderTopColor: "rgba(35,25,16,0.10)",
+      }}
+    >
+      <View style={{ flexDirection: "row" }}>
         <View
-          key={rowIndex}
-          className={[
-            "flex-row",
-            rowIndex < Math.ceil(cells.length / 2) - 1 ? "border-b border-border" : "",
-          ].join(" ")}
+          style={{
+            flex: 1,
+            paddingVertical: 16,
+            paddingRight: 4,
+            borderRightWidth: 1,
+            borderRightColor: "rgba(35,25,16,0.10)",
+            borderBottomWidth: 1,
+            borderBottomColor: "rgba(35,25,16,0.10)",
+          }}
         >
-          {row.map((cell, cellIndex) => (
-            <View
-              key={cell.label}
-              className={[
-                "flex-1 px-3 py-3",
-                cellIndex === 0 ? "border-r border-border" : "",
-              ].join(" ")}
-            >
-              <Text className="text-[10px] font-semibold uppercase tracking-[0.8px] text-text-soft">
-                {cell.label}
-              </Text>
-              <Text
-                className="mt-1 text-[13px] text-espresso"
-                style={fontStyles.uiMedium}
-                numberOfLines={1}
-              >
-                {cell.value}
-              </Text>
-            </View>
-          ))}
-          {row.length === 1 ? <View className="flex-1" /> : null}
+          <BasicsCell cell={topRow[0]} />
         </View>
-      ))}
+        <View
+          style={{
+            flex: 1,
+            paddingVertical: 16,
+            paddingLeft: 16,
+            borderBottomWidth: 1,
+            borderBottomColor: "rgba(35,25,16,0.10)",
+          }}
+        >
+          <BasicsCell cell={topRow[1]} />
+        </View>
+      </View>
+      <View style={{ flexDirection: "row" }}>
+        <View
+          style={{
+            flex: 1,
+            paddingVertical: 16,
+            paddingRight: 4,
+            borderRightWidth: 1,
+            borderRightColor: "rgba(35,25,16,0.10)",
+          }}
+        >
+          <BasicsCell cell={bottomRow[0]} />
+        </View>
+        <View style={{ flex: 1, paddingVertical: 16, paddingLeft: 16 }}>
+          <BasicsCell cell={bottomRow[1]} />
+        </View>
+      </View>
     </View>
   );
 }
 
-function chunkArray<T>(array: T[], size: number): T[][] {
-  const chunks: T[][] = [];
-  for (let i = 0; i < array.length; i += size) {
-    chunks.push(array.slice(i, i + size));
-  }
-  return chunks;
+function BasicsCell({ cell }: { cell: { label: string; value: string } }) {
+  return (
+    <>
+      <Text
+        style={[fontStyles.monoRegular, { fontSize: 9, color: "#8A7B6A", letterSpacing: 1.8, marginBottom: 6 }]}
+      >
+        {cell.label.toUpperCase()}
+      </Text>
+      <Text
+        style={[fontStyles.headMedium, { fontSize: 17, color: "#231910", letterSpacing: -0.2, lineHeight: 20 }]}
+        numberOfLines={1}
+      >
+        {cell.value}
+      </Text>
+    </>
+  );
 }

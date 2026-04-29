@@ -1,3 +1,6 @@
+# Path: app/services/matching_service.py
+# Summary: Implements matching service business logic.
+
 from __future__ import annotations
 
 from enum import Enum

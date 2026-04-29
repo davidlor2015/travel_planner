@@ -1,3 +1,6 @@
+// Path: ui/src/app/AppShell/AppShell.tsx
+// Summary: Implements AppShell module logic.
+
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -40,17 +43,6 @@ const TripsIcon = () => (
       d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
       clipRule="evenodd"
     />
-  </svg>
-);
-
-const CompanionsIcon = () => (
-  <svg
-    viewBox="0 0 20 20"
-    className="w-4 h-4"
-    fill="currentColor"
-    aria-hidden="true"
-  >
-    <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v1h8v-1zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-1a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v1h-3zM4.75 14.094A5.973 5.973 0 004 17v1H1v-1a3 3 0 013.75-2.906z" />
   </svg>
 );
 
@@ -99,9 +91,7 @@ const ProfileIcon = () => (
 
 const NAV_TABS: NavTab[] = [
   { id: "trips", label: "Trips", icon: <TripsIcon /> },
-  { id: "explore", label: "Explore", icon: <ExploreIcon /> },
-  { id: "archive", label: "Archive", icon: <ArchiveIcon /> },
-  { id: "matching", label: "Companions", icon: <CompanionsIcon /> },
+  { id: "archive", label: "Memories", icon: <ArchiveIcon /> },
 ];
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -128,6 +118,7 @@ export const AppShell = ({
 
   const initial = userEmail[0]?.toUpperCase() ?? "W";
   const isTrips = view === "trips";
+  const exploreEnabled = import.meta.env.VITE_ENABLE_EXPLORE === "true";
   const shellWidth = "max-w-6xl";
 
   return (
@@ -216,6 +207,16 @@ export const AppShell = ({
                       <p className="truncate text-[11px] text-text-soft">{userEmail}</p>
                     </div>
                     <div className="border-t border-border">
+                      {exploreEnabled ? (
+                        <button
+                          type="button"
+                          onClick={() => { onViewChange("explore"); setAvatarMenuOpen(false); }}
+                          className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-text transition-colors hover:bg-surface-sunken"
+                        >
+                          <ExploreIcon />
+                          Explore
+                        </button>
+                      ) : null}
                       <button
                         type="button"
                         onClick={() => { onViewChange("profile"); setAvatarMenuOpen(false); }}
@@ -272,7 +273,10 @@ export const AppShell = ({
         aria-label="Primary"
         className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-bg-app/98 px-2 pb-[calc(env(safe-area-inset-bottom)+0.25rem)] pt-2 backdrop-blur-md sm:hidden"
       >
-        <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
+        <div
+          className="mx-auto grid max-w-md gap-1"
+          style={{ gridTemplateColumns: `repeat(${NAV_TABS.length}, minmax(0, 1fr))` }}
+        >
           {NAV_TABS.map((tab) => {
             const isActive = view === tab.id;
             return (

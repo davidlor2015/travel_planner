@@ -1,3 +1,6 @@
+// Path: ui/src/features/matching/components/MatchResultList.tsx
+// Summary: Renders the MatchResultList UI component.
+
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { useMatchResults } from '../hooks/useMatchResults';

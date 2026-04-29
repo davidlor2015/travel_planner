@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/helpers/collaborationGate.ts
+// Summary: Implements collaborationGate module logic.
+
 import type { TripResponse } from "../../types";
 
 /**

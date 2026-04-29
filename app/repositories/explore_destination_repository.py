@@ -1,3 +1,6 @@
+# Path: app/repositories/explore_destination_repository.py
+# Summary: Implements data access for explore destination repository operations.
+
 from sqlalchemy import Select, select
 from sqlalchemy.orm import Session
 

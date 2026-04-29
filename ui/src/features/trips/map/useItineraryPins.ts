@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/map/useItineraryPins.ts
+// Summary: Provides useItineraryPins hook behavior.
+
 import { useMemo } from 'react';
 import type { Itinerary } from '../../../shared/api/ai';
 import { useGeocodeQueries } from '../../../shared/hooks/useGeocode';

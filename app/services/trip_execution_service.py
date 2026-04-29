@@ -1,3 +1,6 @@
+# Path: app/services/trip_execution_service.py
+# Summary: Implements trip execution service business logic.
+
 from __future__ import annotations
 
 from sqlalchemy.orm import Session

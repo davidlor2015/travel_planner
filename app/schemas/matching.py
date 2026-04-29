@@ -1,3 +1,6 @@
+# Path: app/schemas/matching.py
+# Summary: Defines Pydantic schemas for matching payloads.
+
 from __future__ import annotations
 
 from datetime import datetime

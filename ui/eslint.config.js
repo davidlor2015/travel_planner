@@ -1,3 +1,6 @@
+// Path: ui/eslint.config.js
+// Summary: Implements eslint.config module logic.
+
 import js from '@eslint/js'
 import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'

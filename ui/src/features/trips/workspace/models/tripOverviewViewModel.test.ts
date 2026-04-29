@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/models/tripOverviewViewModel.test.ts
+// Summary: Defines the tripOverviewViewModel.test data model.
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Itinerary } from "../../../../shared/api/ai";

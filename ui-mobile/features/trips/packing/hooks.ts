@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/packing/hooks.ts
+// Summary: Implements hooks module logic.
+
 import { useCallback } from "react";
 import {
   useMutation,
@@ -20,6 +23,8 @@ export const packingKeys = {
   suggestions: (tripId: number) => ["trips", tripId, "packing", "suggestions"] as const,
 };
 
+const EMPTY_ITEMS: PackingItem[] = [];
+
 export function usePackingList(tripId: number) {
   const queryClient = useQueryClient();
 
@@ -28,14 +33,14 @@ export function usePackingList(tripId: number) {
     queryFn: () => getPackingItems(tripId),
   });
 
-  const items: PackingItem[] = query.data ?? [];
+  const items: PackingItem[] = query.data ?? EMPTY_ITEMS;
 
-  const invalidateSummaries = async () => {
+  const invalidateSummaries = useCallback(async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: tripKeys.detail(tripId) }),
       queryClient.invalidateQueries({ queryKey: tripKeys.summaries }),
     ]);
-  };
+  }, [queryClient, tripId]);
 
   const addMutation = useMutation({
     mutationFn: (label: string) => createPackingItem(tripId, label),
@@ -107,6 +112,28 @@ export function usePackingList(tripId: number) {
     },
   });
 
+  const editMutation = useMutation({
+    mutationFn: ({ id, label }: { id: number; label: string }) =>
+      updatePackingItem(tripId, id, { label }),
+    onMutate: async ({ id, label }) => {
+      await queryClient.cancelQueries({ queryKey: packingKeys.items(tripId) });
+      const prev = queryClient.getQueryData<PackingItem[]>(packingKeys.items(tripId));
+      queryClient.setQueryData<PackingItem[]>(packingKeys.items(tripId), (old) =>
+        (old ?? []).map((i) => (i.id === id ? { ...i, label } : i)),
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(packingKeys.items(tripId), ctx.prev);
+    },
+    onSuccess: (updated) => {
+      queryClient.setQueryData<PackingItem[]>(packingKeys.items(tripId), (old) =>
+        (old ?? []).map((i) => (i.id === updated.id ? updated : i)),
+      );
+      void invalidateSummaries();
+    },
+  });
+
   const addItem = useCallback(
     (label: string) => {
       const trimmed = label.trim();
@@ -130,6 +157,15 @@ export function usePackingList(tripId: number) {
     [removeMutation],
   );
 
+  const editItem = useCallback(
+    (id: number, label: string) => {
+      const trimmed = label.trim();
+      if (!trimmed) return Promise.resolve(null);
+      return editMutation.mutateAsync({ id, label: trimmed });
+    },
+    [editMutation],
+  );
+
   const clearChecked = useCallback(async () => {
     const checked = items.filter((i) => i.checked);
     if (checked.length === 0) return;
@@ -139,7 +175,7 @@ export function usePackingList(tripId: number) {
     await invalidateSummaries();
     const firstFailure = results.find((r) => r.status === "rejected");
     if (firstFailure) throw (firstFailure as PromiseRejectedResult).reason;
-  }, [items, tripId, queryClient]);
+  }, [items, tripId, queryClient, invalidateSummaries]);
 
   const reload = useCallback(
     () => queryClient.invalidateQueries({ queryKey: packingKeys.items(tripId) }),
@@ -153,6 +189,7 @@ export function usePackingList(tripId: number) {
     addItem,
     toggleItem,
     removeItem,
+    editItem,
     clearChecked,
     reload,
   };

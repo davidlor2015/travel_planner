@@ -1,3 +1,6 @@
+# Path: app/services/trip_access_service.py
+# Summary: Implements trip access service business logic.
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -32,7 +35,7 @@ class TripAccessService:
         if membership is None or membership.member_state is None:
             raise HTTPException(status_code=404, detail="Trip not found")
 
-        if owner_only and membership.role != "owner":
+        if owner_only and membership.role != "owner" and membership.trip.user_id != user_id:
             raise HTTPException(status_code=403, detail="Only the trip owner can perform this action")
 
         return TripAccessContext(

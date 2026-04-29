@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/tabs/SavedItineraryView.tsx
+// Summary: Implements SavedItineraryView module logic.
+
 import type { Itinerary, ItineraryItem } from "../../../../shared/api/ai";
 
 interface SavedItineraryViewProps {

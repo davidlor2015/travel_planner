@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/onTrip/deriveStopVisualState.ts
+// Summary: Implements deriveStopVisualState module logic.
+
 import type { TripExecutionStatus, TripOnTripBlocker } from "../../../../shared/api/trips";
 import type { StopVM, TimelineRowVM } from "./types";
 

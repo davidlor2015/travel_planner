@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/tabs/OverviewCoordinationPanel.tsx
+// Summary: Implements OverviewCoordinationPanel module logic.
+
 import { motion } from "framer-motion";
 
 import type { Trip } from "../../../../shared/api/trips";

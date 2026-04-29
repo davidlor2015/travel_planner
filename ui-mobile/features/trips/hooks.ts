@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/hooks.ts
+// Summary: Implements hooks module logic.
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
@@ -5,17 +8,20 @@ import {
   createTripInvite,
   deleteTrip,
   getTripById,
+  getTripExecutionSummary,
   getTripMemberReadiness,
   getTripOnTripSnapshot,
   getTripSummaries,
   getTrips,
   updateTrip,
 } from "./api";
-import type { TripCreate, TripUpdate } from "./types";
+import type { TripCreate, TripResponse, TripSummary, TripUpdate } from "./types";
 
 export const tripKeys = {
   all: ["trips"] as const,
   detail: (tripId: number) => ["trips", tripId] as const,
+  executionSummary: (tripId: number) =>
+    ["trips", tripId, "execution-summary"] as const,
   summaries: ["trips", "summaries"] as const,
   memberReadiness: (tripId: number) => ["trips", tripId, "readiness"] as const,
   onTripSnapshot: (tripId: number) => ["trips", tripId, "on-trip-snapshot"] as const,
@@ -45,6 +51,17 @@ export function useTripSummariesQuery(options?: { enabled?: boolean }) {
     queryKey: tripKeys.summaries,
     queryFn: getTripSummaries,
     enabled: options?.enabled ?? true,
+  });
+}
+
+export function useTripExecutionSummaryQuery(
+  tripId: number | null,
+  options?: { enabled?: boolean },
+) {
+  return useQuery({
+    queryKey: tripKeys.executionSummary(tripId as number),
+    queryFn: () => getTripExecutionSummary(tripId as number),
+    enabled: (options?.enabled ?? true) && typeof tripId === "number",
   });
 }
 
@@ -98,9 +115,29 @@ export function useDeleteTripMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (tripId: number) => deleteTrip(tripId),
+    onMutate: async (tripId) => {
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: tripKeys.detail(tripId) }),
+        queryClient.cancelQueries({ queryKey: tripKeys.executionSummary(tripId) }),
+        queryClient.cancelQueries({ queryKey: tripKeys.memberReadiness(tripId) }),
+        queryClient.cancelQueries({ queryKey: tripKeys.onTripSnapshot(tripId) }),
+        queryClient.cancelQueries({ queryKey: tripKeys.all }),
+        queryClient.cancelQueries({ queryKey: tripKeys.summaries }),
+      ]);
+    },
     onSuccess: (_data, tripId) => {
+      queryClient.setQueryData<TripResponse[]>(tripKeys.all, (current) =>
+        current?.filter((trip) => trip.id !== tripId),
+      );
+      queryClient.setQueryData<TripSummary[]>(tripKeys.summaries, (current) =>
+        current?.filter((summary) => summary.trip_id !== tripId),
+      );
       queryClient.removeQueries({ queryKey: tripKeys.detail(tripId) });
+      queryClient.removeQueries({ queryKey: tripKeys.executionSummary(tripId) });
+      queryClient.removeQueries({ queryKey: tripKeys.memberReadiness(tripId) });
+      queryClient.removeQueries({ queryKey: tripKeys.onTripSnapshot(tripId) });
       void queryClient.invalidateQueries({ queryKey: tripKeys.all });
+      void queryClient.invalidateQueries({ queryKey: tripKeys.summaries });
     },
   });
 }

@@ -1,5 +1,10 @@
+// Path: ui-mobile/features/explore/ExploreSearchBar.tsx
+// Summary: Implements ExploreSearchBar module logic.
+
 import { Ionicons } from "@expo/vector-icons";
 import { TextInput, View } from "react-native";
+
+import { fontStyles } from "@/shared/theme/typography";
 
 type Props = {
   value: string;
@@ -16,6 +21,7 @@ export function ExploreSearchBar({ value, onChangeText }: Props) {
         placeholder="Search places, themes, seasons"
         placeholderTextColor="#8A7E74"
         className="flex-1 text-[14px] text-text"
+        style={fontStyles.uiRegular}
         autoCorrect={false}
         autoCapitalize="none"
         returnKeyType="search"

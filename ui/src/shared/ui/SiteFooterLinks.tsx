@@ -1,3 +1,6 @@
+// Path: ui/src/shared/ui/SiteFooterLinks.tsx
+// Summary: Implements SiteFooterLinks module logic.
+
 import { Link } from 'react-router-dom';
 
 interface SiteFooterLinksProps {

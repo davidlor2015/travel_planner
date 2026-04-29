@@ -1,3 +1,6 @@
+# Path: app/schemas/reservation.py
+# Summary: Defines Pydantic schemas for reservation payloads.
+
 from __future__ import annotations
 
 from datetime import datetime

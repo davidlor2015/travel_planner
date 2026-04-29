@@ -1,3 +1,6 @@
+// Path: ui/src/features/matching/hooks/useMatchResults.ts
+// Summary: Provides useMatchResults hook behavior.
+
 import { useEffect, useState } from 'react';
 
 import { getMatches, type MatchResult } from '../../../shared/api/matching';

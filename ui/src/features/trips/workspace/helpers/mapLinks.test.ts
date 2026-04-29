@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/helpers/mapLinks.test.ts
+// Summary: Covers automated tests for mapLinks.test behavior.
+
 import { describe, expect, it } from "vitest";
 
 import { isAppleMobile, mapsDirectionsHref, mapsSearchHref } from "./mapLinks";

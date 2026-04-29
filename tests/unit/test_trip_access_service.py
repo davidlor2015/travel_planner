@@ -42,6 +42,7 @@ def _make_membership(role: str, has_state: bool = True) -> MagicMock:
     membership = MagicMock()
     membership.role = role
     membership.trip = MagicMock()
+    membership.trip.user_id = None
     membership.member_state = MagicMock() if has_state else None
     return membership
 
@@ -94,6 +95,16 @@ class TestRequireMembership:
         ctx = svc.require_membership(trip_id=1, user_id=1, owner_only=True)
 
         assert ctx.membership.role == "owner"
+
+    def test_owner_only_passes_for_trip_creator_without_owner_role(self, MockRepo):
+        membership = _make_membership("member")
+        membership.trip.user_id = 7
+        MockRepo.return_value.get_context.return_value = membership
+        svc = _make_service()
+
+        ctx = svc.require_membership(trip_id=1, user_id=7, owner_only=True)
+
+        assert ctx.membership is membership
 
     def test_owner_only_raises_403_for_member(self, MockRepo):
         MockRepo.return_value.get_context.return_value = _make_membership("member")

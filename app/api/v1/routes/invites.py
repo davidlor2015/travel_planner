@@ -1,3 +1,6 @@
+# Path: app/api/v1/routes/invites.py
+# Summary: Defines invites API route handlers.
+
 from fastapi import APIRouter
 
 from app.api.deps import CurrentUser, SessionDep

@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/tabs/OverviewTab.tsx
+// Summary: Implements OverviewTab module logic.
+
 import { motion, AnimatePresence } from "framer-motion";
 import { EditableItineraryPanel } from "../../itinerary/components";
 import type { Trip } from "../../../../shared/api/trips";

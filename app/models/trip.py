@@ -1,3 +1,6 @@
+# Path: app/models/trip.py
+# Summary: Defines the trip data model.
+
 from __future__ import annotations
 
 from datetime import date, datetime

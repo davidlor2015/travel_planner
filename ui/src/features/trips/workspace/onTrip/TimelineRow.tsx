@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/onTrip/TimelineRow.tsx
+// Summary: Implements TimelineRow module logic.
+
 import { mapsDirectionsHref } from "../helpers/mapLinks";
 import type { TimelineRowVM } from "./types";
 

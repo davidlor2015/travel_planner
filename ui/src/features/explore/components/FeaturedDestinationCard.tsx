@@ -1,3 +1,6 @@
+// Path: ui/src/features/explore/components/FeaturedDestinationCard.tsx
+// Summary: Renders the FeaturedDestinationCard UI component.
+
 import { WishlistButton } from "../../../shared/ui";
 import type { Destination } from "../types";
 import { RatingBadge } from "./RatingBadge";

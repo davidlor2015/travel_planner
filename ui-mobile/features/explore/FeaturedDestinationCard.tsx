@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/explore/FeaturedDestinationCard.tsx
+// Summary: Implements FeaturedDestinationCard module logic.
+
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, Text, View } from "react-native";
@@ -9,9 +12,10 @@ import type { FeaturedCardViewModel } from "./types";
 type Props = {
   item: FeaturedCardViewModel;
   onPress?: () => void;
+  onPlanTrip?: (destination: string) => void;
 };
 
-export function FeaturedDestinationCard({ item, onPress }: Props) {
+export function FeaturedDestinationCard({ item, onPress, onPlanTrip }: Props) {
   return (
     <Pressable
       onPress={onPress}
@@ -35,22 +39,39 @@ export function FeaturedDestinationCard({ item, onPress }: Props) {
       {/* Season badge */}
       <View className="absolute right-3 top-3 rounded-full border border-white/25 bg-black/30 px-3 py-1">
         <Text className="text-[11px] font-semibold text-white/90">
-          {item.season}
+          {item.bestSeason}
         </Text>
       </View>
 
-      {/* Name + tagline */}
-      <View className="absolute bottom-0 left-0 right-0 gap-1 p-4">
-        <Text
-          className="text-[24px] leading-[28px] text-white"
-          style={fontStyles.displaySemibold}
-          numberOfLines={1}
-        >
-          {item.name}
-        </Text>
-        <Text className="text-[12px] leading-[16px] text-white/75" numberOfLines={1}>
-          {item.locationLine}
-        </Text>
+      {/* Name + tagline + plan CTA */}
+      <View className="absolute bottom-0 left-0 right-0 p-4">
+        <View className="flex-row items-end justify-between">
+          <View className="flex-1 gap-1 pr-2">
+            <Text
+              className="text-[24px] leading-[28px] text-white"
+              style={fontStyles.displaySemibold}
+              numberOfLines={1}
+            >
+              {item.name}
+            </Text>
+            <Text className="text-[12px] leading-[16px] text-white/75" numberOfLines={1}>
+              {item.locationLine}
+            </Text>
+          </View>
+          {onPlanTrip && (
+            <Pressable
+              onPress={() => onPlanTrip(item.destination)}
+              className="rounded-full bg-white/90 px-3 py-1.5 active:opacity-70"
+              accessibilityRole="button"
+              accessibilityLabel={`Plan a trip to ${item.name}`}
+              hitSlop={8}
+            >
+              <Text className="text-[11px] text-espresso" style={fontStyles.uiSemibold}>
+                Plan a trip →
+              </Text>
+            </Pressable>
+          )}
+        </View>
       </View>
     </Pressable>
   );

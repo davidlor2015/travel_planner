@@ -1,3 +1,6 @@
+// Path: ui/src/features/static/PrivacyPage.tsx
+// Summary: Implements PrivacyPage module logic.
+
 import { StaticPageLayout } from './StaticPageLayout';
 
 export const PrivacyPage = () => (

@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/MapTab.tsx
+// Summary: Implements MapTab module logic.
+
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -9,6 +12,8 @@ import {
   View,
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
+
+import { fontStyles } from "@/shared/theme/typography";
 
 import { useWorkspaceMapModel } from "./useWorkspaceMapModel";
 
@@ -116,7 +121,9 @@ export function MapTab({ tripId }: Props) {
   if (map.error) {
     return (
       <View className="mx-5 mt-5 rounded-[16px] border border-danger/20 bg-danger/5 px-4 py-4">
-        <Text className="text-[13px] leading-5 text-danger">{map.error}</Text>
+        <Text className="text-[13px] leading-5 text-danger" style={fontStyles.uiRegular}>
+          {map.error}
+        </Text>
       </View>
     );
   }
@@ -124,7 +131,7 @@ export function MapTab({ tripId }: Props) {
   if (!map.hasItinerary || map.isMissing) {
     return (
       <View className="mx-5 mt-5 rounded-[16px] border border-divider bg-ivory px-4 py-5">
-        <Text className="text-[13px] leading-5 text-muted">
+        <Text className="text-[13px] leading-5 text-muted" style={fontStyles.uiRegular}>
           Save an itinerary first to unlock the trip map.
         </Text>
       </View>
@@ -147,6 +154,7 @@ export function MapTab({ tripId }: Props) {
             placeholder="Search places in this trip"
             placeholderTextColor="#8A7E72"
             className="flex-1 text-[13px] leading-[20px] text-text"
+            style={fontStyles.uiRegular}
             autoCapitalize="none"
             autoCorrect={false}
             returnKeyType="search"
@@ -171,7 +179,10 @@ export function MapTab({ tripId }: Props) {
                   markerClassName(marker.tone),
                 ].join(" ")}
               >
-                <Text className="pt-[3px] text-center text-[10px] font-semibold uppercase tracking-[0.35px] text-ivory">
+                <Text
+                  className="pt-[3px] text-center text-[10px] uppercase tracking-[0.35px] text-ivory"
+                  style={fontStyles.uiSemibold}
+                >
                   {marker.label}
                 </Text>
               </View>
@@ -194,7 +205,10 @@ export function MapTab({ tripId }: Props) {
 
         {!map.hasVisibleStops ? (
           <View className="absolute inset-x-6 top-[210px] rounded-full border border-border bg-bg-app/90 px-4 py-2">
-            <Text className="text-center text-[12px] font-medium text-text-soft">
+            <Text
+              className="text-center text-[12px] text-text-soft"
+              style={fontStyles.uiMedium}
+            >
               No stops match this filter yet.
             </Text>
           </View>
@@ -220,15 +234,16 @@ export function MapTab({ tripId }: Props) {
               className={[
                 "h-[29px] justify-center rounded-full border px-3 active:opacity-70",
                 active
-                  ? "border-espresso bg-espresso"
+                  ? "border-ontrip bg-ontrip"
                   : "border-divider bg-transparent",
               ].join(" ")}
             >
               <Text
                 className={[
                   "text-[11px] leading-[16px]",
-                  active ? "font-semibold text-ivory" : "font-medium text-clay",
+                  active ? "text-on-dark" : "text-clay",
                 ].join(" ")}
+                style={active ? fontStyles.uiSemibold : fontStyles.uiMedium}
               >
                 {item.label}
               </Text>
@@ -237,7 +252,10 @@ export function MapTab({ tripId }: Props) {
         })}
       </View>
 
-      <Text className="px-5 pt-5 text-[11px] font-medium uppercase tracking-[1.7px] text-text-soft">
+      <Text
+        className="px-5 pt-5 text-[11px] uppercase tracking-[1.7px] text-text-soft"
+        style={fontStyles.uiMedium}
+      >
         Nearby this trip
       </Text>
 
@@ -251,20 +269,30 @@ export function MapTab({ tripId }: Props) {
               <View className="flex-row items-center gap-3">
                 <Ionicons name="location-outline" size={14} color="#B9714F" />
                 <View className="min-w-0 flex-1">
-                  <Text className="text-[13px] font-medium text-text" numberOfLines={1}>
+                  <Text
+                    className="text-[13px] text-text"
+                    style={fontStyles.uiMedium}
+                    numberOfLines={1}
+                  >
                     {stop.title}
                   </Text>
-                  <Text className="mt-0.5 text-[11px] text-text-soft" numberOfLines={1}>
+                  <Text
+                    className="mt-0.5 text-[11px] text-text-soft"
+                    style={fontStyles.uiRegular}
+                    numberOfLines={1}
+                  >
                     {stop.subtitle}
                   </Text>
                 </View>
-                <Text className="text-[11px] text-text-soft">{stop.distanceLabel}</Text>
+                <Text className="text-[11px] text-text-soft" style={fontStyles.uiRegular}>
+                  {stop.distanceLabel}
+                </Text>
               </View>
             </View>
           ))
         ) : (
           <View className="rounded-[12px] border border-divider bg-ivory px-4 py-4">
-            <Text className="text-[12px] text-muted">
+            <Text className="text-[12px] text-muted" style={fontStyles.uiRegular}>
               No nearby stops match the current map filter.
             </Text>
           </View>

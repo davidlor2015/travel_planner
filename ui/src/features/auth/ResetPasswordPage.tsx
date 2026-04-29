@@ -1,3 +1,6 @@
+// Path: ui/src/features/auth/ResetPasswordPage.tsx
+// Summary: Implements ResetPasswordPage module logic.
+
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';

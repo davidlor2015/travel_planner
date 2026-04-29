@@ -1,3 +1,6 @@
+// Path: ui-mobile/app/(auth)/verify-email.tsx
+// Summary: Implements verify-email module logic.
+
 import { useEffect, useRef, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -41,7 +44,7 @@ export default function VerifyEmailPage() {
       <View className="flex-1 px-7">
         {/* Logo row */}
         <View className="pt-10 pb-2">
-          <WaypointLogo size={24} />
+          <WaypointLogo size={36} />
         </View>
 
         {/* Editorial headline */}

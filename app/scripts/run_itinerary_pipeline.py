@@ -1,3 +1,6 @@
+# Path: app/scripts/run_itinerary_pipeline.py
+# Summary: Implements run itinerary pipeline functionality.
+
 # app/scripts/run_itinerary_pipeline.py
 """
 End-to-end itinerary pipeline: generate → embed → upsert to pgvector.

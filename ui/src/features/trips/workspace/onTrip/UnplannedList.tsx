@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/onTrip/UnplannedList.tsx
+// Summary: Implements UnplannedList module logic.
+
 import type { TripOnTripUnplannedStop } from "../../../../shared/api/trips";
 
 // Generic map-pin icon for all unplanned stops (we have no category metadata)

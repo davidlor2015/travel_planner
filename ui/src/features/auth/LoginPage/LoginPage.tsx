@@ -1,3 +1,6 @@
+// Path: ui/src/features/auth/LoginPage/LoginPage.tsx
+// Summary: Implements LoginPage module logic.
+
 import React, { useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { WaypointLogo } from "../../../shared/ui/WaypointLogo";

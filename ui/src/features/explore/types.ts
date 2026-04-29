@@ -1,3 +1,6 @@
+// Path: ui/src/features/explore/types.ts
+// Summary: Implements types module logic.
+
 export type DestinationMood =
   | "Trending"
   | "Beach & Islands"

@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/TripInvitePage.tsx
+// Summary: Implements TripInvitePage module logic.
+
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';

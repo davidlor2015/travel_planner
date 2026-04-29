@@ -1,3 +1,6 @@
+// Path: ui/src/features/explore/ExplorePage.tsx
+// Summary: Implements ExplorePage module logic.
+
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 

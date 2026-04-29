@@ -1,3 +1,6 @@
+// Path: ui/src/features/static/TermsPage.tsx
+// Summary: Implements TermsPage module logic.
+
 import { StaticPageLayout } from './StaticPageLayout';
 
 export const TermsPage = () => (

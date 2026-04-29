@@ -1,3 +1,6 @@
+# Path: app/services/prep_service.py
+# Summary: Implements prep service business logic.
+
 from __future__ import annotations
 
 from fastapi import HTTPException

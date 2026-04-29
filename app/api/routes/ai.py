@@ -1,3 +1,6 @@
+# Path: app/api/routes/ai.py
+# Summary: Defines ai API route handlers.
+
 from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status

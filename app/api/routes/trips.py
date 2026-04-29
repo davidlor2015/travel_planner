@@ -1,3 +1,6 @@
+# Path: app/api/routes/trips.py
+# Summary: Defines trips API route handlers.
+
 from typing import List
 
 from sqlalchemy import select

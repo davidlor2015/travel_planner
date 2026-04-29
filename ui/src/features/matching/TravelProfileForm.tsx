@@ -1,3 +1,6 @@
+// Path: ui/src/features/matching/TravelProfileForm.tsx
+// Summary: Implements TravelProfileForm module logic.
+
 import { useMemo } from 'react';
 import { useForm, useWatch, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';

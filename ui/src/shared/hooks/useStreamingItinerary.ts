@@ -1,3 +1,6 @@
+// Path: ui/src/shared/hooks/useStreamingItinerary.ts
+// Summary: Provides useStreamingItinerary hook behavior.
+
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { API_URL } from '../../app/config';
 import type { Itinerary } from '../api/ai';

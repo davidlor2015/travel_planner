@@ -1,3 +1,6 @@
+# Path: app/api/deps.py
+# Summary: Implements deps functionality.
+
 # app/api/deps.py
 from typing import Annotated
 

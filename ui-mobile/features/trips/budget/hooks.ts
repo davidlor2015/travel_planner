@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/budget/hooks.ts
+// Summary: Implements hooks module logic.
+
 import { useCallback } from "react";
 import {
   useMutation,
@@ -14,6 +17,7 @@ import {
   type BudgetExpense,
 } from "./api";
 import { tripKeys } from "../hooks";
+import { toLocalNoonISOString } from "./adapters";
 
 export const budgetKeys = {
   detail: (tripId: number) => ["trips", tripId, "budget"] as const,
@@ -64,12 +68,14 @@ export function useBudgetTracker(tripId: number) {
       label,
       amount,
       category,
+      createdAtOverride,
     }: {
       label: string;
       amount: number;
       category: string;
+      createdAtOverride?: string;
     }) => createExpense(tripId, { label, amount, category }),
-    onMutate: async ({ label, amount, category }) => {
+    onMutate: async ({ label, amount, category, createdAtOverride }) => {
       await queryClient.cancelQueries({ queryKey: budgetKeys.detail(tripId) });
       const prev = queryClient.getQueryData<BudgetData>(budgetKeys.detail(tripId));
       const tempId = -Date.now();
@@ -79,7 +85,9 @@ export function useBudgetTracker(tripId: number) {
         label,
         amount,
         category,
-        created_at: new Date().toISOString(),
+        created_at: createdAtOverride
+          ? toLocalNoonISOString(createdAtOverride)
+          : new Date().toISOString(),
       };
       queryClient.setQueryData<BudgetData>(budgetKeys.detail(tripId), (old) =>
         old
@@ -127,8 +135,18 @@ export function useBudgetTracker(tripId: number) {
   );
 
   const addExpense = useCallback(
-    (label: string, amount: number, category: ExpenseCategory) =>
-      addExpenseMutation.mutateAsync({ label, amount, category }),
+    (
+      label: string,
+      amount: number,
+      category: ExpenseCategory,
+      createdAtOverride?: string,
+    ) =>
+      addExpenseMutation.mutateAsync({
+        label,
+        amount,
+        category,
+        createdAtOverride,
+      }),
     [addExpenseMutation],
   );
 

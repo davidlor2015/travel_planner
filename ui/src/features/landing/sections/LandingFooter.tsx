@@ -1,3 +1,6 @@
+// Path: ui/src/features/landing/sections/LandingFooter.tsx
+// Summary: Implements LandingFooter module logic.
+
 import { SiteFooterLinks, WaypointLogo } from "../../../shared/ui";
 
 interface LandingFooterProps {

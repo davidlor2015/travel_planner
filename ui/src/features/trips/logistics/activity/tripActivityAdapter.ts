@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/logistics/activity/tripActivityAdapter.ts
+// Summary: Implements tripActivityAdapter module logic.
+
 const READ_STORAGE_KEY = 'wp_trip_activity_read_v1';
 const MUTED_STORAGE_KEY = 'wp_trip_activity_muted_v1';
 

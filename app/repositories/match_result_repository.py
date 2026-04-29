@@ -1,3 +1,6 @@
+# Path: app/repositories/match_result_repository.py
+# Summary: Implements data access for match result repository operations.
+
 from typing import Any, Iterable, List
 
 from sqlalchemy import delete, or_, select

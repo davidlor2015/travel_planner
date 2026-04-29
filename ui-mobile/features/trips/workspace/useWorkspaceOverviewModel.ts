@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/useWorkspaceOverviewModel.ts
+// Summary: Provides useWorkspaceOverviewModel hook behavior.
+
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useApplyItineraryMutation, useSavedItineraryQuery } from "@/features/ai/hooks";
@@ -11,7 +14,22 @@ import type {
   TripWorkspaceCollaborationViewModel,
   TripWorkspaceViewModel,
 } from "./adapters";
-import type { StopEditPatch } from "./StopEditSheet";
+import type { StopFormValue } from "./StopFormSheet";
+import {
+  addDayToItinerary,
+  addStopToDay,
+  buildDayOptions,
+  buildTimeOptions,
+  deleteDayFromItinerary,
+  deleteStopFromItinerary,
+  getStopMoveAvailability,
+  moveStopToDay,
+  moveStopWithinDay,
+  updateStopInItinerary,
+  type DayOption,
+  type StopSource,
+  type TimeOption,
+} from "./itineraryDraftMutations";
 import {
   buildItineraryTabDays,
   type ItineraryFilterKey,
@@ -40,6 +58,9 @@ export type WorkspaceOverviewModel = {
   itinerary: Itinerary | null;
   selectedStop: ItineraryItem | null;
   editingStop: { dayIndex: number; stopIndex: number | null } | null;
+  dayOptions: DayOption[];
+  timeOptions: TimeOption[];
+  stopMoveAvailability: ReturnType<typeof getStopMoveAvailability>;
   regeneratingDayIndex: number | null;
   isItineraryLoading: boolean;
   isItineraryMissing: boolean;
@@ -56,8 +77,14 @@ export type WorkspaceOverviewModel = {
   setShowFullItinerary: (value: boolean) => void;
   setEditingStop: (value: { dayIndex: number; stopIndex: number | null } | null) => void;
   setRegeneratingDayIndex: (value: number | null) => void;
-  handleSaveStop: (patch: StopEditPatch) => void;
+  handleSaveStop: (value: StopFormValue) => void;
   handleDeleteStop: () => void;
+  handleAddDay: () => void;
+  handleDeleteDay: (dayIndex: number) => void;
+  handleMoveStopUp: () => void;
+  handleMoveStopDown: () => void;
+  handleMoveStopToPreviousDay: () => void;
+  handleMoveStopToNextDay: () => void;
   handleAcceptRefinement: (refinedItinerary: Itinerary) => void;
   handlePublishChanges: () => Promise<void>;
 };
@@ -116,6 +143,22 @@ export function useWorkspaceOverviewModel({
           editingStop.stopIndex ?? -1
         ] ?? null
       : null;
+  const selectedStopSource: StopSource | null = useMemo(
+    () =>
+      editingStop?.stopIndex == null
+        ? null
+        : { dayIndex: editingStop.dayIndex, stopIndex: editingStop.stopIndex },
+    [editingStop],
+  );
+  const dayOptions = useMemo(
+    () => buildDayOptions((editableItinerary ?? savedItinerary)?.days ?? []),
+    [editableItinerary, savedItinerary],
+  );
+  const timeOptions = useMemo(() => buildTimeOptions(30), []);
+  const stopMoveAvailability = useMemo(
+    () => getStopMoveAvailability(editableItinerary ?? savedItinerary, selectedStopSource),
+    [editableItinerary, savedItinerary, selectedStopSource],
+  );
 
   useEffect(() => {
     setEditableItinerary(null);
@@ -165,64 +208,107 @@ export function useWorkspaceOverviewModel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [completedItinerary, isStillStreaming, trip.id]);
 
-  function handleAddStop(dayIndex: number, patch: StopEditPatch) {
+  function handleAddStop(dayIndex: number, value: StopFormValue) {
     setEditableItinerary((current) => {
       if (!current) return current;
-      const day = current.days[dayIndex];
-      if (!day) return current;
-
-      const nextDays = [...current.days];
-      nextDays[dayIndex] = {
-        ...day,
-        items: [...day.items, createStopFromPatch(patch)],
-      };
-      return { ...current, days: nextDays };
+      return addStopToDay(current, dayIndex, createStopFromValue(value));
     });
   }
 
-  function handleUpdateStop(dayIndex: number, stopIndex: number, patch: StopEditPatch) {
+  function handleUpdateStop(source: StopSource, value: StopFormValue) {
     setEditableItinerary((current) => {
       if (!current) return current;
-      const day = current.days[dayIndex];
-      const stop = day?.items[stopIndex];
-      if (!day || !stop) return current;
-
-      const nextItems = [...day.items];
-      nextItems[stopIndex] = { ...stop, ...patch };
-      const nextDays = [...current.days];
-      nextDays[dayIndex] = { ...day, items: nextItems };
-      return { ...current, days: nextDays };
+      return updateStopInItinerary(
+        current,
+        source,
+        {
+          time: value.time,
+          title: value.title,
+          location: value.location,
+          notes: value.notes,
+        },
+        value.dayIndex,
+      );
     });
   }
 
   function handleDeleteStop() {
-    if (!editingStop || editingStop.stopIndex == null) return;
-    const { dayIndex, stopIndex } = editingStop;
+    if (!selectedStopSource) return;
 
     setEditableItinerary((current) => {
       if (!current) return current;
-      const day = current.days[dayIndex];
-      if (!day?.items[stopIndex]) return current;
-
-      const nextDays = [...current.days];
-      nextDays[dayIndex] = {
-        ...day,
-        items: day.items.filter((_item, index) => index !== stopIndex),
-      };
-      return { ...current, days: nextDays };
+      return deleteStopFromItinerary(current, selectedStopSource);
     });
     setEditingStop(null);
   }
 
-  function handleSaveStop(patch: StopEditPatch) {
+  function handleAddDay() {
+    setEditableItinerary((current) => {
+      if (!current) return current;
+      return addDayToItinerary(current);
+    });
+    setItineraryFilter("all");
+  }
+
+  function handleDeleteDay(dayIndex: number) {
+    setEditableItinerary((current) => {
+      if (!current?.days[dayIndex] || current.days.length <= 1) return current;
+      return deleteDayFromItinerary(current, dayIndex);
+    });
+    setEditingStop(null);
+    setRegeneratingDayIndex((current) => {
+      if (current === null) return current;
+      if (current === dayIndex) return null;
+      return current > dayIndex ? current - 1 : current;
+    });
+  }
+
+  function handleSaveStop(value: StopFormValue) {
     if (!editingStop) return;
 
     if (editingStop.stopIndex == null) {
-      handleAddStop(editingStop.dayIndex, patch);
+      handleAddStop(value.dayIndex, value);
     } else {
-      handleUpdateStop(editingStop.dayIndex, editingStop.stopIndex, patch);
+      handleUpdateStop(
+        { dayIndex: editingStop.dayIndex, stopIndex: editingStop.stopIndex },
+        value,
+      );
     }
     setEditingStop(null);
+  }
+
+  function handleMoveStopUp() {
+    if (!editableItinerary || !selectedStopSource || !stopMoveAvailability.canMoveUp) return;
+    setEditableItinerary(moveStopWithinDay(editableItinerary, selectedStopSource, "up"));
+    setEditingStop({
+      dayIndex: selectedStopSource.dayIndex,
+      stopIndex: selectedStopSource.stopIndex - 1,
+    });
+  }
+
+  function handleMoveStopDown() {
+    if (!editableItinerary || !selectedStopSource || !stopMoveAvailability.canMoveDown) return;
+    setEditableItinerary(moveStopWithinDay(editableItinerary, selectedStopSource, "down"));
+    setEditingStop({
+      dayIndex: selectedStopSource.dayIndex,
+      stopIndex: selectedStopSource.stopIndex + 1,
+    });
+  }
+
+  function handleMoveStopToPreviousDay() {
+    if (!editableItinerary || !selectedStopSource || !stopMoveAvailability.canMoveToPreviousDay) return;
+    const targetDayIndex = selectedStopSource.dayIndex - 1;
+    const targetStopIndex = editableItinerary.days[targetDayIndex]?.items.length ?? 0;
+    setEditableItinerary(moveStopToDay(editableItinerary, selectedStopSource, targetDayIndex));
+    setEditingStop({ dayIndex: targetDayIndex, stopIndex: targetStopIndex });
+  }
+
+  function handleMoveStopToNextDay() {
+    if (!editableItinerary || !selectedStopSource || !stopMoveAvailability.canMoveToNextDay) return;
+    const targetDayIndex = selectedStopSource.dayIndex + 1;
+    const targetStopIndex = editableItinerary.days[targetDayIndex]?.items.length ?? 0;
+    setEditableItinerary(moveStopToDay(editableItinerary, selectedStopSource, targetDayIndex));
+    setEditingStop({ dayIndex: targetDayIndex, stopIndex: targetStopIndex });
   }
 
   function handleAcceptRefinement(refinedItinerary: Itinerary) {
@@ -291,6 +377,9 @@ export function useWorkspaceOverviewModel({
     itinerary: visibleItinerary,
     selectedStop,
     editingStop,
+    dayOptions,
+    timeOptions,
+    stopMoveAvailability,
     regeneratingDayIndex,
     isItineraryLoading: itineraryQuery.isLoading,
     isItineraryMissing: isMissing,
@@ -309,6 +398,12 @@ export function useWorkspaceOverviewModel({
     setRegeneratingDayIndex,
     handleSaveStop,
     handleDeleteStop,
+    handleAddDay,
+    handleDeleteDay,
+    handleMoveStopUp,
+    handleMoveStopDown,
+    handleMoveStopToPreviousDay,
+    handleMoveStopToNextDay,
     handleAcceptRefinement,
     handlePublishChanges,
   };
@@ -335,15 +430,15 @@ function sortObjectKeys(value: unknown): unknown {
   return value;
 }
 
-function createStopFromPatch(patch: StopEditPatch): ItineraryItem {
+function createStopFromValue(value: StopFormValue): ItineraryItem {
   return {
     id: null,
-    time: patch.time,
-    title: patch.title,
-    location: patch.location,
+    time: value.time,
+    title: value.title,
+    location: value.location,
     lat: null,
     lon: null,
-    notes: patch.notes,
+    notes: value.notes,
     cost_estimate: null,
     status: "planned",
     handled_by: null,

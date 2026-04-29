@@ -1,9 +1,13 @@
+// Path: ui-mobile/features/trips/workspace/InviteTravelerSheet.tsx
+// Summary: Implements InviteTravelerSheet module logic.
+
 import { useEffect, useState } from "react";
 import { KeyboardAvoidingView, Modal, Platform, ScrollView, Text, View } from "react-native";
 
-import { PrimaryButton, SecondaryButton } from "@/shared/ui/Button";
+import { Button, SecondaryButton } from "@/shared/ui/Button";
 import { ScreenHeader } from "@/shared/ui/ScreenHeader";
 import { TextInputField } from "@/shared/ui/TextInputField";
+import { fontStyles } from "@/shared/theme/typography";
 
 type Props = {
   visible: boolean;
@@ -66,13 +70,16 @@ export function InviteTravelerSheet({
 
               {error ? (
                 <View className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3">
-                  <Text className="text-sm font-medium text-danger">{error}</Text>
+                  <Text className="text-sm text-danger" style={fontStyles.uiMedium}>
+                    {error}
+                  </Text>
                 </View>
               ) : null}
 
               <View className="gap-2 pt-2">
-                <PrimaryButton
+                <Button
                   label={submitting ? "Sending…" : "Send Invite"}
+                  variant="ontrip"
                   disabled={submitting}
                   fullWidth
                   onPress={() => {

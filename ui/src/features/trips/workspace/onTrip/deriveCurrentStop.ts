@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/onTrip/deriveCurrentStop.ts
+// Summary: Implements deriveCurrentStop module logic.
+
 import type { TripOnTripStopSnapshot } from "../../../../shared/api/trips";
 
 /**

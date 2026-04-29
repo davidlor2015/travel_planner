@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/logistics/chat/types.ts
+// Summary: Implements types module logic.
+
 import type { WorkspaceTab } from '../../workspace/WorkspaceTabBar';
 
 export type ChatReferenceKind = 'itinerary' | 'booking';

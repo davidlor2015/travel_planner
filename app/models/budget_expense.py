@@ -1,3 +1,6 @@
+# Path: app/models/budget_expense.py
+# Summary: Defines the budget expense data model.
+
 from __future__ import annotations
 
 from datetime import datetime

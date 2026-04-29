@@ -1,0 +1,23 @@
+// Path: ui-mobile/shared/theme/desertEditorial.ts
+// Summary: Implements desertEditorial module logic.
+
+export const DE = {
+  ivory: "#F2EBDD",
+  ivoryDeep: "#E8E0CE",
+  paper: "#FAF5EA",
+  paperWarm: "#F8F1E2",
+  ink: "#231910",
+  inkSoft: "#3D2E22",
+  espresso: "#2A1F17",
+  clay: "#B85A38",
+  claySoft: "#D89A7C",
+  claySandLight: "#EFD8C9",
+  sage: "#94A487",
+  sageDeep: "#7A8B6E",
+  amber: "#C99A3E",
+  muted: "#8A7B6A",
+  mutedLight: "#B5A892",
+  rule: "rgba(35, 25, 16, 0.10)",
+  ruleStrong: "rgba(35, 25, 16, 0.18)",
+  shade: "rgba(35, 25, 16, 0.04)",
+} as const;

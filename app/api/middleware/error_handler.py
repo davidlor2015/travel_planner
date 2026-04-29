@@ -1,3 +1,6 @@
+# Path: app/api/middleware/error_handler.py
+# Summary: Implements error handler functionality.
+
 import logging
 from fastapi import Request
 from fastapi.responses import JSONResponse

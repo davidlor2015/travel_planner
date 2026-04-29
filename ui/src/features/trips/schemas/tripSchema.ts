@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/schemas/tripSchema.ts
+// Summary: Defines Pydantic schemas for tripSchema payloads.
+
 import { z } from "zod";
 
 export const BUDGET_OPTIONS = [

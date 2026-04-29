@@ -1,3 +1,6 @@
+// Path: ui/src/shared/api/client.ts
+// Summary: Implements client module logic.
+
 import { API_URL } from '../../app/config';
 import {
   clearStoredSession,

@@ -1,3 +1,6 @@
+// Path: ui/e2e/helpers.ts
+// Summary: Implements helpers module logic.
+
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 

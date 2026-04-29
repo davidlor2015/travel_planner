@@ -1,3 +1,6 @@
+// Path: ui/src/features/explore/adapters/destinationExploreAdapter.ts
+// Summary: Implements destinationExploreAdapter module logic.
+
 import type {
   Destination,
   DestinationFilters,

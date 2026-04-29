@@ -1,3 +1,6 @@
+// Path: ui/src/shared/ui/WaypointLogo.tsx
+// Summary: Implements WaypointLogo module logic.
+
 type LogoProps = {
   variant?: "full" | "header" | "mark" | "favicon";
   className?: string;

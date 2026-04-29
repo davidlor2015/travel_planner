@@ -1,3 +1,6 @@
+// Path: ui-mobile/app/(auth)/register.tsx
+// Summary: Implements register module logic.
+
 import { useState } from "react";
 import {
   KeyboardAvoidingView,

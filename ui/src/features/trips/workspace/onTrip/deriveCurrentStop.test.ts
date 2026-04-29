@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/onTrip/deriveCurrentStop.test.ts
+// Summary: Covers automated tests for deriveCurrentStop.test behavior.
+
 import { describe, expect, it } from "vitest";
 
 import type { TripOnTripStopSnapshot } from "../../../../shared/api/trips";

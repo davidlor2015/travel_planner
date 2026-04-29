@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/matching/CompanionsScreen.tsx
+// Summary: Implements CompanionsScreen module logic.
+
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";

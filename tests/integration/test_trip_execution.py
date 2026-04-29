@@ -609,3 +609,85 @@ def test_delete_execution_event_twice_second_is_404(client, auth_headers_user_a)
         headers=auth_headers_user_a,
     )
     assert second.status_code == 404
+
+
+def test_execution_summary_returns_latest_status_counts_and_unplanned_total(
+    client, auth_headers_user_a
+):
+    trip_id = _create_active_trip(client, auth_headers_user_a)
+    _apply_three_item_itinerary(client, auth_headers_user_a, trip_id)
+
+    initial = _snapshot(client, auth_headers_user_a, trip_id)
+    refs = [stop["stop_ref"] for stop in initial["today_stops"]]
+
+    client.post(
+        f"/v1/trips/{trip_id}/execution/stop-status",
+        json={"stop_ref": refs[0], "status": "confirmed"},
+        headers=auth_headers_user_a,
+    )
+    client.post(
+        f"/v1/trips/{trip_id}/execution/stop-status",
+        json={"stop_ref": refs[1], "status": "skipped"},
+        headers=auth_headers_user_a,
+    )
+    client.post(
+        f"/v1/trips/{trip_id}/execution/stop-status",
+        json={"stop_ref": refs[2], "status": "confirmed"},
+        headers=auth_headers_user_a,
+    )
+    # Latest status wins: this stop should not be counted as confirmed.
+    client.post(
+        f"/v1/trips/{trip_id}/execution/stop-status",
+        json={"stop_ref": refs[2], "status": "planned"},
+        headers=auth_headers_user_a,
+    )
+
+    today = date.today()
+    client.post(
+        f"/v1/trips/{trip_id}/execution/unplanned-stop",
+        json={"day_date": today.isoformat(), "title": "Coffee break"},
+        headers=auth_headers_user_a,
+    )
+    client.post(
+        f"/v1/trips/{trip_id}/execution/unplanned-stop",
+        json={"day_date": today.isoformat(), "title": "Photo stop"},
+        headers=auth_headers_user_a,
+    )
+
+    res = client.get(
+        f"/v1/trips/{trip_id}/execution-summary",
+        headers=auth_headers_user_a,
+    )
+    assert res.status_code == 200, res.text
+    assert res.json() == {
+        "confirmed_stops_count": 1,
+        "skipped_stops_count": 1,
+        "unplanned_stops_count": 2,
+    }
+
+
+def test_execution_summary_returns_zero_counts_without_events(client, auth_headers_user_a):
+    trip_id = _create_active_trip(client, auth_headers_user_a)
+
+    res = client.get(
+        f"/v1/trips/{trip_id}/execution-summary",
+        headers=auth_headers_user_a,
+    )
+    assert res.status_code == 200, res.text
+    assert res.json() == {
+        "confirmed_stops_count": 0,
+        "skipped_stops_count": 0,
+        "unplanned_stops_count": 0,
+    }
+
+
+def test_execution_summary_requires_trip_membership(
+    client, auth_headers_user_a, auth_headers_user_b
+):
+    trip_id = _create_active_trip(client, auth_headers_user_a)
+
+    res = client.get(
+        f"/v1/trips/{trip_id}/execution-summary",
+        headers=auth_headers_user_b,
+    )
+    assert res.status_code == 404

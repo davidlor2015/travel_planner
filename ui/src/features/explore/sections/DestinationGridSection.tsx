@@ -1,3 +1,6 @@
+// Path: ui/src/features/explore/sections/DestinationGridSection.tsx
+// Summary: Implements DestinationGridSection module logic.
+
 import { ActionButton, EmptyState, PageSection } from "../../../shared/ui";
 import type { Destination } from "../types";
 import { DestinationCard } from "../components/DestinationCard";

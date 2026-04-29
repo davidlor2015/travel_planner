@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/types.ts
+// Summary: Implements types module logic.
+
 export type TripMember = {
   user_id: number;
   email: string;
@@ -88,6 +91,12 @@ export type TripSummary = {
   budget_expense_count: number;
 };
 
+export type TripExecutionSummary = {
+  confirmed_stops_count: number;
+  skipped_stops_count: number;
+  unplanned_stops_count: number;
+};
+
 export type WorkspaceLastSeenPayload = {
   signature: string;
   snapshot: Record<string, unknown>;
@@ -131,6 +140,7 @@ export type TripOnTripStopSnapshot = {
   title: string | null;
   time: string | null;
   location: string | null;
+  notes: string | null;
   lat: number | null;
   lon: number | null;
   status: "planned" | "confirmed" | "skipped" | null;

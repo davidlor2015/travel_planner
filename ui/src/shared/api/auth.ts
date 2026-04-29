@@ -1,3 +1,6 @@
+// Path: ui/src/shared/api/auth.ts
+// Summary: Implements auth module logic.
+
 import { API_URL } from '../../app/config';
 import type { SessionUser } from '../auth/session';
 import { apiFetch } from './client';

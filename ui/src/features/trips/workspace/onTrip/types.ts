@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/onTrip/types.ts
+// Summary: Implements types module logic.
+
 import type {
   TripExecutionStatus,
   TripOnTripBlocker,

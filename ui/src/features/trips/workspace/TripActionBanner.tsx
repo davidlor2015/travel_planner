@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/TripActionBanner.tsx
+// Summary: Implements TripActionBanner module logic.
+
 import type {
   TripActionCommand,
   TripActionabilityModel,

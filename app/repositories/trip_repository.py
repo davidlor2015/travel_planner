@@ -1,9 +1,16 @@
+# Path: app/repositories/trip_repository.py
+# Summary: Implements data access for trip repository operations.
+
 from typing import Optional, List
 
-from sqlalchemy import select
+from sqlalchemy import delete, or_, select
 from sqlalchemy.orm import Session, selectinload
 
+from app.models.match_interaction import MatchInteraction
+from app.models.match_request import MatchRequest
+from app.models.match_result import MatchResult
 from app.models.trip import Trip
+from app.models.trip_execution_event import TripExecutionEvent
 from app.models.trip_membership import TripMemberState, TripMembership
 from app.repositories.base import BaseRepository
 
@@ -76,6 +83,36 @@ class TripRepository(BaseRepository[Trip]):
         self.db.commit()
         self.db.refresh(trip)
         return trip
+
+    def delete_workspace(self, trip: Trip) -> None:
+        request_ids = select(MatchRequest.id).where(MatchRequest.trip_id == trip.id)
+        result_ids = select(MatchResult.id).where(
+            or_(
+                MatchResult.request_a_id.in_(request_ids),
+                MatchResult.request_b_id.in_(request_ids),
+            )
+        )
+
+        self.db.execute(
+            delete(MatchInteraction).where(
+                or_(
+                    MatchInteraction.request_id.in_(request_ids),
+                    MatchInteraction.match_result_id.in_(result_ids),
+                )
+            )
+        )
+        self.db.execute(
+            delete(MatchResult).where(
+                or_(
+                    MatchResult.request_a_id.in_(request_ids),
+                    MatchResult.request_b_id.in_(request_ids),
+                )
+            )
+        )
+        self.db.execute(delete(MatchRequest).where(MatchRequest.id.in_(request_ids)))
+        self.db.execute(delete(TripExecutionEvent).where(TripExecutionEvent.trip_id == trip.id))
+        self.db.delete(trip)
+        self.db.commit()
 
     def set_discoverable_for_user(self, user_id: int, is_discoverable: bool) -> None:
         trips = list(

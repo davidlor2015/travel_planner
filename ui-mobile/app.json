@@ -1,17 +1,22 @@
 {
   "expo": {
-    "name": "ui-mobile",
-    "slug": "ui-mobile",
+    "name": "Waypoint",
+    "slug": "waypoint",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "uimobile",
+    "scheme": "waypoint",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.davidlor.waypoint",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "com.davidlor.waypoint",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -40,11 +45,19 @@
         }
       ],
       "expo-secure-store",
-      "expo-font"
+      "expo-font",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "67d8b026-9d5d-463f-ae6e-87014f8d5562"
+      }
+    },
+    "owner": "david-dev-wp"
   }
 }

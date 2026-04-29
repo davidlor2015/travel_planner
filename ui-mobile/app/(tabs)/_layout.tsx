@@ -1,7 +1,11 @@
+// Path: ui-mobile/app/(tabs)/_layout.tsx
+// Summary: Implements  layout module logic.
+
 import { Ionicons } from "@expo/vector-icons";
 import { Redirect, Tabs } from "expo-router";
 
 import { useAuth } from "@/providers/AuthProvider";
+import { AppFontFamily } from "@/shared/theme/typography";
 
 function TabsLayoutInner() {
   return (
@@ -17,7 +21,7 @@ function TabsLayoutInner() {
         },
         tabBarLabelStyle: {
           fontSize: 10,
-          fontWeight: "500",
+          fontFamily: AppFontFamily.uiMedium,
           letterSpacing: 0.2,
         },
       }}
@@ -45,20 +49,25 @@ function TabsLayoutInner() {
         }
       />
       <Tabs.Screen
-        name="companions"
+        name="today"
         options={{
-          title: "Companions",
+          title: "Today",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people-outline" size={size} color={color} />
+            <Ionicons name="today-outline" size={size} color={color} />
           ),
         }}
+      />
+      {/* Companions is hidden from primary nav for V1; feature code preserved in features/matching/ */}
+      <Tabs.Screen
+        name="companions"
+        options={{ href: null }}
       />
       <Tabs.Screen
         name="archive"
         options={{
-          title: "Archive",
+          title: "Memories",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="archive-outline" size={size} color={color} />
+            <Ionicons name="albums-outline" size={size} color={color} />
           ),
         }}
       />

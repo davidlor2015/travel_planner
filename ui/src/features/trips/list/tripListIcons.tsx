@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/list/tripListIcons.tsx
+// Summary: Implements tripListIcons module logic.
+
 /**
  * Small stroke icons used only by the TripList feature (picker + empty states).
  * If these appear elsewhere, promote them to `shared/ui` and import from there.

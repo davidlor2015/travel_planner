@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/TripHero.tsx
+// Summary: Implements TripHero module logic.
+
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 

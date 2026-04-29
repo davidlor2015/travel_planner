@@ -1,3 +1,6 @@
+# Path: app/scripts/seed_itineraries.py
+# Summary: Implements seed itineraries functionality.
+
 """
 Validate the seed itinerary file and print a summary.
 

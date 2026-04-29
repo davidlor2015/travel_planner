@@ -1,3 +1,6 @@
+# Path: app/scripts/embed_itineraries.py
+# Summary: Implements embed itineraries functionality.
+
 # app/scripts/embed_itineraries.py
 """
 Read itinerary records from a JSON file, build text chunks, embed them,

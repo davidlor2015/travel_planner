@@ -1,3 +1,6 @@
+// Path: ui-mobile/hooks/use-theme-color.ts
+// Summary: Provides use-theme-color hook behavior.
+
 /**
  * Learn more about light and dark modes:
  * https://docs.expo.dev/guides/color-schemes/

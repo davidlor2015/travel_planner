@@ -1,3 +1,6 @@
+// Path: ui/src/features/archive/components/ArchiveYearGroupList.tsx
+// Summary: Renders the ArchiveYearGroupList UI component.
+
 import type {
   ArchiveViewMode,
   ArchiveYearGroup,

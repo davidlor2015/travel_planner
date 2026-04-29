@@ -1,4 +1,8 @@
+// Path: ui-mobile/features/trips/workspace/itineraryPresentation.ts
+// Summary: Implements itineraryPresentation module logic.
+
 import type { DayPlan, Itinerary, ItineraryItem } from "@/features/ai/api";
+import { formatTripStopTime } from "@/features/trips/stopTime";
 
 export type ItineraryFilterKey = "all" | "activities" | "transit" | "reservations";
 
@@ -136,45 +140,8 @@ export function formatItineraryDayDate(dateStr: string | null): string | null {
 }
 
 export function formatItineraryStopTime(time: string | null): ItineraryStopTimeBlock {
-  const raw = time?.trim();
-  if (!raw) return { primary: "TBD", secondary: null };
-
-  const clockMatch = raw.match(/\b(?:[01]?\d|2[0-3]):[0-5]\d(?:\s?[AP]M)?\b/i);
-  const clock = clockMatch?.[0]?.replace(/\s+/g, " ").toUpperCase() ?? null;
-  const period = normalizePeriodLabel(raw);
-
-  if (period && clock) return { primary: period, secondary: clock };
-  if (clock) return { primary: clock, secondary: period };
-  if (period) return { primary: period, secondary: null };
-
-  return { primary: compactLooseTimeLabel(raw), secondary: null };
-}
-
-function normalizePeriodLabel(value: string): string | null {
-  const normalized = value.toLowerCase();
-  if (/\bearly\s+morning\b/.test(normalized)) return "Early AM";
-  if (/\blate\s+morning\b/.test(normalized)) return "Late AM";
-  if (/\bmorning\b/.test(normalized)) return "Morning";
-  if (/\bearly\s+afternoon\b/.test(normalized)) return "Early PM";
-  if (/\blate\s+afternoon\b/.test(normalized)) return "Late PM";
-  if (/\bafternoon\b/.test(normalized)) return "Afternoon";
-  if (/\bearly\s+evening\b/.test(normalized)) return "Early Eve";
-  if (/\blate\s+evening\b/.test(normalized)) return "Late Eve";
-  if (/\bevening\b/.test(normalized)) return "Evening";
-  if (/\bnight\b/.test(normalized)) return "Night";
-  return null;
-}
-
-function compactLooseTimeLabel(value: string): string {
-  const label = value.replace(/\s+/g, " ").trim();
-  if (label.length <= 10) return label;
-  const compacted = label
-    .replace(/\bapproximately\b/i, "Approx.")
-    .replace(/\bafternoon\b/i, "PM")
-    .replace(/\bmorning\b/i, "AM")
-    .replace(/\bevening\b/i, "Eve");
-  if (compacted.length <= 10) return compacted;
-
-  const firstWord = compacted.split(" ")[0];
-  return firstWord && firstWord.length <= 10 ? firstWord : "Time";
+  return {
+    primary: formatTripStopTime(time),
+    secondary: null,
+  };
 }

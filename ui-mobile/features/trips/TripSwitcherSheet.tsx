@@ -1,7 +1,11 @@
+// Path: ui-mobile/features/trips/TripSwitcherSheet.tsx
+// Summary: Implements TripSwitcherSheet module logic.
+
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 
 import { Button } from "@/shared/ui/Button";
 import { StatusPill } from "@/shared/ui/StatusPill";
+import { fontStyles } from "@/shared/theme/typography";
 
 import type { TripListItemViewModel } from "./adapters";
 
@@ -33,8 +37,10 @@ export function TripSwitcherSheet({
           <View className="mb-4 items-center">
             <View className="h-1.5 w-12 rounded-full bg-border" />
           </View>
-          <Text className="text-xl font-semibold text-text">Switch Trip</Text>
-          <Text className="mt-1 text-sm text-text-muted">
+          <Text className="text-xl text-text" style={fontStyles.uiSemibold}>
+            Switch Trip
+          </Text>
+          <Text className="mt-1 text-sm text-text-muted" style={fontStyles.uiRegular}>
             Jump between active workspaces without leaving the trip area.
           </Text>
           <ScrollView contentContainerClassName="gap-3 py-4">
@@ -60,12 +66,20 @@ export function TripSwitcherSheet({
                           className="h-1.5 w-1.5 flex-shrink-0 rounded-full"
                           style={{ backgroundColor: statusDotColor(trip.status) }}
                         />
-                        <Text className="flex-1 text-base font-semibold text-text" numberOfLines={1}>
+                        <Text
+                          className="flex-1 text-base text-text"
+                          style={fontStyles.uiSemibold}
+                          numberOfLines={1}
+                        >
                           {trip.title}
                         </Text>
                       </View>
-                      <Text className="mt-1 text-sm text-text-muted">{trip.destination}</Text>
-                      <Text className="mt-1 text-sm text-text-muted">{trip.dateRange}</Text>
+                      <Text className="mt-1 text-sm text-text-muted" style={fontStyles.uiRegular}>
+                        {trip.destination}
+                      </Text>
+                      <Text className="mt-1 text-sm text-text-muted" style={fontStyles.uiRegular}>
+                        {trip.dateRange}
+                      </Text>
                     </View>
                     {/* StatusPill only for the current/selected trip */}
                     {isCurrent ? (

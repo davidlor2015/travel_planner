@@ -1,3 +1,6 @@
+# Path: app/core/security.py
+# Summary: Implements security functionality.
+
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 import hashlib

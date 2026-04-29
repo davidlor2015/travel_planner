@@ -1,3 +1,6 @@
+# Path: app/services/llm/gemini_client.py
+# Summary: Implements gemini client business logic.
+
 import logging
 from typing import AsyncGenerator
 

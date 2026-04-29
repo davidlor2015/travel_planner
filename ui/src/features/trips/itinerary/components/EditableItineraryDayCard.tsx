@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/itinerary/components/EditableItineraryDayCard.tsx
+// Summary: Renders the EditableItineraryDayCard UI component.
+
 import type { ReactNode } from "react";
 
 export interface EditableItineraryDayCardProps {

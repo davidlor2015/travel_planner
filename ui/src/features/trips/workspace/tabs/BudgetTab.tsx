@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/tabs/BudgetTab.tsx
+// Summary: Implements BudgetTab module logic.
+
 import { BudgetTracker } from "../../logistics/budget";
 import type { BudgetSummary } from "../types";
 

@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/itinerary/itineraryDraftMutations.test.ts
+// Summary: Covers automated tests for itineraryDraftMutations.test behavior.
+
 import { describe, expect, it } from "vitest";
 
 import { createItineraryDraftMutations } from "./itineraryDraftMutations";

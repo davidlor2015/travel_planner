@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/onTrip/deriveStopVisualState.test.ts
+// Summary: Covers automated tests for deriveStopVisualState.test behavior.
+
 import { describe, expect, it } from "vitest";
 
 import type { StopVM } from "./types";

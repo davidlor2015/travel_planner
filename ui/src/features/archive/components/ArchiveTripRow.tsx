@@ -1,3 +1,6 @@
+// Path: ui/src/features/archive/components/ArchiveTripRow.tsx
+// Summary: Renders the ArchiveTripRow UI component.
+
 import { AvatarStack, StatusPill } from "../../../shared/ui";
 import { formatArchiveDateRange } from "../adapters/archiveAdapter";
 import type { ArchiveTripItem } from "../types";
@@ -23,6 +26,13 @@ export function ArchiveTripRow({
     id: `${trip.id}-${index}`,
     label: initial,
   }));
+  const executionSummary = trip.executionSummary;
+  const hasExecutionHistory = Boolean(
+    executionSummary &&
+      (executionSummary.confirmedStopsCount > 0 ||
+        executionSummary.skippedStopsCount > 0 ||
+        executionSummary.unplannedStopsCount > 0),
+  );
 
   return (
     <article className="grid gap-4 rounded-2xl border border-smoke bg-white px-4 py-4 shadow-[0_6px_18px_rgba(28,17,8,0.04)] sm:grid-cols-[112px_minmax(0,1fr)_auto] sm:items-center">
@@ -54,6 +64,35 @@ export function ArchiveTripRow({
           </span>
           {rating ? <span>{rating}/5 rated</span> : null}
         </div>
+        {(trip.itineraryDayCount || trip.itineraryStopCount || trip.notesPreview) ? (
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-flint">
+            {trip.itineraryDayCount ? (
+              <span className="rounded-full border border-smoke bg-parchment/40 px-2.5 py-1">
+                {trip.itineraryDayCount} day plan
+              </span>
+            ) : null}
+            {trip.itineraryStopCount ? (
+              <span className="rounded-full border border-smoke bg-parchment/40 px-2.5 py-1">
+                {trip.itineraryStopCount} saved stop{trip.itineraryStopCount === 1 ? "" : "s"}
+              </span>
+            ) : null}
+            {trip.notesPreview ? (
+              <span className="rounded-full border border-smoke bg-parchment/40 px-2.5 py-1">
+                Notes captured
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+        {trip.notesPreview ? (
+          <p className="mt-2 text-xs text-muted">{trip.notesPreview}</p>
+        ) : null}
+        {executionSummary ? (
+          <p className="mt-2 text-xs text-muted">
+            {hasExecutionHistory
+              ? `Visited ${executionSummary.confirmedStopsCount} · Skipped ${executionSummary.skippedStopsCount} · Added ${executionSummary.unplannedStopsCount}`
+              : "No execution history yet"}
+          </p>
+        ) : null}
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <button

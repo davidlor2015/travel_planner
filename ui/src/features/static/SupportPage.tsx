@@ -1,3 +1,6 @@
+// Path: ui/src/features/static/SupportPage.tsx
+// Summary: Implements SupportPage module logic.
+
 import { StaticPageLayout } from './StaticPageLayout';
 
 export const SupportPage = () => (

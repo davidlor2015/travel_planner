@@ -1,4 +1,9 @@
+// Path: ui-mobile/shared/ui/StatusPill.tsx
+// Summary: Implements StatusPill module logic.
+
 import { Text, View } from "react-native";
+
+import { fontStyles } from "@/shared/theme/typography";
 
 type Variant = "default" | "success" | "warning" | "error" | "info";
 
@@ -19,7 +24,9 @@ export function StatusPill({ label, variant = "default" }: Props) {
   const { pill, label: labelClass } = variantClasses[variant];
   return (
     <View className={`self-start rounded-full px-2.5 py-1 ${pill}`}>
-      <Text className={`text-xs font-semibold ${labelClass}`}>{label}</Text>
+      <Text className={`text-xs ${labelClass}`} style={fontStyles.uiSemibold}>
+        {label}
+      </Text>
     </View>
   );
 }

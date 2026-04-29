@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/onTrip/NeedsAttentionCard.tsx
+// Summary: Implements NeedsAttentionCard module logic.
+
 import { Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 

@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/logistics/activity/types.ts
+// Summary: Implements types module logic.
+
 export type TripActivityType =
   | 'trip_created'
   | 'member_joined'

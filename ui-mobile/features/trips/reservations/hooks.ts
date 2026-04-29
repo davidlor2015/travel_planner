@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/reservations/hooks.ts
+// Summary: Implements hooks module logic.
+
 import { useCallback } from "react";
 import {
   useMutation,

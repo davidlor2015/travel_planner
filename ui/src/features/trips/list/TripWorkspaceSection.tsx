@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/list/TripWorkspaceSection.tsx
+// Summary: Implements TripWorkspaceSection module logic.
+
 import type { Trip } from "../../../shared/api/trips";
 import { TripHero } from "../workspace/TripHero";
 import { WorkspaceActivityStrip } from "../workspace/WorkspaceActivityStrip";

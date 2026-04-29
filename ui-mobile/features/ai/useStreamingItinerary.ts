@@ -1,5 +1,7 @@
+// Path: ui-mobile/features/ai/useStreamingItinerary.ts
+// Summary: Provides useStreamingItinerary hook behavior.
+
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Platform } from "react-native";
 // react-native-sse provides a spec-compliant EventSource for iOS/Android.
 // On Expo web, the native browser EventSource is available globally.
 import EventSource from "react-native-sse";

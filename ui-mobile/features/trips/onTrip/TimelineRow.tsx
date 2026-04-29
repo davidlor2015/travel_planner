@@ -1,206 +1,187 @@
-import { Pressable, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+// Path: ui-mobile/features/trips/onTrip/TimelineRow.tsx
+// Summary: Implements TimelineRow module logic.
 
+import { Pressable, Text, View } from "react-native";
+
+import { formatTripStopTime } from "@/features/trips/stopTime";
+import { DE } from "@/shared/theme/desertEditorial";
 import { fontStyles } from "@/shared/theme/typography";
 import type { StopVM, TimelineVariant } from "./adapters";
 import {
   getStatusLabel,
-  getStatusTone,
   isStopNow,
   shouldMuteStop,
-  type OnTripStatusTone,
 } from "./presentation";
 
 type Props = {
   stop: StopVM;
   variant: TimelineVariant;
   isLast: boolean;
-  onNavigate?: () => void;
-  onConfirm?: () => void;
-  onSkip?: () => void;
+  onPress?: () => void;
 };
 
 export function TimelineRow({
   stop,
   variant,
   isLast,
-  onNavigate,
-  onConfirm,
-  onSkip,
+  onPress,
 }: Props) {
   const isNow = isStopNow(variant);
   const isMuted = shouldMuteStop(stop);
-  const canMutate = !stop.isReadOnly && Boolean(stop.stop_ref);
+  const timeLabel = formatTripStopTime(stop.time);
 
   return (
-    <View className={["flex-row", isNow ? "rounded-[14px] bg-[#FBF1E8]/70" : ""].join(" ")}>
-      <View className="w-[46px] pt-3">
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      className="flex-row"
+      style={({ pressed }) => [
+        {
+          borderBottomWidth: isLast ? 0 : 1,
+          borderBottomColor: DE.rule,
+          borderStyle: "dashed",
+          opacity: isMuted ? 0.55 : pressed && onPress ? 0.75 : 1,
+        },
+      ]}
+      accessibilityRole={onPress ? "button" : "text"}
+      accessibilityLabel={stop.title ?? "Stop"}
+      accessibilityHint={onPress ? "Tap to view stop details" : undefined}
+    >
+      {/* ── Time column ────────────────────────────────────────────────── */}
+      <View className="w-[76px] items-start py-3.5 pr-1">
         <Text
-          className={["text-right text-[12px] leading-[18px]", isNow ? "text-ontrip" : "text-ontrip-muted"].join(" ")}
-          style={isNow ? fontStyles.uiSemibold : fontStyles.uiMedium}
-          numberOfLines={1}
+          style={[
+            isNow ? fontStyles.monoMedium : fontStyles.monoRegular,
+            {
+              fontSize: 12,
+              letterSpacing: 0.5,
+              color: isNow ? DE.clay : DE.muted,
+              fontVariant: ["tabular-nums"],
+            },
+          ]}
         >
-          {stop.time?.trim() || "TBD"}
+          {timeLabel}
         </Text>
       </View>
 
+      {/* ── Dot + connector ────────────────────────────────────────────── */}
       <View className="mx-3 items-center" style={{ width: 14 }}>
-        <DotForVariant variant={variant} />
-        {!isLast ? (
-          <View className="mt-1 w-px flex-1 bg-divider" />
-        ) : null}
+        <DotForVariant variant={variant} effectiveStatus={stop.effectiveStatus} />
       </View>
 
-      <View className="min-w-0 flex-1 pb-5 pt-3">
+      {/* ── Content ────────────────────────────────────────────────────── */}
+      <View className="min-w-0 flex-1 py-3.5">
+        {/* Title row */}
         <View className="min-w-0 flex-row items-center gap-2">
           <Text
-            className={[
-              "min-w-0 flex-1 text-[14px] leading-[21px]",
-              isMuted ? "line-through text-ontrip-muted" : "text-ontrip",
-            ].join(" ")}
-            style={isNow ? fontStyles.uiSemibold : fontStyles.uiMedium}
+            style={[
+              isNow ? fontStyles.uiBold : fontStyles.uiMedium,
+              {
+                fontSize: 14,
+                lineHeight: 21,
+                flex: 1,
+                color: DE.ink,
+                textDecorationLine: isMuted ? "line-through" : "none",
+                textDecorationColor: DE.mutedLight,
+              },
+            ]}
             numberOfLines={1}
           >
             {stop.title?.trim() || "Untitled stop"}
           </Text>
-          {isNow ? <NowPill /> : null}
         </View>
 
-        {stop.location ? (
+        {stop.notes?.trim() && !isMuted ? (
           <Text
-            className="mt-0.5 text-[12px] leading-[18px] text-ontrip-muted"
-            style={fontStyles.uiRegular}
+            style={[fontStyles.uiRegular, { fontSize: 12, lineHeight: 18, color: DE.clay, marginTop: 2 }]}
             numberOfLines={1}
           >
-            {stop.location}
+            <Text style={{ color: DE.clay }}>• </Text>
+            {stop.notes.trim()}
           </Text>
         ) : null}
-
-        <View className="mt-2.5 flex-row flex-wrap items-center gap-3">
-          <StatusPill status={stop.effectiveStatus} />
-          {onNavigate ? <NavigateAction onPress={onNavigate} /> : null}
-        </View>
-
-        {canMutate && (onConfirm || onSkip) ? (
-          <View className="mt-2.5 flex-row flex-wrap gap-2">
-            {onConfirm ? (
-              <MiniAction
-                label={stop.effectiveStatus === "confirmed" ? "Confirmed" : "Confirm"}
-                onPress={onConfirm}
-                disabled={stop.isPending}
-                active={stop.effectiveStatus === "confirmed"}
-              />
-            ) : null}
-            {onSkip ? (
-              <MiniAction
-                label={stop.effectiveStatus === "skipped" ? "Skipped" : "Skip"}
-                onPress={onSkip}
-                disabled={stop.isPending}
-                active={stop.effectiveStatus === "skipped"}
-              />
-            ) : null}
-          </View>
-        ) : null}
       </View>
-    </View>
+
+      <View className="items-end py-3.5">
+        <TimelineStatus variant={variant} status={stop.effectiveStatus} />
+      </View>
+    </Pressable>
   );
 }
 
-function DotForVariant({ variant }: { variant: TimelineVariant }) {
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function DotForVariant({
+  variant,
+  effectiveStatus,
+}: {
+  variant: TimelineVariant;
+  effectiveStatus: StopVM["effectiveStatus"];
+}) {
   if (variant === "now") {
     return (
-      <View className="mt-[17px] h-3 w-3 rounded-full bg-accent-ontrip" />
+      <View
+        className="mt-[16px] h-[14px] w-[14px] items-center justify-center rounded-full"
+        style={{ backgroundColor: "rgba(184, 90, 56, 0.14)" }}
+      >
+        <View className="h-2 w-2 rounded-full" style={{ backgroundColor: DE.clay }} />
+      </View>
+    );
+  }
+  if (variant === "done" && effectiveStatus === "confirmed") {
+    return (
+      <View
+        className="mt-[18px] h-3 w-3 items-center justify-center rounded-full border"
+        style={{ borderColor: DE.mutedLight }}
+      >
+        <Text style={[fontStyles.uiMedium, { fontSize: 8, lineHeight: 9, color: DE.muted }]}>✓</Text>
+      </View>
     );
   }
   if (variant === "done") {
     return (
-      <View className="mt-[18px] h-2.5 w-2.5 rounded-full border border-divider bg-surface-ontrip" />
+      <View
+        className="mt-[18px] h-2.5 w-2.5 rounded-full border bg-transparent"
+        style={{ borderColor: DE.mutedLight }}
+      />
     );
   }
   if (variant === "next") {
     return (
-      <View className="mt-[18px] h-2.5 w-2.5 rounded-full border border-accent-ontrip bg-surface-ontrip" />
+      <View
+        className="mt-[18px] h-2.5 w-2.5 rounded-full border bg-surface-ontrip"
+        style={{ borderColor: DE.mutedLight, backgroundColor: DE.ivory }}
+      />
     );
   }
   return (
-    <View className="mt-[18px] h-2.5 w-2.5 rounded-full border border-divider bg-surface-ontrip" />
+    <View
+      className="mt-[18px] h-2.5 w-2.5 rounded-full border bg-surface-ontrip"
+      style={{ borderColor: DE.mutedLight, backgroundColor: DE.ivory }}
+    />
   );
 }
 
-function NowPill() {
-  return (
-    <View className="rounded-full bg-[#EAD7C9] px-3 py-1">
-      <Text className="text-[11px] leading-[14px] text-amber" style={fontStyles.uiMedium}>
-        Now
-      </Text>
-    </View>
-  );
-}
-
-function StatusPill({ status }: { status: StopVM["effectiveStatus"] }) {
-  const tone = getStatusTone(status);
-  const toneClass = getStatusToneClass(tone);
-
-  return (
-    <View className={`rounded-full border px-3 py-1.5 ${toneClass.container}`}>
-      <Text
-        className={`text-[11px] leading-[14px] tracking-[0.3px] ${toneClass.text}`}
-        style={fontStyles.uiMedium}
-      >
-        {getStatusLabel(status)}
-      </Text>
-    </View>
-  );
-}
-
-function getStatusToneClass(tone: OnTripStatusTone): { container: string; text: string } {
-  if (tone === "confirmed") {
-    return { container: "border-transparent bg-olive/15", text: "text-olive" };
-  }
-  if (tone === "skipped") {
-    return { container: "border-divider bg-transparent", text: "text-muted" };
-  }
-  return { container: "border-divider bg-cream/70", text: "text-ontrip" };
-}
-
-function NavigateAction({ onPress }: { onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} className="flex-row items-center gap-1 active:opacity-70">
-      <Ionicons name="navigate-outline" size={12} color="#B86845" />
-      <Text className="text-[12px] leading-[18px] text-amber" style={fontStyles.uiMedium}>
-        Navigate
-      </Text>
-    </Pressable>
-  );
-}
-
-function MiniAction({
-  label,
-  onPress,
-  disabled,
-  active,
+function TimelineStatus({
+  variant,
+  status,
 }: {
-  label: string;
-  onPress?: () => void;
-  disabled?: boolean;
-  active?: boolean;
+  variant: TimelineVariant;
+  status: StopVM["effectiveStatus"];
 }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={!onPress || disabled}
-      className={[
-        "rounded-full border px-3 py-1.5",
-        active ? "border-olive/30 bg-olive/10" : "border-divider bg-surface-ontrip",
-        disabled ? "opacity-50" : "",
-      ].join(" ")}
-    >
-      <Text
-        className={["text-[11px] leading-[14px]", active ? "text-olive" : "text-ontrip-muted"].join(" ")}
-        style={fontStyles.uiSemibold}
-      >
-        {label}
+  if (variant === "done") {
+    return (
+      <Text style={[fontStyles.monoRegular, { fontSize: 10, letterSpacing: 1.5, textTransform: "uppercase", color: DE.sageDeep }]}>
+        {status === "skipped" ? getStatusLabel(status) : "Done"}
       </Text>
-    </Pressable>
-  );
+    );
+  }
+  if (variant === "next") {
+    return (
+      <Text style={[fontStyles.monoRegular, { fontSize: 10, letterSpacing: 1.5, textTransform: "uppercase", color: DE.muted }]}>
+        Next
+      </Text>
+    );
+  }
+  return null;
 }

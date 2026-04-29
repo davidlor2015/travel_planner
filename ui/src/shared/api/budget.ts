@@ -1,3 +1,6 @@
+// Path: ui/src/shared/api/budget.ts
+// Summary: Implements budget module logic.
+
 import { API_URL } from '../../app/config';
 import { apiFetch } from './client';
 import { ApiError } from './errors';

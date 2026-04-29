@@ -1,3 +1,6 @@
+// Path: ui/src/features/archive/components/ArchiveHeader.tsx
+// Summary: Renders the ArchiveHeader UI component.
+
 import { SectionHeading } from "../../../shared/ui";
 
 interface ArchiveHeaderProps {
@@ -29,7 +32,7 @@ export function ArchiveHeader({ heroImage, metadata }: ArchiveHeaderProps) {
 
       <div className="relative mx-auto max-w-3xl">
         <SectionHeading
-          eyebrow="Archive"
+          eyebrow="Memories"
           title="Your Travel Story"
           align="center"
           description={

@@ -1,4 +1,13 @@
+// Path: ui/src/features/archive/types.ts
+// Summary: Implements types module logic.
+
 export type ArchiveViewMode = "grid" | "list";
+
+export interface ArchiveExecutionSummary {
+  confirmedStopsCount: number;
+  skippedStopsCount: number;
+  unplannedStopsCount: number;
+}
 
 export interface ArchiveTripItem {
   id: number;
@@ -14,6 +23,10 @@ export interface ArchiveTripItem {
   memberCount: number;
   memberInitials: string[];
   hasSavedItinerary: boolean;
+  itineraryDayCount: number | null;
+  itineraryStopCount: number | null;
+  notesPreview: string | null;
+  executionSummary: ArchiveExecutionSummary | null;
 }
 
 export interface ArchiveYearGroup {

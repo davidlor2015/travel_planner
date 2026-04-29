@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/tabs/GroupTab.tsx
+// Summary: Implements GroupTab module logic.
+
 import { useRef, useState } from "react";
 import type { Trip } from "../../../../shared/api/trips";
 import { track } from "../../../../shared/analytics";

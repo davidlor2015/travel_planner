@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/logistics/reservations/useReservations.ts
+// Summary: Provides useReservations hook behavior.
+
 import { useCallback, useEffect, useReducer } from 'react';
 import {
   createReservation,

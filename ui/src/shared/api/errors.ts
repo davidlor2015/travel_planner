@@ -1,3 +1,6 @@
+// Path: ui/src/shared/api/errors.ts
+// Summary: Implements errors module logic.
+
 /**
  * Structured error thrown by all API client modules when a request receives
  * a non-OK HTTP response. Carries the status code and raw response body so

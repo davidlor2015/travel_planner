@@ -1,3 +1,6 @@
+# Path: app/repositories/base.py
+# Summary: Implements data access for base operations.
+
 from typing import Generic, TypeVar, Type, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import select

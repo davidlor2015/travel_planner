@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/workspace/BookingsTab.tsx
+// Summary: Implements BookingsTab module logic.
+
 import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,6 +23,7 @@ import {
 } from "@/features/trips/reservations/bookingPresentation";
 import type { BookingDetailViewModel } from "@/features/trips/reservations/bookingPresentation";
 import { useReservations } from "@/features/trips/reservations/hooks";
+import { DE } from "@/shared/theme/desertEditorial";
 import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { ScreenError } from "@/shared/ui/ScreenError";
@@ -142,12 +146,12 @@ function NextUpCard({
         {vm.navigateUrl ? (
           <Pressable
             onPress={(e) => void handleNavigate(e)}
-            className="flex-row items-center justify-center gap-2 rounded-[10px] border border-amber/40 bg-amber/8 py-2.5 active:opacity-70"
+            className="flex-row items-center justify-center gap-2 rounded-[10px] border border-ontrip bg-ontrip py-2.5 active:opacity-70"
             accessibilityRole="button"
             accessibilityLabel={`Navigate to ${vm.location}`}
           >
-            <Ionicons name="navigate-outline" size={13} color="#B86845" />
-            <Text style={fontStyles.uiSemibold} className="text-[12px] text-amber">
+            <Ionicons name="navigate-outline" size={13} color={DE.ivory} />
+            <Text style={fontStyles.uiSemibold} className="text-[12px] text-on-dark">
               {navigating ? "Opening Maps…" : "Navigate"}
             </Text>
           </Pressable>
@@ -313,12 +317,12 @@ export function BookingsTab({ tripId }: Props) {
                 onPress={() => setActiveFilter(chip.key)}
                 className={[
                   "rounded-full border px-3.5 py-1.5",
-                  active ? "border-espresso bg-espresso" : "border-smoke bg-transparent",
+                  active ? "border-ontrip bg-ontrip" : "border-smoke bg-transparent",
                 ].join(" ")}
               >
                 <Text
                   style={fontStyles.uiMedium}
-                  className={["text-[11px]", active ? "text-ivory" : "text-[#4a3f37]"].join(" ")}
+                  className={["text-[11px]", active ? "text-on-dark" : "text-[#4a3f37]"].join(" ")}
                 >
                   {chip.label}
                 </Text>

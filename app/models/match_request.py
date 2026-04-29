@@ -1,3 +1,6 @@
+# Path: app/models/match_request.py
+# Summary: Defines the match request data model.
+
 from __future__ import annotations
 
 from datetime import datetime

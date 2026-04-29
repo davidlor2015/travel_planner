@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/auth/api.ts
+// Summary: Implements api module logic.
+
 import { API_BASE_URL } from "@/shared/api/config";
 import { ApiError, apiRequest } from "@/shared/api/client";
 
@@ -57,6 +60,13 @@ export async function getMe(accessToken?: string): Promise<MeResponse> {
   return apiRequest<MeResponse>("/v1/auth/me", {
     method: "GET",
     authToken: accessToken,
+  });
+}
+
+export async function updateMe(payload: { display_name: string }): Promise<MeResponse> {
+  return apiRequest<MeResponse>("/v1/auth/me", {
+    method: "PATCH",
+    body: payload,
   });
 }
 

@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+// Path: ui-mobile/scripts/reset-project.js
+// Summary: Implements reset-project module logic.
+
 
 /**
  * This script is used to reset the project to a blank state.

@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/WorkspacePrimitives.tsx
+// Summary: Implements WorkspacePrimitives module logic.
+
 import type { TripMember } from "../../../shared/api/trips";
 
 function getMemberInitials(email: string): string {

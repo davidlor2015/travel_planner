@@ -1,3 +1,6 @@
+# Path: app/repositories/match_request_repository.py
+# Summary: Implements data access for match request repository operations.
+
 from datetime import date
 from typing import List
 

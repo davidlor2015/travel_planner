@@ -1,3 +1,6 @@
+// Path: ui/src/features/matching/components/MatchResultCard.tsx
+// Summary: Renders the MatchResultCard UI component.
+
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 

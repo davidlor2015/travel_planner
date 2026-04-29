@@ -1,3 +1,6 @@
+# Path: app/schemas/itinerary.py
+# Summary: Defines Pydantic schemas for itinerary payloads.
+
 from __future__ import annotations
 
 from typing import Optional

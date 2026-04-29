@@ -1,3 +1,6 @@
+// Path: ui/src/shared/auth/session.ts
+// Summary: Implements session module logic.
+
 export interface SessionUser {
   email: string;
   id?: number;

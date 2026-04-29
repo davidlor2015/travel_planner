@@ -1,3 +1,6 @@
+# Path: app/api/v1/routes/budget.py
+# Summary: Defines budget API route handlers.
+
 from fastapi import APIRouter, Response
 
 from app.api.deps import CurrentUser, SessionDep

@@ -1,3 +1,6 @@
+// Path: ui-mobile/app/(auth)/forgot-password.tsx
+// Summary: Implements forgot-password module logic.
+
 import { useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -74,7 +77,7 @@ export default function ForgotPasswordPage() {
             {"Reset your\npassword."}
           </Text>
           <Text className="mt-2 text-sm leading-5 text-muted" style={fontStyles.uiRegular}>
-            Enter your email and we'll send a link to choose a new one.
+            {"Enter your email and we'll send a link to choose a new one."}
           </Text>
         </View>
 

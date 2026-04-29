@@ -1,3 +1,6 @@
+# Path: app/schemas/search.py
+# Summary: Defines Pydantic schemas for search payloads.
+
 from __future__ import annotations
 
 from pydantic import BaseModel

@@ -1,4 +1,8 @@
-import type { Trip } from "../../../shared/api/trips";
+// Path: ui/src/features/archive/adapters/archiveAdapter.ts
+// Summary: Implements archiveAdapter module logic.
+
+import type { Trip, TripExecutionSummary } from "../../../shared/api/trips";
+import { parseTripItineraryPayload } from "../../trips/workspace/models/normalizeTripWorkspace";
 import { getTripImageUrl } from "../../trips/workspace/helpers/tripVisuals";
 import type {
   ArchiveSummaryLine,
@@ -50,10 +54,27 @@ function isPastTrip(trip: Trip): boolean {
   return new Date(trip.end_date).getTime() < Date.now();
 }
 
+function compactText(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function extractNotesPreview(notes: string | null): string | null {
+  if (!notes) return null;
+  const compact = compactText(notes);
+  if (!compact) return null;
+  if (compact.length <= 120) return compact;
+  return `${compact.slice(0, 117).trimEnd()}...`;
+}
+
 export function toArchiveTrip(trip: Trip): ArchiveTripItem {
   const startDate = new Date(trip.start_date);
   const endDate = new Date(trip.end_date);
   const destination = splitDestination(trip.destination);
+  const itinerary = parseTripItineraryPayload(trip.description);
+  const itineraryDayCount = itinerary?.days.length ?? null;
+  const itineraryStopCount = itinerary
+    ? itinerary.days.reduce((total, day) => total + day.items.length, 0)
+    : null;
 
   return {
     id: trip.id,
@@ -69,13 +90,34 @@ export function toArchiveTrip(trip: Trip): ArchiveTripItem {
     memberInitials: trip.members.slice(0, 3).map((member) => getInitials(member.email)),
     imageUrl: getTripImageUrl(trip),
     hasSavedItinerary: looksLikeSavedItinerary(trip.description),
+    itineraryDayCount,
+    itineraryStopCount,
+    notesPreview: extractNotesPreview(trip.notes),
+    executionSummary: null,
   };
 }
 
-export function getArchiveTrips(trips: Trip[]): ArchiveTripItem[] {
+function toArchiveExecutionSummary(
+  executionSummary: TripExecutionSummary | null | undefined,
+) {
+  if (!executionSummary) return null;
+  return {
+    confirmedStopsCount: executionSummary.confirmed_stops_count,
+    skippedStopsCount: executionSummary.skipped_stops_count,
+    unplannedStopsCount: executionSummary.unplanned_stops_count,
+  };
+}
+
+export function getArchiveTrips(
+  trips: Trip[],
+  executionSummaryByTripId: Record<number, TripExecutionSummary | null> = {},
+): ArchiveTripItem[] {
   return trips
     .filter(isPastTrip)
-    .map(toArchiveTrip)
+    .map((trip) => ({
+      ...toArchiveTrip(trip),
+      executionSummary: toArchiveExecutionSummary(executionSummaryByTripId[trip.id]),
+    }))
     .sort((a, b) => b.endDate.getTime() - a.endDate.getTime());
 }
 

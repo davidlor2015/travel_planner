@@ -1,3 +1,6 @@
+// Path: ui/src/features/archive/components/ArchiveTripCard.tsx
+// Summary: Renders the ArchiveTripCard UI component.
+
 import { AvatarStack, StatusPill } from "../../../shared/ui";
 import { formatArchiveDateRange } from "../adapters/archiveAdapter";
 import type { ArchiveTripItem } from "../types";
@@ -23,6 +26,13 @@ export function ArchiveTripCard({
     id: `${trip.id}-${index}`,
     label: initial,
   }));
+  const executionSummary = trip.executionSummary;
+  const hasExecutionHistory = Boolean(
+    executionSummary &&
+      (executionSummary.confirmedStopsCount > 0 ||
+        executionSummary.skippedStopsCount > 0 ||
+        executionSummary.unplannedStopsCount > 0),
+  );
 
   return (
     <article className="overflow-hidden rounded-2xl border border-smoke bg-white shadow-[0_14px_36px_rgba(28,17,8,0.06)]">
@@ -59,6 +69,30 @@ export function ArchiveTripCard({
             <StatusPill tone="positive">Saved itinerary</StatusPill>
           ) : null}
         </div>
+
+        {(trip.itineraryDayCount || trip.itineraryStopCount || trip.notesPreview) ? (
+          <div className="space-y-2 rounded-xl border border-smoke bg-parchment/35 px-3 py-2">
+            <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-flint">
+              {trip.itineraryDayCount ? (
+                <span>{trip.itineraryDayCount} day plan</span>
+              ) : null}
+              {trip.itineraryStopCount ? (
+                <span>{trip.itineraryStopCount} saved stop{trip.itineraryStopCount === 1 ? "" : "s"}</span>
+              ) : null}
+              {trip.notesPreview ? <span>Trip notes captured</span> : null}
+            </div>
+            {trip.notesPreview ? (
+              <p className="text-xs leading-relaxed text-muted">{trip.notesPreview}</p>
+            ) : null}
+          </div>
+        ) : null}
+        {executionSummary ? (
+          <p className="text-xs text-muted">
+            {hasExecutionHistory
+              ? `Visited ${executionSummary.confirmedStopsCount} · Skipped ${executionSummary.skippedStopsCount} · Added ${executionSummary.unplannedStopsCount}`
+              : "No execution history yet"}
+          </p>
+        ) : null}
 
         <div className="flex flex-wrap items-center gap-2">
           <button

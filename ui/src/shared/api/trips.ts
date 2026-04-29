@@ -1,3 +1,6 @@
+// Path: ui/src/shared/api/trips.ts
+// Summary: Implements trips module logic.
+
 import { API_URL } from '../../app/config';
 import { apiFetch } from './client';
 import { executeWithRetry } from './executeWithRetry';
@@ -188,6 +191,12 @@ export interface TripExecutionEvent {
   created_at: string;
 }
 
+export interface TripExecutionSummary {
+  confirmed_stops_count: number;
+  skipped_stops_count: number;
+  unplanned_stops_count: number;
+}
+
 export interface UnplannedStopPayload {
   day_date: string;
   title: string;
@@ -329,6 +338,23 @@ export const getTripOnTripSnapshot = async (
   if (!response.ok) {
     const text = await response.text();
     throw new Error(`Failed to fetch on-trip snapshot (${response.status}): ${text}`);
+  }
+
+  return response.json();
+};
+
+export const getTripExecutionSummary = async (
+  token: string,
+  tripId: number,
+): Promise<TripExecutionSummary> => {
+  const response = await apiFetch(`${API_URL}/v1/trips/${tripId}/execution-summary`, {
+    method: 'GET',
+    token,
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to fetch execution summary (${response.status}): ${text}`);
   }
 
   return response.json();

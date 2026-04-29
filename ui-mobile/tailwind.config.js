@@ -1,3 +1,6 @@
+// Path: ui-mobile/tailwind.config.js
+// Summary: Implements tailwind.config module logic.
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -52,21 +55,27 @@ module.exports = {
         success: "#6A7A43",
         warning: "#B86845",
         "surface-ontrip": "#F2EBDD",
-        "surface-ontrip-raised": "#FBF7EF",
+        "surface-ontrip-raised": "#FAF5EA",
         "surface-ontrip-sunken": "#ECE4D7",
-        "surface-exec": "#2A1D13",
-        "surface-exec-top": "#3A2A1F",
+        "surface-exec": "#231910",
+        "surface-exec-top": "#3D2E22",
         "border-ontrip": "#E4DBCB",
         "border-ontrip-strong": "#C9B99A",
         "border-exec": "#6B5743",
-        "accent-ontrip": "#B4532A",
-        ontrip: "#2A1D13",
+        "accent-ontrip": "#B85A38",
+        ontrip: "#231910",
         "ontrip-strong": "#6B5743",
-        "ontrip-muted": "#8A7866",
+        "ontrip-muted": "#8A7B6A",
         "ontrip-soft": "#A89680",
         "on-dark": "#F2EBDD",
-        "on-dark-muted": "#C9BCA8",
-        "on-dark-soft": "#D7B48C",
+        "on-dark-muted": "#B5A892",
+        "on-dark-soft": "#D89A7C",
+        // DE palette additions
+        "de-clay-sand": "#EFD8C9",
+        "de-sage": "#94A487",
+        "de-sage-deep": "#7A8B6E",
+        "de-muted-light": "#B5A892",
+        "de-ink-soft": "#3D2E22",
       },
       borderRadius: {
         xl2: "20px",

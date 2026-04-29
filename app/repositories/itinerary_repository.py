@@ -1,3 +1,6 @@
+# Path: app/repositories/itinerary_repository.py
+# Summary: Implements data access for itinerary repository operations.
+
 from typing import List
 
 from sqlalchemy import delete, select

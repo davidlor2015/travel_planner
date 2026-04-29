@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/workspace/models/deriveTripActionItems.ts
+// Summary: Defines the deriveTripActionItems data model.
+
 import type { Trip, TripMemberReadinessItem } from "../../../../shared/api/trips";
 import type { Itinerary } from "../../../../shared/api/ai";
 import type {

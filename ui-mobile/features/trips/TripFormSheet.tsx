@@ -1,3 +1,6 @@
+// Path: ui-mobile/features/trips/TripFormSheet.tsx
+// Summary: Implements TripFormSheet module logic.
+
 import { useEffect, useState, type ReactNode } from "react";
 import {
   KeyboardAvoidingView,
@@ -8,10 +11,13 @@ import {
   Text,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { PrimaryButton, SecondaryButton } from "@/shared/ui/Button";
+import { Button, SecondaryButton } from "@/shared/ui/Button";
 import { ScreenHeader } from "@/shared/ui/ScreenHeader";
 import { TextInputField } from "@/shared/ui/TextInputField";
+import { fontStyles } from "@/shared/theme/typography";
+import { formatDateInput } from "@/shared/utils/formatDateInput";
 
 import { PlaceAutocompleteInput } from "./PlaceAutocompleteInput";
 import type { PlaceSuggestion, TripCreate, TripResponse, TripUpdate } from "./types";
@@ -39,19 +45,24 @@ type Props = {
   visible: boolean;
   mode: "create" | "edit";
   trip?: TripResponse | null;
+  initialDestination?: string;
   submitting?: boolean;
+  deleting?: boolean;
   error?: string | null;
+  canDeleteTrip?: boolean;
   onClose: () => void;
   onSubmit: (value: TripFormValue) => Promise<void>;
+  onDeleteTrip?: () => void;
 };
 
 function toInitialValue(
   mode: "create" | "edit",
   trip?: TripResponse | null,
+  initialDestination?: string,
 ): TripFormValue {
   return {
     title:       trip?.title                    ?? "",
-    destination: trip?.destination              ?? "",
+    destination: trip?.destination              ?? initialDestination ?? "",
     start_date:  trip?.start_date?.slice(0, 10) ?? "",
     end_date:    trip?.end_date?.slice(0, 10)   ?? "",
     notes:       mode === "edit" ? (trip?.notes ?? "") : "",
@@ -109,11 +120,16 @@ export function TripFormSheet({
   visible,
   mode,
   trip,
+  initialDestination,
   submitting = false,
+  deleting = false,
   error,
+  canDeleteTrip = false,
   onClose,
   onSubmit,
+  onDeleteTrip,
 }: Props) {
+  const insets = useSafeAreaInsets();
   const {
     query: destinationQuery,
     suggestions: placeSuggestions,
@@ -136,11 +152,11 @@ export function TripFormSheet({
 
   useEffect(() => {
     if (!visible) return;
-    const initial = toInitialValue(mode, trip);
+    const initial = toInitialValue(mode, trip, initialDestination);
     setValue(initial);
     resetDestinationAutocomplete(initial.destination);
     setErrors({});
-  }, [trip, visible, mode, resetDestinationAutocomplete]);
+  }, [trip, visible, mode, initialDestination, resetDestinationAutocomplete]);
 
   useEffect(() => {
     setValue((current) => {
@@ -156,8 +172,8 @@ export function TripFormSheet({
     });
   }, [selectedPlace]);
 
-  const titleLabel =
-    mode === "create" ? "Create Trip" : "Edit Trip";
+  const titleLabel = mode === "create" ? "Create trip" : "Edit trip";
+  const submitLabel = mode === "create" ? "Create trip" : "Save changes";
   const subtitle =
     mode === "create"
       ? "Destination, dates, and preferences shape the AI-generated itinerary."
@@ -195,19 +211,21 @@ export function TripFormSheet({
   return (
     <Modal
       animationType="slide"
-      transparent
+      presentationStyle="fullScreen"
       visible={visible}
       onRequestClose={onClose}
     >
-      <View className="flex-1 justify-end bg-black/35">
+      <View className="flex-1 bg-bg-app">
         <KeyboardAvoidingView
+          className="flex-1 bg-bg-app"
           behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={0}
         >
-          <View className="max-h-[92%] overflow-hidden rounded-t-[30px] border border-border bg-bg-app">
-            <View className="items-center pt-3">
-              <View className="h-1.5 w-12 rounded-full bg-border-strong" />
-            </View>
-            <View className="border-b border-border/70 bg-bg-app">
+          <View className="flex-1 bg-bg-app">
+            <View
+              className="border-b border-border/70 bg-bg-app pb-3"
+              style={{ paddingTop: Math.max(insets.top, 12) }}
+            >
               <ScreenHeader
                 title={titleLabel}
                 subtitle={subtitle}
@@ -215,7 +233,18 @@ export function TripFormSheet({
               />
             </View>
 
-            <ScrollView contentContainerClassName="gap-4 px-4 py-4">
+            <ScrollView
+              className="flex-1 bg-bg-app"
+              contentContainerStyle={{
+                gap: 16,
+                paddingHorizontal: 16,
+                paddingTop: 16,
+                paddingBottom: 28,
+              }}
+              keyboardShouldPersistTaps="handled"
+              automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
+              showsVerticalScrollIndicator={false}
+            >
               <FormSection
                 eyebrow="Core details"
                 description="Destination and dates anchor the workspace."
@@ -248,8 +277,9 @@ export function TripFormSheet({
                       placeholder="2026-07-10"
                       value={value.start_date}
                       onChangeText={(v) =>
-                        setValue((c) => ({ ...c, start_date: v }))
+                        setValue((c) => ({ ...c, start_date: formatDateInput(v) }))
                       }
+                      keyboardType="numeric"
                       autoCapitalize="none"
                       error={errors.start_date}
                     />
@@ -260,7 +290,10 @@ export function TripFormSheet({
                       hint="YYYY-MM-DD"
                       placeholder="2026-07-16"
                       value={value.end_date}
-                      onChangeText={(v) => setValue((c) => ({ ...c, end_date: v }))}
+                      onChangeText={(v) =>
+                        setValue((c) => ({ ...c, end_date: formatDateInput(v) }))
+                      }
+                      keyboardType="numeric"
                       autoCapitalize="none"
                       error={errors.end_date}
                     />
@@ -276,7 +309,7 @@ export function TripFormSheet({
                 >
                   {/* Budget */}
                   <View className="gap-2">
-                    <Text className="text-sm font-semibold text-text">
+                    <Text className="text-sm text-text" style={fontStyles.uiSemibold}>
                       Budget
                     </Text>
                     <View className="flex-row gap-2">
@@ -288,14 +321,15 @@ export function TripFormSheet({
                             onPress={() => toggleSegment("budget", opt.value)}
                             className={`flex-1 items-center rounded-full border py-2 active:opacity-70 ${
                               active
-                                ? "border-text bg-text"
+                                ? "border-ontrip bg-ontrip"
                                 : "border-border bg-white"
                             }`}
                           >
                             <Text
-                              className={`text-sm font-semibold ${
-                                active ? "text-ivory" : "text-text-muted"
+                              className={`text-sm ${
+                                active ? "text-on-dark" : "text-text-muted"
                               }`}
+                              style={fontStyles.uiSemibold}
                             >
                               {opt.label}
                             </Text>
@@ -307,7 +341,7 @@ export function TripFormSheet({
 
                   {/* Pace */}
                   <View className="mt-4 gap-2">
-                    <Text className="text-sm font-semibold text-text">
+                    <Text className="text-sm text-text" style={fontStyles.uiSemibold}>
                       Pace
                     </Text>
                     <View className="flex-row gap-2">
@@ -319,14 +353,15 @@ export function TripFormSheet({
                             onPress={() => toggleSegment("pace", opt.value)}
                             className={`flex-1 items-center rounded-full border py-2 active:opacity-70 ${
                               active
-                                ? "border-text bg-text"
+                                ? "border-ontrip bg-ontrip"
                                 : "border-border bg-white"
                             }`}
                           >
                             <Text
-                              className={`text-sm font-semibold ${
-                                active ? "text-ivory" : "text-text-muted"
+                              className={`text-sm ${
+                                active ? "text-on-dark" : "text-text-muted"
                               }`}
+                              style={fontStyles.uiSemibold}
                             >
                               {opt.label}
                             </Text>
@@ -338,7 +373,7 @@ export function TripFormSheet({
 
                   {/* Interests */}
                   <View className="mt-4 gap-2">
-                    <Text className="text-sm font-semibold text-text">
+                    <Text className="text-sm text-text" style={fontStyles.uiSemibold}>
                       Interests
                     </Text>
                     <View className="flex-row flex-wrap gap-2">
@@ -351,14 +386,15 @@ export function TripFormSheet({
                             onPress={() => toggleInterest(interest)}
                             className={`rounded-full border px-3 py-1.5 active:opacity-70 ${
                               active
-                                ? "border-text bg-text"
+                                ? "border-ontrip bg-ontrip"
                                 : "border-border bg-white"
                             }`}
                           >
                             <Text
-                              className={`text-xs font-medium capitalize ${
-                                active ? "text-ivory" : "text-text-muted"
+                              className={`text-xs capitalize ${
+                                active ? "text-on-dark" : "text-text-muted"
                               }`}
+                              style={fontStyles.uiMedium}
                             >
                               {interest}
                             </Text>
@@ -387,29 +423,63 @@ export function TripFormSheet({
                 </FormSection>
               )}
 
+              {mode === "edit" && canDeleteTrip && onDeleteTrip ? (
+                <FormSection
+                  eyebrow="Trip settings"
+                  description="Remove this trip from Waypoint when you no longer need it saved."
+                >
+                  <Pressable
+                    onPress={onDeleteTrip}
+                    disabled={submitting || deleting}
+                    accessibilityRole="button"
+                    accessibilityLabel="Delete trip"
+                    className={[
+                      "min-h-11 flex-row items-center justify-between rounded-2xl border border-danger/20 bg-white px-4 py-3 active:opacity-70",
+                      submitting || deleting ? "opacity-50" : "",
+                    ].join(" ")}
+                  >
+                    <Text className="text-sm text-danger" style={fontStyles.uiSemibold}>
+                      {deleting ? "Deleting…" : "Delete trip"}
+                    </Text>
+                    <Text className="text-lg leading-5 text-danger" style={fontStyles.uiSemibold}>
+                      ›
+                    </Text>
+                  </Pressable>
+                </FormSection>
+              ) : null}
+
               {error ? (
                 <View className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3">
-                  <Text className="text-sm font-medium text-danger">
+                  <Text className="text-sm text-danger" style={fontStyles.uiMedium}>
                     {error}
                   </Text>
                 </View>
               ) : null}
             </ScrollView>
 
-            <View className="gap-2 border-t border-border bg-bg-app px-4 pb-6 pt-3">
-              <PrimaryButton
+            <View
+              className="gap-2 border-t border-border bg-bg-app px-4 pt-3"
+              style={{ paddingBottom: Math.max(insets.bottom, 16) }}
+            >
+              <Button
                 label={
                   submitting
                     ? mode === "create"
                       ? "Creating…"
                       : "Saving…"
-                    : titleLabel
+                    : submitLabel
                 }
                 onPress={handleSubmit}
-                disabled={submitting}
+                disabled={submitting || deleting}
+                fullWidth
+                variant="ontrip"
+              />
+              <SecondaryButton
+                label="Cancel"
+                onPress={onClose}
+                disabled={submitting || deleting}
                 fullWidth
               />
-              <SecondaryButton label="Cancel" onPress={onClose} fullWidth />
             </View>
           </View>
         </KeyboardAvoidingView>
@@ -430,10 +500,15 @@ function FormSection({
   return (
     <View className="gap-4 rounded-2xl border border-border bg-surface-muted px-4 py-4">
       <View>
-        <Text className="text-[10px] font-bold uppercase tracking-[1.2px] text-text-soft">
+        <Text
+          className="text-[10px] uppercase tracking-[1.2px] text-text-soft"
+          style={fontStyles.monoMedium}
+        >
           {eyebrow}
         </Text>
-        <Text className="mt-1 text-sm leading-5 text-text-muted">{description}</Text>
+        <Text className="mt-1 text-sm leading-5 text-text-muted" style={fontStyles.uiRegular}>
+          {description}
+        </Text>
       </View>
       <View className="gap-4">{children}</View>
     </View>

@@ -1,3 +1,6 @@
+// Path: ui/src/features/trips/create/CreateTripForm.tsx
+// Summary: Implements CreateTripForm module logic.
+
 import { useState } from 'react';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
