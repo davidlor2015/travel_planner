@@ -7,6 +7,10 @@ jest.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 
+jest.mock("@/features/trips/api", () => ({
+  searchPlaces: jest.fn().mockResolvedValue([]),
+}));
+
 function buildTrip(overrides: Partial<TripResponse> = {}): TripResponse {
   return {
     id: overrides.id ?? 7,
@@ -39,7 +43,7 @@ describe("TripFormSheet", () => {
     expect(getByText("Cancel")).toBeTruthy();
     expect(getByText("Trip title")).toBeTruthy();
     expect(getByText("Destination")).toBeTruthy();
-    expect(getByText("Budget")).toBeTruthy();
+    expect(getAllByText("Budget").length).toBeGreaterThan(0);
     expect(getByText("Pace")).toBeTruthy();
     expect(getByText("Interests")).toBeTruthy();
     expect(getByPlaceholderText("e.g. Summer in Rome")).toBeTruthy();

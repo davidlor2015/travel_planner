@@ -5,6 +5,10 @@ import { BudgetTab } from "@/features/trips/workspace/BudgetTab";
 
 const mockUseBudgetTracker = jest.fn();
 
+jest.mock("@expo/vector-icons", () => ({
+  Ionicons: () => null,
+}));
+
 jest.mock("@/features/trips/budget/hooks", () => ({
   useBudgetTracker: (...args: unknown[]) => mockUseBudgetTracker(...args),
 }));
@@ -71,11 +75,13 @@ describe("BudgetTab", () => {
   it("opens the budget input sheet from Set total budget", () => {
     mockUseBudgetTracker.mockReturnValue(makeBudgetState());
 
-    const { getByRole, getByText } = render(<BudgetTab tripId={7} />);
+    const { getByPlaceholderText, getByRole, getByText } = render(
+      <BudgetTab tripId={7} />,
+    );
 
     fireEvent.press(getByRole("button", { name: "Set total budget" }));
 
-    expect(getByText("Total budget")).toBeTruthy();
+    expect(getByPlaceholderText("e.g. 2000")).toBeTruthy();
     expect(getByText("Save budget")).toBeTruthy();
   });
 
@@ -99,12 +105,12 @@ describe("BudgetTab", () => {
       }),
     );
 
-    const { getByText, queryByText } = render(<BudgetTab tripId={7} />);
+    const { getAllByText, getByText, queryByText } = render(<BudgetTab tripId={7} />);
 
     expect(getByText("Spending by category")).toBeTruthy();
     expect(getByText("Recent transactions")).toBeTruthy();
     expect(getByText("Dinner in Trastevere")).toBeTruthy();
-    expect(getByText("Food")).toBeTruthy();
+    expect(getAllByText("Food").length).toBeGreaterThan(0);
     expect(
       queryByText("Categories and history will appear here once you log an expense."),
     ).toBeNull();

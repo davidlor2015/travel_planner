@@ -48,6 +48,10 @@ function resolveApiBaseUrl(): string {
     return normalizeBaseUrl(remapAndroidLocalhost(raw));
   }
 
+  if (process.env.NODE_ENV === "test") {
+    return DEFAULT_WEB_DEV_API_BASE_URL;
+  }
+
   const isDev =
     typeof __DEV__ === "boolean"
       ? __DEV__

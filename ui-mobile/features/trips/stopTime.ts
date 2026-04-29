@@ -30,12 +30,14 @@ function parseClockParts(
   const raw = normalizeWhitespace(value ?? "");
   if (!raw) return null;
 
-  const match = raw.match(/\b(\d{1,2}):(\d{2})(?::(\d{2}))?\s*([AaPp][Mm])?\b/);
+  const match = raw.match(
+    /(?:^|[T\s])(\d{1,2}):(\d{2})(?::\d{2})?\s*([AaPp][Mm])?(?=$|[\s.,Z+-])/,
+  );
   if (!match) return null;
 
   let hour = Number.parseInt(match[1] ?? "", 10);
   const minute = Number.parseInt(match[2] ?? "", 10);
-  const suffix = match[4]?.toLowerCase();
+  const suffix = match[3]?.toLowerCase();
   if (Number.isNaN(hour) || Number.isNaN(minute) || minute > 59) return null;
 
   if (suffix) {

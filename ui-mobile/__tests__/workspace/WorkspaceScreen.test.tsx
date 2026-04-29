@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { act, fireEvent, render } from "@testing-library/react-native";
-import { Pressable, Text, View } from "react-native";
 
 import { WorkspaceScreen } from "@/features/trips/workspace/WorkspaceScreen";
 
@@ -104,11 +103,14 @@ jest.mock("@/features/trips/workspace/useTripWorkspaceModel", () => ({
 }));
 
 jest.mock("@/features/trips/workspace/WorkspaceTripHeader", () => ({
-  WorkspaceTripHeader: ({ onEditPress }: { onEditPress: () => void }) => (
-    <Pressable onPress={onEditPress}>
-      <Text>Edit trip details</Text>
-    </Pressable>
-  ),
+  WorkspaceTripHeader: ({ onEditPress }: { onEditPress: () => void }) => {
+    const { Pressable: P, Text: T } = require("react-native");
+    return (
+      <P onPress={onEditPress}>
+        <T>Edit trip details</T>
+      </P>
+    );
+  },
 }));
 
 jest.mock("@/features/trips/workspace/WorkspaceTabBar", () => ({
@@ -155,17 +157,18 @@ jest.mock("@/features/trips/TripFormSheet", () => ({
     onDeleteTrip?: () => void;
     error?: string | null;
   }) => {
+    const { View: V, Text: T, Pressable: P } = require("react-native");
     if (!visible) return null;
     return (
-      <View>
-        <Text>{mode === "edit" ? "Edit trip" : "Create trip"}</Text>
+      <V>
+        <T>{mode === "edit" ? "Edit trip" : "Create trip"}</T>
         {mode === "edit" && onDeleteTrip ? (
-          <Pressable onPress={onDeleteTrip}>
-            <Text>Delete trip</Text>
-          </Pressable>
+          <P onPress={onDeleteTrip}>
+            <T>Delete trip</T>
+          </P>
         ) : null}
-        {error ? <Text>{error}</Text> : null}
-      </View>
+        {error ? <T>{error}</T> : null}
+      </V>
     );
   },
 }));
