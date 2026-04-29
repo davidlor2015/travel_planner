@@ -88,6 +88,7 @@ function inviteStatusLabel(status: string): string {
 export function toTripWorkspaceViewModel(
   trip: TripResponse,
   currentUserEmail: string,
+  currentUserId?: number | null,
 ): TripWorkspaceViewModel {
   const start = new Date(trip.start_date);
   const end = new Date(trip.end_date);
@@ -106,9 +107,10 @@ export function toTripWorkspaceViewModel(
     statusLabel: tripStatusLabel(getTripStatus(trip.start_date, trip.end_date)),
     memberCount: trip.member_count,
     members: trip.members.map((member) => ({ email: member.email })),
-    isOwner: trip.members.some(
-      (m) => m.email.toLowerCase() === currentUserEmail.toLowerCase() && m.role === "owner",
-    ),
+    isOwner:
+      trip.members.some(
+        (m) => m.email.toLowerCase() === currentUserEmail.toLowerCase() && m.role === "owner",
+      ) || (typeof currentUserId === "number" && trip.user_id === currentUserId),
   };
 }
 

@@ -115,6 +115,16 @@ export function useDeleteTripMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (tripId: number) => deleteTrip(tripId),
+    onMutate: async (tripId) => {
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: tripKeys.detail(tripId) }),
+        queryClient.cancelQueries({ queryKey: tripKeys.executionSummary(tripId) }),
+        queryClient.cancelQueries({ queryKey: tripKeys.memberReadiness(tripId) }),
+        queryClient.cancelQueries({ queryKey: tripKeys.onTripSnapshot(tripId) }),
+        queryClient.cancelQueries({ queryKey: tripKeys.all }),
+        queryClient.cancelQueries({ queryKey: tripKeys.summaries }),
+      ]);
+    },
     onSuccess: (_data, tripId) => {
       queryClient.setQueryData<TripResponse[]>(tripKeys.all, (current) =>
         current?.filter((trip) => trip.id !== tripId),
@@ -123,6 +133,7 @@ export function useDeleteTripMutation() {
         current?.filter((summary) => summary.trip_id !== tripId),
       );
       queryClient.removeQueries({ queryKey: tripKeys.detail(tripId) });
+      queryClient.removeQueries({ queryKey: tripKeys.executionSummary(tripId) });
       queryClient.removeQueries({ queryKey: tripKeys.memberReadiness(tripId) });
       queryClient.removeQueries({ queryKey: tripKeys.onTripSnapshot(tripId) });
       void queryClient.invalidateQueries({ queryKey: tripKeys.all });

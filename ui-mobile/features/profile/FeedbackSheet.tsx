@@ -29,7 +29,7 @@ const FEEDBACK_CATEGORIES = [
 
 type FeedbackCategory = (typeof FEEDBACK_CATEGORIES)[number]["key"];
 
-const RECIPIENT = "davidlor2015@gmail.com";
+const RECIPIENT = "waypoint@travel-planner.app";
 const MESSAGE_MIN = 10;
 
 // ─── Mailto builder ───────────────────────────────────────────────────────────

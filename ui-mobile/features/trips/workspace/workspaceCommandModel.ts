@@ -190,7 +190,7 @@ export function buildQuickActions(args: {
     },
     {
       key: "members",
-      label: "People",
+      label: "Travelers",
       summary: plural(trip.memberCount, "traveler"),
       detail: trip.isOwner ? "Invite and readiness" : "Group readiness",
       tone: "neutral",

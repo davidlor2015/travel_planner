@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import type { BookingIconName } from "./adapters";
 import type { Reservation, ReservationPayload, ReservationType } from "./api";
+import { DE } from "@/shared/theme/desertEditorial";
 import { fontStyles } from "@/shared/theme/typography";
 import { PrimaryButton, SecondaryButton } from "@/shared/ui/Button";
 import { TextInputField } from "@/shared/ui/TextInputField";
@@ -160,18 +161,18 @@ export function BookingFormSheet({ visible, onClose, initialValues, onSave }: Pr
                       className={[
                         "flex-row items-center gap-1.5 rounded-full border px-3 py-1.5",
                         active
-                          ? "border-espresso bg-espresso"
+                          ? "border-ontrip bg-ontrip"
                           : "border-smoke bg-white",
                       ].join(" ")}
                     >
                       <Ionicons
                         name={chip.icon satisfies BookingIconName}
                         size={12}
-                        color={active ? "#FEFCF9" : "#8A7E74"}
+                        color={active ? DE.ivory : "#8A7E74"}
                       />
                       <Text
                         style={fontStyles.uiMedium}
-                        className={["text-[12px]", active ? "text-ivory" : "text-muted"].join(" ")}
+                        className={["text-[12px]", active ? "text-on-dark" : "text-muted"].join(" ")}
                       >
                         {chip.label}
                       </Text>

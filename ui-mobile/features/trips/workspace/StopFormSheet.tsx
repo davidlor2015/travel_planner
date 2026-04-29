@@ -13,13 +13,13 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { ItineraryItem } from "@/features/ai/api";
 import { PlaceAutocompleteInput } from "@/features/trips/PlaceAutocompleteInput";
 import { usePlaceAutocomplete } from "@/features/trips/usePlaceAutocomplete";
-import { PrimaryButton, SecondaryButton } from "@/shared/ui/Button";
+import { Button, SecondaryButton } from "@/shared/ui/Button";
 import { Field } from "@/shared/ui/Field";
-import { MultilineInputField } from "@/shared/ui/MultilineInputField";
 import { TextInputField } from "@/shared/ui/TextInputField";
 import { fontStyles } from "@/shared/theme/typography";
 
@@ -75,6 +75,7 @@ export function StopFormSheet({
   onMoveToNextDay,
   onClose,
 }: Props) {
+  const insets = useSafeAreaInsets();
   const [selectedDayIndex, setSelectedDayIndex] = useState(initialDayIndex);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [title, setTitle] = useState("");
@@ -154,6 +155,8 @@ export function StopFormSheet({
     176,
     Math.max(132, Math.round(windowHeight * 0.24)),
   );
+  const footerBottomPadding = Math.max(insets.bottom, 16);
+  const contentBottomPadding = footerBottomPadding + (isEditMode ? 144 : 112);
 
   return (
     <Modal
@@ -172,7 +175,10 @@ export function StopFormSheet({
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
             style={{ flexShrink: 1 }}
-            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}
+            contentContainerStyle={{
+              paddingHorizontal: 16,
+              paddingBottom: contentBottomPadding,
+            }}
           >
             <View className="mb-4">
               <Text className="text-lg text-text" style={fontStyles.uiSemibold}>
@@ -274,12 +280,15 @@ export function StopFormSheet({
                 </View>
               </Field>
 
-              <MultilineInputField
+              <TextInputField
                 label="Notes"
                 hint="Optional"
                 value={notes}
                 onChangeText={setNotes}
                 placeholder="Notes"
+                multiline
+                textAlignVertical="top"
+                className="min-h-24"
               />
 
               {isEditMode ? (
@@ -309,23 +318,32 @@ export function StopFormSheet({
                 </Field>
               ) : null}
 
+              {isEditMode ? (
+                <Field label="Stop settings">
+                  <Pressable
+                    onPress={handleDelete}
+                    accessibilityRole="button"
+                    accessibilityLabel="Delete stop"
+                    className="min-h-11 flex-row items-center justify-between rounded-2xl border border-danger/20 bg-white px-4 py-3 active:opacity-70"
+                  >
+                    <Text className="text-sm text-danger" style={fontStyles.uiSemibold}>
+                      Delete stop
+                    </Text>
+                    <Text className="text-lg leading-5 text-danger" style={fontStyles.uiSemibold}>
+                      >
+                    </Text>
+                  </Pressable>
+                </Field>
+              ) : null}
+
             </View>
           </ScrollView>
 
-          <View className="gap-3 border-t border-border bg-bg px-4 pb-6 pt-3">
-            {isEditMode ? (
-              <Pressable
-                onPress={handleDelete}
-                accessibilityRole="button"
-                accessibilityLabel="Delete stop"
-                className="min-h-10 items-center justify-center rounded-full px-4 py-2 active:opacity-70"
-              >
-                <Text className="text-sm text-danger" style={fontStyles.uiSemibold}>
-                  Delete stop
-                </Text>
-              </Pressable>
-            ) : null}
-            <PrimaryButton label="Save stop" onPress={handleSave} fullWidth />
+          <View
+            className="gap-3 border-t border-border bg-bg px-4 pt-3"
+            style={{ paddingBottom: footerBottomPadding }}
+          >
+            <Button label="Save stop" onPress={handleSave} variant="ontrip" fullWidth />
             <SecondaryButton label="Cancel" onPress={onClose} fullWidth />
           </View>
         </View>
@@ -361,7 +379,7 @@ function SelectorButton({
         {label}
       </Text>
       <Text className="text-lg leading-5 text-text-muted" style={fontStyles.uiRegular}>
-        {expanded ? "−" : "+"}
+        {expanded ? "^" : "v"}
       </Text>
     </Pressable>
   );

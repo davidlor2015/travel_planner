@@ -166,12 +166,12 @@ export function RegenerateSheet({
                         className={[
                           "rounded-full border px-4 py-2 active:opacity-70",
                           active
-                            ? "border-espresso bg-espresso"
+                            ? "border-ontrip bg-ontrip"
                             : "border-border-strong bg-transparent",
                         ].join(" ")}
                       >
                         <Text
-                          className={active ? "text-[13px] text-ivory" : "text-[13px] text-espresso"}
+                          className={active ? "text-[13px] text-on-dark" : "text-[13px] text-espresso"}
                           style={fontStyles.uiMedium}
                         >
                           {v.label}

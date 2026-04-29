@@ -29,6 +29,7 @@ import {
   useBudgetTracker,
   type ExpenseCategory,
 } from "@/features/trips/budget/hooks";
+import { DE } from "@/shared/theme/desertEditorial";
 import { ScreenError } from "@/shared/ui/ScreenError";
 import { ScreenLoading } from "@/shared/ui/ScreenLoading";
 import { SectionCard } from "@/shared/ui/SectionCard";
@@ -321,19 +322,19 @@ export function BudgetTab({ tripId }: Props) {
                       className={[
                         "mr-1.5 flex-row items-center gap-1 rounded-full border px-3 py-1.5",
                         isActive
-                          ? "border-espresso bg-espresso"
+                          ? "border-ontrip bg-ontrip"
                           : "border-border bg-white",
                       ].join(" ")}
                     >
                       <Ionicons
                         name={categoryMeta.icon}
                         size={12}
-                        color={isActive ? "#FFFFFF" : categoryMeta.iconColor}
+                        color={isActive ? DE.ivory : categoryMeta.iconColor}
                       />
                       <Text
                         className={[
                           "text-[13px]",
-                          isActive ? "text-white" : "text-text-muted",
+                          isActive ? "text-on-dark" : "text-text-muted",
                         ].join(" ")}
                         style={isActive ? fontStyles.uiSemibold : fontStyles.uiRegular}
                       >

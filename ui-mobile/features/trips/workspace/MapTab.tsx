@@ -234,14 +234,14 @@ export function MapTab({ tripId }: Props) {
               className={[
                 "h-[29px] justify-center rounded-full border px-3 active:opacity-70",
                 active
-                  ? "border-espresso bg-espresso"
+                  ? "border-ontrip bg-ontrip"
                   : "border-divider bg-transparent",
               ].join(" ")}
             >
               <Text
                 className={[
                   "text-[11px] leading-[16px]",
-                  active ? "text-ivory" : "text-clay",
+                  active ? "text-on-dark" : "text-clay",
                 ].join(" ")}
                 style={active ? fontStyles.uiSemibold : fontStyles.uiMedium}
               >

@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import type { BookingDetailViewModel } from "./bookingPresentation";
 import { openNavigate } from "./bookingPresentation";
+import { DE } from "@/shared/theme/desertEditorial";
 import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
 import { PrimaryButton, SecondaryButton } from "@/shared/ui/Button";
 
@@ -162,12 +163,12 @@ export function BookingDetailSheet({ vm, visible, onClose, onEdit, onDelete }: P
           {vm.navigateUrl ? (
             <Pressable
               onPress={() => void handleNavigate()}
-              className="flex-row items-center justify-center gap-2 mt-4 mb-1 rounded-[12px] border border-amber/40 bg-amber/8 px-4 py-3 active:opacity-70"
+              className="flex-row items-center justify-center gap-2 mt-4 mb-1 rounded-[12px] border border-ontrip bg-ontrip px-4 py-3 active:opacity-70"
               accessibilityRole="button"
               accessibilityLabel={`Navigate to ${vm.location}`}
             >
-              <Ionicons name="navigate-outline" size={16} color="#B86845" />
-              <Text style={fontStyles.uiSemibold} className="text-[13px] text-amber">
+              <Ionicons name="navigate-outline" size={16} color={DE.ivory} />
+              <Text style={fontStyles.uiSemibold} className="text-[13px] text-on-dark">
                 {navigating ? "Opening Maps…" : "Navigate"}
               </Text>
             </Pressable>

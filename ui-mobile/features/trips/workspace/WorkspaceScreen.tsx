@@ -3,8 +3,8 @@
 
 import { type Href, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Pressable, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Modal, Pressable, Text, View } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useSavedItineraryQuery } from "@/features/ai/hooks";
 import { useStreamingItinerary } from "@/features/ai/useStreamingItinerary";
@@ -17,6 +17,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import { ScreenError } from "@/shared/ui/ScreenError";
 import { ScreenLoading } from "@/shared/ui/ScreenLoading";
 import { fontStyles } from "@/shared/theme/typography";
+import { Button, SecondaryButton } from "@/shared/ui/Button";
 
 import { BookingsTab } from "./BookingsTab";
 import { BudgetTab } from "./BudgetTab";
@@ -35,12 +36,14 @@ type Props = { tripId: number; autoStartFromCreate?: boolean };
 
 export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("overview");
 
   useEffect(() => {
@@ -50,6 +53,7 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
   const workspace = useTripWorkspaceModel({
     tripId,
     currentUserEmail: user?.email ?? "",
+    currentUserId: user?.id ?? null,
   });
   const tripData = workspace.tripRaw;
   const trip = workspace.trip;
@@ -57,6 +61,7 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
   const deleteCurrentTrip = workspace.deleteTrip;
   const isDeletingTrip = workspace.isDeletingTrip;
   const isSoloTrip = workspace.isSolo;
+  const canDeleteTrip = trip?.isOwner ?? false;
 
   const { streams, start, reset } = useStreamingItinerary();
   const streamState = streams[tripId];
@@ -72,42 +77,42 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
     onTripSnapshotQuery.data ?? null,
   );
 
-  const confirmDeleteTrip = useCallback(() => {
-    if (!tripData || !trip?.isOwner || isDeletingTrip) return;
+  const deleteConfirmTitle = isSoloTrip ? "Delete trip?" : "Delete trip for everyone?";
+  const deleteConfirmDescription = isSoloTrip
+    ? "This permanently removes this trip, including its itinerary, budget, packing list, and reservations."
+    : "This permanently removes the trip for all members, including its itinerary, budget, packing list, and reservations.";
 
-    Alert.alert(
-      isSoloTrip ? "Delete trip?" : "Delete trip for everyone?",
-      isSoloTrip
-        ? "This permanently removes this trip, including its itinerary, budget, packing list, and reservations."
-        : "This permanently removes the trip for all members, including its itinerary, budget, packing list, and reservations.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete trip",
-          style: "destructive",
-          onPress: () => {
-            void (async () => {
-              try {
-                setEditError(null);
-                await deleteCurrentTrip();
-                setEditOpen(false);
-                router.replace("/(tabs)/trips" as Href);
-              } catch {
-                setEditError("We couldn't delete the trip. Try again.");
-              }
-            })();
-          },
-        },
-      ],
-    );
-  }, [
-    router,
-    deleteCurrentTrip,
-    isDeletingTrip,
-    isSoloTrip,
-    trip?.isOwner,
-    tripData,
-  ]);
+  const closeDeleteConfirm = useCallback(() => {
+    if (isDeletingTrip) return;
+    setDeleteConfirmOpen(false);
+  }, [isDeletingTrip]);
+
+  const confirmDeleteTrip = useCallback(() => {
+    if (!canDeleteTrip || isDeletingTrip) return;
+    setEditError(null);
+    setDeleteConfirmOpen(true);
+  }, [canDeleteTrip, isDeletingTrip]);
+
+  const handleDeleteTrip = useCallback(() => {
+    void (async () => {
+      try {
+        setEditError(null);
+        await deleteCurrentTrip();
+        closeDeleteConfirm();
+        setEditOpen(false);
+        router.replace("/(tabs)/trips" as Href);
+      } catch {
+        closeDeleteConfirm();
+        setEditError("We couldn't delete the trip. Try again.");
+      }
+    })();
+  }, [closeDeleteConfirm, deleteCurrentTrip, router]);
+
+  useEffect(() => {
+    if (!editOpen) {
+      setDeleteConfirmOpen(false);
+    }
+  }, [editOpen]);
 
   // Mirror web's ?from=create: auto-start AI stream once when a freshly created
   // trip has no itinerary yet, so creation → draft is one uninterrupted arc.
@@ -146,7 +151,7 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
       tabs.push({ key: "budget", label: "Budget" });
       tabs.push({ key: "packing", label: "Packing" });
     }
-    tabs.push({ key: "members", label: "People" });
+    tabs.push({ key: "members", label: "Travelers" });
     if (ENABLE_MAP) {
       tabs.push({ key: "map", label: "Map" });
     }
@@ -291,7 +296,7 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
         submitting={workspace.isUpdatingTrip}
         deleting={workspace.isDeletingTrip}
         error={editError}
-        canDeleteTrip={trip.isOwner}
+        canDeleteTrip={canDeleteTrip}
         onClose={() => {
           setEditOpen(false);
           setEditError(null);
@@ -307,6 +312,48 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
         }}
         onDeleteTrip={confirmDeleteTrip}
       />
+
+      <Modal
+        animationType="fade"
+        transparent
+        visible={deleteConfirmOpen}
+        onRequestClose={closeDeleteConfirm}
+      >
+        <View className="flex-1 justify-end bg-black/35 px-4">
+          <Pressable
+            className="absolute inset-0"
+            accessibilityRole="button"
+            accessibilityLabel="Close delete confirmation"
+            onPress={closeDeleteConfirm}
+          />
+          <View
+            className="rounded-[28px] border border-border bg-bg-app px-5 pt-5"
+            style={{ paddingBottom: Math.max(insets.bottom, 16) }}
+          >
+            <Text className="text-xl text-text" style={fontStyles.headSemibold}>
+              {deleteConfirmTitle}
+            </Text>
+            <Text className="mt-2 text-sm leading-6 text-text-muted" style={fontStyles.uiRegular}>
+              {deleteConfirmDescription}
+            </Text>
+            <View className="mt-5 gap-2">
+              <Button
+                label={isDeletingTrip ? "Deleting…" : "Delete trip"}
+                variant="danger"
+                fullWidth
+                disabled={isDeletingTrip}
+                onPress={handleDeleteTrip}
+              />
+              <SecondaryButton
+                label="Cancel"
+                fullWidth
+                disabled={isDeletingTrip}
+                onPress={closeDeleteConfirm}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

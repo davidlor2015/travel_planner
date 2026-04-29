@@ -11,8 +11,9 @@ import {
   Text,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { PrimaryButton, SecondaryButton } from "@/shared/ui/Button";
+import { Button, SecondaryButton } from "@/shared/ui/Button";
 import { ScreenHeader } from "@/shared/ui/ScreenHeader";
 import { TextInputField } from "@/shared/ui/TextInputField";
 import { fontStyles } from "@/shared/theme/typography";
@@ -128,6 +129,7 @@ export function TripFormSheet({
   onSubmit,
   onDeleteTrip,
 }: Props) {
+  const insets = useSafeAreaInsets();
   const {
     query: destinationQuery,
     suggestions: placeSuggestions,
@@ -170,8 +172,8 @@ export function TripFormSheet({
     });
   }, [selectedPlace]);
 
-  const titleLabel =
-    mode === "create" ? "Create Trip" : "Edit Trip";
+  const titleLabel = mode === "create" ? "Create trip" : "Edit trip";
+  const submitLabel = mode === "create" ? "Create trip" : "Save changes";
   const subtitle =
     mode === "create"
       ? "Destination, dates, and preferences shape the AI-generated itinerary."
@@ -209,19 +211,21 @@ export function TripFormSheet({
   return (
     <Modal
       animationType="slide"
-      transparent
+      presentationStyle="fullScreen"
       visible={visible}
       onRequestClose={onClose}
     >
-      <View className="flex-1 justify-end bg-black/35">
+      <View className="flex-1 bg-bg-app">
         <KeyboardAvoidingView
+          className="flex-1 bg-bg-app"
           behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={0}
         >
-          <View className="max-h-[92%] overflow-hidden rounded-t-[30px] border border-border bg-bg-app">
-            <View className="items-center pt-3">
-              <View className="h-1.5 w-12 rounded-full bg-border-strong" />
-            </View>
-            <View className="border-b border-border/70 bg-bg-app">
+          <View className="flex-1 bg-bg-app">
+            <View
+              className="border-b border-border/70 bg-bg-app pb-3"
+              style={{ paddingTop: Math.max(insets.top, 12) }}
+            >
               <ScreenHeader
                 title={titleLabel}
                 subtitle={subtitle}
@@ -229,7 +233,18 @@ export function TripFormSheet({
               />
             </View>
 
-            <ScrollView contentContainerClassName="gap-4 px-4 py-4">
+            <ScrollView
+              className="flex-1 bg-bg-app"
+              contentContainerStyle={{
+                gap: 16,
+                paddingHorizontal: 16,
+                paddingTop: 16,
+                paddingBottom: 28,
+              }}
+              keyboardShouldPersistTaps="handled"
+              automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
+              showsVerticalScrollIndicator={false}
+            >
               <FormSection
                 eyebrow="Core details"
                 description="Destination and dates anchor the workspace."
@@ -306,13 +321,13 @@ export function TripFormSheet({
                             onPress={() => toggleSegment("budget", opt.value)}
                             className={`flex-1 items-center rounded-full border py-2 active:opacity-70 ${
                               active
-                                ? "border-text bg-text"
+                                ? "border-ontrip bg-ontrip"
                                 : "border-border bg-white"
                             }`}
                           >
                             <Text
                               className={`text-sm ${
-                                active ? "text-ivory" : "text-text-muted"
+                                active ? "text-on-dark" : "text-text-muted"
                               }`}
                               style={fontStyles.uiSemibold}
                             >
@@ -338,13 +353,13 @@ export function TripFormSheet({
                             onPress={() => toggleSegment("pace", opt.value)}
                             className={`flex-1 items-center rounded-full border py-2 active:opacity-70 ${
                               active
-                                ? "border-text bg-text"
+                                ? "border-ontrip bg-ontrip"
                                 : "border-border bg-white"
                             }`}
                           >
                             <Text
                               className={`text-sm ${
-                                active ? "text-ivory" : "text-text-muted"
+                                active ? "text-on-dark" : "text-text-muted"
                               }`}
                               style={fontStyles.uiSemibold}
                             >
@@ -371,13 +386,13 @@ export function TripFormSheet({
                             onPress={() => toggleInterest(interest)}
                             className={`rounded-full border px-3 py-1.5 active:opacity-70 ${
                               active
-                                ? "border-text bg-text"
+                                ? "border-ontrip bg-ontrip"
                                 : "border-border bg-white"
                             }`}
                           >
                             <Text
                               className={`text-xs capitalize ${
-                                active ? "text-ivory" : "text-text-muted"
+                                active ? "text-on-dark" : "text-text-muted"
                               }`}
                               style={fontStyles.uiMedium}
                             >
@@ -442,20 +457,29 @@ export function TripFormSheet({
               ) : null}
             </ScrollView>
 
-            <View className="gap-2 border-t border-border bg-bg-app px-4 pb-6 pt-3">
-              <PrimaryButton
+            <View
+              className="gap-2 border-t border-border bg-bg-app px-4 pt-3"
+              style={{ paddingBottom: Math.max(insets.bottom, 16) }}
+            >
+              <Button
                 label={
                   submitting
                     ? mode === "create"
                       ? "Creating…"
                       : "Saving…"
-                    : titleLabel
+                    : submitLabel
                 }
                 onPress={handleSubmit}
-                disabled={submitting}
+                disabled={submitting || deleting}
+                fullWidth
+                variant="ontrip"
+              />
+              <SecondaryButton
+                label="Cancel"
+                onPress={onClose}
+                disabled={submitting || deleting}
                 fullWidth
               />
-              <SecondaryButton label="Cancel" onPress={onClose} fullWidth />
             </View>
           </View>
         </KeyboardAvoidingView>

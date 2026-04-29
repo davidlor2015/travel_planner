@@ -52,11 +52,11 @@ function Chip({
       onPress={onPress}
       className={[
         "rounded-full border px-4 py-2 active:opacity-75",
-        active ? "border-amber bg-amber" : "border-border bg-surface",
+        active ? "border-ontrip bg-ontrip" : "border-border bg-surface",
       ].join(" ")}
     >
       <Text
-        className={["text-[13px]", active ? "text-white" : "text-text-muted"].join(" ")}
+        className={["text-[13px]", active ? "text-on-dark" : "text-text-muted"].join(" ")}
         style={fontStyles.uiSemibold}
         numberOfLines={1}
       >

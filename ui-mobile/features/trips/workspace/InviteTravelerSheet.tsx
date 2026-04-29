@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { KeyboardAvoidingView, Modal, Platform, ScrollView, Text, View } from "react-native";
 
-import { PrimaryButton, SecondaryButton } from "@/shared/ui/Button";
+import { Button, SecondaryButton } from "@/shared/ui/Button";
 import { ScreenHeader } from "@/shared/ui/ScreenHeader";
 import { TextInputField } from "@/shared/ui/TextInputField";
 import { fontStyles } from "@/shared/theme/typography";
@@ -77,8 +77,9 @@ export function InviteTravelerSheet({
               ) : null}
 
               <View className="gap-2 pt-2">
-                <PrimaryButton
+                <Button
                   label={submitting ? "Sending…" : "Send Invite"}
+                  variant="ontrip"
                   disabled={submitting}
                   fullWidth
                   onPress={() => {

@@ -25,6 +25,7 @@ import { useWorkspaceCollaboration } from "./hooks";
 type Options = {
   tripId: number;
   currentUserEmail: string;
+  currentUserId?: number | null;
 };
 
 export type TripWorkspaceModel = {
@@ -51,6 +52,7 @@ export type TripWorkspaceModel = {
 export function useTripWorkspaceModel({
   tripId,
   currentUserEmail,
+  currentUserId,
 }: Options): TripWorkspaceModel {
   // Queries and mutations
   const tripQuery = useTripDetailQuery(tripId);
@@ -72,8 +74,11 @@ export function useTripWorkspaceModel({
     tripQuery.error.status === 404;
 
   const trip = useMemo(
-    () => (tripQuery.data ? toTripWorkspaceViewModel(tripQuery.data, currentUserEmail) : null),
-    [tripQuery.data, currentUserEmail],
+    () =>
+      tripQuery.data
+        ? toTripWorkspaceViewModel(tripQuery.data, currentUserEmail, currentUserId)
+        : null,
+    [tripQuery.data, currentUserEmail, currentUserId],
   );
 
   const summary = useMemo(() => {

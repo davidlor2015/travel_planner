@@ -6,7 +6,7 @@ import { Pressable, Text } from "react-native";
 
 import { fontStyles } from "@/shared/theme/typography";
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "ontrip";
 
 type Props = {
   label: string;
@@ -22,6 +22,7 @@ const variantClasses: Record<ButtonVariant, string> = {
   secondary: "border border-border bg-surface-muted active:bg-surface-sunken",
   ghost: "bg-transparent active:bg-surface-sunken",
   danger: "bg-danger active:opacity-90",
+  ontrip: "bg-ontrip active:opacity-90",
 };
 
 const textClasses: Record<ButtonVariant, string> = {
@@ -29,6 +30,7 @@ const textClasses: Record<ButtonVariant, string> = {
   secondary: "text-text",
   ghost: "text-text-muted",
   danger: "text-white",
+  ontrip: "text-on-dark",
 };
 
 export function Button({

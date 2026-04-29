@@ -288,7 +288,7 @@ export function PackingTab({ tripId }: Props) {
                   onPress={() => setActiveFilter(chip.key)}
                   className={[
                     "flex-row items-center gap-1 rounded-full border px-3 py-2",
-                    isActive ? "border-espresso bg-espresso" : "border-border bg-white",
+                    isActive ? "border-ontrip bg-ontrip" : "border-border bg-white",
                   ].join(" ")}
                   accessibilityRole="button"
                   accessibilityLabel={`Show ${chip.label.toLowerCase()} items`}
@@ -313,11 +313,11 @@ export function PackingTab({ tripId }: Props) {
           {visibleSuggestions.length > 0 ? (
             <Pressable
               onPress={() => setShowSuggestions((current) => !current)}
-              className="rounded-full border border-amber/45 bg-amber/10 px-3 py-2 active:opacity-75"
+              className="rounded-full border border-ontrip bg-ontrip px-3 py-2 active:opacity-75"
               accessibilityRole="button"
               accessibilityLabel="Suggest from trip"
             >
-              <Text style={fontStyles.uiSemibold} className="text-[12px] text-amber">
+              <Text style={fontStyles.uiSemibold} className="text-[12px] text-on-dark">
                 Suggest from trip
               </Text>
             </Pressable>
@@ -353,7 +353,7 @@ export function PackingTab({ tripId }: Props) {
             disabled={!draft.trim()}
             className={[
               "flex-row items-center gap-1 rounded-full px-3 py-2",
-              draft.trim() ? "bg-espresso" : "bg-smoke",
+              draft.trim() ? "bg-ontrip" : "bg-smoke",
             ].join(" ")}
             accessibilityRole="button"
             accessibilityLabel={`Add item to ${selectedCategory.title}`}
@@ -382,7 +382,7 @@ export function PackingTab({ tripId }: Props) {
                 onPress={() => setDraftCategory(category.key)}
                 className={[
                   "rounded-full border px-3 py-1.5",
-                  isActive ? "border-amber/45 bg-amber/10" : "border-border bg-white",
+                  isActive ? "border-ontrip bg-ontrip" : "border-border bg-white",
                 ].join(" ")}
                 accessibilityRole="button"
                 accessibilityLabel={`Select ${category.title} category`}
@@ -391,7 +391,7 @@ export function PackingTab({ tripId }: Props) {
                   style={fontStyles.uiMedium}
                   className={[
                     "text-[12px]",
-                    isActive ? "text-amber" : "text-text-soft",
+                    isActive ? "text-on-dark" : "text-text-soft",
                   ].join(" ")}
                 >
                   {category.title}
