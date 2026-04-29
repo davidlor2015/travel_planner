@@ -202,7 +202,7 @@ export function BudgetTab({ tripId }: Props) {
         </SectionCard>
 
         <BudgetPrimaryButton
-          label="+ Add expense"
+          label="Add expense"
           onPress={() => setShowExpenseSheet(true)}
           icon={<Ionicons name="add" size={16} color={DE.ivory} />}
           fullWidth

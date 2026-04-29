@@ -333,6 +333,12 @@ export function TodayScreen() {
             style={{ borderColor: DE.rule, backgroundColor: DE.paper }}
           >
             <View className="h-[130px] w-full overflow-hidden">
+              {/* Fallback gradient — visible when the hero image fails to load */}
+              <LinearGradient
+                colors={["#B86845", "#7A4F35", "#1C1108"]}
+                locations={[0, 0.55, 1]}
+                style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+              />
               <Image
                 source={{ uri: imageUrl }}
                 className="h-full w-full"

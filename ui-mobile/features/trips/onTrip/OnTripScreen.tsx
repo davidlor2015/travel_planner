@@ -178,6 +178,7 @@ export function OnTripScreen({
     >
       <OnTripHeader
         eyebrow={dayHeader.eyebrow}
+        dateLabel={dayHeader.dateLabel}
         onBack={() =>
           router.canGoBack() ? router.back() : router.replace("/(tabs)/trips")
         }

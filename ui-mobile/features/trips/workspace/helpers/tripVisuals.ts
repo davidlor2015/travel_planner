@@ -1,5 +1,4 @@
 // Path: ui-mobile/features/trips/workspace/helpers/tripVisuals.ts
-// Summary: Implements tripVisuals module logic.
 
 const UNSPLASH_PARAMS =
   "crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080&q=80&auto=format";
@@ -15,6 +14,8 @@ const DESTINATION_IMAGES: { match: RegExp; url: string }[] = [
   { match: /seoul|busan|korea/i, url: `https://images.unsplash.com/photo-1538485399081-7c8974d1d9b6?${UNSPLASH_PARAMS}` },
   { match: /bangkok|chiang mai|phuket|thailand/i, url: `https://images.unsplash.com/photo-1508009603885-50cf7c579365?${UNSPLASH_PARAMS}` },
   { match: /bali|jakarta|indonesia/i, url: `https://images.unsplash.com/photo-1537996194471-e657df975ab4?${UNSPLASH_PARAMS}` },
+  // Sacramento must come before the generic USA entry so city-level lookup wins.
+  { match: /sacramento/i, url: `https://images.unsplash.com/photo-1583132377145-497806a7fcff?${UNSPLASH_PARAMS}` },
   { match: /new york|chicago|san francisco|usa|united states/i, url: `https://images.unsplash.com/photo-1496588152823-e2874ed2b38d?${UNSPLASH_PARAMS}` },
   { match: /reykjavik|iceland/i, url: `https://images.unsplash.com/photo-1504893524553-b855bce32c67?${UNSPLASH_PARAMS}` },
   { match: /marrakech|casablanca|morocco/i, url: `https://images.unsplash.com/photo-1548013146-72479768bada?${UNSPLASH_PARAMS}` },
@@ -22,6 +23,9 @@ const DESTINATION_IMAGES: { match: RegExp; url: string }[] = [
   { match: /queenstown|auckland|new zealand/i, url: `https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?${UNSPLASH_PARAMS}` },
 ];
 
+// Generic scenic travel images used when no destination match is found.
+// Selection is deterministic: trip.id % length, so the same trip always gets
+// the same fallback across sessions.
 const FALLBACK_IMAGES = [
   `https://images.unsplash.com/photo-1501785888041-af3ef285b470?${UNSPLASH_PARAMS}`,
   `https://images.unsplash.com/photo-1507525428034-b723cf961d3e?${UNSPLASH_PARAMS}`,
@@ -29,9 +33,45 @@ const FALLBACK_IMAGES = [
   `https://images.unsplash.com/photo-1467269204594-9661b134dd2b?${UNSPLASH_PARAMS}`,
 ];
 
-export function getTripImageUrl(trip: { id: number; destination: string }): string {
-  const match = DESTINATION_IMAGES.find((entry) => entry.match.test(trip.destination));
+/**
+ * Normalizes a destination string for catalog lookup:
+ * lowercase, trimmed, commas replaced with spaces, consecutive spaces collapsed.
+ *
+ * "Sacramento, CA" → "sacramento ca"
+ * "Sacramento, California" → "sacramento california"
+ * "  SACRAMENTO , CA  " → "sacramento ca"
+ */
+export function normalizeDestination(destination: string): string {
+  return destination
+    .toLocaleLowerCase()
+    .trim()
+    .replace(/,\s*/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Resolves the hero image URL for a trip using a four-tier fallback chain:
+ *   1. Explicit server-provided heroImageUrl (future-proofing for when the API
+ *      supports per-trip custom hero images).
+ *   2. Destination catalog match — tested against both the raw destination string
+ *      and the normalized form so "Sacramento,CA" and "Sacramento, CA" both hit.
+ *   3. Deterministic branded Waypoint fallback — one of four scenic travel images
+ *      selected by (trip.id % 4), ensuring the same trip always gets the same image.
+ */
+export function getTripImageUrl(trip: {
+  id: number;
+  destination: string;
+  heroImageUrl?: string | null;
+}): string {
+  if (trip.heroImageUrl) return trip.heroImageUrl;
+
+  const normalized = normalizeDestination(trip.destination);
+  const match = DESTINATION_IMAGES.find(
+    (entry) => entry.match.test(normalized) || entry.match.test(trip.destination),
+  );
   if (match) return match.url;
+
   return FALLBACK_IMAGES[Math.abs(trip.id) % FALLBACK_IMAGES.length] ?? FALLBACK_IMAGES[0]!;
 }
 

@@ -4,27 +4,17 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, Text, View } from "react-native";
 
-import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
+import { fontStyles } from "@/shared/theme/typography";
 
 type Props = {
   subtitle: string;
   onNewTrip: () => void;
 };
 
-function todayLabel(): string {
-  const now = new Date();
-  const day = now.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
-  const date = now.toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase();
-  return `${day} · ${date}`;
-}
-
 export function TripsListHeader({ subtitle, onNewTrip }: Props) {
   return (
     <View className="flex-row items-start justify-between px-6 pt-5 pb-6">
       <View className="flex-1 pr-3" style={{ gap: 10 }}>
-        <Text style={[textScaleStyles.caption, { color: "#8A7E74" }]}>
-          {todayLabel()}
-        </Text>
         <Text
           className="text-[38px] text-text"
           style={[fontStyles.headMedium, { lineHeight: 40, letterSpacing: -0.8 }]}

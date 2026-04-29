@@ -118,9 +118,14 @@ jest.mock("@/features/trips/onTrip/NeedsAttentionCard", () => ({
 }));
 
 jest.mock("@/features/trips/onTrip/OnTripHeader", () => ({
-  OnTripHeader: ({ eyebrow }: { eyebrow: string }) => {
-    const { Text } = require("react-native");
-    return <Text testID="on-trip-header-eyebrow">{eyebrow}</Text>;
+  OnTripHeader: ({ eyebrow, dateLabel }: { eyebrow: string; dateLabel?: string | null }) => {
+    const { Text, View } = require("react-native");
+    return (
+      <View>
+        <Text testID="on-trip-header-eyebrow">{eyebrow}</Text>
+        {dateLabel ? <Text testID="on-trip-header-date-label">{dateLabel}</Text> : null}
+      </View>
+    );
   },
 }));
 
@@ -396,17 +401,27 @@ describe("OnTripScreen", () => {
     expect(queryByText(/NowCard:stop-day4/i)).toBeTruthy();
   });
 
-  it("OnTripHeader receives eyebrow that includes the calendar date for the displayed day", () => {
+  it("OnTripHeader receives eyebrow that contains the day number but not the calendar date", () => {
     mockDeriveOnTripViewModel.mockReturnValue(buildVm());
     // snapshot has today.day_date = "2026-10-10" → buildOnTripDayHeader produces
-    // eyebrow like "ON TRIP · DAY 1 · Sat, Oct 10"
+    // eyebrow "ON TRIP · DAY 1"; date moves to the separate dateLabel field
     const { getByTestId } = render(
       <OnTripScreen tripId={1} tripTitle="Kyoto" tripDestination="Kyoto, Japan" />,
     );
 
     const eyebrow = getByTestId("on-trip-header-eyebrow").props.children as string;
-    // Must contain both the day number and a readable calendar date fragment
     expect(eyebrow).toMatch(/DAY 1/i);
-    expect(eyebrow).toMatch(/Oct 10/);
+    expect(eyebrow).not.toMatch(/Oct 10/i);
+  });
+
+  it("OnTripHeader receives the active day date in dateLabel", () => {
+    mockDeriveOnTripViewModel.mockReturnValue(buildVm());
+    // snapshot has today.day_date = "2026-10-10" → dateLabel "SATURDAY · OCT 10"
+    const { getByTestId } = render(
+      <OnTripScreen tripId={1} tripTitle="Kyoto" tripDestination="Kyoto, Japan" />,
+    );
+
+    const dateLabel = getByTestId("on-trip-header-date-label").props.children as string;
+    expect(dateLabel).toMatch(/OCT 10/i);
   });
 });

@@ -71,6 +71,12 @@ export function WorkspaceTripHeader({
 
   return (
     <View style={[styles.container, compact ? styles.compactContainer : undefined]}>
+      {/* Fallback gradient — visible when the hero image fails to load */}
+      <LinearGradient
+        colors={["#B86845", "#7A4F35", "#1C1108"]}
+        locations={[0, 0.55, 1]}
+        style={StyleSheet.absoluteFillObject}
+      />
       <Image
         source={{ uri: imageUrl }}
         style={StyleSheet.absoluteFillObject}
