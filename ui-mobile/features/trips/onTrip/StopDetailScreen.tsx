@@ -9,6 +9,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useOnTripSnapshotQuery, useTripDetailQuery } from "@/features/trips/hooks";
+import { formatTripStopTime } from "@/features/trips/stopTime";
 import { ScreenError } from "@/shared/ui/ScreenError";
 import { ScreenLoading } from "@/shared/ui/ScreenLoading";
 import { DE } from "@/shared/theme/desertEditorial";
@@ -102,9 +103,7 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
   const titleMain = titleWords.slice(0, -1).join(" ");
   const titleLast = titleWords[titleWords.length - 1] ?? "";
 
-  const timeKicker = [stop.time, stop.location ? null : null]
-    .filter(Boolean)
-    .join(" · ");
+  const timeKicker = stop.time ? formatTripStopTime(stop.time) : null;
 
   return (
     <SafeAreaView className="flex-1" edges={["top"]} style={{ backgroundColor: DE.ivory }}>

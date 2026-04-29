@@ -219,7 +219,9 @@ export function buildBudgetSummaryViewModel(
   limit: number | null,
   totalSpent: number,
 ): BudgetSummaryViewModel {
-  const remaining = limit !== null ? limit - totalSpent : null;
+  const hasBudget = limit !== null && limit > 0;
+  const budgetLimit = hasBudget ? limit : 0;
+  const remaining = hasBudget ? budgetLimit - totalSpent : null;
 
   const remainingMetric: BudgetSummaryMetric =
     remaining === null
@@ -245,9 +247,9 @@ export function buildBudgetSummaryViewModel(
 
   return {
     helperText:
-      limit === null
+      !hasBudget
         ? "Set a total budget to see remaining spend at a glance."
-        : `${formatBudgetAmount(totalSpent)} spent of ${formatBudgetAmount(limit)} total.`,
+        : `${formatBudgetAmount(totalSpent)} spent of ${formatBudgetAmount(budgetLimit)} total.`,
     metrics: [
       {
         key: "spent",
@@ -258,8 +260,8 @@ export function buildBudgetSummaryViewModel(
       {
         key: "total",
         label: "Total budget",
-        value: limit !== null ? formatBudgetAmount(limit) : "Not set",
-        tone: limit !== null ? "default" : "muted",
+        value: hasBudget ? formatBudgetAmount(budgetLimit) : "Not set",
+        tone: hasBudget ? "default" : "muted",
       },
       remainingMetric,
     ],

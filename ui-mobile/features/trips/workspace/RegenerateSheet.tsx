@@ -15,6 +15,7 @@ import {
 
 import type { DayPlan, Itinerary, RefinementVariant } from "@/features/ai/api";
 import { useRefineItineraryMutation } from "@/features/ai/hooks";
+import { formatTripStopTime } from "@/features/trips/stopTime";
 import { fontStyles } from "@/shared/theme/typography";
 
 type RefineState =
@@ -344,7 +345,7 @@ function RefinedDayPreview({
               className="w-12 text-right text-[11px] text-muted"
               style={fontStyles.uiRegular}
             >
-              {item.time?.trim() || "TBD"}
+              {formatTripStopTime(item.time)}
             </Text>
             <View className="flex-1">
               <Text

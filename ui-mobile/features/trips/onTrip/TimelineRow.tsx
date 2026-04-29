@@ -3,11 +3,11 @@
 
 import { Pressable, Text, View } from "react-native";
 
+import { formatTripStopTime } from "@/features/trips/stopTime";
 import { DE } from "@/shared/theme/desertEditorial";
 import { fontStyles } from "@/shared/theme/typography";
 import type { StopVM, TimelineVariant } from "./adapters";
 import {
-  splitStopTimeDisplay,
   getStatusLabel,
   isStopNow,
   shouldMuteStop,
@@ -28,7 +28,7 @@ export function TimelineRow({
 }: Props) {
   const isNow = isStopNow(variant);
   const isMuted = shouldMuteStop(stop);
-  const timeDisplay = splitStopTimeDisplay(stop.time);
+  const timeLabel = formatTripStopTime(stop.time);
 
   return (
     <Pressable
@@ -48,38 +48,20 @@ export function TimelineRow({
       accessibilityHint={onPress ? "Tap to view stop details" : undefined}
     >
       {/* ── Time column ────────────────────────────────────────────────── */}
-      <View className="w-11 items-start py-3.5">
-        {timeDisplay.period ? (
-          <Text
-            numberOfLines={1}
-            style={[
-              fontStyles.monoRegular,
-              {
-                fontSize: 9,
-                letterSpacing: 0.5,
-                textTransform: "uppercase",
-                color: isNow ? DE.clay : DE.muted,
-              },
-            ]}
-          >
-            {timeDisplay.period}
-          </Text>
-        ) : null}
-        {timeDisplay.clock ? (
-          <Text
-            numberOfLines={1}
-            style={[
-              isNow ? fontStyles.monoMedium : fontStyles.monoRegular,
-              {
-                fontSize: 12,
-                letterSpacing: 0.5,
-                color: isNow ? DE.clay : DE.muted,
-              },
-            ]}
-          >
-            {timeDisplay.clock}
-          </Text>
-        ) : null}
+      <View className="w-[76px] items-start py-3.5 pr-1">
+        <Text
+          style={[
+            isNow ? fontStyles.monoMedium : fontStyles.monoRegular,
+            {
+              fontSize: 12,
+              letterSpacing: 0.5,
+              color: isNow ? DE.clay : DE.muted,
+              fontVariant: ["tabular-nums"],
+            },
+          ]}
+        >
+          {timeLabel}
+        </Text>
       </View>
 
       {/* ── Dot + connector ────────────────────────────────────────────── */}

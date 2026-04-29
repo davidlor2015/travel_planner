@@ -111,15 +111,16 @@ function ItineraryStopRow({
 }
 
 function TimeBlock({ block }: { block: ItineraryStopTimeBlock }) {
-  const displayTime =
-    block.secondary && /\d/.test(block.secondary) ? block.secondary : block.primary;
+  const displayTime = block.secondary ?? block.primary;
 
   return (
-    <View className="w-11 shrink-0 pt-0.5">
+    <View className="w-[76px] shrink-0 pr-1 pt-0.5">
       <Text
         className="text-[12px] leading-[16px] tracking-[0.5px]"
-        style={[fontStyles.monoMedium, { color: DE.ink }]}
-        numberOfLines={1}
+        style={[
+          fontStyles.monoMedium,
+          { color: DE.ink, fontVariant: ["tabular-nums"] },
+        ]}
       >
         {displayTime}
       </Text>

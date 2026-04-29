@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
 import type { DayPlan } from "@/features/ai/api";
+import { formatTripStopTime } from "@/features/trips/stopTime";
 import { fontStyles } from "@/shared/theme/typography";
 
 type Props = {
@@ -63,12 +64,12 @@ export function EditableItineraryDayCard({
                 accessibilityLabel={`Edit ${item.title || "stop"}`}
                 className="flex-row gap-3 py-1 active:opacity-70"
               >
-                <View className="w-16 pt-3">
+                <View className="w-[78px] shrink-0 pt-3 pr-1">
                   <Text
                     className="text-xs uppercase tracking-[0.4px] text-text-soft"
-                    style={fontStyles.monoRegular}
+                    style={[fontStyles.monoRegular, { fontVariant: ["tabular-nums"] }]}
                   >
-                    {item.time?.trim() || "TBD"}
+                    {formatTripStopTime(item.time)}
                   </Text>
                 </View>
                 <View className="flex-1 rounded-2xl border border-border bg-white px-3 py-3">

@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 import { Animated, Platform, Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
+import { formatTripStopTime } from "@/features/trips/stopTime";
 import { DE } from "@/shared/theme/desertEditorial";
 import { fontStyles } from "@/shared/theme/typography";
 import type { StopVM } from "./adapters";
@@ -31,6 +32,8 @@ export function HappeningNowCard({
   const title = formatCardTitle(stop.title);
   const description = formatCardDescription(stop);
   const stripLabel = tone === "now" ? "Happening now" : "Up next";
+  const stopTimeLabel = formatTripStopTime(stop.time);
+  const fallbackTimeLabel = formatTripStopTime(localTimeHHMM());
 
   const pulseUseNativeDriver = Platform.OS !== "web";
 
@@ -110,7 +113,7 @@ export function HappeningNowCard({
           </Text>
         </View>
         <Text style={[fontStyles.monoRegular, { fontSize: 11, color: DE.mutedLight, letterSpacing: 1.2 }]}>
-          {stop.time?.trim() || localTimeHHMM()}
+          {stop.time ? stopTimeLabel : fallbackTimeLabel}
         </Text>
       </View>
 
@@ -142,7 +145,15 @@ export function HappeningNowCard({
           className="mt-5 flex-row items-center rounded-[10px] px-3.5 py-3"
           style={{ backgroundColor: "rgba(242, 235, 221, 0.06)" }}
         >
-          <MetaItem label={tone === "now" && stop.time ? `Since ${stop.time}` : stop.time ? `At ${stop.time}` : "Time TBD"} />
+          <MetaItem
+            label={
+              tone === "now" && stop.time
+                ? `Since ${stopTimeLabel}`
+                : stop.time
+                  ? `At ${stopTimeLabel}`
+                  : "Time TBD"
+            }
+          />
           <View className="mx-3 h-3 w-px" style={{ backgroundColor: "rgba(242, 235, 221, 0.18)" }} />
           <MetaItem label={stop.location?.trim() ? "Open route" : "Add location"} />
           <View className="mx-3 h-3 w-px" style={{ backgroundColor: "rgba(242, 235, 221, 0.18)" }} />

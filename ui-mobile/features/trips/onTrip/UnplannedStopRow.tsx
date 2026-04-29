@@ -3,6 +3,7 @@
 
 import { Pressable, Text, View } from "react-native";
 
+import { formatTripStopTime } from "@/features/trips/stopTime";
 import { fontStyles } from "@/shared/theme/typography";
 
 import type { OnTripViewModel } from "./adapters";
@@ -13,7 +14,10 @@ type Props = {
 };
 
 export function UnplannedStopRow({ stop, onDelete }: Props) {
-  const meta = [stop.location, stop.time].filter(Boolean).join(" · ");
+  const meta = [
+    stop.location,
+    stop.time ? formatTripStopTime(stop.time) : null,
+  ].filter(Boolean).join(" · ");
   return (
     <View className="flex-row items-center gap-3 rounded-[22px] border border-border-ontrip bg-surface-ontrip-raised px-4 py-4">
       <View className="flex-1">

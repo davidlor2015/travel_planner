@@ -1,6 +1,7 @@
 // Path: ui-mobile/features/trips/onTrip/adapters.ts
 // Summary: Implements adapters module logic.
 
+import { stopTimeToMinutes } from "@/features/trips/stopTime";
 import type {
   TripExecutionStatus,
   TripOnTripBlocker,
@@ -39,20 +40,6 @@ export function currentLocalMinutes(now: Date = new Date()): number {
   return now.getHours() * 60 + now.getMinutes();
 }
 
-function parseTimeToMinutes(time: string | null | undefined): number | null {
-  const raw = time?.trim() ?? "";
-  if (!raw) return null;
-  const m = raw.match(/^(\d{1,2}):(\d{2})\s*(am|pm)?$/i);
-  if (!m) return null;
-  let hour = parseInt(m[1]!, 10);
-  const minute = parseInt(m[2]!, 10);
-  const suffix = m[3]?.toLowerCase();
-  if (Number.isNaN(hour) || Number.isNaN(minute)) return null;
-  if (suffix === "pm" && hour < 12) hour += 12;
-  if (suffix === "am" && hour === 12) hour = 0;
-  return hour * 60 + minute;
-}
-
 function deriveCurrentStop(
   stops: TripOnTripStopSnapshot[],
   nowMinutes: number,
@@ -61,7 +48,7 @@ function deriveCurrentStop(
   for (const stop of stops) {
     const status = stop.execution_status ?? stop.status ?? "planned";
     if (status === "confirmed" || status === "skipped") continue;
-    const startedAt = parseTimeToMinutes(stop.time);
+    const startedAt = stopTimeToMinutes(stop.time);
     if (startedAt == null || startedAt > nowMinutes) continue;
     if (!best || startedAt > best.startedAt) best = { stop, startedAt };
   }

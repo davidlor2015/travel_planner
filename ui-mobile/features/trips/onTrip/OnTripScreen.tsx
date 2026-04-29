@@ -11,6 +11,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { useSavedItineraryQuery } from "@/features/ai/hooks";
 import type { DayPlan, ItineraryItem } from "@/features/ai/api";
 import { useOnTripSnapshotQuery } from "@/features/trips/hooks";
+import { formatTripStopTime } from "@/features/trips/stopTime";
 import {
   hasResolvedTodayStop,
   isResolvedStop,
@@ -363,7 +364,7 @@ function TomorrowPeek({ stop }: { stop: TomorrowPreview }) {
               style={[fontStyles.headMediumItalic, { fontSize: 20, lineHeight: 24, color: DE.ink, letterSpacing: -0.3 }]}
               numberOfLines={2}
             >
-              {stop.time ? `${stop.title}, ${stop.time}.` : stop.title}
+              {stop.time ? `${stop.title}, ${formatTripStopTime(stop.time)}.` : stop.title}
             </Text>
             {stop.subtitle ? (
               <Text

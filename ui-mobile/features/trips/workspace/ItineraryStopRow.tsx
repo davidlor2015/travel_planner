@@ -3,6 +3,7 @@
 
 import { Text, View } from "react-native";
 
+import { formatTripStopTime } from "@/features/trips/stopTime";
 import { fontStyles } from "@/shared/theme/typography";
 
 type Props = {
@@ -15,12 +16,12 @@ type Props = {
 export function ItineraryStopRow({ time, title, location, notes }: Props) {
   return (
     <View className="flex-row gap-3 py-2">
-      <View className="w-16">
+      <View className="w-[78px] shrink-0 pr-1">
         <Text
           className="text-xs uppercase tracking-[0.4px] text-text-soft"
-          style={fontStyles.monoRegular}
+          style={[fontStyles.monoRegular, { fontVariant: ["tabular-nums"] }]}
         >
-          {time?.trim() || "TBD"}
+          {formatTripStopTime(time)}
         </Text>
       </View>
       <View className="flex-1 rounded-2xl border border-border bg-white px-3 py-3">

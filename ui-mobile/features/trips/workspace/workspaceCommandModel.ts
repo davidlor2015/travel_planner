@@ -2,6 +2,7 @@
 // Summary: Implements workspaceCommandModel module logic.
 
 import type { DayPlan, Itinerary, ItineraryItem } from "@/features/ai/api";
+import { formatTripStopTime } from "@/features/trips/stopTime";
 import type { TripOnTripSnapshot, TripOnTripStopSnapshot } from "../types";
 
 import type {
@@ -84,7 +85,7 @@ function formatMoney(value: number): string {
 function stopLabel(stop: ItineraryItem | TripOnTripStopSnapshot | null | undefined): string | null {
   const title = stop?.title?.trim();
   if (!title) return null;
-  const parts = [stop?.time?.trim(), title].filter(Boolean);
+  const parts = [stop?.time ? formatTripStopTime(stop.time) : null, title].filter(Boolean);
   return parts.join(" · ");
 }
 
