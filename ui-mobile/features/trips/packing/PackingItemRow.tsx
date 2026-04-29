@@ -19,6 +19,7 @@ type Props = {
   onSaveEdit?: () => void;
   onCancelEdit?: () => void;
   variant?: "card" | "embedded";
+  isReadOnly?: boolean;
 };
 
 export function PackingItemRow({
@@ -32,6 +33,7 @@ export function PackingItemRow({
   onSaveEdit,
   onCancelEdit,
   variant = "card",
+  isReadOnly = false,
 }: Props) {
   const displayLabel = item.label.trim() || "Untitled item";
 
@@ -116,8 +118,12 @@ export function PackingItemRow({
           item.checked ? "border-olive bg-olive" : "border-border bg-white",
         ].join(" ")}
         onPress={onToggle}
+        disabled={isReadOnly}
         accessibilityRole="button"
         accessibilityLabel={`${item.checked ? "Uncheck" : "Check"} ${displayLabel}`}
+        accessibilityHint={
+          isReadOnly ? "View-only travelers cannot update packing items." : undefined
+        }
       >
         {item.checked ? <Ionicons name="checkmark" size={14} color="#FFFFFF" /> : null}
       </Pressable>
@@ -125,8 +131,12 @@ export function PackingItemRow({
       <Pressable
         className="flex-1"
         onPress={onStartEdit}
+        disabled={isReadOnly}
         accessibilityRole="button"
-        accessibilityLabel={`Edit ${displayLabel}`}
+        accessibilityLabel={isReadOnly ? displayLabel : `Edit ${displayLabel}`}
+        accessibilityHint={
+          isReadOnly ? "View-only travelers cannot edit packing items." : undefined
+        }
       >
         <Text
           className={[
@@ -140,26 +150,28 @@ export function PackingItemRow({
         </Text>
       </Pressable>
 
-      <View className="flex-row items-center gap-1">
-        <Pressable
-          onPress={onStartEdit}
-          hitSlop={8}
-          className="rounded-full p-1.5 active:bg-white"
-          accessibilityRole="button"
-          accessibilityLabel={`Edit ${displayLabel}`}
-        >
-          <Ionicons name="create-outline" size={14} color="#8A7E74" />
-        </Pressable>
-        <Pressable
-          onPress={onDelete}
-          hitSlop={8}
-          className="rounded-full p-1.5 active:bg-white"
-          accessibilityRole="button"
-          accessibilityLabel={`Delete ${displayLabel}`}
-        >
-          <Ionicons name="trash-outline" size={14} color="#8A7E74" />
-        </Pressable>
-      </View>
+      {!isReadOnly ? (
+        <View className="flex-row items-center gap-1">
+          <Pressable
+            onPress={onStartEdit}
+            hitSlop={8}
+            className="rounded-full p-1.5 active:bg-white"
+            accessibilityRole="button"
+            accessibilityLabel={`Edit ${displayLabel}`}
+          >
+            <Ionicons name="create-outline" size={14} color="#8A7E74" />
+          </Pressable>
+          <Pressable
+            onPress={onDelete}
+            hitSlop={8}
+            className="rounded-full p-1.5 active:bg-white"
+            accessibilityRole="button"
+            accessibilityLabel={`Delete ${displayLabel}`}
+          >
+            <Ionicons name="trash-outline" size={14} color="#8A7E74" />
+          </Pressable>
+        </View>
+      ) : null}
     </View>
   );
 }

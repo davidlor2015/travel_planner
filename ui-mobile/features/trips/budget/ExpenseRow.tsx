@@ -14,7 +14,7 @@ import {
 
 type Props = {
   transaction: BudgetTransactionRowViewModel;
-  onDelete: () => void;
+  onDelete?: () => void;
 };
 
 const FILTER_ACTIVE_BORDER: Record<ExpenseCategory, string> = {
@@ -69,17 +69,19 @@ export function ExpenseRow({ transaction, onDelete }: Props) {
           </Text>
         </View>
 
-        <Pressable
-          onPress={onDelete}
-          className="flex-row items-center gap-1 rounded-full px-2 py-1 active:bg-surface-muted"
-          accessibilityRole="button"
-          accessibilityLabel={`Remove ${transaction.label}`}
-        >
-          <Ionicons name="trash-outline" size={13} color="#8A7E74" />
-          <Text className="text-[12px] text-text-soft" style={fontStyles.uiSemibold}>
-            Remove
-          </Text>
-        </Pressable>
+        {onDelete ? (
+          <Pressable
+            onPress={onDelete}
+            className="flex-row items-center gap-1 rounded-full px-2 py-1 active:bg-surface-muted"
+            accessibilityRole="button"
+            accessibilityLabel={`Remove ${transaction.label}`}
+          >
+            <Ionicons name="trash-outline" size={13} color="#8A7E74" />
+            <Text className="text-[12px] text-text-soft" style={fontStyles.uiSemibold}>
+              Remove
+            </Text>
+          </Pressable>
+        ) : null}
       </View>
     </View>
   );

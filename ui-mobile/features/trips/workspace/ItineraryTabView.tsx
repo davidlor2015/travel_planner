@@ -9,6 +9,7 @@ import { DE } from "@/shared/theme/desertEditorial";
 import { fontStyles } from "@/shared/theme/typography";
 
 import { ItineraryTimelineDay } from "./ItineraryTimelineDay";
+import { ReadOnlyNotice } from "./ReadOnlyNotice";
 import {
   ITINERARY_FILTERS,
   type ItineraryFilterKey,
@@ -33,6 +34,7 @@ type Props = {
   onPublish: () => void;
   onRegenerateAll: () => void;
   onCancelStream: () => void;
+  isReadOnly?: boolean;
 };
 
 export function ItineraryTabView({
@@ -53,10 +55,11 @@ export function ItineraryTabView({
   onPublish,
   onRegenerateAll,
   onCancelStream,
+  isReadOnly = false,
 }: Props) {
   const scrollRef = useRef<ScrollView>(null);
   const firstVisibleDayIndex = days[0]?.dayIndex ?? null;
-  const canEditItinerary = !isLoading && !isMissing && !isStreaming;
+  const canEditItinerary = !isReadOnly && !isLoading && !isMissing && !isStreaming;
   const canAddStop = canEditItinerary && firstVisibleDayIndex !== null;
 
   function handleAddDayPress() {
@@ -84,6 +87,7 @@ export function ItineraryTabView({
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingBottom: 40 }}
     >
+      {isReadOnly ? <ReadOnlyNotice className="mx-[22px] mt-4" /> : null}
       <View className="flex-row items-center justify-between px-[22px] py-4">
         <ScrollView
           horizontal
@@ -128,6 +132,11 @@ export function ItineraryTabView({
             style={{ borderColor: "rgba(184, 90, 56, 0.40)" }}
             accessibilityRole="button"
             accessibilityLabel={canAddStop ? "Add itinerary stop" : "Add itinerary day"}
+            accessibilityHint={
+              isReadOnly
+                ? "View-only travelers cannot edit the itinerary."
+                : undefined
+            }
           >
             <Text
               className="text-[12px]"
@@ -182,15 +191,17 @@ export function ItineraryTabView({
           <Text className="text-[13px] leading-5" style={{ color: DE.muted }}>
             No itinerary saved yet. Generate one to start planning day-by-day.
           </Text>
-          <Pressable
-            onPress={onRegenerateAll}
-            className="self-start rounded-[12px] px-4 py-2 active:opacity-75"
-            style={{ backgroundColor: DE.clay }}
-          >
-            <Text className="text-[13px]" style={[fontStyles.uiSemibold, { color: DE.ivory }]}>
-              Generate with AI
-            </Text>
-          </Pressable>
+          {!isReadOnly ? (
+            <Pressable
+              onPress={onRegenerateAll}
+              className="self-start rounded-[12px] px-4 py-2 active:opacity-75"
+              style={{ backgroundColor: DE.clay }}
+            >
+              <Text className="text-[13px]" style={[fontStyles.uiSemibold, { color: DE.ivory }]}>
+                Generate with AI
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
       ) : days.length > 0 ? (
         <View className="gap-7">
@@ -199,10 +210,11 @@ export function ItineraryTabView({
               key={day.day.day_number}
               day={day}
               onEditStop={(stopIndex) => onEditStop(day.dayIndex, stopIndex)}
+              isReadOnly={isReadOnly}
             />
           ))}
 
-          {isDirty ? (
+          {isDirty && !isReadOnly ? (
             <View className="mx-[22px]">
               <PrimaryButton
                 label={isSaving ? "Publishing..." : "Publish changes"}
@@ -213,19 +225,21 @@ export function ItineraryTabView({
             </View>
           ) : null}
 
-          <Pressable
-            onPress={onRegenerateAll}
-            disabled={isDirty}
-            className={[
-              "mx-[22px] items-center justify-center rounded-[12px] border py-2.5 active:opacity-70",
-              isDirty ? "opacity-50" : "",
-            ].join(" ")}
-            style={{ borderColor: DE.ruleStrong }}
-          >
-            <Text className="text-[12px]" style={[fontStyles.uiSemibold, { color: DE.muted }]}>
-              {isDirty ? "Publish changes before regenerating" : "Regenerate with AI"}
-            </Text>
-          </Pressable>
+          {!isReadOnly ? (
+            <Pressable
+              onPress={onRegenerateAll}
+              disabled={isDirty}
+              className={[
+                "mx-[22px] items-center justify-center rounded-[12px] border py-2.5 active:opacity-70",
+                isDirty ? "opacity-50" : "",
+              ].join(" ")}
+              style={{ borderColor: DE.ruleStrong }}
+            >
+              <Text className="text-[12px]" style={[fontStyles.uiSemibold, { color: DE.muted }]}>
+                {isDirty ? "Publish changes before regenerating" : "Regenerate with AI"}
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
       ) : (
         <View

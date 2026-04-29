@@ -27,7 +27,9 @@ import { ScreenLoading } from "@/shared/ui/ScreenLoading";
 import { SectionCard } from "@/shared/ui/SectionCard";
 import { fontStyles } from "@/shared/theme/typography";
 
-type Props = { tripId: number };
+import { ReadOnlyNotice } from "./ReadOnlyNotice";
+
+type Props = { tripId: number; isReadOnly?: boolean };
 
 // ─── Local button helpers ─────────────────────────────────────────────────────
 
@@ -37,12 +39,14 @@ function BudgetPrimaryButton({
   icon,
   disabled = false,
   fullWidth = false,
+  accessibilityHint,
 }: {
   label: string;
   onPress: () => void;
   icon?: React.ReactNode;
   disabled?: boolean;
   fullWidth?: boolean;
+  accessibilityHint?: string;
 }) {
   return (
     <Pressable
@@ -50,6 +54,7 @@ function BudgetPrimaryButton({
       disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityHint={accessibilityHint}
       className={[
         "min-h-[44px] flex-row items-center justify-center gap-2 rounded-2xl bg-ontrip px-5 py-2.5 active:opacity-80",
         fullWidth ? "w-full" : "",
@@ -70,7 +75,7 @@ const SUMMARY_TONE_CLASS: Record<"default" | "muted" | "danger", string> = {
   danger: "text-danger",
 };
 
-export function BudgetTab({ tripId }: Props) {
+export function BudgetTab({ tripId, isReadOnly = false }: Props) {
   const budget = useBudgetTracker(tripId);
 
   const [listError, setListError] = useState<string | null>(null);
@@ -155,17 +160,24 @@ export function BudgetTab({ tripId }: Props) {
           </View>
         ) : null}
 
+        {isReadOnly ? <ReadOnlyNotice className="" /> : null}
+
         <SectionCard
           title="Budget"
           description={summary.helperText}
           action={
             <Pressable
               onPress={() => setShowBudgetSheet(true)}
+              disabled={isReadOnly}
               accessibilityRole="button"
               accessibilityLabel={
                 hasBudget ? "Edit budget" : "Set total budget"
               }
+              accessibilityHint={
+                isReadOnly ? "View-only travelers cannot set the budget." : undefined
+              }
               className="rounded-full border border-border px-3 py-1.5 active:bg-surface-sunken"
+              style={isReadOnly ? { opacity: 0.45 } : undefined}
             >
               <Text
                 className="text-[11px] text-text-muted"
@@ -206,6 +218,10 @@ export function BudgetTab({ tripId }: Props) {
           onPress={() => setShowExpenseSheet(true)}
           icon={<Ionicons name="add" size={16} color={DE.ivory} />}
           fullWidth
+          disabled={isReadOnly}
+          accessibilityHint={
+            isReadOnly ? "View-only travelers cannot add expenses." : undefined
+          }
         />
 
         {showHelperLine ? (
@@ -318,7 +334,11 @@ export function BudgetTab({ tripId }: Props) {
                   <ExpenseRow
                     key={transaction.id}
                     transaction={transaction}
-                    onDelete={() => void handleRemoveExpense(transaction.id)}
+                    onDelete={
+                      isReadOnly
+                        ? undefined
+                        : () => void handleRemoveExpense(transaction.id)
+                    }
                   />
                 ))}
               </View>
@@ -337,7 +357,7 @@ export function BudgetTab({ tripId }: Props) {
       </ScrollView>
 
       <BudgetLimitSheet
-        visible={showBudgetSheet}
+        visible={!isReadOnly && showBudgetSheet}
         currentLimit={budget.limit}
         onClose={() => setShowBudgetSheet(false)}
         onSave={async (amount) => {
@@ -346,7 +366,7 @@ export function BudgetTab({ tripId }: Props) {
       />
 
       <ExpenseFormSheet
-        visible={showExpenseSheet}
+        visible={!isReadOnly && showExpenseSheet}
         onClose={() => setShowExpenseSheet(false)}
         onSave={async ({ label, amount, category, date }) => {
           await budget.addExpense(

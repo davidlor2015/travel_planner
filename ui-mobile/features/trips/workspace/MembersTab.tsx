@@ -11,8 +11,10 @@ import { fontStyles } from "@/shared/theme/typography";
 import type {
   TripWorkspaceCollaborationViewModel,
   TripWorkspaceViewModel,
+  WorkspacePillVariant,
 } from "./adapters";
 import { InviteTravelerSheet } from "./InviteTravelerSheet";
+import { ReadOnlyNotice } from "./ReadOnlyNotice";
 
 type Props = {
   trip: TripWorkspaceViewModel;
@@ -38,17 +40,23 @@ export function MembersTab({
   const sectionDescription = isSoloTrip
     ? "Invite travel companions when you want to coordinate this trip with others."
     : collaboration.groupDescription;
+  const showReadOnlyNotice = trip.isReadOnly;
 
   return (
     <>
       <ScrollView contentContainerClassName="gap-4 px-4 pb-8 pt-4">
+        {showReadOnlyNotice ? <ReadOnlyNotice className="" /> : null}
         <SectionCard
           eyebrow={sectionEyebrow}
           title={sectionTitle}
           description={sectionDescription}
           action={
             collaboration.canInvite ? (
-              <Pressable onPress={() => setInviteOpen(true)}>
+              <Pressable
+                onPress={() => setInviteOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Invite traveler"
+              >
                 <Text className="text-sm text-accent" style={fontStyles.uiSemibold}>
                   Invite
                 </Text>
@@ -69,8 +77,9 @@ export function MembersTab({
                 }
               />
               <StatusPill
-                label={isSoloTrip ? "Solo trip" : trip.isOwner ? "You own this trip" : "Shared trip"}
+                label={trip.currentUserRoleLabel}
                 variant="info"
+                accessibilityLabel={`Your trip role: ${trip.currentUserRoleLabel}`}
               />
               {collaboration.pendingInvites.length > 0 ? (
                 <StatusPill
@@ -95,16 +104,17 @@ export function MembersTab({
               >
                 <View className="flex-row items-start justify-between gap-3">
                   <View className="flex-1">
-                    <Text className="text-sm text-text" style={fontStyles.uiMedium}>
-                      {member.email}
-                      {member.isCurrentUser ? " · You" : ""}
-                    </Text>
-                    <Text
-                      className="mt-1 text-xs uppercase tracking-[0.4px] text-text-soft"
-                      style={fontStyles.monoRegular}
-                    >
-                      {member.roleLabel}
-                    </Text>
+                    <View className="flex-row flex-wrap items-center gap-2">
+                      <Text className="text-sm text-text" style={fontStyles.uiMedium}>
+                        {member.email}
+                        {member.isCurrentUser ? " · You" : ""}
+                      </Text>
+                      <StatusPill
+                        label={member.roleLabel}
+                        variant={roleBadgeVariant(member.roleLabel)}
+                        accessibilityLabel={`${member.email} role: ${member.roleLabel}`}
+                      />
+                    </View>
                     <Text className="mt-2 text-sm text-text-muted" style={fontStyles.uiRegular}>
                       {member.readinessDetail}
                     </Text>
@@ -133,9 +143,16 @@ export function MembersTab({
                     <Text className="text-sm text-text" style={fontStyles.uiMedium}>
                       {invite.email}
                     </Text>
-                    <Text className="mt-1 text-xs text-text-soft" style={fontStyles.uiRegular}>
-                      {invite.statusLabel} · Expires {invite.expiresAtLabel}
-                    </Text>
+                    <View className="mt-2 flex-row flex-wrap items-center gap-2">
+                      <StatusPill
+                        label={invite.statusLabel}
+                        variant="warning"
+                        accessibilityLabel={`${invite.email} invite status: ${invite.statusLabel}`}
+                      />
+                      <Text className="text-xs text-text-soft" style={fontStyles.uiRegular}>
+                        Expires {invite.expiresAtLabel}
+                      </Text>
+                    </View>
                   </View>
                 ))}
               </View>
@@ -171,4 +188,11 @@ export function MembersTab({
       />
     </>
   );
+}
+
+function roleBadgeVariant(label: string): WorkspacePillVariant {
+  if (label === "Owner") return "info";
+  if (label === "Can edit") return "success";
+  if (label === "Pending") return "warning";
+  return "default";
 }

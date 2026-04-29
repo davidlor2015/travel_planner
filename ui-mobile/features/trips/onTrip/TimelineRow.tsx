@@ -91,7 +91,17 @@ export function TimelineRow({
           </Text>
         </View>
 
-        {stop.notes?.trim() && !isMuted ? (
+        {stop.statusActionLabel && variant === "done" ? (
+          <Text
+            style={[
+              fontStyles.uiRegular,
+              { fontSize: 11, lineHeight: 16, color: DE.muted, marginTop: 1 },
+            ]}
+            numberOfLines={1}
+          >
+            {stop.statusActionLabel}
+          </Text>
+        ) : stop.notes?.trim() && !isMuted ? (
           <Text
             style={[fontStyles.uiRegular, { fontSize: 12, lineHeight: 18, color: DE.clay, marginTop: 2 }]}
             numberOfLines={1}

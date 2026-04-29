@@ -20,11 +20,16 @@ import { ScreenError } from "@/shared/ui/ScreenError";
 import { ScreenLoading } from "@/shared/ui/ScreenLoading";
 import { DE } from "@/shared/theme/desertEditorial";
 import { fontStyles } from "@/shared/theme/typography";
+import { useAuth } from "@/providers/AuthProvider";
 
 import type { TripExecutionStatus } from "../types";
 import { toStopVmForDetail } from "./adapters";
 import { useOnTripMutations } from "./hooks";
 import { buildNavigateUrl } from "./presentation";
+import {
+  READ_ONLY_TRIP_BODY,
+  READ_ONLY_TRIP_TITLE,
+} from "../workspace/helpers/collaborationGate";
 
 type Props = {
   tripId: number;
@@ -34,6 +39,7 @@ type Props = {
 export function StopDetailScreen({ tripId, stopKey }: Props) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const snapshotQuery = useOnTripSnapshotQuery(tripId);
   const tripQuery = useTripDetailQuery(tripId);
 
@@ -41,6 +47,7 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
     tripId,
     snapshot: snapshotQuery.data ?? null,
     onSnapshotRefresh: () => {},
+    currentUser: user,
   });
 
   const stop = useMemo(() => {
@@ -237,6 +244,33 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
           <View className="mb-5" />
         )}
 
+        {stop.statusActionDetailLabel ? (
+          <View
+            className="mb-4 rounded-[12px] border px-4 py-3"
+            style={{ backgroundColor: DE.paper, borderColor: DE.rule }}
+          >
+            <Text
+              style={[
+                fontStyles.monoRegular,
+                {
+                  fontSize: 9,
+                  letterSpacing: 1.8,
+                  textTransform: "uppercase",
+                  color: DE.muted,
+                },
+              ]}
+            >
+              Status
+            </Text>
+            <Text
+              className="mt-1"
+              style={[fontStyles.uiRegular, { fontSize: 13, color: DE.inkSoft }]}
+            >
+              {stop.statusActionDetailLabel}
+            </Text>
+          </View>
+        ) : null}
+
         {/* Primary action: Navigate */}
         {navigateUrl ? (
           <Pressable
@@ -263,7 +297,9 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
           <View
             className="mb-6 flex-row items-start gap-2.5 rounded-[12px] border px-4 py-3"
             style={{ backgroundColor: DE.paper, borderColor: DE.rule }}
-            accessibilityRole="alert"
+            accessible
+            accessibilityRole="text"
+            accessibilityLabel={`${READ_ONLY_TRIP_TITLE}. ${READ_ONLY_TRIP_BODY}`}
           >
             <Ionicons
               name="lock-closed-outline"
@@ -271,14 +307,19 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
               color={DE.muted}
               style={{ marginTop: 1 }}
             />
-            <Text
-              style={[
-                fontStyles.uiRegular,
-                { fontSize: 13, lineHeight: 19, color: DE.muted, flex: 1 },
-              ]}
-            >
-              Trip actions are not available in read-only mode.
-            </Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[fontStyles.uiSemibold, { fontSize: 13, color: DE.inkSoft }]}>
+                {READ_ONLY_TRIP_TITLE}
+              </Text>
+              <Text
+                style={[
+                  fontStyles.uiRegular,
+                  { fontSize: 12, lineHeight: 17, color: DE.muted, marginTop: 2 },
+                ]}
+              >
+                {READ_ONLY_TRIP_BODY}
+              </Text>
+            </View>
           </View>
         ) : stop.stop_ref ? (
           <View className="mb-6 flex-row flex-wrap gap-2.5">

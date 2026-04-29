@@ -1,4 +1,9 @@
-import { searchPlaces } from "@/features/trips/api";
+import {
+  acceptPendingTripInvite,
+  declinePendingTripInvite,
+  getPendingTripInvites,
+  searchPlaces,
+} from "@/features/trips/api";
 import { apiRequest } from "@/shared/api/client";
 
 jest.mock("@/shared/api/client", () => ({
@@ -26,5 +31,35 @@ describe("trips api", () => {
 
     expect(result).toEqual({ suggestions: [] });
     expect(mockApiRequest).not.toHaveBeenCalled();
+  });
+
+  it("getPendingTripInvites calls the pending invite endpoint", async () => {
+    mockApiRequest.mockResolvedValueOnce([]);
+
+    await getPendingTripInvites();
+
+    expect(mockApiRequest).toHaveBeenCalledWith("/v1/trip-invites/pending");
+  });
+
+  it("acceptPendingTripInvite calls the in-app accept endpoint", async () => {
+    mockApiRequest.mockResolvedValueOnce({ trip_id: 7, trip_title: "Lisbon", status: "accepted" });
+
+    await acceptPendingTripInvite(42);
+
+    expect(mockApiRequest).toHaveBeenCalledWith(
+      "/v1/trip-invites/pending/42/accept",
+      { method: "POST" },
+    );
+  });
+
+  it("declinePendingTripInvite calls the in-app decline endpoint", async () => {
+    mockApiRequest.mockResolvedValueOnce({ trip_id: 7, trip_title: "Lisbon", status: "declined" });
+
+    await declinePendingTripInvite(42);
+
+    expect(mockApiRequest).toHaveBeenCalledWith(
+      "/v1/trip-invites/pending/42/decline",
+      { method: "POST" },
+    );
   });
 });

@@ -7,6 +7,10 @@ import type {
   TripResponse,
   TripSummary,
 } from "../types";
+import {
+  getCurrentTripPermissions,
+  getTripRoleLabel,
+} from "./helpers/collaborationGate";
 
 export type TripStatus = "upcoming" | "active" | "past";
 export type WorkspacePillVariant = "default" | "success" | "warning" | "error" | "info";
@@ -22,6 +26,9 @@ export type TripWorkspaceViewModel = {
   memberCount: number;
   members: { email: string }[];
   isOwner: boolean;
+  canEdit: boolean;
+  isReadOnly: boolean;
+  currentUserRoleLabel: string;
 };
 
 export type TripWorkspaceMemberViewModel = {
@@ -73,12 +80,8 @@ function tripStatusLabel(status: TripStatus): string {
   return "Completed";
 }
 
-function roleLabel(role: string): string {
-  return role === "owner" ? "Owner" : "Member";
-}
-
 function inviteStatusLabel(status: string): string {
-  if (status === "pending") return "Invite pending";
+  if (status === "pending") return "Pending";
   if (status === "accepted") return "Accepted";
   if (status === "declined") return "Declined";
   if (status === "expired") return "Expired";
@@ -92,6 +95,11 @@ export function toTripWorkspaceViewModel(
 ): TripWorkspaceViewModel {
   const start = new Date(trip.start_date);
   const end = new Date(trip.end_date);
+  const permissions = getCurrentTripPermissions({
+    trip,
+    currentUserEmail,
+    currentUserId,
+  });
   const durationDays =
     Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())
       ? 0
@@ -107,10 +115,10 @@ export function toTripWorkspaceViewModel(
     statusLabel: tripStatusLabel(getTripStatus(trip.start_date, trip.end_date)),
     memberCount: trip.member_count,
     members: trip.members.map((member) => ({ email: member.email })),
-    isOwner:
-      trip.members.some(
-        (m) => m.email.toLowerCase() === currentUserEmail.toLowerCase() && m.role === "owner",
-      ) || (typeof currentUserId === "number" && trip.user_id === currentUserId),
+    isOwner: permissions.isOwner,
+    canEdit: permissions.canEdit,
+    isReadOnly: permissions.isReadOnly,
+    currentUserRoleLabel: permissions.roleLabel,
   };
 }
 
@@ -147,7 +155,7 @@ export function toTripWorkspaceCollaborationViewModel(args: {
         return {
           userId: member.user_id,
           email: member.email,
-          roleLabel: roleLabel(member.role),
+          roleLabel: getTripRoleLabel(member.role, member.status),
           isCurrentUser,
           readinessLabel: readinessLoading ? "Checking…" : "Unavailable",
           readinessVariant: "default",
@@ -181,7 +189,7 @@ export function toTripWorkspaceCollaborationViewModel(args: {
       return {
         userId: member.user_id,
         email: member.email,
-        roleLabel: roleLabel(member.role),
+        roleLabel: getTripRoleLabel(member.role, member.status),
         isCurrentUser,
         readinessLabel,
         readinessVariant,

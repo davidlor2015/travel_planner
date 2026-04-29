@@ -16,11 +16,13 @@ import type {
 type Props = {
   day: ItineraryTabDay;
   onEditStop: (stopIndex: number) => void;
+  isReadOnly?: boolean;
 };
 
 export function ItineraryTimelineDay({
   day,
   onEditStop,
+  isReadOnly = false,
 }: Props) {
   return (
     <View className="gap-3">
@@ -58,6 +60,7 @@ export function ItineraryTimelineDay({
               stop={stop}
               isLast={index === day.stops.length - 1}
               onPress={() => onEditStop(stop.stopIndex)}
+              isReadOnly={isReadOnly}
             />
           ))
         ) : (
@@ -74,16 +77,22 @@ function ItineraryStopRow({
   stop,
   isLast,
   onPress,
+  isReadOnly,
 }: {
   stop: ItineraryTabStop;
   isLast: boolean;
   onPress: () => void;
+  isReadOnly: boolean;
 }) {
   return (
     <Pressable
       onPress={onPress}
+      disabled={isReadOnly}
       accessibilityRole="button"
-      accessibilityLabel={`Edit ${stop.title}`}
+      accessibilityLabel={isReadOnly ? `View ${stop.title}` : `Edit ${stop.title}`}
+      accessibilityHint={
+        isReadOnly ? "View-only travelers cannot edit itinerary stops." : undefined
+      }
       className={[
         "min-h-[68px] flex-row items-start gap-3.5 px-[18px] py-3.5 active:opacity-70",
         isLast ? "" : "border-b",

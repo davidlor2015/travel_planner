@@ -26,7 +26,9 @@ import { fontStyles } from "@/shared/theme/typography";
 import { ScreenError } from "@/shared/ui/ScreenError";
 import { ScreenLoading } from "@/shared/ui/ScreenLoading";
 
-type Props = { tripId: number };
+import { ReadOnlyNotice } from "./ReadOnlyNotice";
+
+type Props = { tripId: number; isReadOnly?: boolean };
 
 const SUGGESTIONS_LIMIT = 4;
 const CONTENT_BOTTOM_PADDING = 168;
@@ -38,7 +40,7 @@ const QUICK_ADD_ESSENTIALS = [
   "Walking shoes",
 ];
 
-export function PackingTab({ tripId }: Props) {
+export function PackingTab({ tripId, isReadOnly = false }: Props) {
   const packing = usePackingList(tripId);
   const suggestionsQuery = usePackingSuggestionsQuery(tripId, {
     enabled: !packing.loading,
@@ -139,6 +141,7 @@ export function PackingTab({ tripId }: Props) {
   const selectedCategory = getPackingCategoryConfig(draftCategory);
 
   const openAddForm = (category?: PackingCategoryKey) => {
+    if (isReadOnly) return;
     if (category) setDraftCategory(category);
     if (isAddExpanded) {
       addInputRef.current?.focus();
@@ -148,6 +151,7 @@ export function PackingTab({ tripId }: Props) {
   };
 
   const handleAdd = async (label = draft, category = draftCategory) => {
+    if (isReadOnly) return;
     const trimmed = label.trim();
     if (!trimmed) return;
 
@@ -174,6 +178,7 @@ export function PackingTab({ tripId }: Props) {
   };
 
   const handleToggleItem = async (itemId: number) => {
+    if (isReadOnly) return;
     try {
       setMutationError(null);
       await packing.toggleItem(itemId);
@@ -183,6 +188,7 @@ export function PackingTab({ tripId }: Props) {
   };
 
   const handleRemoveItem = async (itemId: number) => {
+    if (isReadOnly) return;
     try {
       setMutationError(null);
       await packing.removeItem(itemId);
@@ -202,6 +208,7 @@ export function PackingTab({ tripId }: Props) {
   };
 
   const handleClearChecked = async () => {
+    if (isReadOnly) return;
     try {
       const checkedItemIds = new Set(
         packing.items.filter((item) => item.checked).map((item) => item.id),
@@ -230,12 +237,14 @@ export function PackingTab({ tripId }: Props) {
   };
 
   const handleStartEdit = (itemId: number, label: string) => {
+    if (isReadOnly) return;
     setEditingItemId(itemId);
     setEditingDraft(label);
   };
 
   const handleSaveEdit = async () => {
     if (editingItemId == null) return;
+    if (isReadOnly) return;
     if (!editingDraft.trim()) {
       setMutationError("Item names cannot be blank.");
       return;
@@ -254,7 +263,7 @@ export function PackingTab({ tripId }: Props) {
   // ── Shared panels ────────────────────────────────────────────
 
   const suggestionsPanel =
-    showSuggestions && visibleSuggestions.length > 0 ? (
+    !isReadOnly && showSuggestions && visibleSuggestions.length > 0 ? (
       <View className="mx-4 mt-4 rounded-[16px] border border-smoke bg-ivory px-4 py-4">
         <View className="flex-row items-center justify-between">
           <Text
@@ -311,7 +320,7 @@ export function PackingTab({ tripId }: Props) {
     ) : null;
 
   const suggestionsError =
-    suggestionsQuery.isError && showSuggestions ? (
+    !isReadOnly && suggestionsQuery.isError && showSuggestions ? (
       <View className="mx-4 mt-3 rounded-[12px] border border-border bg-surface-muted px-3.5 py-3">
         <Text
           style={fontStyles.uiRegular}
@@ -465,7 +474,7 @@ export function PackingTab({ tripId }: Props) {
                 { fontSize: 24, lineHeight: 30, color: "#1C1108" },
               ]}
             >
-              Start your packing list
+              {isReadOnly ? "Packing list" : "Start your packing list"}
             </Text>
             <Text
               style={[
@@ -478,11 +487,15 @@ export function PackingTab({ tripId }: Props) {
                 },
               ]}
             >
-              Add essentials, clothing, toiletries, and trip-specific items.
+              {isReadOnly
+                ? "Only editors can add packing items for this trip."
+                : "Add essentials, clothing, toiletries, and trip-specific items."}
             </Text>
           </>
         )}
       </View>
+
+      {isReadOnly ? <ReadOnlyNotice className="mx-4 mt-1" /> : null}
 
       {/* ── Mutation error ──────────────────────────────────────── */}
       {mutationError ? (
@@ -492,7 +505,7 @@ export function PackingTab({ tripId }: Props) {
       ) : null}
 
       {/* ── Empty state ─────────────────────────────────────────── */}
-      {!hasItems ? (
+      {!hasItems && !isReadOnly ? (
         <>
           <View className="mx-4 mt-4 rounded-[18px] border border-[#D9CFC4] bg-ivory px-4 py-4">
             <Text
@@ -567,6 +580,15 @@ export function PackingTab({ tripId }: Props) {
           {suggestionsError}
           {isAddExpanded ? addItemForm : null}
         </>
+      ) : !hasItems ? (
+        <View className="mx-4 mt-4 rounded-[18px] border border-[#D9CFC4] bg-ivory px-4 py-4">
+          <Text
+            style={fontStyles.uiRegular}
+            className="text-[13px] leading-[19px] text-muted"
+          >
+            No packing items have been added yet.
+          </Text>
+        </View>
       ) : null}
 
       {/* ── Has items ───────────────────────────────────────────── */}
@@ -589,7 +611,7 @@ export function PackingTab({ tripId }: Props) {
                   {summary.breakdownLabel}
                 </Text>
               </View>
-              {checkedCount > 0 ? (
+              {checkedCount > 0 && !isReadOnly ? (
                 <Pressable
                   onPress={() => void handleClearChecked()}
                   className="rounded-full border border-border bg-white px-3 py-1.5 active:opacity-75"
@@ -658,7 +680,7 @@ export function PackingTab({ tripId }: Props) {
                 })}
               </ScrollView>
 
-              {visibleSuggestions.length > 0 ? (
+              {visibleSuggestions.length > 0 && !isReadOnly ? (
                 <Pressable
                   onPress={() => setShowSuggestions((v) => !v)}
                   className="rounded-full border border-ontrip bg-ontrip px-3 py-2 active:opacity-75"
@@ -680,9 +702,9 @@ export function PackingTab({ tripId }: Props) {
           {suggestionsError}
 
           {/* Collapsed add row or expanded form */}
-          {isAddExpanded ? (
+          {!isReadOnly && isAddExpanded ? (
             addItemForm
-          ) : (
+          ) : !isReadOnly ? (
             <Pressable
               onPress={() => openAddForm()}
               className="mx-4 mt-4 flex-row items-center gap-2.5 rounded-[14px] border border-smoke bg-parchment px-4 py-3.5 active:opacity-75"
@@ -697,7 +719,7 @@ export function PackingTab({ tripId }: Props) {
                 Add item
               </Text>
             </Pressable>
-          )}
+          ) : null}
 
           {/* Category groups */}
           <View className="mx-4 mt-5 gap-3">
@@ -785,29 +807,32 @@ export function PackingTab({ tripId }: Props) {
                             setEditingDraft("");
                           }}
                           variant="embedded"
+                          isReadOnly={isReadOnly}
                         />
                       </View>
                     ))}
                   </View>
 
-                  <Pressable
-                    onPress={() => openAddForm(group.key)}
-                    className="mt-3 flex-row items-center gap-2 rounded-[12px] border border-border bg-parchment-soft px-3 py-2.5 active:opacity-75"
-                    accessibilityRole="button"
-                    accessibilityLabel={`Add item to ${group.title}`}
-                  >
-                    <Ionicons
-                      name="add-circle-outline"
-                      size={15}
-                      color="#B86845"
-                    />
-                    <Text
-                      style={fontStyles.uiMedium}
-                      className="text-[12px] text-amber"
+                  {!isReadOnly ? (
+                    <Pressable
+                      onPress={() => openAddForm(group.key)}
+                      className="mt-3 flex-row items-center gap-2 rounded-[12px] border border-border bg-parchment-soft px-3 py-2.5 active:opacity-75"
+                      accessibilityRole="button"
+                      accessibilityLabel={`Add item to ${group.title}`}
                     >
-                      Add item to {group.title}
-                    </Text>
-                  </Pressable>
+                      <Ionicons
+                        name="add-circle-outline"
+                        size={15}
+                        color="#B86845"
+                      />
+                      <Text
+                        style={fontStyles.uiMedium}
+                        className="text-[12px] text-amber"
+                      >
+                        Add item to {group.title}
+                      </Text>
+                    </Pressable>
+                  ) : null}
                 </View>
               ))
             )}

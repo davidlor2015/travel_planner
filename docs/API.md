@@ -124,8 +124,12 @@ Behavior notes:
 ### Invite creation and acceptance
 
 - `POST /v1/trips/{trip_id}/invites` -> `201`, `TripInviteCreateResponse` (includes `invite_url`)
+- `GET /v1/trip-invites/pending` -> `list[TripInvitePendingResponse]` for the authenticated user's pending invite inbox
+- `POST /v1/trip-invites/pending/{invite_id}/accept` -> `TripInviteAcceptResponse` (auth required, invite must belong to current user's email)
+- `POST /v1/trip-invites/pending/{invite_id}/decline` -> `TripInviteAcceptResponse` (auth required, invite must belong to current user's email)
 - `GET /v1/trip-invites/{token}` -> `TripInviteDetailResponse` (no auth dependency in route)
 - `POST /v1/trip-invites/{token}/accept` -> `TripInviteAcceptResponse` (auth required)
+- `POST /v1/trip-invites/{token}/decline` -> `TripInviteAcceptResponse` (auth required)
 
 Typical errors:
 

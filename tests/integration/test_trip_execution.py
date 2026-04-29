@@ -73,7 +73,10 @@ def _snapshot(client, headers, trip_id):
     return res.json()
 
 
-def test_stop_status_event_is_merged_into_snapshot(client, auth_headers_user_a):
+def test_stop_status_event_is_merged_into_snapshot(client, auth_headers_user_a, user_a, db):
+    user_a.display_name = "David"
+    db.commit()
+
     trip_id = _create_active_trip(client, auth_headers_user_a)
     _apply_basic_itinerary(client, auth_headers_user_a, trip_id)
 
@@ -90,12 +93,21 @@ def test_stop_status_event_is_merged_into_snapshot(client, auth_headers_user_a):
         headers=auth_headers_user_a,
     )
     assert post_res.status_code == 201, post_res.text
+    event_payload = post_res.json()
+    assert event_payload["created_by_user_id"] == user_a.id
+    assert event_payload["created_at"]
 
     after = _snapshot(client, auth_headers_user_a, trip_id)
     confirmed = [stop for stop in after["today_stops"] if stop["stop_ref"] == target_ref][0]
     assert confirmed["execution_status"] == "confirmed"
+    assert confirmed["status_updated_by_user_id"] == user_a.id
+    assert confirmed["status_updated_by_display_name"] == "David"
+    assert confirmed["status_updated_by_email"] == user_a.email
+    assert confirmed["status_updated_at"]
     other = [stop for stop in after["today_stops"] if stop["stop_ref"] != target_ref][0]
     assert other["execution_status"] is None
+    assert other["status_updated_by_user_id"] is None
+    assert other["status_updated_at"] is None
 
 
 def test_snapshot_includes_lat_lon_when_present(client, auth_headers_user_a):

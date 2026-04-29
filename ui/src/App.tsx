@@ -31,13 +31,21 @@ import { ResetPasswordPage } from "./features/auth/ResetPasswordPage";
 import { VerifyEmailPage } from "./features/auth/VerifyEmailPage";
 import { VerifyEmailRequestPage } from "./features/auth/VerifyEmailRequestPage";
 import { TripInvitePage } from "./features/trips/TripInvitePage";
+import { TripInviteInbox } from "./features/trips/TripInviteInbox";
 import { AppShell, type AppView } from "./app/AppShell";
 import { ArchivePage } from "./features/archive/ArchivePage";
 import { PrivacyPage } from "./features/static/PrivacyPage";
 import { SupportPage } from "./features/static/SupportPage";
 import { TermsPage } from "./features/static/TermsPage";
 import { getMe, type LoginResponse, type UserProfile } from "./shared/api/auth";
-import { getTrips, type Trip } from "./shared/api/trips";
+import {
+  acceptPendingTripInvite,
+  declinePendingTripInvite,
+  getPendingTripInvites,
+  getTrips,
+  type PendingTripInvite,
+  type Trip,
+} from "./shared/api/trips";
 import {
   identifyAnalyticsUser,
   resetAnalyticsUser,
@@ -215,6 +223,14 @@ function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [trips, setTrips] = useState<Trip[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<PendingTripInvite[]>([]);
+  const [invitesLoading, setInvitesLoading] = useState(false);
+  const [invitesError, setInvitesError] = useState<string | null>(null);
+  const [invitesOpen, setInvitesOpen] = useState(false);
+  const [inviteActionState, setInviteActionState] = useState<{
+    inviteId: number;
+    action: "accept" | "decline";
+  } | null>(null);
 
   const refreshTrips = useCallback(async () => {
     if (!token) return;
@@ -251,6 +267,64 @@ function AppLayout() {
     };
   }, [token]);
 
+  const refreshPendingInvites = useCallback(async () => {
+    if (!token) return;
+    setInvitesLoading(true);
+    setInvitesError(null);
+    try {
+      const nextInvites = await getPendingTripInvites(token);
+      setPendingInvites(nextInvites);
+    } catch (err) {
+      console.error(err);
+      setInvitesError("We couldn't load your trip invites. Try again.");
+    } finally {
+      setInvitesLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    void refreshPendingInvites();
+  }, [refreshPendingInvites]);
+
+  const handleAcceptInvite = useCallback(
+    async (inviteId: number) => {
+      if (!token) return;
+      setInviteActionState({ inviteId, action: "accept" });
+      setInvitesError(null);
+      try {
+        const result = await acceptPendingTripInvite(token, inviteId);
+        setPendingInvites((prev) => prev.filter((invite) => invite.id !== inviteId));
+        await refreshTrips();
+        setInvitesOpen(false);
+        navigate(`/app/trips/${result.trip_id}`);
+      } catch (err) {
+        console.error(err);
+        setInvitesError("We couldn't accept that invite. Try again.");
+      } finally {
+        setInviteActionState(null);
+      }
+    },
+    [navigate, refreshTrips, token],
+  );
+
+  const handleDeclineInvite = useCallback(
+    async (inviteId: number) => {
+      if (!token) return;
+      setInviteActionState({ inviteId, action: "decline" });
+      setInvitesError(null);
+      try {
+        await declinePendingTripInvite(token, inviteId);
+        setPendingInvites((prev) => prev.filter((invite) => invite.id !== inviteId));
+      } catch (err) {
+        console.error(err);
+        setInvitesError("We couldn't decline that invite. Try again.");
+      } finally {
+        setInviteActionState(null);
+      }
+    },
+    [token],
+  );
+
   const navigateToView = useCallback(
     (view: AppView, tripId?: number) => {
       track({
@@ -271,6 +345,13 @@ function AppLayout() {
       view={viewFromPath(location.pathname)}
       onViewChange={navigateToView}
       userEmail={user.email}
+      pendingInviteCount={pendingInvites.length}
+      onOpenInvites={() => {
+        setInvitesOpen(true);
+        if (pendingInvites.length === 0) {
+          void refreshPendingInvites();
+        }
+      }}
       onLogout={() => {
         logout();
         navigate("/", { replace: true });
@@ -292,6 +373,35 @@ function AppLayout() {
           }}
         />
       </Suspense>
+      {invitesOpen ? (
+        <div
+          className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-espresso/35 px-4 py-20"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Trip invites"
+        >
+          <div className="w-full max-w-xl">
+            <div className="mb-3 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setInvitesOpen(false)}
+                className="rounded-full bg-bg-app px-4 py-2 text-sm font-semibold text-text-muted shadow-[0_8px_30px_rgba(28,17,8,0.12)] transition-colors hover:bg-surface-sunken"
+              >
+                Close
+              </button>
+            </div>
+            <TripInviteInbox
+              invites={pendingInvites}
+              loading={invitesLoading}
+              error={invitesError}
+              actionState={inviteActionState}
+              onAccept={(inviteId) => void handleAcceptInvite(inviteId)}
+              onDecline={(inviteId) => void handleDeclineInvite(inviteId)}
+              onRetry={() => void refreshPendingInvites()}
+            />
+          </div>
+        </div>
+      ) : null}
     </AppShell>
   );
 }

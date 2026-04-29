@@ -114,8 +114,8 @@ export function NotificationsSheet({ visible, preferences, onChange, onClose }: 
               />
               <RowDivider />
               <ToggleRow
-                label="Invite alerts"
-                description="When someone invites you to a trip"
+                label="Invite badge"
+                description="Show pending trip invite counts in the app"
                 value={preferences.inviteAlertsEnabled}
                 onValueChange={(v) => onChange({ inviteAlertsEnabled: v })}
               />

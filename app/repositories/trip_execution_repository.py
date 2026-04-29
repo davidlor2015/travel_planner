@@ -131,9 +131,9 @@ class TripExecutionRepository:
         self.db.delete(event)
         self.db.commit()
 
-    def latest_stop_statuses(self, trip_id: int) -> dict[str, str]:
+    def latest_stop_status_events(self, trip_id: int) -> dict[str, TripExecutionEvent]:
         """
-        Return a mapping of stop_ref -> latest non-null status for the trip.
+        Return a mapping of stop_ref -> latest non-null status event for the trip.
 
         Implemented as a correlated-subquery filter instead of DISTINCT ON so
         that both Postgres (production) and SQLite (tests) work identically.
@@ -149,13 +149,25 @@ class TripExecutionRepository:
             .scalar_subquery()
         )
 
-        rows = self.db.execute(
-            select(TripExecutionEvent.stop_ref, TripExecutionEvent.status).where(
-                TripExecutionEvent.id.in_(latest_id_subq)
-            )
+        rows = self.db.scalars(
+            select(TripExecutionEvent).where(TripExecutionEvent.id.in_(latest_id_subq))
         ).all()
 
-        return {row.stop_ref: row.status for row in rows if row.stop_ref and row.status}
+        return {
+            event.stop_ref: event
+            for event in rows
+            if event.stop_ref and event.status
+        }
+
+    def latest_stop_statuses(self, trip_id: int) -> dict[str, str]:
+        """
+        Return a mapping of stop_ref -> latest non-null status for the trip.
+        """
+        return {
+            stop_ref: event.status
+            for stop_ref, event in self.latest_stop_status_events(trip_id).items()
+            if event.status
+        }
 
     def unplanned_stops_for_date(
         self, trip_id: int, day_date: date

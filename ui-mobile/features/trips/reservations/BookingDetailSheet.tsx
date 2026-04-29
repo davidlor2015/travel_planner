@@ -21,8 +21,8 @@ type Props = {
   vm: BookingDetailViewModel | null;
   visible: boolean;
   onClose: () => void;
-  onEdit: () => void;
-  onDelete: () => Promise<void>;
+  onEdit?: () => void;
+  onDelete?: () => Promise<void>;
 };
 
 function DetailRow({
@@ -88,6 +88,7 @@ export function BookingDetailSheet({ vm, visible, onClose, onEdit, onDelete }: P
   if (!vm) return null;
 
   const handleDelete = async () => {
+    if (!onDelete) return;
     setDeleting(true);
     setDeleteError(null);
     try {
@@ -206,22 +207,28 @@ export function BookingDetailSheet({ vm, visible, onClose, onEdit, onDelete }: P
           ) : null}
 
           {/* Actions */}
-          <View className="flex-row gap-2 mt-5">
-            <View className="flex-1">
-              <PrimaryButton
-                label="Edit"
-                onPress={onEdit}
-                fullWidth
-              />
+          {onEdit || onDelete ? (
+            <View className="flex-row gap-2 mt-5">
+              {onEdit ? (
+                <View className="flex-1">
+                  <PrimaryButton
+                    label="Edit"
+                    onPress={onEdit}
+                    fullWidth
+                  />
+                </View>
+              ) : null}
+              {onDelete ? (
+                <View className="flex-1">
+                  <SecondaryButton
+                    label={deleting ? "Deleting…" : "Delete"}
+                    onPress={() => void handleDelete()}
+                    fullWidth
+                  />
+                </View>
+              ) : null}
             </View>
-            <View className="flex-1">
-              <SecondaryButton
-                label={deleting ? "Deleting…" : "Delete"}
-                onPress={() => void handleDelete()}
-                fullWidth
-              />
-            </View>
-          </View>
+          ) : null}
         </ScrollView>
       </View>
     </Modal>

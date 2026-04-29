@@ -127,7 +127,13 @@ export function WorkspaceTripHeader({
             <GlassButton
               icon="pencil-outline"
               onPress={onEditPress}
+              disabled={trip.isReadOnly}
               accessibilityLabel="Edit trip details"
+              accessibilityHint={
+                trip.isReadOnly
+                  ? "View-only travelers cannot edit trip details."
+                  : undefined
+              }
             />
           </View>
         ) : null}
@@ -202,18 +208,27 @@ export function WorkspaceTripHeader({
 function GlassButton({
   icon,
   onPress,
+  disabled = false,
   accessibilityLabel,
+  accessibilityHint,
 }: {
   icon: React.ComponentProps<typeof Ionicons>["name"];
   onPress: () => void;
+  disabled?: boolean;
   accessibilityLabel: string;
+  accessibilityHint?: string;
 }) {
   return (
     <Pressable
       onPress={onPress}
+      disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      className="h-8 w-8 items-center justify-center rounded-full active:opacity-80"
+      accessibilityHint={accessibilityHint}
+      className={[
+        "h-8 w-8 items-center justify-center rounded-full active:opacity-80",
+        disabled ? "opacity-50" : "",
+      ].join(" ")}
       style={{ backgroundColor: "rgba(35, 25, 16, 0.50)" }}
     >
       <Ionicons name={icon} size={14} color="rgba(250, 245, 234, 0.90)" />

@@ -19,6 +19,7 @@ import {
   hasResolvedTodayStop,
   isResolvedStop,
 } from "@/features/trips/onTrip/eligibility";
+import { useAuth } from "@/providers/AuthProvider";
 import { ScreenError } from "@/shared/ui/ScreenError";
 import { ScreenLoading } from "@/shared/ui/ScreenLoading";
 import { DE } from "@/shared/theme/desertEditorial";
@@ -38,6 +39,10 @@ import { OnTripHeader } from "./OnTripHeader";
 import { buildNavigateUrl, buildOnTripDayHeader } from "./presentation";
 import { TimelineRow } from "./TimelineRow";
 import { UnplannedStopRow } from "./UnplannedStopRow";
+import {
+  READ_ONLY_TRIP_BODY,
+  READ_ONLY_TRIP_TITLE,
+} from "../workspace/helpers/collaborationGate";
 
 type Props = {
   tripId: number;
@@ -56,6 +61,7 @@ export function OnTripScreen({
 }: Props) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const snapshotQuery = useOnTripSnapshotQuery(tripId);
   const itineraryQuery = useSavedItineraryQuery(tripId);
   const [liveSnapshot, setLiveSnapshot] = useState<TripOnTripSnapshot | null>(
@@ -76,6 +82,7 @@ export function OnTripScreen({
     tripId,
     snapshot: liveSnapshot ?? snapshotQuery.data ?? null,
     onSnapshotRefresh: setLiveSnapshot,
+    currentUser: user,
   });
 
   const rawSnapshot = mutations.viewSnapshot ?? snapshotQuery.data ?? null;
@@ -467,7 +474,9 @@ function ReadOnlyBanner() {
     <View
       className="mx-4 mt-5 flex-row items-start gap-3 rounded-[14px] border px-4 py-3.5"
       style={{ backgroundColor: DE.paper, borderColor: DE.rule }}
-      accessibilityRole="alert"
+      accessible
+      accessibilityRole="text"
+      accessibilityLabel={`${READ_ONLY_TRIP_TITLE}. ${READ_ONLY_TRIP_BODY}`}
     >
       <Ionicons
         name="lock-closed-outline"
@@ -475,15 +484,19 @@ function ReadOnlyBanner() {
         color={DE.muted}
         style={{ marginTop: 1 }}
       />
-      <Text
-        style={[
-          fontStyles.uiRegular,
-          { fontSize: 13, lineHeight: 19, color: DE.muted, flex: 1 },
-        ]}
-      >
-        You&apos;re viewing this trip in read-only mode. Confirm, skip, and log
-        actions are unavailable.
-      </Text>
+      <View style={{ flex: 1 }}>
+        <Text style={[fontStyles.uiSemibold, { fontSize: 13, color: DE.inkSoft }]}>
+          {READ_ONLY_TRIP_TITLE}
+        </Text>
+        <Text
+          style={[
+            fontStyles.uiRegular,
+            { fontSize: 12, lineHeight: 17, color: DE.muted, marginTop: 2 },
+          ]}
+        >
+          {READ_ONLY_TRIP_BODY}
+        </Text>
+      </View>
     </View>
   );
 }

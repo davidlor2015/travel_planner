@@ -84,6 +84,12 @@ jest.mock("@/features/ai/hooks", () => ({
   useSavedItineraryQuery: () => ({ data: null, isError: false }),
 }));
 
+jest.mock("@/providers/AuthProvider", () => ({
+  useAuth: () => ({
+    user: { id: 7, email: "david@example.com", display_name: "David" },
+  }),
+}));
+
 jest.mock("@/features/trips/onTrip/hooks", () => ({
   useOnTripMutations: (...args: unknown[]) => mockUseOnTripMutations(...args),
 }));
@@ -205,7 +211,7 @@ describe("OnTripScreen", () => {
     );
 
     expect(
-      getByText(/read-only mode/i),
+      getByText("View-only trip"),
     ).toBeTruthy();
   });
 
@@ -216,7 +222,7 @@ describe("OnTripScreen", () => {
       <OnTripScreen tripId={1} tripTitle="Kyoto" tripDestination="Kyoto, Japan" />,
     );
 
-    expect(queryByText(/read-only mode/i)).toBeNull();
+    expect(queryByText("View-only trip")).toBeNull();
   });
 
   it("mounts NeedsAttentionCard when blockers are present", () => {
@@ -271,6 +277,11 @@ describe("OnTripScreen", () => {
       effectiveStatus: "planned" as const,
       isPending: false,
       isReadOnly: false,
+      statusUpdatedByUserId: null,
+      statusUpdatedByName: null,
+      statusUpdatedAt: null,
+      statusActionLabel: null,
+      statusActionDetailLabel: null,
     };
 
     mockDeriveOnTripViewModel.mockReturnValue(
@@ -386,6 +397,11 @@ describe("OnTripScreen", () => {
       effectiveStatus: "planned" as const,
       isPending: false,
       isReadOnly: false,
+      statusUpdatedByUserId: null,
+      statusUpdatedByName: null,
+      statusUpdatedAt: null,
+      statusActionLabel: null,
+      statusActionDetailLabel: null,
     };
 
     mockDeriveOnTripViewModel.mockReturnValue(

@@ -34,6 +34,9 @@ export function HappeningNowCard({
   const stripLabel = tone === "now" ? "Happening now" : "Up next";
   const stopTimeLabel = formatTripStopTime(stop.time);
   const fallbackTimeLabel = formatTripStopTime(localTimeHHMM());
+  const actionMetaLabel =
+    stop.statusActionDetailLabel ??
+    (tone === "now" ? "Needs action" : "Coming up");
 
   const pulseUseNativeDriver = Platform.OS !== "web";
 
@@ -175,7 +178,7 @@ export function HappeningNowCard({
             style={{ backgroundColor: "rgba(242, 235, 221, 0.18)" }}
           />
           <MetaItem
-            label={tone === "now" ? "Needs action" : "Coming up"}
+            label={actionMetaLabel}
             accent
           />
         </View>

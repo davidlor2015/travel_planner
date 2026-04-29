@@ -87,6 +87,12 @@ jest.mock("@/features/trips/onTrip/hooks", () => ({
   }),
 }));
 
+jest.mock("@/providers/AuthProvider", () => ({
+  useAuth: () => ({
+    user: { id: 7, email: "david@example.com", display_name: "David" },
+  }),
+}));
+
 jest.mock("@/shared/ui/ScreenLoading", () => ({ ScreenLoading: () => null }));
 jest.mock("@/shared/ui/ScreenError", () => ({ ScreenError: () => null }));
 
@@ -117,7 +123,7 @@ describe("StopDetailScreen", () => {
     const { getByText, queryByText } = render(
       <StopDetailScreen tripId={1} stopKey={STOP_REF} />,
     );
-    expect(getByText(/read-only mode/i)).toBeTruthy();
+    expect(getByText("View-only trip")).toBeTruthy();
     expect(queryByText("I'm here")).toBeNull();
     expect(queryByText("Skip this")).toBeNull();
   });

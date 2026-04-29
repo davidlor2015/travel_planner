@@ -1,9 +1,12 @@
 // Path: ui-mobile/features/trips/workspace/OverviewTab.tsx
 // Summary: Implements OverviewTab module logic.
 
+import { useEffect, useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 
+import { updateWorkspaceLastSeen } from "@/features/trips/api";
+import type { TripResponse } from "@/features/trips/types";
 import type { StreamState } from "@/features/ai/useStreamingItinerary";
 import type { TripOnTripSnapshot } from "../types";
 import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
@@ -15,14 +18,20 @@ import type {
 } from "./adapters";
 import { ItineraryTabView } from "./ItineraryTabView";
 import { RegenerateSheet } from "./RegenerateSheet";
+import { ReadOnlyNotice } from "./ReadOnlyNotice";
 import { StopFormSheet } from "./StopFormSheet";
 import { useWorkspaceOverviewModel } from "./useWorkspaceOverviewModel";
+import { ActivitySheet } from "./ActivitySheet";
+import { ActivityStrip } from "./ActivityStrip";
+import { buildTripActivityModel } from "./tripActivityModel";
 import type { WorkspaceAttentionItem } from "./workspaceCommandModel";
 import type { OverviewItineraryDayPreview } from "./overviewItineraryPreview";
 import type { WorkspaceTab } from "./WorkspaceTabBar";
 
 type Props = {
   trip: TripWorkspaceViewModel;
+  tripRaw: TripResponse;
+  currentUserEmail: string;
   summary: TripSummaryViewModel | null;
   collaboration: TripWorkspaceCollaborationViewModel | null;
   onTripSnapshot: TripOnTripSnapshot | null;
@@ -33,10 +42,14 @@ type Props = {
   onOpenTab: (tab: WorkspaceTab) => void;
   onOpenLiveView: () => void;
   showItineraryOnly?: boolean;
+  isReadOnly?: boolean;
+  activityLoadError?: string | null;
 };
 
 export function OverviewTab({
   trip,
+  tripRaw,
+  currentUserEmail,
   summary,
   collaboration,
   onTripSnapshot,
@@ -47,6 +60,8 @@ export function OverviewTab({
   onOpenTab,
   onOpenLiveView,
   showItineraryOnly = false,
+  isReadOnly = false,
+  activityLoadError = null,
 }: Props) {
   const overview = useWorkspaceOverviewModel({
     trip,
@@ -59,6 +74,60 @@ export function OverviewTab({
 
   const command = overview.command;
   const previewDays = overview.itineraryDayPreviews;
+  const showActivity = tripRaw.member_count > 1;
+  const [activitySheetOpen, setActivitySheetOpen] = useState(false);
+  const [activitySeenState, setActivitySeenState] = useState<{
+    signature: string | null;
+    snapshot: Record<string, unknown> | null;
+  }>({ signature: null, snapshot: null });
+  const [activityStatusError, setActivityStatusError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const currentMember =
+      tripRaw.members.find(
+        (member) =>
+          member.email.trim().toLowerCase() ===
+          currentUserEmail.trim().toLowerCase(),
+      ) ?? null;
+    setActivitySeenState({
+      signature: currentMember?.workspace_last_seen_signature ?? null,
+      snapshot:
+        (currentMember?.workspace_last_seen_snapshot as Record<string, unknown> | null | undefined) ??
+        null,
+    });
+    setActivityStatusError(null);
+  }, [tripRaw.id, tripRaw.members, currentUserEmail]);
+
+  const activityModel = useMemo(
+    () =>
+      buildTripActivityModel({
+        trip: tripRaw,
+        itinerary: overview.itinerary,
+        summary,
+        onTripSnapshot,
+        lastSeenSnapshot: activitySeenState.snapshot,
+      }),
+    [
+      activitySeenState.snapshot,
+      onTripSnapshot,
+      overview.itinerary,
+      summary,
+      tripRaw,
+    ],
+  );
+
+  const handleCloseActivitySheet = () => {
+    setActivitySheetOpen(false);
+    if (activitySeenState.signature === activityModel.signature) return;
+    const payload = {
+      signature: activityModel.signature,
+      snapshot: activityModel.snapshot as Record<string, unknown>,
+    };
+    setActivitySeenState(payload);
+    void updateWorkspaceLastSeen(tripRaw.id, payload).catch(() => {
+      setActivityStatusError("Couldn't load recent activity.");
+    });
+  };
 
   const nextActionPill = overview.isStreaming
     ? "Building…"
@@ -73,7 +142,12 @@ export function OverviewTab({
   let ghostLabel: string | null = null;
   let ghostHandler: (() => void) | null = null;
 
-  if (overview.isStreaming) {
+  if (isReadOnly) {
+    if (canOpenLiveView) {
+      primaryLabel = "Open live view";
+      primaryHandler = onOpenLiveView;
+    }
+  } else if (overview.isStreaming) {
     ghostLabel = "Cancel";
     ghostHandler = onCancelStream;
   } else if (overview.isItineraryDirty) {
@@ -110,9 +184,27 @@ export function OverviewTab({
           onPublish={() => void overview.handlePublishChanges()}
           onRegenerateAll={onStartStream}
           onCancelStream={onCancelStream}
+          isReadOnly={isReadOnly}
         />
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+          {isReadOnly ? <ReadOnlyNotice className="mx-[22px] mt-4" /> : null}
+
+          {showActivity ? (
+            <View style={{ paddingTop: 16 }}>
+              <ActivityStrip
+                items={activityModel.items}
+                unseenCount={
+                  activitySeenState.signature &&
+                  activitySeenState.signature !== activityModel.signature
+                    ? activityModel.items.length
+                    : 0
+                }
+                errorMessage={activityLoadError ?? activityStatusError}
+                onPress={() => setActivitySheetOpen(true)}
+              />
+            </View>
+          ) : null}
 
           {/* NEXT ACTION ─────────────────────────────────────── */}
           <View style={{ paddingHorizontal: 22, paddingTop: 20, paddingBottom: 8 }}>
@@ -354,20 +446,22 @@ export function OverviewTab({
                   <Text style={[fontStyles.uiRegular, { fontSize: 13, lineHeight: 20, color: "#8A7B6A" }]}>
                     No itinerary saved yet. Generate one to start planning day-by-day.
                   </Text>
-                  <Pressable
-                    onPress={onStartStream}
-                    className="self-start active:opacity-75"
-                    style={{
-                      paddingHorizontal: 16,
-                      paddingVertical: 8,
-                      borderRadius: 12,
-                      backgroundColor: "#B85A38",
-                    }}
-                  >
-                    <Text style={[fontStyles.uiSemibold, { fontSize: 13, color: "#F2EBDD" }]}>
-                      Generate with AI
-                    </Text>
-                  </Pressable>
+                  {!isReadOnly ? (
+                    <Pressable
+                      onPress={onStartStream}
+                      className="self-start active:opacity-75"
+                      style={{
+                        paddingHorizontal: 16,
+                        paddingVertical: 8,
+                        borderRadius: 12,
+                        backgroundColor: "#B85A38",
+                      }}
+                    >
+                      <Text style={[fontStyles.uiSemibold, { fontSize: 13, color: "#F2EBDD" }]}>
+                        Generate with AI
+                      </Text>
+                    </Pressable>
+                  ) : null}
                 </View>
               ) : previewDays.length > 0 ? (
                 previewDays.map((day, index) => (
@@ -402,7 +496,7 @@ export function OverviewTab({
       {overview.itinerary ? (
         <>
           <StopFormSheet
-            visible={Boolean(overview.editingStop)}
+            visible={!isReadOnly && Boolean(overview.editingStop)}
             item={overview.selectedStop}
             initialDayIndex={overview.editingStop?.dayIndex ?? 0}
             dayOptions={overview.dayOptions}
@@ -417,7 +511,7 @@ export function OverviewTab({
             onClose={() => overview.setEditingStop(null)}
           />
           <RegenerateSheet
-            visible={overview.regeneratingDayIndex !== null}
+            visible={!isReadOnly && overview.regeneratingDayIndex !== null}
             tripId={trip.id}
             day={
               overview.regeneratingDayIndex !== null
@@ -429,6 +523,14 @@ export function OverviewTab({
             onClose={() => overview.setRegeneratingDayIndex(null)}
           />
         </>
+      ) : null}
+      {showActivity ? (
+        <ActivitySheet
+          visible={activitySheetOpen}
+          items={activityModel.items}
+          errorMessage={activityLoadError ?? activityStatusError}
+          onClose={handleCloseActivitySheet}
+        />
       ) : null}
     </View>
   );

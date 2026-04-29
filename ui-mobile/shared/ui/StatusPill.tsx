@@ -10,6 +10,7 @@ type Variant = "default" | "success" | "warning" | "error" | "info";
 type Props = {
   label: string;
   variant?: Variant;
+  accessibilityLabel?: string;
 };
 
 const variantClasses: Record<Variant, { pill: string; label: string }> = {
@@ -20,10 +21,15 @@ const variantClasses: Record<Variant, { pill: string; label: string }> = {
   info: { pill: "border border-depth/20 bg-depth/10", label: "text-depth" },
 };
 
-export function StatusPill({ label, variant = "default" }: Props) {
+export function StatusPill({ label, variant = "default", accessibilityLabel }: Props) {
   const { pill, label: labelClass } = variantClasses[variant];
   return (
-    <View className={`self-start rounded-full px-2.5 py-1 ${pill}`}>
+    <View
+      className={`self-start rounded-full px-2.5 py-1 ${pill}`}
+      accessible
+      accessibilityRole="text"
+      accessibilityLabel={accessibilityLabel ?? label}
+    >
       <Text className={`text-xs ${labelClass}`} style={fontStyles.uiSemibold}>
         {label}
       </Text>

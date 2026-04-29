@@ -30,8 +30,26 @@ export type MutationFeedback = {
 };
 
 type OptimisticEntry =
-  | { kind: "pending"; requestId: number; target: TripExecutionStatus }
-  | { kind: "committed"; requestId: number; target: TripExecutionStatus };
+  | {
+      kind: "pending";
+      requestId: number;
+      target: TripExecutionStatus;
+      actor: OptimisticActor;
+      updatedAt: string;
+    }
+  | {
+      kind: "committed";
+      requestId: number;
+      target: TripExecutionStatus;
+      actor: OptimisticActor;
+      updatedAt: string;
+    };
+
+type OptimisticActor = {
+  userId: number | null;
+  displayName: string | null;
+  email: string | null;
+};
 
 type OptimisticState = {
   statusByRef: Record<string, OptimisticEntry>;
@@ -80,6 +98,11 @@ export type UseOnTripMutationsOptions = {
   tripId: number | null;
   snapshot: TripOnTripSnapshot | null;
   onSnapshotRefresh: (snapshot: TripOnTripSnapshot) => void;
+  currentUser?: {
+    id?: number | null;
+    email?: string | null;
+    display_name?: string | null;
+  } | null;
 };
 
 export type UseOnTripMutationsResult = {
@@ -103,6 +126,7 @@ export function useOnTripMutations({
   tripId,
   snapshot,
   onSnapshotRefresh,
+  currentUser = null,
 }: UseOnTripMutationsOptions): UseOnTripMutationsResult {
   const queryClient = useQueryClient();
   const [optimistic, setOptimistic] =
@@ -238,12 +262,20 @@ export function useOnTripMutations({
       markInteraction();
       const requestId = ++requestIdRef.current;
       const previousOverride = optimistic.statusByRef[stopRef] ?? null;
+      const actor = buildOptimisticActor(currentUser);
+      const updatedAt = new Date().toISOString();
 
       setOptimistic((prev) => ({
         ...prev,
         statusByRef: {
           ...prev.statusByRef,
-          [stopRef]: { kind: "pending", requestId, target: nextStatus },
+          [stopRef]: {
+            kind: "pending",
+            requestId,
+            target: nextStatus,
+            actor,
+            updatedAt,
+          },
         },
       }));
       setPendingCountByRef((prev) => ({
@@ -264,7 +296,13 @@ export function useOnTripMutations({
               ...prev,
               statusByRef: {
                 ...prev.statusByRef,
-                [stopRef]: { kind: "committed", requestId, target: nextStatus },
+                [stopRef]: {
+                  kind: "committed",
+                  requestId,
+                  target: nextStatus,
+                  actor,
+                  updatedAt,
+                },
               },
             };
           });
@@ -319,7 +357,7 @@ export function useOnTripMutations({
         if (queue.get(stopRef) === thisRun) queue.delete(stopRef);
       }
     },
-    [optimistic.statusByRef, refreshSnapshot, tripId, markInteraction],
+    [currentUser, optimistic.statusByRef, refreshSnapshot, tripId, markInteraction],
   );
 
   const logUnplannedStop = useCallback(
@@ -394,7 +432,16 @@ export function useOnTripMutations({
     const overriddenStops = snapshot.today_stops.map<TripOnTripStopSnapshot>(
       (stop) => {
         const entry = stop.stop_ref ? overrides[stop.stop_ref] : undefined;
-        return entry ? { ...stop, execution_status: entry.target } : stop;
+        return entry
+          ? {
+              ...stop,
+              execution_status: entry.target,
+              status_updated_by_user_id: entry.actor.userId,
+              status_updated_by_display_name: entry.actor.displayName,
+              status_updated_by_email: entry.actor.email,
+              status_updated_at: entry.updatedAt,
+            }
+          : stop;
       },
     );
     const filteredUnplanned = snapshot.today_unplanned.filter(
@@ -442,5 +489,19 @@ export function useOnTripMutations({
     removeUnplannedStop,
     lastRefreshedAt,
     refreshFailed,
+  };
+}
+
+function buildOptimisticActor(
+  currentUser: UseOnTripMutationsOptions["currentUser"],
+): OptimisticActor {
+  if (!currentUser) {
+    return { userId: null, displayName: "you", email: null };
+  }
+  return {
+    userId:
+      typeof currentUser.id === "number" ? currentUser.id : null,
+    displayName: "you",
+    email: currentUser.email ?? null,
   };
 }

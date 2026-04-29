@@ -12,6 +12,7 @@ from fastapi import HTTPException
 from app.core import security
 from app.core.config import settings
 from app.models.trip_invite import TripInvite
+from app.models.trip_execution_event import TripExecutionEvent
 from app.repositories.itinerary_repository import ItineraryRepository
 from app.repositories.trip_repository import TripRepository
 from app.repositories.trip_invite_repository import TripInviteRepository
@@ -31,6 +32,7 @@ from app.schemas.trip import (
     TripInviteAcceptResponse,
     TripInviteCreateRequest,
     TripInviteDetailResponse,
+    TripInvitePendingResponse,
     TripInviteResponse,
     TripMemberAddRequest,
     TripMemberReadinessItemResponse,
@@ -285,7 +287,7 @@ class TripService:
 
         # Execution log is read separately and overlaid onto the plan at response time.
         # The plan is never mutated here.
-        execution_statuses = self.execution_repo.latest_stop_statuses(trip_id)
+        execution_statuses = self.execution_repo.latest_stop_status_events(trip_id)
         unplanned_events = (
             self.execution_repo.unplanned_stops_for_date(trip_id, today) if is_active else []
         )
@@ -391,10 +393,10 @@ class TripService:
     def _to_stop_response(
         self,
         resolution: dict[str, Any],
-        execution_statuses: dict[str, str],
+        execution_statuses: dict[str, TripExecutionEvent],
     ) -> TripOnTripStopSnapshotResponse:
         stop_ref = resolution.get("stop_ref")
-        execution_status = execution_statuses.get(stop_ref) if stop_ref else None
+        execution_event = execution_statuses.get(stop_ref) if stop_ref else None
         return TripOnTripStopSnapshotResponse(
             day_number=resolution.get("day_number"),
             day_date=resolution.get("day_date"),
@@ -408,7 +410,19 @@ class TripService:
             source=resolution["source"],
             confidence=resolution["confidence"],
             stop_ref=stop_ref,
-            execution_status=execution_status,
+            execution_status=execution_event.status if execution_event else None,
+            status_updated_by_user_id=execution_event.created_by_user_id if execution_event else None,
+            status_updated_by_display_name=(
+                execution_event.created_by.display_name
+                if execution_event and execution_event.created_by is not None
+                else None
+            ),
+            status_updated_by_email=(
+                execution_event.created_by.email
+                if execution_event and execution_event.created_by is not None
+                else None
+            ),
+            status_updated_at=execution_event.created_at if execution_event else None,
         )
 
     @staticmethod
@@ -438,13 +452,21 @@ class TripService:
         """
         return str(item.id) if item.id is not None else None
 
+    @staticmethod
+    def _execution_status_value(event: TripExecutionEvent | str | None) -> str | None:
+        if event is None:
+            return None
+        if isinstance(event, str):
+            return event
+        return event.status
+
     def _build_today_stops(
         self,
         itinerary: ItineraryResponse,
         day_index: int | None,
         source: str,
         confidence: str,
-        execution_statuses: dict[str, str],
+        execution_statuses: dict[str, TripExecutionEvent],
     ) -> list[TripOnTripStopSnapshotResponse]:
         if day_index is None or day_index < 0 or day_index >= len(itinerary.days):
             return []
@@ -453,7 +475,7 @@ class TripService:
         rows: list[TripOnTripStopSnapshotResponse] = []
         for item in day.items:
             stop_ref = self._item_stop_ref(item)
-            execution_status = execution_statuses.get(stop_ref) if stop_ref else None
+            execution_event = execution_statuses.get(stop_ref) if stop_ref else None
             rows.append(
                 TripOnTripStopSnapshotResponse(
                     day_number=day.day_number,
@@ -468,7 +490,21 @@ class TripService:
                     source=source,
                     confidence=confidence,
                     stop_ref=stop_ref,
-                    execution_status=execution_status,
+                    execution_status=execution_event.status if execution_event else None,
+                    status_updated_by_user_id=(
+                        execution_event.created_by_user_id if execution_event else None
+                    ),
+                    status_updated_by_display_name=(
+                        execution_event.created_by.display_name
+                        if execution_event and execution_event.created_by is not None
+                        else None
+                    ),
+                    status_updated_by_email=(
+                        execution_event.created_by.email
+                        if execution_event and execution_event.created_by is not None
+                        else None
+                    ),
+                    status_updated_at=execution_event.created_at if execution_event else None,
                 )
             )
         rows.sort(
@@ -663,7 +699,7 @@ class TripService:
         self,
         itinerary: ItineraryResponse,
         today_day_index: int | None,
-        execution_statuses: dict[str, str] | None = None,
+        execution_statuses: dict[str, TripExecutionEvent] | None = None,
     ) -> dict[str, Any]:
         _exec = execution_statuses or {}
         start_index = today_day_index if today_day_index is not None else 0
@@ -673,7 +709,7 @@ class TripService:
             for item in day.items:
                 plan_status = (item.status or "planned").strip().lower()
                 stop_ref = self._item_stop_ref(item)
-                exec_status = _exec.get(stop_ref) if stop_ref else None
+                exec_status = self._execution_status_value(_exec.get(stop_ref) if stop_ref else None)
                 if plan_status == "skipped" or exec_status in ("confirmed", "skipped"):
                     continue
                 source = "itinerary_sequence"
@@ -719,7 +755,7 @@ class TripService:
         actor_email: str,
         is_group_trip: bool,
         is_active: bool,
-        execution_statuses: dict[str, str] | None = None,
+        execution_statuses: dict[str, TripExecutionEvent] | None = None,
     ) -> list[TripOnTripBlockerResponse]:
         _exec = execution_statuses or {}
         if not is_active:
@@ -762,7 +798,9 @@ class TripService:
             """
             if (item.status or "planned").strip().lower() != "planned":
                 return False
-            exec_status = _exec.get(self._item_stop_ref(item)) if item is not None else None
+            exec_status = self._execution_status_value(
+                _exec.get(self._item_stop_ref(item)) if item is not None else None
+            )
             return exec_status not in ("confirmed", "skipped")
 
         planned_items = [item for item in day.items if _is_open(item)]
@@ -918,6 +956,25 @@ class TripService:
             invited_by_email=getattr(inviter, "email", None),
         )
 
+    def list_pending_invites_for_user(self, actor_user_id: int) -> list[TripInvitePendingResponse]:
+        user = self.user_repo.get_by_id(actor_user_id)
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        invites = self.invite_repo.list_pending_by_email(user.email)
+        responses: list[TripInvitePendingResponse] = []
+        changed = False
+        for invite in invites:
+            previous_status = invite.status
+            self.invite_repo.expire_stale_invite(invite)
+            if invite.status != previous_status:
+                changed = True
+            if invite.resolved_status == "pending":
+                responses.append(self._pending_invite_response(invite))
+        if changed:
+            self.db.commit()
+        return responses
+
     def accept_invite(self, token: str, actor_user_id: int) -> TripInviteAcceptResponse:
         invite = self._require_invite(token)
         user = self.user_repo.get_by_id(actor_user_id)
@@ -926,6 +983,38 @@ class TripService:
         if user.email.lower() != invite.email.lower():
             raise HTTPException(status_code=403, detail="This invite is for a different email address")
 
+        return self._accept_pending_invite(invite, actor_user_id)
+
+    def accept_pending_invite_by_id(
+        self,
+        invite_id: int,
+        actor_user_id: int,
+    ) -> TripInviteAcceptResponse:
+        invite = self._require_pending_invite_by_id(invite_id, actor_user_id)
+        return self._accept_pending_invite(invite, actor_user_id)
+
+    def decline_invite(self, token: str, actor_user_id: int) -> TripInviteAcceptResponse:
+        invite = self._require_invite(token)
+        user = self.user_repo.get_by_id(actor_user_id)
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found")
+        if user.email.lower() != invite.email.lower():
+            raise HTTPException(status_code=403, detail="This invite is for a different email address")
+        return self._decline_pending_invite(invite)
+
+    def decline_pending_invite_by_id(
+        self,
+        invite_id: int,
+        actor_user_id: int,
+    ) -> TripInviteAcceptResponse:
+        invite = self._require_pending_invite_by_id(invite_id, actor_user_id)
+        return self._decline_pending_invite(invite)
+
+    def _accept_pending_invite(
+        self,
+        invite: TripInvite,
+        actor_user_id: int,
+    ) -> TripInviteAcceptResponse:
         existing_membership = self.membership_repo.get_by_trip_and_user(invite.trip_id, actor_user_id)
         if existing_membership is not None:
             invite.status = "accepted"
@@ -958,6 +1047,16 @@ class TripService:
             status="accepted",
         )
 
+    def _decline_pending_invite(self, invite: TripInvite) -> TripInviteAcceptResponse:
+        invite.status = "declined"
+        invite.responded_at = datetime.now(timezone.utc)
+        self.db.commit()
+        return TripInviteAcceptResponse(
+            trip_id=invite.trip_id,
+            trip_title=invite.trip.title,
+            status="declined",
+        )
+
     def _invite_url(self, raw_token: str) -> str:
         return f"{settings.APP_BASE_URL.rstrip('/')}/invites/{raw_token}"
 
@@ -970,17 +1069,55 @@ class TripService:
             expires_at=invite.expires_at,
         )
 
+    def _pending_invite_response(self, invite: TripInvite) -> TripInvitePendingResponse:
+        inviter = getattr(invite, "invited_by", None)
+        trip = invite.trip
+        return TripInvitePendingResponse(
+            id=invite.id,
+            trip_id=trip.id,
+            trip_title=trip.title,
+            destination=trip.destination,
+            start_date=trip.start_date,
+            end_date=trip.end_date,
+            invitee_email=invite.email,
+            role="member",
+            status=invite.resolved_status,
+            created_at=invite.created_at,
+            expires_at=invite.expires_at,
+            invited_by_email=getattr(inviter, "email", None),
+            invited_by_display_name=getattr(inviter, "display_name", None),
+        )
+
+    def _require_pending_invite_by_id(self, invite_id: int, actor_user_id: int) -> TripInvite:
+        user = self.user_repo.get_by_id(actor_user_id)
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        invite = self.invite_repo.get_by_id_for_email(invite_id, user.email)
+        if invite is None:
+            raise HTTPException(status_code=404, detail="Invite not found")
+        return self._require_actionable_invite(invite)
+
     def _require_invite(self, token: str) -> TripInvite:
         invite = self.invite_repo.get_by_token_hash(security.hash_token(token))
         if invite is None:
             raise HTTPException(status_code=404, detail="Invite not found")
 
+        return self._require_actionable_invite(invite)
+
+    def _require_actionable_invite(self, invite: TripInvite) -> TripInvite:
         self.invite_repo.expire_stale_invite(invite)
         if invite.resolved_status == "expired":
             self.db.commit()
             raise HTTPException(status_code=410, detail="Invite has expired")
         if invite.status != "pending":
-            raise HTTPException(status_code=409, detail="Invite has already been accepted")
+            if invite.status == "accepted":
+                detail = "Invite has already been accepted"
+            elif invite.status == "declined":
+                detail = "Invite has already been declined"
+            else:
+                detail = "Invite is no longer pending"
+            raise HTTPException(status_code=409, detail=detail)
         return invite
 
     def update_workspace_last_seen(

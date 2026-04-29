@@ -15,6 +15,11 @@ export type StopVM = TripOnTripStopSnapshot & {
   effectiveStatus: TripExecutionStatus;
   isPending: boolean;
   isReadOnly: boolean;
+  statusUpdatedByUserId: number | null;
+  statusUpdatedByName: string | null;
+  statusUpdatedAt: string | null;
+  statusActionLabel: string | null;
+  statusActionDetailLabel: string | null;
 };
 
 export type TimelineVariant = "done" | "now" | "next" | "upcoming";
@@ -86,13 +91,83 @@ function toStopVM(
   const isPending = stop.stop_ref
     ? (statusPending[stop.stop_ref] ?? false)
     : false;
+  const statusUpdatedByName = formatActorName(
+    stop.status_updated_by_display_name,
+    stop.status_updated_by_email,
+  );
+  const statusActionLabel = buildStatusActionLabel(
+    effectiveStatus,
+    statusUpdatedByName,
+  );
   return {
     ...stop,
     key: stop.stop_ref ?? `stop-${index}`,
     effectiveStatus,
     isPending,
     isReadOnly,
+    statusUpdatedByUserId: stop.status_updated_by_user_id ?? null,
+    statusUpdatedByName,
+    statusUpdatedAt: stop.status_updated_at ?? null,
+    statusActionLabel,
+    statusActionDetailLabel: buildStatusActionLabel(
+      effectiveStatus,
+      statusUpdatedByName,
+      stop.status_updated_at,
+    ),
   };
+}
+
+function formatActorName(
+  displayName: string | null | undefined,
+  email: string | null | undefined,
+): string | null {
+  const display = displayName?.trim();
+  if (display) return display;
+  const rawEmail = email?.trim();
+  if (!rawEmail) return null;
+  const local = rawEmail.split("@")[0]?.trim();
+  if (!local) return rawEmail;
+  return local
+    .split(/[._-]+/)
+    .filter(Boolean)
+    .map((part) => `${part.slice(0, 1).toUpperCase()}${part.slice(1)}`)
+    .join(" ");
+}
+
+function buildStatusActionLabel(
+  status: TripExecutionStatus,
+  actorName: string | null,
+  updatedAt?: string | null,
+): string | null {
+  if (status !== "confirmed" && status !== "skipped") return null;
+  const verb = status === "confirmed" ? "Confirmed" : "Skipped";
+  const base = actorName ? `${verb} by ${actorName}` : verb;
+  const time = formatStatusActionTime(updatedAt);
+  return time ? `${base} · ${time}` : base;
+}
+
+function formatStatusActionTime(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  const diffMs = Date.now() - date.getTime();
+  if (diffMs >= 0 && diffMs < 60_000) return "just now";
+  if (diffMs >= 0 && diffMs < 60 * 60_000) {
+    const minutes = Math.max(1, Math.round(diffMs / 60_000));
+    return `${minutes}m ago`;
+  }
+  const now = new Date();
+  const sameDay =
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate();
+  if (sameDay) {
+    return date.toLocaleTimeString(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 /** Returns true when a stop's day identity matches the displayed today. */

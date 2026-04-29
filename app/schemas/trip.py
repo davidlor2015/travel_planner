@@ -115,6 +115,22 @@ class TripInviteAcceptResponse(BaseModel):
     status: str
 
 
+class TripInvitePendingResponse(BaseModel):
+    id: int
+    trip_id: int
+    trip_title: str
+    destination: str
+    start_date: date
+    end_date: date
+    invitee_email: EmailStr
+    role: str
+    status: str
+    created_at: datetime
+    expires_at: datetime
+    invited_by_email: EmailStr | None = None
+    invited_by_display_name: str | None = None
+
+
 class TripInviteDetailResponse(BaseModel):
     trip_id: int
     trip_title: str
@@ -210,6 +226,10 @@ class TripOnTripStopSnapshotResponse(BaseModel):
     confidence: OnTripResolutionConfidence
     stop_ref: str | None = None
     execution_status: ExecutionStatus | None = None
+    status_updated_by_user_id: int | None = None
+    status_updated_by_display_name: str | None = None
+    status_updated_by_email: EmailStr | None = None
+    status_updated_at: datetime | None = None
 
 
 class TripOnTripUnplannedStopResponse(BaseModel):

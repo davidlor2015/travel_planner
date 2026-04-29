@@ -180,4 +180,29 @@ describe("deriveOnTripViewModel — cross-day guard", () => {
 
     expect(vm.isDayComplete).toBe(false);
   });
+
+  it("builds actor status labels and falls back when actor metadata is missing", () => {
+    const withActor = buildStop({
+      execution_status: "confirmed",
+      status_updated_by_display_name: "David",
+      status_updated_by_email: "david@example.com",
+      status_updated_by_user_id: 7,
+      status_updated_at: new Date().toISOString(),
+    });
+    const withoutActor = buildStop({
+      stop_ref: "stop-day4-b",
+      execution_status: "skipped",
+    });
+
+    const vm = deriveOnTripViewModel(
+      buildSnapshot({ today_stops: [withActor, withoutActor] }),
+      {},
+      {},
+    );
+
+    expect(vm.timeline[0]?.statusActionLabel).toBe("Confirmed by David");
+    expect(vm.timeline[0]?.statusActionDetailLabel).toMatch(/^Confirmed by David · /);
+    expect(vm.timeline[1]?.statusActionLabel).toBe("Skipped");
+    expect(vm.timeline[1]?.statusActionDetailLabel).toBe("Skipped");
+  });
 });
