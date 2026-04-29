@@ -69,6 +69,7 @@ function normalizePlaceSuggestion(
   const country = asText(suggestion.country);
   const label =
     asText(suggestion.label) ??
+    asText(suggestion.displayName) ??
     asText(suggestion.display_name) ??
     [city, region, country].filter((part): part is string => Boolean(part)).join(", ");
 
@@ -79,7 +80,7 @@ function normalizePlaceSuggestion(
     asText(suggestion.place_id) ??
     `${label.toLowerCase().replace(/\s+/g, "-")}-${index}`;
 
-  const countryCode = asText(suggestion.country_code);
+  const countryCode = asText(suggestion.countryCode) ?? asText(suggestion.country_code);
 
   return {
     id,
@@ -90,6 +91,7 @@ function normalizePlaceSuggestion(
     country_code: countryCode ? countryCode.toUpperCase() : null,
     latitude: asNumber(suggestion.latitude) ?? asNumber(suggestion.lat),
     longitude: asNumber(suggestion.longitude) ?? asNumber(suggestion.lon),
+    source: asText(suggestion.source),
   };
 }
 

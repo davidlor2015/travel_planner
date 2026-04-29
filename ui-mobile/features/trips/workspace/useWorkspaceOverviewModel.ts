@@ -339,8 +339,13 @@ export function useWorkspaceOverviewModel({
     [itineraryFilter, visibleItinerary],
   );
   const itineraryDayPreviews = useMemo(
-    () => buildOverviewItineraryDayPreviews(visibleItinerary, { maxDays: 3 }),
-    [visibleItinerary],
+    () =>
+      buildOverviewItineraryDayPreviews(visibleItinerary, {
+        maxDays: 3,
+        currentDayNumber:
+          onTripSnapshot?.mode === "active" ? onTripSnapshot.today.day_number : null,
+      }),
+    [onTripSnapshot, visibleItinerary],
   );
   const command = useMemo(
     () =>

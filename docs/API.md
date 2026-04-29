@@ -269,7 +269,16 @@ Behavior notes:
 - `/flights` and `/inspirations` use Amadeus sandbox data and can return `503` when integration errors occur
 - `/explore-destinations` returns curated data from route constants in `app/api/v1/routes/search.py`
 
+## Destination Endpoints (`/v1/destinations/*`)
+
+- `GET /search?q={query}` -> `DestinationSearchResult[]`
+
+Behavior notes:
+
+- `/search` uses OpenStreetMap Nominatim directly from the backend with no API key or Expo environment variable required.
+- Provider results are normalized to `displayName`, coordinates, country, countryCode, region, and `source: "nominatim"`.
+- Provider/network failures return `503` with a clean client-facing detail.
+
 ## Known API Gaps to Confirm
 
-- Mobile client code includes a `GET /v1/search/places` call in `ui-mobile/features/trips/api.ts`, but this route is not present in current `app/api/v1/routes/search.py`. Current behavior should be confirmed.
 - If additional non-`/v1/*` routes are expected, verify in code. Current app mounting in `app/main.py` only includes `/v1/*` route modules.

@@ -330,7 +330,7 @@ export function StopFormSheet({
                       Delete stop
                     </Text>
                     <Text className="text-lg leading-5 text-danger" style={fontStyles.uiSemibold}>
-                      >
+                      {">"}
                     </Text>
                   </Pressable>
                 </Field>

@@ -10,6 +10,7 @@ from app.api.v1.routes import (
     ai,
     auth,
     budget,
+    destinations,
     invites,
     matching,
     packing,
@@ -54,6 +55,7 @@ app.include_router(trip_execution.router, prefix="/v1/trips", tags=["Trip Execut
 app.include_router(matching.router, prefix="/v1/matching", tags=["Matching"])
 app.include_router(ai.router, prefix="/v1/ai", tags=["AI"])
 app.include_router(search.router, prefix="/v1/search", tags=["Search"])
+app.include_router(destinations.router, prefix="/v1/destinations", tags=["Destinations"])
 app.include_router(invites.router, prefix="/v1/trip-invites", tags=["Trip Invites"])
 app.include_router(packing.router, prefix="/v1/trips/{trip_id}/packing", tags=["Packing"])
 app.include_router(budget.router, prefix="/v1/trips/{trip_id}/budget", tags=["Budget"])

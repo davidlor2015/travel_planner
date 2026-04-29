@@ -6,7 +6,10 @@ import * as Linking from "expo-linking";
 import { Ionicons } from "@expo/vector-icons";
 import { type Href, useRouter } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 import { useSavedItineraryQuery } from "@/features/ai/hooks";
 import type { DayPlan, ItineraryItem } from "@/features/ai/api";
@@ -21,17 +24,18 @@ import { ScreenLoading } from "@/shared/ui/ScreenLoading";
 import { DE } from "@/shared/theme/desertEditorial";
 import { fontStyles } from "@/shared/theme/typography";
 
-import type { TripExecutionStatus, TripMember, TripOnTripSnapshot } from "../types";
+import type {
+  TripExecutionStatus,
+  TripMember,
+  TripOnTripSnapshot,
+} from "../types";
 import { deriveOnTripViewModel, stopVariant } from "./adapters";
 import { HappeningNowCard } from "./HappeningNowCard";
 import { useOnTripMutations } from "./hooks";
-import { LogStopFab } from "./LogStopFab";
+import { NeedsAttentionCard } from "./NeedsAttentionCard";
 import { LogStopSheet } from "./LogStopSheet";
 import { OnTripHeader } from "./OnTripHeader";
-import {
-  buildNavigateUrl,
-  buildOnTripDayHeader,
-} from "./presentation";
+import { buildNavigateUrl, buildOnTripDayHeader } from "./presentation";
 import { TimelineRow } from "./TimelineRow";
 import { UnplannedStopRow } from "./UnplannedStopRow";
 
@@ -44,17 +48,27 @@ type Props = {
 
 const NOW_TICK_INTERVAL_MS = 60_000;
 
-export function OnTripScreen({ tripId, tripTitle, tripDestination, members }: Props) {
+export function OnTripScreen({
+  tripId,
+  tripTitle,
+  tripDestination,
+  members,
+}: Props) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const snapshotQuery = useOnTripSnapshotQuery(tripId);
   const itineraryQuery = useSavedItineraryQuery(tripId);
-  const [liveSnapshot, setLiveSnapshot] = useState<TripOnTripSnapshot | null>(null);
+  const [liveSnapshot, setLiveSnapshot] = useState<TripOnTripSnapshot | null>(
+    null,
+  );
   const [logModalOpen, setLogModalOpen] = useState(false);
 
   const [, setMinuteTick] = useState(0);
   useEffect(() => {
-    const id = setInterval(() => setMinuteTick((v) => v + 1), NOW_TICK_INTERVAL_MS);
+    const id = setInterval(
+      () => setMinuteTick((v) => v + 1),
+      NOW_TICK_INTERVAL_MS,
+    );
     return () => clearInterval(id);
   }, []);
 
@@ -79,13 +93,17 @@ export function OnTripScreen({ tripId, tripTitle, tripDestination, members }: Pr
   );
 
   const dayHeader = useMemo(
-    () => (rawSnapshot ? buildOnTripDayHeader(rawSnapshot, tripTitle, tripDestination) : null),
+    () =>
+      rawSnapshot
+        ? buildOnTripDayHeader(rawSnapshot, tripTitle, tripDestination)
+        : null,
     [rawSnapshot, tripTitle, tripDestination],
   );
 
-  if (snapshotQuery.isLoading) return <ScreenLoading label="Loading your trip..." />;
+  if (snapshotQuery.isLoading)
+    return <ScreenLoading label="Loading your trip..." />;
 
-  if (snapshotQuery.isError) {
+  if (snapshotQuery.isError && !snapshotQuery.data) {
     return (
       <ScreenError
         message="We couldn't load your live trip view. Try again in a moment."
@@ -94,7 +112,12 @@ export function OnTripScreen({ tripId, tripTitle, tripDestination, members }: Pr
     );
   }
 
-  if (!rawSnapshot || !vm || !dayHeader) return <ScreenLoading label="Loading your trip..." />;
+  if (!rawSnapshot || !vm || !dayHeader)
+    return <ScreenLoading label="Loading your trip..." />;
+
+  const showStaleBanner =
+    mutations.refreshFailed || (snapshotQuery.isError && !!snapshotQuery.data);
+  const displayedRefreshedAt = mutations.lastRefreshedAt;
 
   const nowKey = vm.now?.key ?? null;
   const nextKey = vm.next?.key ?? null;
@@ -122,22 +145,37 @@ export function OnTripScreen({ tripId, tripTitle, tripDestination, members }: Pr
   };
 
   const openStopDetail = (stopKey: string) => {
-    router.push(`/(tabs)/trips/${tripId}/stop/${encodeURIComponent(stopKey)}` as Href);
+    router.push(
+      `/(tabs)/trips/${tripId}/stop/${encodeURIComponent(stopKey)}` as Href,
+    );
   };
 
   const openFullWorkspace = () => {
     router.push(`/(tabs)/trips/${tripId}` as Href);
   };
 
-  const tomorrowStop = deriveTomorrowStop(rawSnapshot, itineraryQuery.data?.days ?? []);
+  const tomorrowStop = deriveTomorrowStop(
+    rawSnapshot,
+    itineraryQuery.data?.days ?? [],
+  );
 
   // Done count for header
   const doneCount = vm.timeline.filter(
     (s) => s.effectiveStatus === "confirmed" || s.effectiveStatus === "skipped",
   ).length;
 
+  // Exclude the currently-focused stop from the list so it isn't rendered twice
+  // (HappeningNowCard already shows it prominently above the timeline).
+  const visibleTimeline = nowKey
+    ? vm.timeline.filter((s) => s.key !== nowKey)
+    : vm.timeline;
+
   return (
-    <SafeAreaView className="flex-1" edges={["top"]} style={{ backgroundColor: DE.ivory }}>
+    <SafeAreaView
+      className="flex-1"
+      edges={["top"]}
+      style={{ backgroundColor: DE.ivory }}
+    >
       <OnTripHeader
         eyebrow={dayHeader.eyebrow}
         onBack={() =>
@@ -150,10 +188,16 @@ export function OnTripScreen({ tripId, tripTitle, tripDestination, members }: Pr
       />
 
       <ScrollView
-        contentContainerStyle={{ paddingBottom: insets.bottom + 88 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* NowCard */}
+        {/* Read-only notice */}
+        {vm.isReadOnly ? <ReadOnlyBanner /> : null}
+
+        {/* Stale data notice */}
+        {showStaleBanner ? <StaleBanner /> : null}
+
+        {/* NowCard / day-complete state */}
         {focusStop ? (
           <View className="mx-4 mt-6">
             <HappeningNowCard
@@ -173,6 +217,15 @@ export function OnTripScreen({ tripId, tripTitle, tripDestination, members }: Pr
               }
             />
           </View>
+        ) : vm.isDayComplete ? (
+          <DayCompleteCard />
+        ) : null}
+
+        {/* Blocker strip */}
+        {vm.blockers.length > 0 ? (
+          <View className="mx-4 mt-3">
+            <NeedsAttentionCard blockers={vm.blockers} />
+          </View>
         ) : null}
 
         {/* Today strip */}
@@ -182,14 +235,19 @@ export function OnTripScreen({ tripId, tripTitle, tripDestination, members }: Pr
           <View className="mt-5 px-[22px]">
             {/* Section header */}
             <View
-              className="flex-row items-baseline justify-between pb-3"
+              className="flex-row items-start justify-between pb-3"
               style={{ borderBottomWidth: 1, borderBottomColor: DE.ruleStrong }}
             >
-              <View>
+              <View className="flex-1">
                 <Text
                   style={[
                     fontStyles.monoRegular,
-                    { fontSize: 10, letterSpacing: 2.2, textTransform: "uppercase", color: DE.muted },
+                    {
+                      fontSize: 10,
+                      letterSpacing: 2.2,
+                      textTransform: "uppercase",
+                      color: DE.muted,
+                    },
                   ]}
                 >
                   Today
@@ -197,42 +255,64 @@ export function OnTripScreen({ tripId, tripTitle, tripDestination, members }: Pr
                 <Text
                   style={[
                     fontStyles.headMedium,
-                    { fontSize: 26, lineHeight: 30, marginTop: 6, letterSpacing: -0.4, color: DE.ink },
+                    {
+                      fontSize: 26,
+                      lineHeight: 30,
+                      marginTop: 6,
+                      letterSpacing: -0.4,
+                      color: DE.ink,
+                    },
                   ]}
                 >
-                  {vm.timeline.length} {vm.timeline.length === 1 ? "stop" : "stops"}
+                  {vm.timeline.length}{" "}
+                  {vm.timeline.length === 1 ? "stop" : "stops"}
                   {doneCount > 0 ? (
-                    <Text style={[fontStyles.headMediumItalic, { color: DE.muted }]}>
+                    <Text
+                      style={[fontStyles.headMediumItalic, { color: DE.muted }]}
+                    >
                       {`, ${doneCount === vm.timeline.length ? "all done." : `${doneCount} done.`}`}
                     </Text>
-                  ) : "."}
+                  ) : (
+                    "."
+                  )}
                 </Text>
               </View>
-              <Text
-                style={[
-                  fontStyles.monoRegular,
-                  { fontSize: 10, letterSpacing: 1.8, textTransform: "uppercase", color: DE.muted },
-                ]}
-              >
-                {doneCount} / {vm.timeline.length} done
-              </Text>
+              {displayedRefreshedAt > 0 ? (
+                <Text
+                  style={[
+                    fontStyles.monoRegular,
+                    {
+                      fontSize: 9,
+                      letterSpacing: 1.2,
+                      color: DE.mutedLight,
+                      marginTop: 2,
+                    },
+                  ]}
+                  accessibilityLabel={formatLastUpdated(displayedRefreshedAt)}
+                >
+                  {formatLastUpdated(displayedRefreshedAt)}
+                </Text>
+              ) : null}
             </View>
 
             {vm.timeline.length === 0 ? (
               <Text
                 className="mt-3"
-                style={[fontStyles.uiRegular, { fontSize: 13, lineHeight: 20, color: DE.muted }]}
+                style={[
+                  fontStyles.uiRegular,
+                  { fontSize: 13, lineHeight: 20, color: DE.muted },
+                ]}
               >
                 No planned stops for today.
               </Text>
             ) : (
               <View className="mt-2">
-                {vm.timeline.map((stop, idx) => (
+                {visibleTimeline.map((stop, idx) => (
                   <TimelineRow
                     key={stop.key}
                     stop={stop}
                     variant={stopVariant(stop, nowKey, nextKey)}
-                    isLast={idx === vm.timeline.length - 1}
+                    isLast={idx === visibleTimeline.length - 1}
                     onPress={() => openStopDetail(stop.key)}
                   />
                 ))}
@@ -248,7 +328,12 @@ export function OnTripScreen({ tripId, tripTitle, tripDestination, members }: Pr
               className="mb-3"
               style={[
                 fontStyles.monoRegular,
-                { fontSize: 10, letterSpacing: 2.2, textTransform: "uppercase", color: DE.muted },
+                {
+                  fontSize: 10,
+                  letterSpacing: 2.2,
+                  textTransform: "uppercase",
+                  color: DE.muted,
+                },
               ]}
             >
               Along the way
@@ -269,6 +354,44 @@ export function OnTripScreen({ tripId, tripTitle, tripDestination, members }: Pr
           </View>
         ) : null}
 
+        {/* Inline log extra stop action */}
+        {!vm.isReadOnly ? (
+          <View className="mx-[22px] mt-6">
+            <Pressable
+              onPress={() => setLogModalOpen(true)}
+              className="flex-row items-center gap-3 rounded-[12px] border px-4 py-3.5 active:opacity-70"
+              style={{ backgroundColor: DE.paper, borderColor: DE.rule }}
+              accessibilityRole="button"
+              accessibilityLabel="Log extra stop"
+            >
+              <Ionicons name="add-circle-outline" size={18} color={DE.muted} />
+              <View>
+                <Text
+                  style={[
+                    fontStyles.uiMedium,
+                    { fontSize: 13, color: DE.inkSoft },
+                  ]}
+                >
+                  + Log extra stop
+                </Text>
+                <Text
+                  style={[
+                    fontStyles.uiRegular,
+                    {
+                      fontSize: 11,
+                      lineHeight: 16,
+                      color: DE.muted,
+                      marginTop: 1,
+                    },
+                  ]}
+                >
+                  Save somewhere you visited outside the plan.
+                </Text>
+              </View>
+            </Pressable>
+          </View>
+        ) : null}
+
         {/* Tomorrow peek */}
         {tomorrowStop ? <TomorrowPeek stop={tomorrowStop} /> : null}
 
@@ -282,7 +405,10 @@ export function OnTripScreen({ tripId, tripTitle, tripDestination, members }: Pr
           >
             <Ionicons name="open-outline" size={12} color={DE.muted} />
             <Text
-              style={[fontStyles.uiRegular, { fontSize: 12, lineHeight: 18, color: DE.muted }]}
+              style={[
+                fontStyles.uiRegular,
+                { fontSize: 12, lineHeight: 18, color: DE.muted },
+              ]}
             >
               Open full workspace
             </Text>
@@ -290,23 +416,10 @@ export function OnTripScreen({ tripId, tripTitle, tripDestination, members }: Pr
         </View>
       </ScrollView>
 
-      {!vm.isReadOnly ? (
-        <View
-          style={{
-            position: "absolute",
-            bottom: insets.bottom + 16,
-            left: 20,
-            right: 20,
-          }}
-        >
-          <LogStopFab onPress={() => setLogModalOpen(true)} />
-        </View>
-      ) : null}
-
       {mutations.feedback ? (
         <Pressable
           onPress={mutations.dismissFeedback}
-          style={{ bottom: insets.bottom + (vm.isReadOnly ? 16 : 76) }}
+          style={{ bottom: insets.bottom + 16 }}
           className={[
             "absolute left-5 right-5 rounded-[16px] px-4 py-3",
             mutations.feedback.kind === "error" ? "bg-danger" : "bg-olive",
@@ -332,6 +445,113 @@ export function OnTripScreen({ tripId, tripTitle, tripDestination, members }: Pr
   );
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatLastUpdated(ts: number): string {
+  const diffMin = Math.floor((Date.now() - ts) / 60_000);
+  if (diffMin < 1) return "Updated just now";
+  if (diffMin === 1) return "Updated 1 min ago";
+  if (diffMin < 60) return `Updated ${diffMin} min ago`;
+  const time = new Date(ts).toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  return `Last updated ${time}`;
+}
+
+// ─── ReadOnlyBanner ───────────────────────────────────────────────────────────
+
+function ReadOnlyBanner() {
+  return (
+    <View
+      className="mx-4 mt-5 flex-row items-start gap-3 rounded-[14px] border px-4 py-3.5"
+      style={{ backgroundColor: DE.paper, borderColor: DE.rule }}
+      accessibilityRole="alert"
+    >
+      <Ionicons
+        name="lock-closed-outline"
+        size={13}
+        color={DE.muted}
+        style={{ marginTop: 1 }}
+      />
+      <Text
+        style={[
+          fontStyles.uiRegular,
+          { fontSize: 13, lineHeight: 19, color: DE.muted, flex: 1 },
+        ]}
+      >
+        You&apos;re viewing this trip in read-only mode. Confirm, skip, and log
+        actions are unavailable.
+      </Text>
+    </View>
+  );
+}
+
+// ─── DayCompleteCard ──────────────────────────────────────────────────────────
+
+function DayCompleteCard() {
+  return (
+    <View
+      className="mx-4 mt-6 rounded-[20px] border px-6 py-7"
+      style={{ backgroundColor: DE.paper, borderColor: DE.ruleStrong }}
+      accessibilityRole="alert"
+      accessibilityLabel="Day complete"
+    >
+      <View className="mb-4 flex-row items-center gap-2.5">
+        <Ionicons name="checkmark-circle-outline" size={14} color={DE.sage} />
+        <Text
+          style={[
+            fontStyles.monoMedium,
+            {
+              fontSize: 10,
+              letterSpacing: 2.2,
+              textTransform: "uppercase",
+              color: DE.sageDeep,
+            },
+          ]}
+        >
+          Day complete
+        </Text>
+      </View>
+      <Text
+        style={[
+          fontStyles.headMediumItalic,
+          { fontSize: 26, lineHeight: 32, color: DE.ink, letterSpacing: -0.4 },
+        ]}
+      >
+        All planned stops for today are done.
+      </Text>
+    </View>
+  );
+}
+
+// ─── StaleBanner ─────────────────────────────────────────────────────────────
+
+function StaleBanner() {
+  return (
+    <View
+      className="mx-4 mt-5 flex-row items-start gap-3 rounded-[14px] border px-4 py-3.5"
+      style={{ backgroundColor: DE.paper, borderColor: DE.claySandLight }}
+      accessibilityRole="alert"
+    >
+      <Ionicons
+        name="cloud-offline-outline"
+        size={13}
+        color={DE.muted}
+        style={{ marginTop: 1 }}
+      />
+      <Text
+        style={[
+          fontStyles.uiRegular,
+          { fontSize: 13, lineHeight: 19, color: DE.muted, flex: 1 },
+        ]}
+      >
+        Couldn&apos;t refresh. Showing last saved plan.
+      </Text>
+    </View>
+  );
+}
+
 // ─── TomorrowPeek ─────────────────────────────────────────────────────────────
 
 type TomorrowPreview = {
@@ -348,28 +568,52 @@ function TomorrowPeek({ stop }: { stop: TomorrowPreview }) {
     <View className="mx-[22px] mt-7">
       <View
         className="rounded-[14px] bg-transparent"
-        style={{ borderWidth: 1, borderColor: DE.rule, paddingHorizontal: 20, paddingVertical: 18 }}
+        style={{
+          borderWidth: 1,
+          borderColor: DE.rule,
+          paddingHorizontal: 20,
+          paddingVertical: 18,
+        }}
       >
         <View className="flex-row items-center justify-between">
           <View className="flex-1 pr-3">
             <Text
               style={[
                 fontStyles.monoRegular,
-                { fontSize: 9, letterSpacing: 2.2, textTransform: "uppercase", marginBottom: 6, color: DE.muted },
+                {
+                  fontSize: 9,
+                  letterSpacing: 2.2,
+                  textTransform: "uppercase",
+                  marginBottom: 6,
+                  color: DE.muted,
+                },
               ]}
             >
               {dateLabel ? `Tomorrow · ${dateLabel}` : "Tomorrow"}
             </Text>
             <Text
-              style={[fontStyles.headMediumItalic, { fontSize: 20, lineHeight: 24, color: DE.ink, letterSpacing: -0.3 }]}
+              style={[
+                fontStyles.headMediumItalic,
+                {
+                  fontSize: 20,
+                  lineHeight: 24,
+                  color: DE.ink,
+                  letterSpacing: -0.3,
+                },
+              ]}
               numberOfLines={2}
             >
-              {stop.time ? `${stop.title}, ${formatTripStopTime(stop.time)}.` : stop.title}
+              {stop.time
+                ? `${stop.title}, ${formatTripStopTime(stop.time)}.`
+                : stop.title}
             </Text>
             {stop.subtitle ? (
               <Text
                 className="mt-1"
-                style={[fontStyles.uiRegular, { fontSize: 12, lineHeight: 18, color: DE.muted }]}
+                style={[
+                  fontStyles.uiRegular,
+                  { fontSize: 12, lineHeight: 18, color: DE.muted },
+                ]}
               >
                 {stop.subtitle}
               </Text>
@@ -453,32 +697,41 @@ function formatTomorrowDate(iso: string | null): string | null {
   if (!iso) return null;
   const date = new Date(`${iso}T00:00:00`);
   if (Number.isNaN(date.getTime())) return iso;
-  const weekday = date.toLocaleDateString(undefined, { weekday: "short" }).toUpperCase();
+  const weekday = date
+    .toLocaleDateString(undefined, { weekday: "short" })
+    .toUpperCase();
   const day = String(date.getDate()).padStart(2, "0");
-  const month = date.toLocaleDateString(undefined, { month: "short" }).toUpperCase();
+  const month = date
+    .toLocaleDateString(undefined, { month: "short" })
+    .toUpperCase();
   return `${weekday} ${day} ${month}`;
 }
 
 // ─── No stops today ───────────────────────────────────────────────────────────
 
-function NoStopsTodayCard({ onOpenWorkspace }: { onOpenWorkspace: () => void }) {
+function NoStopsTodayCard({
+  onOpenWorkspace,
+}: {
+  onOpenWorkspace: () => void;
+}) {
   return (
     <View
       className="mx-[22px] mt-6 gap-4 rounded-[18px] border px-5 py-6"
       style={{ backgroundColor: DE.paper, borderColor: DE.rule }}
     >
       <View>
-        <Text
-          style={[fontStyles.uiSemibold, { fontSize: 17, color: DE.ink }]}
-        >
+        <Text style={[fontStyles.uiSemibold, { fontSize: 17, color: DE.ink }]}>
           No stops are planned for today.
         </Text>
         <Text
           className="mt-2"
-          style={[fontStyles.uiRegular, { fontSize: 13, lineHeight: 20, color: DE.muted }]}
+          style={[
+            fontStyles.uiRegular,
+            { fontSize: 13, lineHeight: 20, color: DE.muted },
+          ]}
         >
-          Your saved itinerary does not have resolved stops for today yet. Open the
-          workspace to review the trip plan or adjust the itinerary.
+          Your saved itinerary does not have resolved stops for today yet. Open
+          the workspace to review the trip plan or adjust the itinerary.
         </Text>
       </View>
       <Pressable

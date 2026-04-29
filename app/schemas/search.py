@@ -64,3 +64,17 @@ class ExploreDestination(BaseModel):
 class ExploreDestinationsResult(BaseModel):
     popular: list[ExploreDestination]
     regions: dict[str, list[ExploreDestination]]
+
+
+# -- Destination search -------------------------------------------------------
+
+class DestinationSearchResult(BaseModel):
+    id: str
+    name: str
+    displayName: str
+    latitude: float | None = None
+    longitude: float | None = None
+    country: str | None = None
+    countryCode: str | None = None
+    region: str | None = None
+    source: str = "nominatim"

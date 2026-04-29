@@ -434,7 +434,7 @@ export function OverviewTab({
   );
 }
 
-function OverviewItineraryPreviewRow({
+export function OverviewItineraryPreviewRow({
   preview,
   showBorder,
   onPress,
@@ -465,33 +465,6 @@ function OverviewItineraryPreviewRow({
         borderTopColor: "rgba(35,25,16,0.10)",
       }}
     >
-      {/* Day number + date */}
-      <View style={{ width: 44, flexShrink: 0, alignItems: "center" }}>
-        <Text
-          style={[fontStyles.headMedium, { fontSize: 22, color: "#231910", letterSpacing: -0.3, lineHeight: 22 }]}
-        >
-          {preview.dayNumber}
-        </Text>
-        {preview.dateLabel ? (
-          <Text
-            style={[fontStyles.monoRegular, { fontSize: 9, color: "#8A7B6A", letterSpacing: 1.5, marginTop: 4 }]}
-          >
-            {preview.dateLabel.toUpperCase()}
-          </Text>
-        ) : null}
-      </View>
-
-      {/* Vertical divider */}
-      <View
-        style={{
-          width: 1,
-          alignSelf: "stretch",
-          minHeight: 40,
-          backgroundColor: "rgba(35,25,16,0.10)",
-          flexShrink: 0,
-        }}
-      />
-
       {/* Day title + stop preview */}
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text
@@ -500,6 +473,13 @@ function OverviewItineraryPreviewRow({
         >
           {preview.dayTitle}
         </Text>
+        {preview.dateLabel ? (
+          <Text
+            style={[fontStyles.monoRegular, { fontSize: 9, color: "#8A7B6A", letterSpacing: 1.5, marginTop: 3 }]}
+          >
+            {preview.dateLabel.toUpperCase()}
+          </Text>
+        ) : null}
         {stopPreview ? (
           <Text
             style={[fontStyles.uiRegular, { fontSize: 12.5, lineHeight: 18, color: "#8A7B6A", marginTop: 4 }]}

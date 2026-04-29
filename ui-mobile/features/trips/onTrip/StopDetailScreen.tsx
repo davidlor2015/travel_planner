@@ -6,9 +6,15 @@ import * as Linking from "expo-linking";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
-import { useOnTripSnapshotQuery, useTripDetailQuery } from "@/features/trips/hooks";
+import {
+  useOnTripSnapshotQuery,
+  useTripDetailQuery,
+} from "@/features/trips/hooks";
 import { formatTripStopTime } from "@/features/trips/stopTime";
 import { ScreenError } from "@/shared/ui/ScreenError";
 import { ScreenLoading } from "@/shared/ui/ScreenLoading";
@@ -48,7 +54,9 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
       if (!Number.isNaN(idx)) raw = snapshot.today_stops[idx];
     }
     if (!raw) return null;
-    const isPending = raw.stop_ref ? (mutations.statusPending[raw.stop_ref] ?? false) : false;
+    const isPending = raw.stop_ref
+      ? (mutations.statusPending[raw.stop_ref] ?? false)
+      : false;
     return toStopVmForDetail(raw, isPending, snapshot.read_only);
   }, [snapshotQuery.data, stopKey, mutations.statusPending]);
 
@@ -106,11 +114,19 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
   const timeKicker = stop.time ? formatTripStopTime(stop.time) : null;
 
   return (
-    <SafeAreaView className="flex-1" edges={["top"]} style={{ backgroundColor: DE.ivory }}>
+    <SafeAreaView
+      className="flex-1"
+      edges={["top"]}
+      style={{ backgroundColor: DE.ivory }}
+    >
       {/* Detail top bar */}
       <View
         className="flex-row items-center justify-between px-5 py-3"
-        style={{ backgroundColor: DE.ivory, borderBottomWidth: 1, borderBottomColor: DE.rule }}
+        style={{
+          backgroundColor: DE.ivory,
+          borderBottomWidth: 1,
+          borderBottomColor: DE.rule,
+        }}
       >
         <Pressable
           onPress={() => router.back()}
@@ -121,7 +137,15 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
         >
           <Ionicons name="chevron-back" size={14} color={DE.muted} />
           <Text
-            style={[fontStyles.monoRegular, { fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: DE.muted }]}
+            style={[
+              fontStyles.monoRegular,
+              {
+                fontSize: 10,
+                letterSpacing: 2,
+                textTransform: "uppercase",
+                color: DE.muted,
+              },
+            ]}
           >
             Today
           </Text>
@@ -135,7 +159,15 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
             />
           ) : null}
           <Text
-            style={[fontStyles.monoMedium, { fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: kickerColor }]}
+            style={[
+              fontStyles.monoMedium,
+              {
+                fontSize: 10,
+                letterSpacing: 2,
+                textTransform: "uppercase",
+                color: kickerColor,
+              },
+            ]}
           >
             {statusKicker}
           </Text>
@@ -143,14 +175,25 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
       </View>
 
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 22, paddingBottom: insets.bottom + 32 }}
+        contentContainerStyle={{
+          paddingHorizontal: 22,
+          paddingBottom: insets.bottom + 32,
+        }}
         showsVerticalScrollIndicator={false}
       >
         {/* Kicker */}
         {stop.time ? (
           <View className="mt-5">
             <Text
-              style={[fontStyles.monoMedium, { fontSize: 10, letterSpacing: 2.2, textTransform: "uppercase", color: DE.clay }]}
+              style={[
+                fontStyles.monoMedium,
+                {
+                  fontSize: 10,
+                  letterSpacing: 2.2,
+                  textTransform: "uppercase",
+                  color: DE.clay,
+                },
+              ]}
             >
               {timeKicker}
             </Text>
@@ -160,7 +203,15 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
         {/* Hero title */}
         <View className="mt-4 mb-2">
           <Text
-            style={[fontStyles.headMedium, { fontSize: 44, lineHeight: 48, letterSpacing: -1, color: DE.ink }]}
+            style={[
+              fontStyles.headMedium,
+              {
+                fontSize: 44,
+                lineHeight: 48,
+                letterSpacing: -1,
+                color: DE.ink,
+              },
+            ]}
           >
             {titleMain ? `${titleMain} ` : ""}
             <Text style={fontStyles.headMediumItalic}>{titleLast}.</Text>
@@ -170,7 +221,15 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
         {/* Location / description */}
         {stop.location ? (
           <Text
-            style={[fontStyles.headMediumItalic, { fontSize: 17, lineHeight: 24, color: DE.muted, marginBottom: 22 }]}
+            style={[
+              fontStyles.headMediumItalic,
+              {
+                fontSize: 17,
+                lineHeight: 24,
+                color: DE.muted,
+                marginBottom: 22,
+              },
+            ]}
           >
             {stop.location}
           </Text>
@@ -188,35 +247,55 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
             accessibilityLabel="Navigate to this stop"
           >
             <Ionicons name="navigate" size={16} color={DE.ivory} />
-            <Text style={[fontStyles.uiSemibold, { fontSize: 15, color: DE.ivory, letterSpacing: 0.2 }]}>
+            <Text
+              style={[
+                fontStyles.uiSemibold,
+                { fontSize: 15, color: DE.ivory, letterSpacing: 0.2 },
+              ]}
+            >
               Navigate{stop.location ? " · route" : ""}
             </Text>
           </Pressable>
         ) : null}
 
-        {/* 2×2 Atomic action grid */}
-        {!isReadOnly ? (
+        {/* Stop actions */}
+        {isReadOnly ? (
+          <View
+            className="mb-6 flex-row items-start gap-2.5 rounded-[12px] border px-4 py-3"
+            style={{ backgroundColor: DE.paper, borderColor: DE.rule }}
+            accessibilityRole="alert"
+          >
+            <Ionicons
+              name="lock-closed-outline"
+              size={12}
+              color={DE.muted}
+              style={{ marginTop: 1 }}
+            />
+            <Text
+              style={[
+                fontStyles.uiRegular,
+                { fontSize: 13, lineHeight: 19, color: DE.muted, flex: 1 },
+              ]}
+            >
+              Trip actions are not available in read-only mode.
+            </Text>
+          </View>
+        ) : stop.stop_ref ? (
           <View className="mb-6 flex-row flex-wrap gap-2.5">
-            {stop.stop_ref ? (
-              <>
-                <AtomicAction
-                  label="I'm here"
-                  sub={effectiveStatus === "confirmed" ? "Confirmed" : "Start stop"}
-                  active={effectiveStatus === "confirmed"}
-                  disabled={isPending}
-                  onPress={() => handleStatus("confirmed")}
-                />
-                <AtomicAction
-                  label="Skip this"
-                  sub={effectiveStatus === "skipped" ? "Skipped" : "Mark skipped"}
-                  active={effectiveStatus === "skipped"}
-                  disabled={isPending}
-                  onPress={() => handleStatus("skipped")}
-                />
-              </>
-            ) : null}
-            <AtomicAction label="Call venue" sub="Use Maps" disabled={!navigateUrl} onPress={() => {}} />
-            <AtomicAction label="Add a note" sub="Private" disabled onPress={() => {}} />
+            <AtomicAction
+              label="I'm here"
+              sub={effectiveStatus === "confirmed" ? "Confirmed" : "Start stop"}
+              active={effectiveStatus === "confirmed"}
+              disabled={isPending}
+              onPress={() => handleStatus("confirmed")}
+            />
+            <AtomicAction
+              label="Skip this"
+              sub={effectiveStatus === "skipped" ? "Skipped" : "Mark skipped"}
+              active={effectiveStatus === "skipped"}
+              disabled={isPending}
+              onPress={() => handleStatus("skipped")}
+            />
           </View>
         ) : null}
 
@@ -232,7 +311,16 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
             }}
           >
             <Text
-              style={[fontStyles.monoRegular, { fontSize: 9, letterSpacing: 2.2, textTransform: "uppercase", color: DE.muted, marginBottom: 12 }]}
+              style={[
+                fontStyles.monoRegular,
+                {
+                  fontSize: 9,
+                  letterSpacing: 2.2,
+                  textTransform: "uppercase",
+                  color: DE.muted,
+                  marginBottom: 12,
+                },
+              ]}
             >
               With you
             </Text>
@@ -242,13 +330,29 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
                   <MemberAvatar email={m.email} index={index} />
                   <Text
                     className="flex-1"
-                    style={[fontStyles.uiRegular, { fontSize: 14, color: DE.ink }]}
+                    style={[
+                      fontStyles.uiRegular,
+                      { fontSize: 14, color: DE.ink },
+                    ]}
                   >
                     {formatMemberName(m.email)}
                   </Text>
                   <View className="flex-row items-center gap-1.5">
-                    <View className="h-[5px] w-[5px] rounded-full" style={{ backgroundColor: DE.sageDeep }} />
-                    <Text style={[fontStyles.monoRegular, { fontSize: 10, letterSpacing: 1.5, textTransform: "uppercase", color: DE.sageDeep }]}>
+                    <View
+                      className="h-[5px] w-[5px] rounded-full"
+                      style={{ backgroundColor: DE.sageDeep }}
+                    />
+                    <Text
+                      style={[
+                        fontStyles.monoRegular,
+                        {
+                          fontSize: 10,
+                          letterSpacing: 1.5,
+                          textTransform: "uppercase",
+                          color: DE.sageDeep,
+                        },
+                      ]}
+                    >
                       On trip
                     </Text>
                   </View>
@@ -260,9 +364,21 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
 
         <View className="mb-4">
           <View className="mb-2 flex-row items-center gap-2">
-            <Ionicons name="lock-closed-outline" size={10} color={DE.mutedLight} />
+            <Ionicons
+              name="lock-closed-outline"
+              size={10}
+              color={DE.mutedLight}
+            />
             <Text
-              style={[fontStyles.monoRegular, { fontSize: 9, letterSpacing: 2, textTransform: "uppercase", color: DE.mutedLight }]}
+              style={[
+                fontStyles.monoRegular,
+                {
+                  fontSize: 9,
+                  letterSpacing: 2,
+                  textTransform: "uppercase",
+                  color: DE.mutedLight,
+                },
+              ]}
             >
               From the plan · not editable here
             </Text>
@@ -270,7 +386,14 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
           <Text
             style={[
               fontStyles.headMediumItalic,
-              { fontSize: 16, lineHeight: 24, color: DE.inkSoft, paddingLeft: 14, borderLeftWidth: 2, borderLeftColor: DE.rule },
+              {
+                fontSize: 16,
+                lineHeight: 24,
+                color: DE.inkSoft,
+                paddingLeft: 14,
+                borderLeftWidth: 2,
+                borderLeftColor: DE.rule,
+              },
             ]}
           >
             Plan notes and deeper edits live in the full workspace.
@@ -317,7 +440,12 @@ function AtomicAction({
       <Text style={[fontStyles.uiSemibold, { fontSize: 14, color: DE.ink }]}>
         {label}
       </Text>
-      <Text style={[fontStyles.uiRegular, { fontSize: 11, color: DE.muted, marginTop: 3 }]}>
+      <Text
+        style={[
+          fontStyles.uiRegular,
+          { fontSize: 11, color: DE.muted, marginTop: 3 },
+        ]}
+      >
         {sub}
       </Text>
     </Pressable>

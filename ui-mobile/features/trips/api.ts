@@ -73,7 +73,7 @@ export async function searchPlaces(query: string): Promise<PlaceSearchApiRespons
   const normalized = query.trim();
   if (!normalized) return { suggestions: [] };
   return apiRequest<PlaceSearchApiResponse>(
-    `/v1/search/places?q=${encodeURIComponent(normalized)}`,
+    `/v1/destinations/search?q=${encodeURIComponent(normalized)}`,
   );
 }
 

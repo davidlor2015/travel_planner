@@ -76,7 +76,26 @@ export function formatTripStopTime(
   return normalizeVagueTimeLabel(raw) ?? raw;
 }
 
-export function stopTimeToMinutes(value: string | null | undefined): number | null {
+export function stopTimeToMinutes(
+  value: string | null | undefined,
+): number | null {
   const clock = parseClockParts(value);
   return clock ? clock.hour24 * 60 + clock.minute : null;
+}
+
+export type StopTimeDisplay = { clock: string | null; period: string | null };
+
+/** Splits a raw stop time string into a clock token and a vague-period token.
+ *  Exactly one will be non-null for a recognised value; both null when empty. */
+export function splitStopTimeDisplay(
+  value: string | null | undefined,
+): StopTimeDisplay {
+  const raw = normalizeWhitespace(value ?? "");
+  if (!raw) return { clock: null, period: null };
+
+  const parts = parseClockParts(raw);
+  if (parts)
+    return { clock: formatClock(parts.hour24, parts.minute), period: null };
+
+  return { clock: null, period: normalizeVagueTimeLabel(raw) };
 }

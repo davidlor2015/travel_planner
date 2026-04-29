@@ -1,8 +1,15 @@
 // Path: ui-mobile/features/trips/onTrip/presentation.ts
 // Summary: Implements presentation module logic.
 
-import type { TripExecutionStatus, TripOnTripBlocker, TripOnTripSnapshot } from "../types";
+import type {
+  TripExecutionStatus,
+  TripOnTripBlocker,
+  TripOnTripSnapshot,
+} from "../types";
 import type { StopVM, TimelineVariant } from "./adapters";
+
+export { splitStopTimeDisplay } from "../stopTime";
+export type { StopTimeDisplay } from "../stopTime";
 
 // ─── Day header ───────────────────────────────────────────────────────────────
 
@@ -35,7 +42,7 @@ export function buildOnTripDayHeader(
       : "ON TRIP";
 
   const weekday = formatWeekday(snapshot.today.day_date);
-  const destination = (tripDestination?.trim() || tripTitle.trim()) || "";
+  const destination = tripDestination?.trim() || tripTitle.trim() || "";
   const shortPlace = extractShortDestination(destination);
 
   let title: string;
@@ -74,7 +81,9 @@ export type OnTripBlockerStripVM = {
   actionLabel: string | null;
 };
 
-export function buildBlockerStrip(blockers: TripOnTripBlocker[]): OnTripBlockerStripVM | null {
+export function buildBlockerStrip(
+  blockers: TripOnTripBlocker[],
+): OnTripBlockerStripVM | null {
   const first = blockers[0];
   if (!first) return null;
 
@@ -92,7 +101,11 @@ export function buildBlockerStrip(blockers: TripOnTripBlocker[]): OnTripBlockerS
     title: first.title,
     detail: first.detail?.trim() || null,
     actionLabel:
-      blockers.length > 1 ? `${blockers.length} items` : hasDetail ? "Adjust" : null,
+      blockers.length > 1
+        ? `${blockers.length} items`
+        : hasDetail
+          ? "Adjust"
+          : null,
   };
 }
 
@@ -148,10 +161,10 @@ function formatHeaderDate(iso: string | null): string | null {
   if (!iso) return null;
   const date = new Date(`${iso}T00:00:00`);
   if (Number.isNaN(date.getTime())) return null;
-  const weekday = date.toLocaleDateString(undefined, { weekday: "short" }).toUpperCase();
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = date.toLocaleDateString(undefined, { month: "short" }).toUpperCase();
-  return `${weekday} ${day} ${month}`;
+  const weekday = date.toLocaleDateString(undefined, { weekday: "short" });
+  const month = date.toLocaleDateString(undefined, { month: "short" });
+  const day = date.getDate();
+  return `${weekday}, ${month} ${day}`;
 }
 
 function formatStopCount(count: number): string {

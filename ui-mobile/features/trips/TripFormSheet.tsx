@@ -11,16 +11,24 @@ import {
   Text,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Button, SecondaryButton } from "@/shared/ui/Button";
+import { Field } from "@/shared/ui/Field";
 import { ScreenHeader } from "@/shared/ui/ScreenHeader";
 import { TextInputField } from "@/shared/ui/TextInputField";
 import { fontStyles } from "@/shared/theme/typography";
-import { formatDateInput } from "@/shared/utils/formatDateInput";
 
-import { PlaceAutocompleteInput } from "./PlaceAutocompleteInput";
-import type { PlaceSuggestion, TripCreate, TripResponse, TripUpdate } from "./types";
+import { DateRangePickerSheet } from "./DateRangePickerSheet";
+import { DestinationPickerSheet } from "./DestinationPickerSheet";
+import type {
+  PlaceSuggestion,
+  SelectedDestination,
+  TripCreate,
+  TripResponse,
+  TripUpdate,
+} from "./types";
 import { usePlaceAutocomplete } from "./usePlaceAutocomplete";
 import {
   BUDGET_OPTIONS,
@@ -38,6 +46,7 @@ export type TripFormValue = {
   budget?: string;
   pace?: string;
   interests?: string[];
+  selectedDestination?: SelectedDestination | null;
   selectedDestinationPlace?: PlaceSuggestion | null;
 };
 
@@ -60,15 +69,22 @@ function toInitialValue(
   trip?: TripResponse | null,
   initialDestination?: string,
 ): TripFormValue {
+  const initialDestinationText = trip?.destination ?? initialDestination ?? "";
   return {
     title:       trip?.title                    ?? "",
-    destination: trip?.destination              ?? initialDestination ?? "",
+    destination: initialDestinationText,
     start_date:  trip?.start_date?.slice(0, 10) ?? "",
     end_date:    trip?.end_date?.slice(0, 10)   ?? "",
     notes:       mode === "edit" ? (trip?.notes ?? "") : "",
     budget:      undefined,
     pace:        undefined,
     interests:   [],
+    selectedDestination: initialDestinationText
+      ? destinationFromText(
+          initialDestinationText,
+          trip ? "saved_trip" : "initial_destination",
+        )
+      : null,
     selectedDestinationPlace: null,
   };
 }
@@ -79,11 +95,15 @@ function validate(
   const next: Partial<Record<keyof TripFormValue, string>> = {};
   const datePattern = /^\d{4}-\d{2}-\d{2}$/;
   if (!value.title.trim())       next.title       = "Trip title is required.";
-  if (!value.destination.trim()) next.destination = "Destination is required.";
-  if (!value.start_date)         next.start_date  = "Start date is required.";
+  if (!value.selectedDestination)
+    next.destination =
+      "Choose a destination from the search results so Waypoint knows where to build your trip.";
+  if (!value.start_date || !value.end_date) {
+    next.start_date = "Choose your trip dates before continuing.";
+    return next;
+  }
   if (value.start_date && !datePattern.test(value.start_date))
     next.start_date = "Use YYYY-MM-DD.";
-  if (!value.end_date)           next.end_date    = "End date is required.";
   if (value.end_date && !datePattern.test(value.end_date))
     next.end_date = "Use YYYY-MM-DD.";
   if (value.start_date && value.end_date && value.end_date < value.start_date)
@@ -92,6 +112,8 @@ function validate(
 }
 
 export function buildCreateTripPayload(value: TripFormValue): TripCreate {
+  const destination =
+    value.selectedDestination?.displayName.trim() || value.destination.trim();
   const preferenceNotes = serializePreferences({
     budget:    value.budget,
     pace:      value.pace,
@@ -99,7 +121,7 @@ export function buildCreateTripPayload(value: TripFormValue): TripCreate {
   });
   return {
     title:       value.title.trim(),
-    destination: value.destination.trim(),
+    destination,
     start_date:  value.start_date,
     end_date:    value.end_date,
     notes:       preferenceNotes || undefined,
@@ -107,13 +129,84 @@ export function buildCreateTripPayload(value: TripFormValue): TripCreate {
 }
 
 export function buildTripUpdatePayload(value: TripFormValue): TripUpdate {
+  const destination =
+    value.selectedDestination?.displayName.trim() || value.destination.trim();
   return {
     title:       value.title.trim(),
-    destination: value.destination.trim(),
+    destination,
     start_date:  value.start_date,
     end_date:    value.end_date,
     notes:       value.notes.trim() || undefined,
   };
+}
+
+function destinationFromText(
+  displayName: string,
+  source: string,
+): SelectedDestination {
+  const name =
+    displayName.split(",").map((part) => part.trim()).find(Boolean) || displayName;
+  return {
+    id: `${source}:${displayName.trim().toLowerCase()}`,
+    name,
+    displayName,
+    source,
+  };
+}
+
+function parseDateInput(value: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const parsed = new Date(year, month - 1, day);
+  if (
+    parsed.getFullYear() !== year ||
+    parsed.getMonth() !== month - 1 ||
+    parsed.getDate() !== day
+  ) {
+    return null;
+  }
+  return parsed;
+}
+
+function formatAutoTitleDateRange(startDate: string, endDate: string): string | null {
+  const start = parseDateInput(startDate);
+  const end = parseDateInput(endDate);
+  if (!start || !end) return null;
+
+  const startMonth = start.toLocaleDateString("en-US", { month: "short" });
+  const endMonth = end.toLocaleDateString("en-US", { month: "short" });
+  const startDay = start.getDate();
+  const endDay = end.getDate();
+
+  if (
+    start.getFullYear() === end.getFullYear() &&
+    start.getMonth() === end.getMonth()
+  ) {
+    return `${startMonth} ${startDay}–${endDay}`;
+  }
+
+  return `${startMonth} ${startDay}–${endMonth} ${endDay}`;
+}
+
+function buildSuggestedTitle(value: TripFormValue): string | null {
+  const destination = value.selectedDestination;
+  if (!destination || !value.start_date || !value.end_date) return null;
+  const dateRange = formatAutoTitleDateRange(value.start_date, value.end_date);
+  if (!dateRange) return null;
+  return `${destination.name} · ${dateRange}`;
+}
+
+function formatDisplayDate(value: string): string {
+  const date = parseDateInput(value);
+  if (!date) return "Choose date";
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 export function TripFormSheet({
@@ -133,19 +226,20 @@ export function TripFormSheet({
   const {
     query: destinationQuery,
     suggestions: placeSuggestions,
-    selectedPlace,
     isLoading: isSearchingPlaces,
     error: placeSearchError,
     hasSearched: hasSearchedPlaces,
     minQueryLength,
     onQueryChange: onDestinationQueryChange,
-    selectSuggestion: onDestinationSuggestionSelect,
     reset: resetDestinationAutocomplete,
   } = usePlaceAutocomplete({
     debounceMs: 300,
     minQueryLength: 2,
   });
   const [value, setValue] = useState<TripFormValue>(toInitialValue(mode, trip));
+  const [destinationSheetOpen, setDestinationSheetOpen] = useState(false);
+  const [dateSheetOpen, setDateSheetOpen] = useState(false);
+  const [dateSelectionMode, setDateSelectionMode] = useState<"start" | "end">("start");
   const [errors, setErrors] = useState<
     Partial<Record<keyof TripFormValue, string>>
   >({});
@@ -155,22 +249,10 @@ export function TripFormSheet({
     const initial = toInitialValue(mode, trip, initialDestination);
     setValue(initial);
     resetDestinationAutocomplete(initial.destination);
+    setDateSheetOpen(false);
+    setDateSelectionMode("start");
     setErrors({});
   }, [trip, visible, mode, initialDestination, resetDestinationAutocomplete]);
-
-  useEffect(() => {
-    setValue((current) => {
-      if (current.destination === destinationQuery) return current;
-      return { ...current, destination: destinationQuery };
-    });
-  }, [destinationQuery]);
-
-  useEffect(() => {
-    setValue((current) => {
-      if (current.selectedDestinationPlace === selectedPlace) return current;
-      return { ...current, selectedDestinationPlace: selectedPlace };
-    });
-  }, [selectedPlace]);
 
   const titleLabel = mode === "create" ? "Create trip" : "Edit trip";
   const submitLabel = mode === "create" ? "Create trip" : "Save changes";
@@ -197,15 +279,45 @@ export function TripFormSheet({
   }
 
   function handleSubmit() {
-    const submitValue: TripFormValue = {
-      ...value,
-      destination: destinationQuery,
-      selectedDestinationPlace: selectedPlace,
-    };
+    const suggestedTitle = value.title.trim() ? null : buildSuggestedTitle(value);
+    const submitValue: TripFormValue = suggestedTitle
+      ? { ...value, title: suggestedTitle }
+      : value;
     const nextErrors = validate(submitValue);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
     void onSubmit(submitValue);
+  }
+
+  function handleSelectDestination(destination: SelectedDestination) {
+    setValue((current) => ({
+      ...current,
+      destination: destination.displayName,
+      selectedDestination: destination,
+      selectedDestinationPlace: null,
+    }));
+    resetDestinationAutocomplete(destination.displayName);
+    setErrors((current) => ({ ...current, destination: undefined }));
+    setDestinationSheetOpen(false);
+  }
+
+  function handleOpenDateSheet(selectionMode: "start" | "end") {
+    setDateSelectionMode(selectionMode);
+    setDateSheetOpen(true);
+  }
+
+  function handleConfirmDates(range: { startDate: string; endDate: string }) {
+    setValue((current) => ({
+      ...current,
+      start_date: range.startDate,
+      end_date: range.endDate,
+    }));
+    setErrors((current) => ({
+      ...current,
+      start_date: undefined,
+      end_date: undefined,
+    }));
+    setDateSheetOpen(false);
   }
 
   return (
@@ -256,48 +368,39 @@ export function TripFormSheet({
                   onChangeText={(v) => setValue((c) => ({ ...c, title: v }))}
                   error={errors.title}
                 />
-                <PlaceAutocompleteInput
-                  label="Destination"
-                  placeholder="e.g. Rome, Italy"
-                  value={destinationQuery}
-                  minQueryLength={minQueryLength}
-                  loading={isSearchingPlaces}
-                  searchError={placeSearchError}
-                  hasSearched={hasSearchedPlaces}
-                  suggestions={placeSuggestions}
-                  onChangeText={onDestinationQueryChange}
-                  onSelectSuggestion={onDestinationSuggestionSelect}
+                <DestinationPickerRow
+                  selectedDestination={value.selectedDestination ?? null}
                   error={errors.destination}
+                  onPress={() => setDestinationSheetOpen(true)}
                 />
-                <View className="flex-row gap-3">
-                  <View className="flex-1">
-                    <TextInputField
-                      label="Start date"
-                      hint="YYYY-MM-DD"
-                      placeholder="2026-07-10"
-                      value={value.start_date}
-                      onChangeText={(v) =>
-                        setValue((c) => ({ ...c, start_date: formatDateInput(v) }))
-                      }
-                      keyboardType="numeric"
-                      autoCapitalize="none"
-                      error={errors.start_date}
-                    />
+                <View className="gap-1.5">
+                  <View className="flex-row gap-3">
+                    <View className="flex-1">
+                      <DateField
+                        label="Start date"
+                        value={value.start_date}
+                        error={Boolean(errors.start_date || errors.end_date)}
+                        onPress={() => handleOpenDateSheet("start")}
+                      />
+                    </View>
+                    <View className="flex-1">
+                      <DateField
+                        label="End date"
+                        value={value.end_date}
+                        error={Boolean(errors.start_date || errors.end_date)}
+                        onPress={() => handleOpenDateSheet("end")}
+                      />
+                    </View>
                   </View>
-                  <View className="flex-1">
-                    <TextInputField
-                      label="End date"
-                      hint="YYYY-MM-DD"
-                      placeholder="2026-07-16"
-                      value={value.end_date}
-                      onChangeText={(v) =>
-                        setValue((c) => ({ ...c, end_date: formatDateInput(v) }))
-                      }
-                      keyboardType="numeric"
-                      autoCapitalize="none"
-                      error={errors.end_date}
-                    />
-                  </View>
+                  {errors.start_date || errors.end_date ? (
+                    <Text
+                      className="text-xs text-danger"
+                      style={fontStyles.uiMedium}
+                      accessibilityRole="alert"
+                    >
+                      {errors.start_date ?? errors.end_date}
+                    </Text>
+                  ) : null}
                 </View>
               </FormSection>
 
@@ -483,8 +586,112 @@ export function TripFormSheet({
             </View>
           </View>
         </KeyboardAvoidingView>
+        <DestinationPickerSheet
+          visible={destinationSheetOpen}
+          query={destinationQuery}
+          suggestions={placeSuggestions}
+          loading={isSearchingPlaces}
+          searchError={placeSearchError}
+          hasSearched={hasSearchedPlaces}
+          minQueryLength={minQueryLength}
+          onChangeQuery={onDestinationQueryChange}
+          onSelectDestination={handleSelectDestination}
+          onClose={() => setDestinationSheetOpen(false)}
+        />
+        <DateRangePickerSheet
+          visible={dateSheetOpen}
+          startDate={value.start_date}
+          endDate={value.end_date}
+          initialSelectionMode={dateSelectionMode}
+          onConfirm={handleConfirmDates}
+          onClose={() => setDateSheetOpen(false)}
+        />
       </View>
     </Modal>
+  );
+}
+
+function DateField({
+  label,
+  value,
+  error,
+  onPress,
+}: {
+  label: "Start date" | "End date";
+  value: string;
+  error: boolean;
+  onPress: () => void;
+}) {
+  const displayValue = formatDisplayDate(value);
+
+  return (
+    <Field label={label}>
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={`${label}, ${displayValue}`}
+        className={[
+          "min-h-14 justify-center rounded-2xl border bg-white px-4 py-3 active:opacity-70",
+          error ? "border-danger" : "border-border",
+        ].join(" ")}
+      >
+        <Text
+          className={value ? "text-[15px] text-text" : "text-[15px] text-text-muted"}
+          style={fontStyles.uiMedium}
+          numberOfLines={1}
+        >
+          {displayValue}
+        </Text>
+      </Pressable>
+    </Field>
+  );
+}
+
+function DestinationPickerRow({
+  selectedDestination,
+  error,
+  onPress,
+}: {
+  selectedDestination: SelectedDestination | null;
+  error?: string | null;
+  onPress: () => void;
+}) {
+  return (
+    <Field label="Destination" error={error}>
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={
+          selectedDestination
+            ? `Destination, ${selectedDestination.displayName}. Change destination.`
+            : "Choose destination"
+        }
+        className={[
+          "min-h-14 flex-row items-center rounded-2xl border bg-white px-4 py-3 active:opacity-70",
+          error ? "border-danger" : "border-border",
+        ].join(" ")}
+      >
+        {selectedDestination ? (
+          <>
+            <View className="mr-3 h-9 w-9 items-center justify-center rounded-full bg-surface-muted">
+              <Ionicons name="location-outline" size={17} color="#B86845" />
+            </View>
+            <View className="min-w-0 flex-1">
+              <Text className="text-sm text-text" style={fontStyles.uiMedium}>
+                {selectedDestination.displayName}
+              </Text>
+            </View>
+            <Text className="ml-3 text-xs text-accent" style={fontStyles.uiSemibold}>
+              Change
+            </Text>
+          </>
+        ) : (
+          <Text className="text-[15px] text-text-muted" style={fontStyles.uiMedium}>
+            + Choose destination
+          </Text>
+        )}
+      </Pressable>
+    </Field>
   );
 }
 

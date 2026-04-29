@@ -101,9 +101,57 @@ function buildDayPreview(day: Itinerary["days"][number]): OverviewItineraryDayPr
 
 export function buildOverviewItineraryDayPreviews(
   itinerary: Itinerary | null,
-  options?: { maxDays?: number },
+  options?: {
+    maxDays?: number;
+    currentDayIndex?: number | null;
+    currentDayNumber?: number | null;
+  },
 ): OverviewItineraryDayPreview[] {
   if (!itinerary?.days?.length) return [];
   const maxDays = options?.maxDays ?? 3;
-  return itinerary.days.slice(0, maxDays).map(buildDayPreview);
+  if (maxDays <= 0) return [];
+
+  const currentIndex = resolveCurrentDayIndex(itinerary.days, options);
+  const previewDays =
+    currentIndex === null
+      ? itinerary.days.slice(0, maxDays)
+      : selectRollingPreviewDays(itinerary.days, currentIndex, maxDays);
+
+  return previewDays.map(buildDayPreview);
+}
+
+function resolveCurrentDayIndex(
+  days: Itinerary["days"],
+  options:
+    | {
+        currentDayIndex?: number | null;
+        currentDayNumber?: number | null;
+      }
+    | undefined,
+): number | null {
+  if (
+    typeof options?.currentDayIndex === "number" &&
+    Number.isInteger(options.currentDayIndex) &&
+    options.currentDayIndex >= 0 &&
+    options.currentDayIndex < days.length
+  ) {
+    return options.currentDayIndex;
+  }
+
+  if (typeof options?.currentDayNumber !== "number") return null;
+  const dayIndex = days.findIndex((day) => day.day_number === options.currentDayNumber);
+  return dayIndex >= 0 ? dayIndex : null;
+}
+
+function selectRollingPreviewDays(
+  days: Itinerary["days"],
+  currentIndex: number,
+  maxDays: number,
+): Itinerary["days"] {
+  const forwardDays = days.slice(currentIndex, currentIndex + maxDays);
+  if (forwardDays.length >= maxDays) return forwardDays;
+
+  const backfillCount = maxDays - forwardDays.length;
+  const backfillStart = Math.max(0, currentIndex - backfillCount);
+  return [...days.slice(backfillStart, currentIndex), ...forwardDays];
 }

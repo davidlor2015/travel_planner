@@ -27,6 +27,8 @@ export type OnTripViewModel = {
   blockers: TripOnTripBlocker[];
   defaultLogDate: string;
   isReadOnly: boolean;
+  /** True when today has stops and every one is confirmed or skipped. */
+  isDayComplete: boolean;
 };
 
 export function todayLocalISODate(now: Date = new Date()): string {
@@ -81,7 +83,9 @@ function toStopVM(
 ): StopVM {
   const effectiveStatus: TripExecutionStatus =
     stop.execution_status ?? stop.status ?? "planned";
-  const isPending = stop.stop_ref ? (statusPending[stop.stop_ref] ?? false) : false;
+  const isPending = stop.stop_ref
+    ? (statusPending[stop.stop_ref] ?? false)
+    : false;
   return {
     ...stop,
     key: stop.stop_ref ?? `stop-${index}`,
@@ -89,6 +93,17 @@ function toStopVM(
     isPending,
     isReadOnly,
   };
+}
+
+/** Returns true when a stop's day identity matches the displayed today. */
+function stopBelongsToToday(
+  stop: TripOnTripStopSnapshot,
+  today: TripOnTripStopSnapshot,
+): boolean {
+  if (stop.day_date && today.day_date) return stop.day_date === today.day_date;
+  if (stop.day_number !== null && today.day_number !== null)
+    return stop.day_number === today.day_number;
+  return true; // can't determine; assume same day rather than discard
 }
 
 export function deriveOnTripViewModel(
@@ -103,16 +118,36 @@ export function deriveOnTripViewModel(
   const currentRaw = deriveCurrentStop(stops, nowMinutes);
   const currentIndex = currentRaw ? findStopIndex(stops, currentRaw) : -1;
 
-  const timeline = stops.map((s, i) => toStopVM(s, i, statusPending, isReadOnly));
+  const timeline = stops.map((s, i) =>
+    toStopVM(s, i, statusPending, isReadOnly),
+  );
 
   const nowVm = currentRaw
     ? toStopVM(currentRaw, currentIndex, statusPending, isReadOnly)
     : null;
 
   const nowKey = nowVm?.key ?? null;
-  const nextRaw = snapshot.next_stop;
+
+  // Only use the server's next_stop when it belongs to the same itinerary day.
+  // If it points to tomorrow or another day, fall back to the first unresolved
+  // stop in today_stops so the top card never crosses a day boundary.
+  const serverNext = snapshot.next_stop;
+  const sameDay = serverNext
+    ? stopBelongsToToday(serverNext, snapshot.today)
+    : false;
+  const nextRaw = sameDay
+    ? serverNext
+    : (stops.find((s) => {
+        if (currentRaw?.stop_ref && s.stop_ref === currentRaw.stop_ref)
+          return false;
+        const st = s.execution_status ?? s.status ?? "planned";
+        return st !== "confirmed" && st !== "skipped";
+      }) ?? null);
+
   const nextIndex = nextRaw ? findStopIndex(stops, nextRaw) : -1;
-  const nextCandidate = nextRaw ? toStopVM(nextRaw, nextIndex, statusPending, isReadOnly) : null;
+  const nextCandidate = nextRaw
+    ? toStopVM(nextRaw, nextIndex, statusPending, isReadOnly)
+    : null;
   const nextVm =
     nextCandidate && nextCandidate.key !== nowKey ? nextCandidate : null;
 
@@ -130,7 +165,9 @@ export function deriveOnTripViewModel(
     (s) => s.effectiveStatus !== "confirmed" && s.effectiveStatus !== "skipped",
   ).length;
 
-  const otherBlockers = snapshot.blockers.filter((b) => b.id !== "today-planned-open");
+  const otherBlockers = snapshot.blockers.filter(
+    (b) => b.id !== "today-planned-open",
+  );
   const effectiveBlockers: TripOnTripBlocker[] =
     unresolvedCount > 0
       ? [
@@ -146,6 +183,13 @@ export function deriveOnTripViewModel(
         ]
       : otherBlockers;
 
+  const isDayComplete =
+    timeline.length > 0 &&
+    timeline.every(
+      (s) =>
+        s.effectiveStatus === "confirmed" || s.effectiveStatus === "skipped",
+    );
+
   return {
     now: nowVm,
     next: nextVm,
@@ -154,6 +198,7 @@ export function deriveOnTripViewModel(
     blockers: effectiveBlockers,
     defaultLogDate,
     isReadOnly,
+    isDayComplete,
   };
 }
 
@@ -163,7 +208,12 @@ export function toStopVmForDetail(
   isPending: boolean,
   isReadOnly: boolean,
 ): StopVM {
-  return toStopVM(stop, 0, isPending ? { [stop.stop_ref ?? ""]: true } : {}, isReadOnly);
+  return toStopVM(
+    stop,
+    0,
+    isPending ? { [stop.stop_ref ?? ""]: true } : {},
+    isReadOnly,
+  );
 }
 
 export function stopVariant(

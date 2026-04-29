@@ -114,10 +114,7 @@ function StopTimeRuleRow({
       >
         {label}
       </Text>
-      <View
-        className="h-px flex-1"
-        style={{ backgroundColor: DE.rule }}
-      />
+      <View className="h-px flex-1" style={{ backgroundColor: DE.rule }} />
     </View>
   );
 }
@@ -138,8 +135,7 @@ function MomentSection({
   const router = useRouter();
   const titleSize = variant === "next" ? 26 : 22;
   const lineHeight = variant === "next" ? 30 : 28;
-  const body =
-    stop.notes?.trim() || stop.location?.trim() || null;
+  const body = stop.notes?.trim() || stop.location?.trim() || null;
   const directionsUrl = buildStopDirectionsUrl(stop);
   const detailKey = stopDetailRouteKey(stop, stops);
 
@@ -216,7 +212,10 @@ function MomentSection({
                 )
               }
               className="rounded-full border px-[18px] py-2.5 active:opacity-75"
-              style={{ borderColor: DE.ruleStrong, backgroundColor: "transparent" }}
+              style={{
+                borderColor: DE.ruleStrong,
+                backgroundColor: "transparent",
+              }}
               accessibilityRole="button"
               accessibilityLabel="Stop details"
             >
@@ -340,10 +339,7 @@ export function TodayScreen() {
                 contentFit="cover"
               />
               <LinearGradient
-                colors={[
-                  "rgba(0,0,0,0)",
-                  "rgba(20,10,5,0.75)",
-                ]}
+                colors={["rgba(0,0,0,0)", "rgba(20,10,5,0.75)"]}
                 locations={[0.2, 1]}
                 style={{
                   position: "absolute",
@@ -434,7 +430,31 @@ export function TodayScreen() {
           />
 
           <View>
-            {nextStop ? (
+            {snapshotIsError ? (
+              <>
+                <Text
+                  className="mb-4 uppercase"
+                  style={{
+                    fontFamily: fontStyles.monoMedium.fontFamily,
+                    fontSize: 9,
+                    letterSpacing: 2,
+                    color: DE.muted,
+                  }}
+                >
+                  Next moment
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: fontStyles.uiRegular.fontFamily,
+                    fontSize: 14,
+                    lineHeight: 21,
+                    color: DE.muted,
+                  }}
+                >
+                  Today&apos;s live stops couldn&apos;t be loaded.
+                </Text>
+              </>
+            ) : nextStop ? (
               <MomentSection
                 kicker="Next moment"
                 stop={nextStop}
@@ -455,34 +475,34 @@ export function TodayScreen() {
                 >
                   Next moment
                 </Text>
-              <View>
-                <Text
-                  style={{
-                    fontFamily: fontStyles.uiRegular.fontFamily,
-                    fontSize: 14,
-                    lineHeight: 21,
-                    color: DE.muted,
-                  }}
-                >
-                  You&apos;re clear for now.
-                </Text>
-                <Text
-                  className="mt-1"
-                  style={{
-                    fontFamily: fontStyles.uiRegular.fontFamily,
-                    fontSize: 12,
-                    lineHeight: 18,
-                    color: DE.mutedLight,
-                  }}
-                >
-                  Open the live timeline whenever you&apos;re ready.
-                </Text>
-              </View>
+                <View>
+                  <Text
+                    style={{
+                      fontFamily: fontStyles.uiRegular.fontFamily,
+                      fontSize: 14,
+                      lineHeight: 21,
+                      color: DE.muted,
+                    }}
+                  >
+                    You&apos;re clear for now.
+                  </Text>
+                  <Text
+                    className="mt-1"
+                    style={{
+                      fontFamily: fontStyles.uiRegular.fontFamily,
+                      fontSize: 12,
+                      lineHeight: 18,
+                      color: DE.mutedLight,
+                    }}
+                  >
+                    Open the live timeline whenever you&apos;re ready.
+                  </Text>
+                </View>
               </>
             )}
           </View>
 
-          {laterStop ? (
+          {!snapshotIsError && laterStop ? (
             <View className="mt-8">
               <MomentSection
                 kicker="A little later"
@@ -500,7 +520,10 @@ export function TodayScreen() {
                 router.push(`/(tabs)/trips/${activeTrip.id}/live` as Href)
               }
               className="flex-row items-center gap-4 rounded-2xl border border-dashed px-5 py-5 active:opacity-75"
-              style={{ borderColor: DE.ruleStrong, backgroundColor: "transparent" }}
+              style={{
+                borderColor: DE.ruleStrong,
+                backgroundColor: "transparent",
+              }}
               accessibilityRole="button"
               accessibilityLabel="Along the way — open live trip to log a stop"
             >
@@ -646,14 +669,21 @@ export function TodayScreen() {
             <Pressable
               onPress={() =>
                 router.push(
-                  (EXPLORE_ENABLED ? "/(tabs)/explore" : "/(tabs)/trips") as Href,
+                  (EXPLORE_ENABLED
+                    ? "/(tabs)/explore"
+                    : "/(tabs)/trips") as Href,
                 )
               }
               className="mt-2.5 h-[50px] items-center justify-center rounded-xl border active:opacity-75"
-              style={{ borderColor: DE.ruleStrong, backgroundColor: "transparent" }}
+              style={{
+                borderColor: DE.ruleStrong,
+                backgroundColor: "transparent",
+              }}
               accessibilityRole="button"
               accessibilityLabel={
-                EXPLORE_ENABLED ? "Browse inspiration in Explore" : "View your trips"
+                EXPLORE_ENABLED
+                  ? "Browse inspiration in Explore"
+                  : "View your trips"
               }
             >
               <Text
@@ -680,7 +710,9 @@ export function TodayScreen() {
               }}
             >
               Nothing on the{" "}
-              <Text style={{ fontFamily: fontStyles.headMediumItalic.fontFamily }}>
+              <Text
+                style={{ fontFamily: fontStyles.headMediumItalic.fontFamily }}
+              >
                 horizon
               </Text>{" "}
               yet
@@ -718,14 +750,21 @@ export function TodayScreen() {
             <Pressable
               onPress={() =>
                 router.push(
-                  (EXPLORE_ENABLED ? "/(tabs)/explore" : "/(tabs)/trips") as Href,
+                  (EXPLORE_ENABLED
+                    ? "/(tabs)/explore"
+                    : "/(tabs)/trips") as Href,
                 )
               }
               className="mt-2.5 h-[50px] items-center justify-center rounded-xl border active:opacity-75"
-              style={{ borderColor: DE.ruleStrong, backgroundColor: "transparent" }}
+              style={{
+                borderColor: DE.ruleStrong,
+                backgroundColor: "transparent",
+              }}
               accessibilityRole="button"
               accessibilityLabel={
-                EXPLORE_ENABLED ? "Browse inspiration in Explore" : "View your trips"
+                EXPLORE_ENABLED
+                  ? "Browse inspiration in Explore"
+                  : "View your trips"
               }
             >
               <Text

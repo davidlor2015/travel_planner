@@ -221,23 +221,39 @@ export type PlaceSuggestion = {
   country_code: string | null;
   latitude: number | null;
   longitude: number | null;
+  source?: string | null;
+};
+
+export type SelectedDestination = {
+  id: string;
+  name: string;
+  displayName: string;
+  latitude?: number;
+  longitude?: number;
+  country?: string;
+  countryCode?: string;
+  region?: string;
+  source?: string;
 };
 
 export type PlaceSearchApiSuggestion = {
   id?: string | number | null;
   place_id?: string | number | null;
   label?: string | null;
+  displayName?: string | null;
   display_name?: string | null;
   name?: string | null;
   city?: string | null;
   region?: string | null;
   state?: string | null;
   country?: string | null;
+  countryCode?: string | null;
   country_code?: string | null;
   latitude?: number | string | null;
   longitude?: number | string | null;
   lat?: number | string | null;
   lon?: number | string | null;
+  source?: string | null;
 };
 
 export type PlaceSearchApiResponse =
