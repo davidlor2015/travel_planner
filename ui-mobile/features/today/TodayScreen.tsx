@@ -523,7 +523,7 @@ export function TodayScreen() {
           <View className="mt-8 pb-2">
             <Pressable
               onPress={() =>
-                router.push(`/(tabs)/trips/${activeTrip.id}/live` as Href)
+                router.push(`/(tabs)/trips/${activeTrip.id}/live?quickLog=1` as Href)
               }
               className="flex-row items-center gap-4 rounded-2xl border border-dashed px-5 py-5 active:opacity-75"
               style={{
@@ -531,7 +531,7 @@ export function TodayScreen() {
                 backgroundColor: "transparent",
               }}
               accessibilityRole="button"
-              accessibilityLabel="Along the way — open live trip to log a stop"
+              accessibilityLabel="Along the way — quick log an unplanned stop"
             >
               <View className="min-w-0 flex-1">
                 <Text
@@ -553,7 +553,7 @@ export function TodayScreen() {
                     color: DE.muted,
                   }}
                 >
-                  Found something unexpected? Add it to the story.
+                  Found something unexpected? Log it in two taps.
                 </Text>
               </View>
               <View

@@ -107,4 +107,67 @@ describe("toTripWorkspaceViewModel", () => {
     ]);
     expect(vm.pendingInvites[0]?.statusLabel).toBe("Pending");
   });
+
+  it("builds traveler identity fallbacks and concrete collaboration copy", () => {
+    const baseMember = buildTrip().members[0]!;
+    const trip = buildTrip({
+      member_count: 4,
+      members: [
+        {
+          ...baseMember,
+          user_id: 1,
+          email: "owner@example.com",
+          role: "owner",
+          status: "accepted",
+          display_name: "David",
+        },
+        {
+          ...baseMember,
+          user_id: 2,
+          email: "davidlor2015@gmail.com",
+          role: "editor",
+          status: "accepted",
+          display_name: null,
+        },
+        {
+          ...baseMember,
+          user_id: 3,
+          email: "",
+          role: "viewer",
+          status: "accepted",
+          display_name: null,
+          name: null,
+        },
+      ],
+      pending_invites: [
+        {
+          id: 88,
+          email: "pending@example.com",
+          status: "pending",
+          created_at: "2026-04-28T12:00:00Z",
+          expires_at: "2026-05-05T12:00:00Z",
+        },
+      ],
+    });
+
+    const vm = toTripWorkspaceCollaborationViewModel({
+      trip,
+      currentUserEmail: "owner@example.com",
+      currentUserDisplayName: "David",
+      readiness: null,
+      readinessLoading: false,
+    });
+
+    expect(vm.members[0]?.displayLabel).toBe("David");
+    expect(vm.members[0]?.supportingText).toBe("Can manage this trip and invite others.");
+    expect(vm.members[1]?.displayLabel).toBe("Davidlor2015");
+    expect(vm.members[1]?.supportingText).toBe(
+      "Can edit itinerary, packing, budget, and reservations.",
+    );
+    expect(vm.members[2]?.displayLabel).toBe("Traveler");
+    expect(vm.members[2]?.supportingText).toBe("Can view the shared trip plan.");
+    expect(vm.pendingInvites[0]?.displayLabel).toBe("Invited traveler");
+    expect(vm.pendingInvites[0]?.supportingText).toBe("Invite pending · Resend");
+    expect(vm.pendingInvites[0]?.rolePillLabel).toBe("Can edit");
+  });
 });

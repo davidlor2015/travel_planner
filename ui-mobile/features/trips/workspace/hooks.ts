@@ -16,6 +16,7 @@ export function useWorkspaceCollaboration(
   tripId: number | null,
   trip: TripResponse | null,
   currentUserEmail: string,
+  currentUserDisplayName?: string | null,
 ) {
   const memberReadinessQuery = useTripMemberReadinessQuery(tripId, {
     enabled: Boolean(trip),
@@ -28,11 +29,18 @@ export function useWorkspaceCollaboration(
         ? toTripWorkspaceCollaborationViewModel({
             trip,
             currentUserEmail,
+            currentUserDisplayName,
             readiness: memberReadinessQuery.data ?? null,
             readinessLoading: memberReadinessQuery.isLoading,
           })
         : null,
-    [currentUserEmail, memberReadinessQuery.data, memberReadinessQuery.isLoading, trip],
+    [
+      currentUserDisplayName,
+      currentUserEmail,
+      memberReadinessQuery.data,
+      memberReadinessQuery.isLoading,
+      trip,
+    ],
   );
 
   const sendInvite = useCallback(

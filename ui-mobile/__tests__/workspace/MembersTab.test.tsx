@@ -39,7 +39,11 @@ function collaboration(
       {
         userId: 1,
         email: "owner@example.com",
+        displayLabel: "Owner",
+        emailSecondary: "owner@example.com",
         roleLabel: "Owner",
+        rolePillLabel: "Owner",
+        supportingText: "Can manage this trip and invite others.",
         isCurrentUser: true,
         readinessLabel: "Unavailable",
         readinessVariant: "default",
@@ -48,7 +52,11 @@ function collaboration(
       {
         userId: 2,
         email: "editor@example.com",
+        displayLabel: "Editor",
+        emailSecondary: "editor@example.com",
         roleLabel: "Can edit",
+        rolePillLabel: "Can edit",
+        supportingText: "Can edit itinerary, packing, budget, and reservations.",
         isCurrentUser: false,
         readinessLabel: "Unavailable",
         readinessVariant: "default",
@@ -57,7 +65,11 @@ function collaboration(
       {
         userId: 3,
         email: "viewer@example.com",
+        displayLabel: "Viewer",
+        emailSecondary: "viewer@example.com",
         roleLabel: "View only",
+        rolePillLabel: "View only",
+        supportingText: "Can view the shared trip plan.",
         isCurrentUser: false,
         readinessLabel: "Unavailable",
         readinessVariant: "default",
@@ -68,6 +80,10 @@ function collaboration(
       {
         id: 4,
         email: "pending@example.com",
+        displayLabel: "Invited traveler",
+        emailSecondary: "pending@example.com",
+        rolePillLabel: "Can edit",
+        supportingText: "Invite pending · Resend",
         statusLabel: "Pending",
         expiresAtLabel: "May 5, 2026",
       },
@@ -77,8 +93,8 @@ function collaboration(
 }
 
 describe("MembersTab role labels", () => {
-  it("shows Owner, Can edit, View only, and Pending badges", () => {
-    const { getAllByText } = render(
+  it("shows editorial group copy and traveler card hierarchy", () => {
+    const { getAllByText, getByText, queryByText } = render(
       <MembersTab
         trip={trip()}
         collaboration={collaboration()}
@@ -87,9 +103,15 @@ describe("MembersTab role labels", () => {
       />,
     );
 
+    expect(getByText("Everyone on the trip")).toBeTruthy();
+    expect(
+      getByText("Invite travelers, share the plan, and keep the group moving together."),
+    ).toBeTruthy();
+    expect(queryByText("In Progress")).toBeNull();
     expect(getAllByText("Owner").length).toBeGreaterThan(0);
     expect(getAllByText("Can edit").length).toBeGreaterThan(0);
     expect(getAllByText("View only").length).toBeGreaterThan(0);
-    expect(getAllByText("Pending").length).toBeGreaterThan(0);
+    expect(getByText("Invited traveler")).toBeTruthy();
+    expect(getByText("Invite pending · Resend")).toBeTruthy();
   });
 });

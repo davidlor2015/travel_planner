@@ -34,7 +34,11 @@ export type TripWorkspaceViewModel = {
 export type TripWorkspaceMemberViewModel = {
   userId: number;
   email: string;
+  displayLabel: string;
+  emailSecondary: string | null;
   roleLabel: string;
+  rolePillLabel: "Owner" | "Can edit" | "View only";
+  supportingText: string;
   isCurrentUser: boolean;
   readinessLabel: string;
   readinessVariant: WorkspacePillVariant;
@@ -44,6 +48,10 @@ export type TripWorkspaceMemberViewModel = {
 export type TripWorkspacePendingInviteViewModel = {
   id: number;
   email: string;
+  displayLabel: string;
+  emailSecondary: string | null;
+  rolePillLabel: "Can edit";
+  supportingText: string;
   statusLabel: string;
   expiresAtLabel: string;
 };
@@ -125,10 +133,11 @@ export function toTripWorkspaceViewModel(
 export function toTripWorkspaceCollaborationViewModel(args: {
   trip: TripResponse;
   currentUserEmail: string;
+  currentUserDisplayName?: string | null;
   readiness: TripMemberReadiness | null;
   readinessLoading: boolean;
 }): TripWorkspaceCollaborationViewModel {
-  const { trip, currentUserEmail, readiness, readinessLoading } = args;
+  const { trip, currentUserEmail, currentUserDisplayName, readiness, readinessLoading } = args;
   const normalizedCurrentUserEmail = currentUserEmail.trim().toLowerCase();
   const readinessByUserId = new Map(
     (readiness?.members ?? []).map((member) => [member.user_id, member]),
@@ -150,12 +159,32 @@ export function toTripWorkspaceCollaborationViewModel(args: {
       const readinessItem = readinessByUserId.get(member.user_id);
       const isCurrentUser =
         member.email.trim().toLowerCase() === normalizedCurrentUserEmail;
+      const hasJoined = isJoinedStatus(member.status);
+      const roleLabel = getTripRoleLabel(member.role, member.status);
+      const displayLabel = resolveTravelerDisplayLabel({
+        member,
+        hasJoined,
+        isCurrentUser,
+        currentUserDisplayName,
+      });
+      const rolePillLabel = hasJoined ? toRolePillLabel(roleLabel, member.role) : "Can edit";
+      const supportingText = hasJoined
+        ? rolePillLabel === "Owner"
+          ? "Can manage this trip and invite others."
+          : rolePillLabel === "Can edit"
+            ? "Can edit itinerary, packing, budget, and reservations."
+            : "Can view the shared trip plan."
+        : "Invite pending · Resend";
 
       if (!readinessItem) {
         return {
           userId: member.user_id,
           email: member.email,
-          roleLabel: getTripRoleLabel(member.role, member.status),
+          displayLabel,
+          emailSecondary: member.email || null,
+          roleLabel,
+          rolePillLabel,
+          supportingText,
           isCurrentUser,
           readinessLabel: readinessLoading ? "Checking…" : "Unavailable",
           readinessVariant: "default",
@@ -189,7 +218,11 @@ export function toTripWorkspaceCollaborationViewModel(args: {
       return {
         userId: member.user_id,
         email: member.email,
-        roleLabel: getTripRoleLabel(member.role, member.status),
+        displayLabel,
+        emailSecondary: member.email || null,
+        roleLabel,
+        rolePillLabel,
+        supportingText,
         isCurrentUser,
         readinessLabel,
         readinessVariant,
@@ -199,10 +232,77 @@ export function toTripWorkspaceCollaborationViewModel(args: {
     pendingInvites: trip.pending_invites.map((invite) => ({
       id: invite.id,
       email: invite.email,
+      displayLabel: "Invited traveler",
+      emailSecondary: invite.email || null,
+      rolePillLabel: "Can edit",
+      supportingText: "Invite pending · Resend",
       statusLabel: inviteStatusLabel(invite.status),
       expiresAtLabel: formatDate(invite.expires_at),
     })),
   };
+}
+
+function asText(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const cleaned = value.trim();
+  return cleaned.length > 0 ? cleaned : null;
+}
+
+function capitalize(value: string): string {
+  if (!value) return value;
+  return value[0]!.toUpperCase() + value.slice(1);
+}
+
+function displayNameFromEmail(email: string | null): string | null {
+  if (!email) return null;
+  const local = email.split("@")[0]?.trim();
+  if (!local) return null;
+  return capitalize(local);
+}
+
+function isJoinedStatus(status: string | null | undefined): boolean {
+  const normalized = (status ?? "").trim().toLowerCase();
+  return normalized === "" || normalized === "active" || normalized === "accepted" || normalized === "joined";
+}
+
+function toRolePillLabel(
+  roleLabel: string,
+  rawRole: string | null | undefined,
+): "Owner" | "Can edit" | "View only" {
+  if (roleLabel === "Owner") return "Owner";
+  if (roleLabel === "Can edit") return "Can edit";
+  if (roleLabel === "View only") return "View only";
+
+  const normalizedRole = (rawRole ?? "").trim().toLowerCase();
+  if (normalizedRole === "owner") return "Owner";
+  if (normalizedRole === "viewer") return "View only";
+  return "Can edit";
+}
+
+function resolveTravelerDisplayLabel(args: {
+  member: TripResponse["members"][number];
+  hasJoined: boolean;
+  isCurrentUser: boolean;
+  currentUserDisplayName?: string | null;
+}): string {
+  const { member, hasJoined, isCurrentUser, currentUserDisplayName } = args;
+  const memberDisplayName = asText(member.display_name) ?? asText(member.name);
+  const currentUserName = isCurrentUser ? asText(currentUserDisplayName) : null;
+  const displayName = memberDisplayName ?? currentUserName;
+  if (displayName) {
+    return displayName;
+  }
+
+  if (hasJoined) {
+    const emailName = displayNameFromEmail(asText(member.email));
+    if (emailName) return emailName;
+  }
+
+  if (!hasJoined) {
+    return "Invited traveler";
+  }
+
+  return "Traveler";
 }
 
 export function toTripSummaryViewModel(summary: TripSummary): TripSummaryViewModel {

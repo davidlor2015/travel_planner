@@ -4,6 +4,8 @@
 export type TripMember = {
   user_id: number;
   email: string;
+  display_name?: string | null;
+  name?: string | null;
   role: string;
   joined_at: string;
   status: string;

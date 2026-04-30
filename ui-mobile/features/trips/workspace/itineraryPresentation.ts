@@ -15,7 +15,7 @@ export const ITINERARY_FILTERS: { key: ItineraryFilterKey; label: string }[] = [
 
 export type ItineraryStopPill = {
   label: string;
-  tone: "activity" | "reservation" | "transit";
+  tone: "activity" | "reservation" | "transit" | "meal" | "walk";
 };
 
 export type ItineraryStopTimeBlock = {
@@ -41,7 +41,7 @@ export type ItineraryTabDay = {
   stops: ItineraryTabStop[];
 };
 
-type StopKind = "activity" | "lodging" | "walk" | "transit" | "reservation";
+type StopKind = "activity" | "lodging" | "walk" | "transit" | "reservation" | "meal";
 
 export function buildItineraryTabDays(
   itinerary: Itinerary | null,
@@ -77,7 +77,8 @@ export function buildItineraryTabDays(
 
 function filterMatchesKind(filter: ItineraryFilterKey, kind: StopKind): boolean {
   if (filter === "all") return true;
-  if (filter === "activities") return kind === "activity" || kind === "walk";
+  if (filter === "activities")
+    return kind === "activity" || kind === "walk" || kind === "meal";
   if (filter === "transit") return kind === "transit";
   return kind === "reservation" || kind === "lodging";
 }
@@ -86,7 +87,8 @@ function pillForKind(kind: StopKind): ItineraryStopPill {
   if (kind === "reservation") return { label: "Reservation", tone: "reservation" };
   if (kind === "lodging") return { label: "Lodging", tone: "activity" };
   if (kind === "transit") return { label: "Transit", tone: "transit" };
-  if (kind === "walk") return { label: "Walk", tone: "activity" };
+  if (kind === "meal") return { label: "Meal", tone: "meal" };
+  if (kind === "walk") return { label: "Walk", tone: "walk" };
   return { label: "Activity", tone: "activity" };
 }
 
@@ -112,6 +114,14 @@ function classifyItineraryItem(item: ItineraryItem): StopKind {
 
   if (/\b(walk|stroll|hike|trail|wander)\b/.test(haystack)) {
     return "walk";
+  }
+
+  if (
+    /\b(breakfast|brunch|lunch|dinner|snack|coffee|cafe|restaurant|izakaya|bistro|bar)\b/.test(
+      haystack,
+    )
+  ) {
+    return "meal";
   }
 
   if (

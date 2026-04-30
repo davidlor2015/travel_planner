@@ -70,7 +70,10 @@ function NextUpCard({
         <View className="flex-row items-center gap-1.5">
           <Ionicons name="flash-outline" size={11} color="#B86845" />
           <Text
-            style={[fontStyles.uiMedium, { fontSize: 10, letterSpacing: 1.4, color: "#B86845" }]}
+            style={[
+              fontStyles.uiMedium,
+              { fontSize: 10, letterSpacing: 1.4, color: "#B86845" },
+            ]}
           >
             NEXT UP
           </Text>
@@ -86,20 +89,31 @@ function NextUpCard({
           {/* Content */}
           <View className="flex-1 gap-[4px]">
             <Text
-              style={[textScaleStyles.displayL, { fontSize: 17, color: "#1C1108" }]}
+              style={[
+                textScaleStyles.displayL,
+                { fontSize: 17, color: "#1C1108" },
+              ]}
               numberOfLines={1}
             >
               {vm.title}
             </Text>
             {vm.startLabel ? (
-              <Text style={fontStyles.uiRegular} className="text-[12px] text-muted" numberOfLines={1}>
+              <Text
+                style={fontStyles.uiRegular}
+                className="text-[12px] text-muted"
+                numberOfLines={1}
+              >
                 {vm.startLabel}
               </Text>
             ) : null}
             {vm.location ? (
               <View className="flex-row items-center gap-1">
                 <Ionicons name="location-outline" size={10} color="#8A7E74" />
-                <Text style={fontStyles.uiRegular} className="text-[11px] text-muted" numberOfLines={1}>
+                <Text
+                  style={fontStyles.uiRegular}
+                  className="text-[11px] text-muted"
+                  numberOfLines={1}
+                >
                   {vm.location}
                 </Text>
               </View>
@@ -109,7 +123,10 @@ function NextUpCard({
           {/* Right: price + pill */}
           <View className="items-end gap-1.5">
             {vm.priceLabel ? (
-              <Text style={fontStyles.uiMedium} className="text-[13px] text-espresso">
+              <Text
+                style={fontStyles.uiMedium}
+                className="text-[13px] text-espresso"
+              >
                 {vm.priceLabel}
               </Text>
             ) : null}
@@ -153,7 +170,10 @@ function NextUpCard({
             accessibilityLabel={`Navigate to ${vm.location}`}
           >
             <Ionicons name="navigate-outline" size={13} color={DE.ivory} />
-            <Text style={fontStyles.uiSemibold} className="text-[12px] text-on-dark">
+            <Text
+              style={fontStyles.uiSemibold}
+              className="text-[12px] text-on-dark"
+            >
               {navigating ? "Opening Maps…" : "Navigate"}
             </Text>
           </Pressable>
@@ -169,7 +189,10 @@ function SectionHeader({ label, count }: { label: string; count: number }) {
   return (
     <View className="flex-row items-center justify-between pt-2 pb-1">
       <Text
-        style={[fontStyles.uiMedium, { fontSize: 10, letterSpacing: 1.5, color: "#8A7E74" }]}
+        style={[
+          fontStyles.uiMedium,
+          { fontSize: 10, letterSpacing: 1.5, color: "#8A7E74" },
+        ]}
       >
         {label}
       </Text>
@@ -209,7 +232,8 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
   const groups = groupReservationsByTime(filteredItems);
 
   const heroItem =
-    groups.nextUpcoming?.start_at !== undefined && groups.nextUpcoming?.start_at !== null
+    groups.nextUpcoming?.start_at !== undefined &&
+    groups.nextUpcoming?.start_at !== null
       ? groups.nextUpcoming
       : null;
 
@@ -230,7 +254,10 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
     }
   };
 
-  const handleEdit = async (item: Reservation, payload: Parameters<typeof reservations.editReservation>[1]) => {
+  const handleEdit = async (
+    item: Reservation,
+    payload: Parameters<typeof reservations.editReservation>[1],
+  ) => {
     try {
       setMutationError(null);
       await reservations.editReservation(item.id, payload);
@@ -260,7 +287,10 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
                 RESERVATIONS
               </Text>
               <Text
-                style={[textScaleStyles.displayL, { fontSize: 22, color: "#1C1108" }]}
+                style={[
+                  textScaleStyles.displayL,
+                  { fontSize: 22, color: "#1C1108" },
+                ]}
               >
                 {summary.confirmedLabel}
               </Text>
@@ -272,12 +302,17 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
               accessibilityRole="button"
               accessibilityLabel="Add booking"
               accessibilityHint={
-                isReadOnly ? "View-only travelers cannot add bookings." : undefined
+                isReadOnly
+                  ? "View-only travelers cannot add bookings."
+                  : undefined
               }
               style={isReadOnly ? { opacity: 0.45 } : undefined}
             >
               <Ionicons name="add" size={13} color="#B86845" />
-              <Text style={fontStyles.uiMedium} className="text-[12px] text-amber">
+              <Text
+                style={fontStyles.uiMedium}
+                className="text-[12px] text-amber"
+              >
                 Add
               </Text>
             </Pressable>
@@ -316,7 +351,11 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 12, gap: 8 }}
+          contentContainerStyle={{
+            paddingHorizontal: 20,
+            paddingBottom: 12,
+            gap: 8,
+          }}
         >
           {BOOKING_FILTER_CHIPS.map((chip) => {
             const active = activeFilter === chip.key;
@@ -326,12 +365,17 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
                 onPress={() => setActiveFilter(chip.key)}
                 className={[
                   "rounded-full border px-3.5 py-1.5",
-                  active ? "border-ontrip bg-ontrip" : "border-smoke bg-transparent",
+                  active
+                    ? "border-ontrip bg-ontrip"
+                    : "border-smoke bg-transparent",
                 ].join(" ")}
               >
                 <Text
                   style={fontStyles.uiMedium}
-                  className={["text-[11px]", active ? "text-on-dark" : "text-[#4a3f37]"].join(" ")}
+                  className={[
+                    "text-[11px]",
+                    active ? "text-on-dark" : "text-[#4a3f37]",
+                  ].join(" ")}
                 >
                   {chip.label}
                 </Text>
@@ -343,7 +387,10 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
         {/* ── Mutation error ────────────────────────────────────────────────── */}
         {mutationError ? (
           <View className="mx-5 mb-3 rounded-xl border border-danger/25 bg-danger/10 px-3.5 py-3">
-            <Text style={fontStyles.uiRegular} className="text-[13px] text-danger">
+            <Text
+              style={fontStyles.uiRegular}
+              className="text-[13px] text-danger"
+            >
               {mutationError}
             </Text>
           </View>
@@ -354,12 +401,15 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
           <View className="px-5">
             <EmptyState
               title="No bookings yet"
-              message="Add flights, stays, and reservations here to keep execution details at your fingertips."
+              message="Flight time, hotel addresses, confirmation numbers - keep it all here so you're never digging through email mid-trip."
             />
           </View>
         ) : filteredItems.length === 0 ? (
           <View className="px-5 py-8 items-center">
-            <Text style={fontStyles.uiRegular} className="text-[13px] text-muted text-center">
+            <Text
+              style={fontStyles.uiRegular}
+              className="text-[13px] text-muted text-center"
+            >
               No {activeFilter} bookings yet.
             </Text>
           </View>
@@ -378,7 +428,10 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
             {/* Upcoming section */}
             {remainingUpcoming.length > 0 ? (
               <View className="gap-2">
-                <SectionHeader label="UPCOMING" count={remainingUpcoming.length} />
+                <SectionHeader
+                  label="UPCOMING"
+                  count={remainingUpcoming.length}
+                />
                 {remainingUpcoming.map((r) => (
                   <BookingRow
                     key={r.id}
@@ -393,7 +446,10 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
             ) : groups.upcoming.length > 0 && !heroItem ? (
               // Unscheduled upcoming (no start_at) — no hero, show as flat list
               <View className="gap-2">
-                <SectionHeader label="UPCOMING" count={groups.upcoming.length} />
+                <SectionHeader
+                  label="UPCOMING"
+                  count={groups.upcoming.length}
+                />
                 {groups.upcoming.map((r) => (
                   <BookingRow
                     key={r.id}

@@ -156,17 +156,25 @@ function TimeBlock({ block }: { block: ItineraryStopTimeBlock }) {
 }
 
 function StopPill({ pill }: { pill: ItineraryStopPill }) {
-  const backgroundColor =
-    pill.tone === "reservation" ? "rgba(148, 164, 135, 0.33)" : DE.claySandLight;
+  const toneStyle =
+    pill.tone === "reservation"
+      ? { backgroundColor: "rgba(148, 164, 135, 0.30)", textColor: DE.sageDeep }
+      : pill.tone === "transit"
+        ? { backgroundColor: "rgba(138, 123, 106, 0.18)", textColor: DE.inkSoft }
+        : pill.tone === "meal"
+          ? { backgroundColor: "rgba(201, 154, 62, 0.18)", textColor: DE.espresso }
+          : pill.tone === "walk"
+            ? { backgroundColor: "rgba(148, 164, 135, 0.18)", textColor: DE.sageDeep }
+            : { backgroundColor: DE.claySandLight, textColor: DE.inkSoft };
 
   return (
     <View
       className="max-w-[88px] shrink-0 rounded-full px-2.5 py-1"
-      style={{ backgroundColor }}
+      style={{ backgroundColor: toneStyle.backgroundColor }}
     >
       <Text
         className="text-[10.5px] leading-[13px]"
-        style={[fontStyles.uiMedium, { color: DE.ink }]}
+        style={[fontStyles.uiMedium, { color: toneStyle.textColor }]}
         numberOfLines={1}
       >
         {pill.label}

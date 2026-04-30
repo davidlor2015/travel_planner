@@ -50,7 +50,9 @@ export default function RegisterPage() {
         email: trimmedEmail,
         password,
       });
-      setSuccessMessage("Account created. Verify your email before signing in.");
+      setSuccessMessage(
+        "Account created. Verify your email before signing in.",
+      );
     } catch (error) {
       setErrorMessage(friendlyError(error, "auth"));
     }
@@ -95,11 +97,17 @@ export default function RegisterPage() {
             </Text>
             <Text
               className="text-espresso"
-              style={[textScaleStyles.displayXL, { fontSize: 38, lineHeight: 42 }]}
+              style={[
+                textScaleStyles.displayXL,
+                { fontSize: 38, lineHeight: 42 },
+              ]}
             >
-              {"Join\\nRoen."}
+              Join Roen.
             </Text>
-            <Text className="mt-2 text-sm leading-5 text-muted" style={fontStyles.uiRegular}>
+            <Text
+              className="mt-2 text-sm leading-5 text-muted"
+              style={fontStyles.uiRegular}
+            >
               Use a name your travel group will recognize.
             </Text>
           </View>
@@ -143,7 +151,10 @@ export default function RegisterPage() {
 
             {errorMessage ? (
               <View className="mt-1 rounded-xl border border-danger/20 bg-danger/10 px-4 py-3">
-                <Text className="text-sm text-danger" style={fontStyles.uiMedium}>
+                <Text
+                  className="text-sm text-danger"
+                  style={fontStyles.uiMedium}
+                >
                   {errorMessage}
                 </Text>
               </View>
@@ -151,10 +162,15 @@ export default function RegisterPage() {
 
             {successMessage ? (
               <View className="mt-1 gap-3 rounded-xl border border-olive/20 bg-olive/10 px-4 py-3">
-                <Text className="text-sm text-olive" style={fontStyles.uiMedium}>
+                <Text
+                  className="text-sm text-olive"
+                  style={fontStyles.uiMedium}
+                >
                   {successMessage}
                 </Text>
-                <Pressable onPress={() => router.push("./verify-email-request")}>
+                <Pressable
+                  onPress={() => router.push("./verify-email-request")}
+                >
                   <Text
                     className="text-sm text-espresso underline"
                     style={fontStyles.uiMedium}
@@ -175,8 +191,13 @@ export default function RegisterPage() {
               style={registerMutation.isPending ? { opacity: 0.6 } : undefined}
             >
               <View className="flex-row items-center gap-2">
-                <Text className="text-[15px] text-on-dark" style={fontStyles.uiMedium}>
-                  {registerMutation.isPending ? "Creating account…" : "Create Account"}
+                <Text
+                  className="text-[15px] text-on-dark"
+                  style={fontStyles.uiMedium}
+                >
+                  {registerMutation.isPending
+                    ? "Creating account…"
+                    : "Create Account"}
                 </Text>
                 {!registerMutation.isPending && (
                   <Ionicons name="arrow-forward" size={16} color="#F2EBDD" />
@@ -190,7 +211,10 @@ export default function RegisterPage() {
             >
               <Text className="text-sm text-muted" style={fontStyles.uiRegular}>
                 Already have an account?{" "}
-                <Text className="text-espresso underline" style={fontStyles.uiMedium}>
+                <Text
+                  className="text-espresso underline"
+                  style={fontStyles.uiMedium}
+                >
                   Sign in
                 </Text>
               </Text>
@@ -222,7 +246,13 @@ function UnderlineField({
         placeholderTextColor="#8A7E74"
         selectionColor="#B86845"
         className="pb-2 text-[18px] text-espresso"
-        style={[fontStyles.uiRegular, { borderBottomWidth: 1.5, borderBottomColor: error ? "#881337" : "#EAE2D6" }]}
+        style={[
+          fontStyles.uiRegular,
+          {
+            borderBottomWidth: 1.5,
+            borderBottomColor: error ? "#881337" : "#EAE2D6",
+          },
+        ]}
         {...inputProps}
       />
       {error ? (

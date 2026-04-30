@@ -26,6 +26,7 @@ type Options = {
   tripId: number;
   currentUserEmail: string;
   currentUserId?: number | null;
+  currentUserDisplayName?: string | null;
 };
 
 export type TripWorkspaceModel = {
@@ -53,6 +54,7 @@ export function useTripWorkspaceModel({
   tripId,
   currentUserEmail,
   currentUserId,
+  currentUserDisplayName,
 }: Options): TripWorkspaceModel {
   // Queries and mutations
   const tripQuery = useTripDetailQuery(tripId);
@@ -65,6 +67,7 @@ export function useTripWorkspaceModel({
     tripId,
     tripQuery.data ?? null,
     currentUserEmail,
+    currentUserDisplayName,
   );
 
   // Primary view model derivations

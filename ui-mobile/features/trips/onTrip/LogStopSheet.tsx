@@ -13,6 +13,7 @@ type Props = {
   visible: boolean;
   defaultDate: string;
   disabled: boolean;
+  quickMode?: boolean;
   onClose: () => void;
   onSubmit: (payload: {
     day_date: string;
@@ -23,6 +24,13 @@ type Props = {
   }) => Promise<void>;
 };
 
+const QUICK_LOG_PRESETS = [
+  "Coffee stop",
+  "Snack break",
+  "Viewpoint",
+  "Street wander",
+] as const;
+
 function localTimeHHMM(): string {
   const now = new Date();
   return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
@@ -32,12 +40,14 @@ export function LogStopSheet({
   visible,
   defaultDate,
   disabled,
+  quickMode = false,
   onClose,
   onSubmit,
 }: Props) {
   const [title, setTitle] = useState("");
   const [time, setTime] = useState(localTimeHHMM());
   const [notes, setNotes] = useState("");
+  const [showFullForm, setShowFullForm] = useState(!quickMode);
 
   const {
     query: locationQuery,
@@ -57,9 +67,11 @@ export function LogStopSheet({
     setTime(localTimeHHMM());
     resetLocationAutocomplete("");
     setNotes("");
-  }, [visible, resetLocationAutocomplete]);
+    setShowFullForm(!quickMode);
+  }, [quickMode, visible, resetLocationAutocomplete]);
 
   const canSubmit = !disabled && title.trim().length > 0;
+  const canUseQuickPresets = quickMode && !showFullForm;
 
   return (
     <Modal animationType="slide" transparent visible={visible} onRequestClose={onClose}>
@@ -80,59 +92,109 @@ export function LogStopSheet({
               showsVerticalScrollIndicator={false}
             >
               <View className="mt-4 gap-3">
-                <TextInputField
-                  label="Title"
-                  value={title}
-                  onChangeText={setTitle}
-                  placeholder="Coffee break"
-                />
-                <TextInputField
-                  label="Time"
-                  value={time}
-                  onChangeText={setTime}
-                  placeholder="16:30"
-                />
-                <PlaceAutocompleteInput
-                  label="Location"
-                  hint="Optional"
-                  placeholder="Search or type a location"
-                  value={locationQuery}
-                  minQueryLength={locationMinQueryLength}
-                  loading={isSearchingLocation}
-                  searchError={locationSearchError}
-                  hasSearched={hasSearchedLocation}
-                  suggestions={locationSuggestions}
-                  onChangeText={onLocationQueryChange}
-                  onSelectSuggestion={onLocationSuggestionSelect}
-                />
-                <TextInputField
-                  label="Notes"
-                  value={notes}
-                  onChangeText={setNotes}
-                  placeholder="Optional"
-                  multiline
-                />
+                {canUseQuickPresets ? (
+                  <>
+                    <Text
+                      className="text-[12px] uppercase tracking-[1.8px] text-ontrip-muted"
+                      style={fontStyles.monoRegular}
+                    >
+                      Quick capture
+                    </Text>
+                    <View className="flex-row flex-wrap gap-2">
+                      {QUICK_LOG_PRESETS.map((preset) => (
+                        <Pressable
+                          key={preset}
+                          disabled={disabled}
+                          onPress={() =>
+                            void onSubmit({
+                              day_date: defaultDate,
+                              title: preset,
+                              time: localTimeHHMM(),
+                              location: null,
+                              notes: null,
+                            })
+                          }
+                          className={[
+                            "rounded-full border border-border-ontrip-strong bg-surface-ontrip px-3.5 py-2.5",
+                            disabled ? "opacity-50" : "active:opacity-80",
+                          ].join(" ")}
+                        >
+                          <Text className="text-[12px] text-ontrip" style={fontStyles.uiMedium}>
+                            {preset}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                    <Pressable
+                      onPress={() => setShowFullForm(true)}
+                      className="self-start pt-1"
+                      accessibilityRole="button"
+                      accessibilityLabel="Add details for this stop"
+                    >
+                      <Text className="text-[12px] text-ontrip-muted" style={fontStyles.uiMedium}>
+                        Add details instead
+                      </Text>
+                    </Pressable>
+                  </>
+                ) : (
+                  <>
+                    <TextInputField
+                      label="Title"
+                      value={title}
+                      onChangeText={setTitle}
+                      placeholder="Coffee break"
+                    />
+                    <TextInputField
+                      label="Time"
+                      value={time}
+                      onChangeText={setTime}
+                      placeholder="16:30"
+                    />
+                    <PlaceAutocompleteInput
+                      label="Location"
+                      hint="Optional"
+                      placeholder="Search or type a location"
+                      value={locationQuery}
+                      minQueryLength={locationMinQueryLength}
+                      loading={isSearchingLocation}
+                      searchError={locationSearchError}
+                      hasSearched={hasSearchedLocation}
+                      suggestions={locationSuggestions}
+                      onChangeText={onLocationQueryChange}
+                      onSelectSuggestion={onLocationSuggestionSelect}
+                    />
+                    <TextInputField
+                      label="Notes"
+                      value={notes}
+                      onChangeText={setNotes}
+                      placeholder="Optional"
+                      multiline
+                    />
+                  </>
+                )}
 
-                <Pressable
-                  onPress={() =>
-                    void onSubmit({
-                      day_date: defaultDate,
-                      title: title.trim(),
-                      time: time.trim() || null,
-                      location: locationQuery.trim() || null,
-                      notes: notes.trim() || null,
-                    })
-                  }
-                  disabled={!canSubmit}
-                  className={[
-                    "min-h-11 items-center justify-center rounded-full bg-accent-ontrip px-4 py-3",
-                    canSubmit ? "active:opacity-90" : "opacity-50",
-                  ].join(" ")}
-                >
-                  <Text className="text-sm text-white" style={fontStyles.uiSemibold}>
-                    {disabled ? "Saving…" : "Save stop"}
-                  </Text>
-                </Pressable>
+                {!canUseQuickPresets ? (
+                  <Pressable
+                    onPress={() =>
+                      void onSubmit({
+                        day_date: defaultDate,
+                        title: title.trim(),
+                        time: time.trim() || null,
+                        location: locationQuery.trim() || null,
+                        notes: notes.trim() || null,
+                      })
+                    }
+                    disabled={!canSubmit}
+                    className={[
+                      "min-h-11 items-center justify-center rounded-full bg-accent-ontrip px-4 py-3",
+                      canSubmit ? "active:opacity-90" : "opacity-50",
+                    ].join(" ")}
+                  >
+                    <Text className="text-sm text-white" style={fontStyles.uiSemibold}>
+                      {disabled ? "Saving…" : "Save stop"}
+                    </Text>
+                  </Pressable>
+                ) : null}
                 <Pressable
                   onPress={onClose}
                   className="min-h-11 items-center justify-center rounded-full border border-border-ontrip-strong bg-surface-ontrip px-4 py-3"

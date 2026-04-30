@@ -54,6 +54,7 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
     tripId,
     currentUserEmail: user?.email ?? "",
     currentUserId: user?.id ?? null,
+    currentUserDisplayName: user?.display_name ?? null,
   });
   const tripData = workspace.tripRaw;
   const trip = workspace.trip;

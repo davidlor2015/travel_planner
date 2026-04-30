@@ -1,7 +1,7 @@
 // Path: ui-mobile/features/trips/onTrip/OnTripScreen.tsx
 // Summary: Implements OnTripScreen module logic.
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as Linking from "expo-linking";
 import { Ionicons } from "@expo/vector-icons";
 import { type Href, useRouter } from "expo-router";
@@ -49,6 +49,7 @@ type Props = {
   tripTitle: string;
   tripDestination?: string;
   members?: TripMember[];
+  autoOpenLogComposer?: boolean;
 };
 
 const NOW_TICK_INTERVAL_MS = 60_000;
@@ -58,6 +59,7 @@ export function OnTripScreen({
   tripTitle,
   tripDestination,
   members,
+  autoOpenLogComposer = false,
 }: Props) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -68,6 +70,10 @@ export function OnTripScreen({
     null,
   );
   const [logModalOpen, setLogModalOpen] = useState(false);
+  const [logComposerMode, setLogComposerMode] = useState<"quick" | "full">(
+    autoOpenLogComposer ? "quick" : "full",
+  );
+  const hasAutoOpenedComposerRef = useRef(false);
 
   const [, setMinuteTick] = useState(0);
   useEffect(() => {
@@ -106,6 +112,16 @@ export function OnTripScreen({
         : null,
     [rawSnapshot, tripTitle, tripDestination],
   );
+
+  useEffect(() => {
+    if (hasAutoOpenedComposerRef.current) return;
+    if (!autoOpenLogComposer) return;
+    if (!vm || vm.isReadOnly) return;
+
+    hasAutoOpenedComposerRef.current = true;
+    setLogComposerMode("quick");
+    setLogModalOpen(true);
+  }, [autoOpenLogComposer, vm]);
 
   if (snapshotQuery.isLoading)
     return <ScreenLoading label="Loading your trip..." />;
@@ -386,7 +402,10 @@ export function OnTripScreen({
         {!vm.isReadOnly ? (
           <View className="mx-[22px] mt-6">
             <Pressable
-              onPress={() => setLogModalOpen(true)}
+              onPress={() => {
+                setLogComposerMode("full");
+                setLogModalOpen(true);
+              }}
               className="flex-row items-center gap-3 rounded-[12px] border px-4 py-3.5 active:opacity-70"
               style={{ backgroundColor: DE.paper, borderColor: DE.rule }}
               accessibilityRole="button"
@@ -463,9 +482,11 @@ export function OnTripScreen({
         visible={logModalOpen}
         defaultDate={vm.defaultLogDate}
         disabled={mutations.isLoggingUnplanned}
+        quickMode={logComposerMode === "quick"}
         onClose={() => setLogModalOpen(false)}
         onSubmit={async (payload) => {
           await mutations.logUnplannedStop(payload);
+          setLogComposerMode("full");
           setLogModalOpen(false);
         }}
       />

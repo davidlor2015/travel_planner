@@ -12,12 +12,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { type Href, router } from "expo-router";
 
 import {
   useArchiveScreen,
 } from "@/features/trips/archive/useArchiveScreen";
 import type { ArchiveTripViewModel, ArchiveYearGroup } from "@/features/trips/archive/archiveUtils";
+import { DE } from "@/shared/theme/desertEditorial";
 import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
 import { ScreenLoading } from "@/shared/ui/ScreenLoading";
 
@@ -186,27 +188,95 @@ function SearchBar({
 
 // ─── Empty states ─────────────────────────────────────────────────────────────
 
+function MemoriesEmptyIllustration() {
+  return (
+    <View
+      className="mb-2 w-full max-w-[320px] overflow-hidden rounded-[24px] border"
+      style={{ borderColor: DE.ruleStrong, backgroundColor: DE.paper }}
+    >
+      <LinearGradient
+        colors={["rgba(250,245,234,0.92)", "rgba(239,216,201,0.40)"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0 }}
+      />
+
+      <View className="px-5 pb-5 pt-6">
+        <View className="mb-4 flex-row items-center justify-between">
+          <View
+            className="rounded-full border px-3 py-1"
+            style={{ borderColor: DE.ruleStrong, backgroundColor: "rgba(248,241,226,0.82)" }}
+          >
+            <Text
+              style={[fontStyles.monoRegular, { fontSize: 9, letterSpacing: 1.6, color: DE.muted }]}
+            >
+              MEMORY STAMPS
+            </Text>
+          </View>
+          <Ionicons name="sparkles-outline" size={13} color={DE.mutedLight} />
+        </View>
+
+        <View className="flex-row items-center gap-3">
+          <View
+            className="h-12 w-12 items-center justify-center rounded-2xl border"
+            style={{ borderColor: DE.ruleStrong, backgroundColor: "rgba(250,245,234,0.88)" }}
+          >
+            <Ionicons name="bookmark-outline" size={22} color={DE.clay} />
+          </View>
+          <View className="flex-1">
+            <View className="mb-2 h-px" style={{ backgroundColor: DE.rule }} />
+            <View className="h-px" style={{ backgroundColor: DE.rule }} />
+          </View>
+          <View
+            className="h-8 w-8 items-center justify-center rounded-full"
+            style={{ backgroundColor: "rgba(148,164,135,0.18)" }}
+          >
+            <Ionicons name="ellipse-outline" size={12} color={DE.sageDeep} />
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 function NoArchiveState() {
   return (
-    <View className="flex-1 items-center justify-center px-8 gap-4">
-      <View className="h-14 w-14 items-center justify-center rounded-full border border-smoke bg-parchment">
-        <Ionicons name="map-outline" size={26} color="#B86845" />
+    <View className="flex-1 px-6 pb-8 pt-5">
+      <View pointerEvents="none" className="absolute inset-0 overflow-hidden">
+        <LinearGradient
+          colors={["rgba(250,245,234,0.82)", "rgba(250,245,234,0.96)"]}
+          start={{ x: 0.12, y: 0 }}
+          end={{ x: 0.9, y: 1 }}
+          style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0 }}
+        />
+        <View
+          className="absolute -right-12 top-16 h-40 w-40 rounded-full"
+          style={{ backgroundColor: "rgba(239,216,201,0.22)" }}
+        />
+        <View
+          className="absolute -left-16 bottom-14 h-52 w-52 rounded-full"
+          style={{ backgroundColor: "rgba(148,164,135,0.10)" }}
+        />
       </View>
-      <Text style={textScaleStyles.displayL} className="text-espresso text-center">
-        No memories yet.
-      </Text>
-      <Text style={fontStyles.uiRegular} className="text-[14px] text-muted text-center leading-5">
-        Completed trips will appear here after their end date. Roen will keep track of what you planned, what you visited, and what changed along the way.
-      </Text>
-      <Pressable
-        onPress={() => router.push("/(tabs)/trips" as Href)}
-        accessibilityRole="button"
-        className="mt-1 rounded-full border border-smoke bg-white px-5 py-2.5"
-      >
-        <Text style={fontStyles.uiMedium} className="text-[13px] text-espresso">
-          View Trips
+
+      <View className="flex-1 items-center justify-center gap-4">
+        <MemoriesEmptyIllustration />
+        <Text style={textScaleStyles.displayL} className="text-center text-espresso">
+          No memories yet.
         </Text>
-      </Pressable>
+        <Text style={fontStyles.uiRegular} className="text-center text-[14px] leading-5 text-muted">
+          When a trip wraps, it settles here with the plan, the places you made it to, and the detours that made it yours.
+        </Text>
+        <Pressable
+          onPress={() => router.push("/(tabs)/trips" as Href)}
+          accessibilityRole="button"
+          className="mt-1 rounded-full border border-smoke bg-white px-5 py-2.5"
+        >
+          <Text style={fontStyles.uiMedium} className="text-[13px] text-espresso">
+            Browse Trips
+          </Text>
+        </Pressable>
+      </View>
     </View>
   );
 }

@@ -67,7 +67,7 @@ function TabsLayoutInner() {
         options={{
           title: "Memories",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="albums-outline" size={size} color={color} />
+            <Ionicons name="map-outline" size={size} color={color} />
           ),
         }}
       />
