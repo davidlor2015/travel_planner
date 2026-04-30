@@ -73,11 +73,17 @@ export default function LoginPage() {
               Welcome back
             </Text>
             <Text
-              style={[textScaleStyles.displayXL, { fontSize: 38, lineHeight: 42, color: AUTH_PALETTE.text }]}
+              style={[
+                textScaleStyles.displayXL,
+                { fontSize: 38, lineHeight: 42, color: AUTH_PALETTE.text },
+              ]}
             >
               {"Sign in."}
             </Text>
-            <Text className="mt-2 text-sm leading-5 text-muted" style={fontStyles.uiRegular}>
+            <Text
+              className="mt-2 text-sm leading-5 text-muted"
+              style={fontStyles.uiRegular}
+            >
               Pick up where you left off.
             </Text>
           </View>
@@ -107,7 +113,10 @@ export default function LoginPage() {
 
             {errorMessage ? (
               <View className="mt-1 rounded-xl border border-danger/20 bg-danger/10 px-4 py-3">
-                <Text className="text-sm text-danger" style={fontStyles.uiMedium}>
+                <Text
+                  className="text-sm text-danger"
+                  style={fontStyles.uiMedium}
+                >
                   {errorMessage}
                 </Text>
               </View>
@@ -148,7 +157,9 @@ export default function LoginPage() {
             >
               <Text className="text-sm text-muted" style={fontStyles.uiRegular}>
                 New here?{" "}
-                <Text style={[fontStyles.uiMedium, s.link]}>Create an account</Text>
+                <Text style={[fontStyles.uiMedium, s.link]}>
+                  Create an account
+                </Text>
               </Text>
             </Pressable>
           </View>

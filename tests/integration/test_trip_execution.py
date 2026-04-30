@@ -257,6 +257,79 @@ def test_stop_status_requires_trip_membership(client, auth_headers_user_a, auth_
     assert res.status_code == 404
 
 
+def test_execution_write_endpoints_auth_and_response_contract(
+    client,
+    auth_headers_user_a,
+    auth_headers_user_b,
+    user_b,
+):
+    trip_id = _create_active_trip(client, auth_headers_user_a)
+    _apply_basic_itinerary(client, auth_headers_user_a, trip_id)
+    target_ref = _snapshot(client, auth_headers_user_a, trip_id)["today_stops"][0]["stop_ref"]
+    today = date.today()
+
+    non_member_status = client.post(
+        f"/v1/trips/{trip_id}/execution/stop-status",
+        json={"stop_ref": target_ref, "status": "confirmed"},
+        headers=auth_headers_user_b,
+    )
+    assert non_member_status.status_code == 404
+
+    non_member_unplanned = client.post(
+        f"/v1/trips/{trip_id}/execution/unplanned-stop",
+        json={"day_date": today.isoformat(), "title": "Non-member detour"},
+        headers=auth_headers_user_b,
+    )
+    assert non_member_unplanned.status_code == 404
+
+    add_member = client.post(
+        f"/v1/trips/{trip_id}/members",
+        json={"email": user_b.email},
+        headers=auth_headers_user_a,
+    )
+    assert add_member.status_code == 201, add_member.text
+
+    member_status = client.post(
+        f"/v1/trips/{trip_id}/execution/stop-status",
+        json={"stop_ref": target_ref, "status": "confirmed"},
+        headers=auth_headers_user_b,
+    )
+    assert member_status.status_code == 201, member_status.text
+    assert set(member_status.json().keys()) == {
+        "id",
+        "kind",
+        "stop_ref",
+        "status",
+        "day_date",
+        "time",
+        "title",
+        "location",
+        "notes",
+        "created_by_user_id",
+        "created_at",
+    }
+
+    member_unplanned = client.post(
+        f"/v1/trips/{trip_id}/execution/unplanned-stop",
+        json={"day_date": today.isoformat(), "title": "Member detour"},
+        headers=auth_headers_user_b,
+    )
+    assert member_unplanned.status_code == 201, member_unplanned.text
+    assert set(member_unplanned.json().keys()) == {
+        "id",
+        "kind",
+        "stop_ref",
+        "status",
+        "day_date",
+        "time",
+        "title",
+        "location",
+        "notes",
+        "created_by_user_id",
+        "created_at",
+    }
+
+
 def test_delete_unplanned_stop_forbidden_for_non_creator_non_owner(
     client, auth_headers_user_a, auth_headers_user_b, user_b
 ):

@@ -244,6 +244,9 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
           onCancelStream={handleCancelStream}
           onOpenTab={setActiveTab}
           onOpenLiveView={() => router.push(`/(tabs)/trips/${tripId}/live` as Href)}
+          // Park the user on Overview the moment apply succeeds — the saved
+          // itinerary is the climax of the create flow, not a side effect.
+          onItineraryApplied={() => setActiveTab("overview")}
           showItineraryOnly={resolvedTab === "itinerary"}
           isReadOnly={isReadOnly}
           activityLoadError={

@@ -17,6 +17,7 @@ import type {
 } from "./adapters";
 import { ItineraryTabView } from "./ItineraryTabView";
 import { RegenerateSheet } from "./RegenerateSheet";
+import { RethinkDaySheet } from "./RethinkDaySheet";
 import { ReadOnlyNotice } from "./ReadOnlyNotice";
 import { StopFormSheet } from "./StopFormSheet";
 import { useWorkspaceOverviewModel } from "./useWorkspaceOverviewModel";
@@ -40,6 +41,7 @@ type Props = {
   onCancelStream: () => void;
   onOpenTab: (tab: WorkspaceTab) => void;
   onOpenLiveView: () => void;
+  onItineraryApplied?: () => void;
   showItineraryOnly?: boolean;
   isReadOnly?: boolean;
   activityLoadError?: string | null;
@@ -58,6 +60,7 @@ export function OverviewTab({
   onCancelStream,
   onOpenTab,
   onOpenLiveView,
+  onItineraryApplied,
   showItineraryOnly = false,
   isReadOnly = false,
   activityLoadError = null,
@@ -69,6 +72,7 @@ export function OverviewTab({
     onTripSnapshot,
     streamState,
     onCancelStream,
+    onItineraryApplied,
   });
 
   const command = overview.command;
@@ -183,11 +187,56 @@ export function OverviewTab({
           onPublish={() => void overview.handlePublishChanges()}
           onRegenerateAll={onStartStream}
           onCancelStream={onCancelStream}
+          onRethinkDay={!isReadOnly ? (dayIndex) => overview.setRethinkingDayIndex(dayIndex) : undefined}
           isReadOnly={isReadOnly}
         />
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
           {isReadOnly ? <ReadOnlyNotice className="mx-[22px] mt-4" /> : null}
+
+          {overview.recentlyApplied ? (
+            <View
+              testID="itinerary-applied-banner"
+              accessible
+              accessibilityRole="alert"
+              accessibilityLiveRegion="polite"
+              style={{
+                marginHorizontal: 22,
+                marginTop: 16,
+                padding: 16,
+                borderRadius: 16,
+                backgroundColor: "#F2EBDD",
+                borderWidth: 1,
+                borderColor: "rgba(184,90,56,0.22)",
+                flexDirection: "row",
+                alignItems: "flex-start",
+                gap: 12,
+              }}
+            >
+              <View
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 14,
+                  backgroundColor: "rgba(184,90,56,0.15)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Ionicons name="checkmark" size={16} color="#B85A38" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[fontStyles.headSemibold, { fontSize: 16, color: "#231910", lineHeight: 20 }]}>
+                  Your trip is ready
+                </Text>
+                <Text
+                  style={[fontStyles.uiRegular, { fontSize: 13, lineHeight: 18, color: "#8A7B6A", marginTop: 4 }]}
+                >
+                  Your itinerary is in your workspace now.
+                </Text>
+              </View>
+            </View>
+          ) : null}
 
           {showActivity ? (
             <View style={{ paddingTop: 16 }}>
@@ -520,6 +569,18 @@ export function OverviewTab({
             currentItinerary={overview.itinerary}
             onAccept={overview.handleAcceptRefinement}
             onClose={() => overview.setRegeneratingDayIndex(null)}
+          />
+          <RethinkDaySheet
+            visible={!isReadOnly && overview.rethinkingDayIndex !== null}
+            tripId={trip.id}
+            day={
+              overview.rethinkingDayIndex !== null
+                ? (overview.itinerary.days[overview.rethinkingDayIndex] ?? null)
+                : null
+            }
+            currentItinerary={overview.itinerary}
+            onAccept={overview.handleAcceptRethink}
+            onClose={() => overview.setRethinkingDayIndex(null)}
           />
         </>
       ) : null}

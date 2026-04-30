@@ -30,8 +30,15 @@ class TripAccessService:
         user_id: int,
         *,
         owner_only: bool = False,
+        load_full_trip: bool = False,
+        load_trip_members: bool = False,
     ) -> TripAccessContext:
-        membership = self.membership_repo.get_context(trip_id, user_id)
+        if load_full_trip:
+            membership = self.membership_repo.get_context(trip_id, user_id)
+        elif load_trip_members:
+            membership = self.membership_repo.get_access_context_with_trip_members(trip_id, user_id)
+        else:
+            membership = self.membership_repo.get_access_context(trip_id, user_id)
         if membership is None or membership.member_state is None:
             raise HTTPException(status_code=404, detail="Trip not found")
 
@@ -43,6 +50,11 @@ class TripAccessService:
             membership=membership,
             member_state=membership.member_state,
         )
+
+    def require_membership_exists(self, trip_id: int, user_id: int) -> None:
+        membership = self.membership_repo.get_by_trip_and_user(trip_id, user_id)
+        if membership is None:
+            raise HTTPException(status_code=404, detail="Trip not found")
 
     @staticmethod
     def can_execute_on_trip(context: TripAccessContext) -> bool:

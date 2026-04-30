@@ -253,6 +253,7 @@ export const TripList = ({
     selectedIsRegenerating,
     selectedIsApplying,
     selectedDraftMutationState,
+    selectedAppliedSuccess,
     selectedIsAnyGenerating,
     selectedOnTripSnapshot,
     selectedIsOnTripCompactMode,
@@ -539,6 +540,7 @@ export const TripList = ({
                     isApplying={selectedIsApplying}
                     draftMutationState={selectedDraftMutationState}
                     draftPublishError={draftActionError}
+                    appliedSuccess={selectedAppliedSuccess}
                     savedItinerary={selectedSavedItinerary}
                     pendingItinerary={selectedPendingItinerary}
                     draftPlanMeta={selectedDraftPlanMeta}

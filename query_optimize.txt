@@ -1,0 +1,202 @@
+## Query Performance Audit Summary
+Audit scope covered all requested backend flows through route → service → repository/model + Alembic index coverage.  
+Current state is generally solid on indexing (notably recent 2026-04-30 index migrations), with the main launch risks concentrated in query shape and over-fetching, not missing core indexes.
+
+## Core Flow Findings
+
+### 1. Trip Workspace Load
+- Files:
+  - [trips.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/api/v1/routes/trips.py)
+  - [trip_service.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/services/trip_service.py)
+  - [trip_membership_repository.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/repositories/trip_membership_repository.py)
+  - [trip_repository.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/repositories/trip_repository.py)
+- Tables:
+  - `trips`, `trip_memberships`, `trip_member_states`, `trip_invites`, `itinerary_days`, `itinerary_events`, `itinerary_day_anchors`, `packing_items`, `budget_expenses`, `prep_items`, `reservations`
+- Findings:
+  - `GET /v1/trips/{trip_id}/member-readiness` builds planning readiness via `joinedload` of 3 member-state collections at once ([trip_membership_repository.py:64](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/repositories/trip_membership_repository.py:64)).  
+    Problem: row multiplication risk as members/items grow.  
+    Why it matters: workspace collaboration call is user-facing and frequent.  
+    Recommended fix: switch readiness planning loader to `selectinload` for `packing_items`, `budget_expenses`, `prep_items`; keep `joinedload` only for single-row relations.  
+    Risk level: `P1`  
+    Migration needed: `No`
+  - `GET /v1/trips/` returns full `TripResponse` graph (`members`, `pending_invites`) ([trips.py:34](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/api/v1/routes/trips.py:34), [trip_repository.py:49](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/repositories/trip_repository.py:49)), while mobile list flow calls this endpoint directly ([api.ts:27](/mnt/c/users/david/desktop/planner_proj/travel-planner/ui-mobile/features/trips/api.ts:27)).  
+    Problem: avoidable over-fetch for list/switcher use.  
+    Why it matters: higher DB + serialization + payload cost on every trip list load.  
+    Recommended fix: move list clients to `/v1/trips/lite` or slim default list response.  
+    Risk level: `P1`  
+    Migration needed: `No`
+  - `GET /v1/trips/summaries` uses correlated subqueries and `func.date(start_at)` ([trip_repository.py:96](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/repositories/trip_repository.py:96)).  
+    Problem: date-cast can reduce index efficiency for upcoming-reservation metric.  
+    Why it matters: called in main workspace/trips flow.  
+    Recommended fix: compare `start_at` against a timestamp boundary instead of `func.date(start_at)`.  
+    Risk level: `P2`  
+    Migration needed: `No`
+- Recommended fixes:
+  - Prioritize readiness loader shape and trips list payload reduction.
+  - Keep summary query single-roundtrip, but remove date-cast expression.
+
+### 2. Trip Detail Retrieval
+- Files:
+  - [trips.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/api/v1/routes/trips.py)
+  - [trip_repository.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/repositories/trip_repository.py)
+- Tables:
+  - `trips`, `trip_memberships`, `trip_member_states`, `trip_invites`, `users`
+- Findings:
+  - `GET /v1/trips/{trip_id}` already uses `selectinload` for memberships, member state, invites ([trip_repository.py:34](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/repositories/trip_repository.py:34)).  
+    Likely query count: ~5 (trip + memberships + users + member_states + invites).  
+    N+1 risk: low for this endpoint.
+- Recommended fixes:
+  - No immediate backend query-shape change required.
+  - Keep under observation if member/invite counts become large.
+
+### 3. AI Itinerary Apply/Save
+- Files:
+  - [ai.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/api/v1/routes/ai.py)
+  - [itinerary_service.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/services/ai/itinerary_service.py)
+  - [itinerary_repository.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/repositories/itinerary_repository.py)
+- Tables:
+  - `trips`, `trip_memberships`, `users`, `itinerary_days`, `itinerary_events`, `itinerary_day_anchors`
+- Findings:
+  - Apply path is full replace (`DELETE` all itinerary rows then reinsert) ([itinerary_repository.py:21](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/repositories/itinerary_repository.py:21), [itinerary_service.py:737](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/services/ai/itinerary_service.py:737)).  
+    Problem: write cost scales with total itinerary size per save.  
+    Why it matters: repeated publish/regenerate cycles can get slower as itinerary depth grows.  
+    Recommended fix: keep for launch correctness, but add latency monitoring + payload guard; defer diff-based writes post-launch.  
+    Risk level: `P2`  
+    Migration needed: `No`
+- Recommended fixes:
+  - No schema/index change needed now; treat as controlled technical debt.
+
+### 4. Budget List/summary
+- Files:
+  - [budget.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/api/v1/routes/budget.py)
+  - [budget_service.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/services/budget_service.py)
+- Tables:
+  - `trip_member_states`, `budget_expenses`
+- Findings:
+  - `member_state_id`-scoped access pattern is indexed and appropriate ([budget_service.py:25](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/services/budget_service.py:25)).  
+  - No clear N+1 or scan risk in core budget list path.
+- Recommended fixes:
+  - No action needed.
+
+### 5. Packing List
+- Files:
+  - [packing.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/api/v1/routes/packing.py)
+  - [packing_service.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/services/packing_service.py)
+- Tables:
+  - `trip_member_states`, `packing_items`, `reservations`
+- Findings:
+  - `list_items` is efficient (`member_state_id` filter indexed).  
+  - `list_suggestions` loads full reservation rows though it only uses `reservation_type` ([packing_service.py:113](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/services/packing_service.py:113)).  
+    Risk level: `P2`, migration: `No`.
+- Recommended fixes:
+  - Replace full reservation fetch with `SELECT DISTINCT reservation_type WHERE trip_id=:id`.
+
+### 6. Reservations List
+- Files:
+  - [reservations.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/api/v1/routes/reservations.py)
+  - [reservation_service.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/services/reservation_service.py)
+  - [ac4d8e2f7b31_add_reservations_trip_start_created_index.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/alembic/versions/ac4d8e2f7b31_add_reservations_trip_start_created_index.py)
+- Tables:
+  - `reservations`, `budget_expenses`
+- Findings:
+  - List path already avoids N+1 via `selectinload(Reservation.budget_expenses)` ([reservation_service.py:105](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/services/reservation_service.py:105)).  
+  - Composite index for list ordering exists (`trip_id,start_at,created_at`) ([ac4d8e2f7b31...py:20](/mnt/c/users/david/desktop/planner_proj/travel-planner/alembic/versions/ac4d8e2f7b31_add_reservations_trip_start_created_index.py:20)).
+- Recommended fixes:
+  - No action needed for launch on DB query shape.
+
+### 7. Invite/member access checks
+- Files:
+  - [invites.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/api/v1/routes/invites.py)
+  - [trip_invite_repository.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/repositories/trip_invite_repository.py)
+  - [9c2d4e6f8a1b_add_query_performance_indexes.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/alembic/versions/9c2d4e6f8a1b_add_query_performance_indexes.py)
+  - [trip_access_service.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/services/trip_access_service.py)
+- Tables:
+  - `trip_invites`, `trip_memberships`, `trip_member_states`, `users`, `trips`
+- Findings:
+  - Invite lookup/index coverage is good: `(email,status,created_at)` and `(trip_id,email,status)` are in place ([9c2d4e6f8a1b...py:20](/mnt/c/users/david/desktop/planner_proj/travel-planner/alembic/versions/9c2d4e6f8a1b_add_query_performance_indexes.py:20)).  
+  - Access checks still load `trip + member_state` even for simple authorization-only operations ([trip_access_service.py:27](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/services/trip_access_service.py:27)).  
+    Risk level: `P2`, migration: `No`.
+- Recommended fixes:
+  - Add a lightweight auth-only membership probe for hot write endpoints.
+
+### 8. On-Trip snapshot and stop execution status updates
+- Files:
+  - [trip_service.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/services/trip_service.py)
+  - [trip_execution_service.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/services/trip_execution_service.py)
+  - [trip_execution_repository.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/repositories/trip_execution_repository.py)
+  - [9c2d4e6f8a1b_add_query_performance_indexes.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/alembic/versions/9c2d4e6f8a1b_add_query_performance_indexes.py)
+- Tables:
+  - `trip_execution_events`, `itinerary_days`, `itinerary_events`, `trip_memberships`, `users`
+- Findings:
+  - Snapshot currently rebuilds member email map from `trip.memberships -> membership.user` without eager loading ([trip_service.py:282](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/services/trip_service.py:282)).  
+    Problem: potential N+1 on members and duplicate member-email retrieval (itinerary path already queried membership emails).  
+    Why it matters: endpoint is polled every 30s by mobile ([hooks.ts:99](/mnt/c/users/david/desktop/planner_proj/travel-planner/ui-mobile/features/trips/hooks.ts:99)).  
+    Recommended fix: eager-load memberships/users in access context for this endpoint or reuse a single prebuilt member-email query result.  
+    Risk level: `P1`  
+    Migration needed: `No`
+  - Stop-status write validation is already targeted and indexed (`stop_exists_for_trip` join+limit, and execution composite indexes exist) ([trip_execution_service.py:91](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/services/trip_execution_service.py:91), [trip_execution_repository.py:38](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/repositories/trip_execution_repository.py:38)).  
+    Risk level: `No action needed`.
+- Recommended fixes:
+  - Optimize snapshot query shape first; keep execution write path/indexes as-is.
+
+## Index Review
+- Covered well for requested lookup patterns:
+  - `trip_id`: memberships, itinerary_days, reservations, invites, execution events.
+  - `user_id`: trip_memberships (`user_id` + unique `trip_id,user_id`), execution `created_by_user_id`.
+  - `day_id`: itinerary_events/day_anchors.
+  - `stop_ref`: execution events + composite `(trip_id,kind,stop_ref,id)`.
+  - reservation trip FK + sort composite: `(trip_id,start_at,created_at)`.
+  - packing/budget/prep now scoped by `member_state_id` with indexes.
+  - invite token and pending lookups: unique token + email/status/trip composites.
+- Potential optional gap:
+  - `trips.user_id` is not indexed in model/migrations ([trip.py:19](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/models/trip.py:19)); not a clear core-flow bottleneck today, so I would not add yet.
+
+## N+1 Query Risks
+- `GET /v1/trips/{trip_id}/on-trip-snapshot`: membership user access in loop may issue per-member lazy queries.
+- `GET /v1/trips/{trip_id}/member-readiness`: not classic N+1, but high row-amplification risk due multi-collection `joinedload` in one query.
+
+## Endpoints Loading Too Much Data
+- `GET /v1/trips/` returns full trip graph for list/switcher consumers that do not need it.
+- `GET /v1/trips/{trip_id}/member-readiness` loads full planning collections for every member, every call.
+- `GET /v1/trips/{trip_id}/on-trip-snapshot` does duplicate member-email retrieval work.
+
+## Recommended Fix Priority
+
+### P0
+- None identified in current code.
+
+### P1
+- Optimize on-trip snapshot member loading/reuse to remove poll-time N+1 risk.
+- Change member-readiness loader strategy from multi-collection `joinedload` to `selectinload`.
+- Reduce `/v1/trips/` over-fetch in list contexts (`/lite` usage or slim list response).
+
+### P2
+- Improve summaries upcoming-reservation filter to be index-friendly (remove `func.date(...)`).
+- Keep full-replace itinerary apply for launch, but instrument latency and payload size.
+- Use lightweight auth-only membership checks on hot write paths.
+- Make packing suggestions query read only reservation types needed.
+
+## Suggested Implementation Plan
+1. Fix snapshot query shape (`on-trip-snapshot`) first because it is polling-driven and user-visible.
+2. Refactor member-readiness loading to avoid row explosion; verify identical response contract.
+3. Switch list consumers to `/v1/trips/lite` (or add a new slim default list path) without changing detail API.
+4. Clean up summary query date predicate for index friendliness.
+5. Add telemetry tests/benchmarks for snapshot/readiness/list endpoints before and after changes.
+
+## Files to Modify
+- [trip_service.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/services/trip_service.py)
+- [trip_membership_repository.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/repositories/trip_membership_repository.py)
+- [trip_access_service.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/services/trip_access_service.py)
+- [trip_repository.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/repositories/trip_repository.py)
+- [packing_service.py](/mnt/c/users/david/desktop/planner_proj/travel-planner/app/services/packing_service.py)
+- Optional client callsite update: [api.ts](/mnt/c/users/david/desktop/planner_proj/travel-planner/ui-mobile/features/trips/api.ts)
+
+## Tests to Add
+- Statement-count regression tests for:
+  - `GET /v1/trips/{trip_id}/on-trip-snapshot`
+  - `GET /v1/trips/{trip_id}/member-readiness`
+  - `GET /v1/trips/` vs `/v1/trips/lite`
+- Performance-oriented integration tests with large synthetic data:
+  - many members + many per-member planning rows
+  - large execution event histories with snapshot polling
+- Contract tests to ensure optimized loaders do not change response shape/order.

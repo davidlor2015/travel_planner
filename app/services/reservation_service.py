@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from fastapi import HTTPException
 from sqlalchemy import case
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.models.budget_expense import BudgetExpense
 from app.models.reservation import Reservation
@@ -91,16 +91,26 @@ class ReservationService:
         existing.amount = reservation.amount
         existing.category = _budget_category_for_reservation(reservation.reservation_type)
 
-    def list_reservations(self, trip_id: int, user_id: int) -> list[ReservationResponse]:
+    def list_reservations(
+        self,
+        trip_id: int,
+        user_id: int,
+        *,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> list[ReservationResponse]:
         context = self.access_service.require_membership(trip_id, user_id)
         rows = (
             self.db.query(Reservation)
+            .options(selectinload(Reservation.budget_expenses))
             .filter(Reservation.trip_id == trip_id)
             .order_by(
                 case((Reservation.start_at.is_(None), 1), else_=0),
                 Reservation.start_at.asc(),
                 Reservation.created_at.asc(),
             )
+            .offset(skip)
+            .limit(limit)
             .all()
         )
         return [self._to_response(row, context.member_state.id) for row in rows]

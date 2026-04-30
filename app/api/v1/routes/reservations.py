@@ -11,8 +11,19 @@ router = APIRouter()
 
 
 @router.get("/", response_model=list[ReservationResponse])
-def list_reservations(trip_id: int, db: SessionDep, current_user: CurrentUser):
-    return ReservationService(db).list_reservations(trip_id, current_user.id)
+def list_reservations(
+    trip_id: int,
+    db: SessionDep,
+    current_user: CurrentUser,
+    skip: int = 0,
+    limit: int = 100,
+):
+    return ReservationService(db).list_reservations(
+        trip_id,
+        current_user.id,
+        skip=skip,
+        limit=limit,
+    )
 
 
 @router.post("/", response_model=ReservationResponse, status_code=201)

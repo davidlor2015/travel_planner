@@ -135,3 +135,27 @@ def test_reservations_respect_trip_ownership(client, db, user_a, user_b, auth_he
 
     res = client.get(f"/v1/trips/{trip.id}/reservations/", headers=auth_headers_user_a)
     assert res.status_code == 404
+
+
+def test_list_reservations_supports_pagination(client, db, user_a, auth_headers_user_a, attach_trip_membership):
+    trip = _create_trip(db, user_a.id, attach_trip_membership)
+
+    for title in ("First", "Second", "Third"):
+        create_res = client.post(
+            f"/v1/trips/{trip.id}/reservations/",
+            json={
+                "title": title,
+                "reservation_type": "other",
+            },
+            headers=auth_headers_user_a,
+        )
+        assert create_res.status_code == 201, create_res.text
+
+    page = client.get(
+        f"/v1/trips/{trip.id}/reservations/?skip=1&limit=1",
+        headers=auth_headers_user_a,
+    )
+    assert page.status_code == 200, page.text
+    items = page.json()
+    assert len(items) == 1
+    assert items[0]["title"] == "Second"

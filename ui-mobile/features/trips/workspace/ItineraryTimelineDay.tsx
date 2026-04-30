@@ -16,12 +16,14 @@ import type {
 type Props = {
   day: ItineraryTabDay;
   onEditStop: (stopIndex: number) => void;
+  onRethinkDay?: () => void;
   isReadOnly?: boolean;
 };
 
 export function ItineraryTimelineDay({
   day,
   onEditStop,
+  onRethinkDay,
   isReadOnly = false,
 }: Props) {
   return (
@@ -48,6 +50,22 @@ export function ItineraryTimelineDay({
           {day.stopCountLabel}
         </Text>
       </View>
+      {!isReadOnly && onRethinkDay ? (
+        <Pressable
+          onPress={onRethinkDay}
+          accessibilityRole="button"
+          accessibilityLabel={`Rethink ${day.dayLabel}`}
+          hitSlop={8}
+          className="px-[22px] active:opacity-60"
+        >
+          <Text
+            className="text-[12px]"
+            style={[fontStyles.uiMedium, { color: DE.clay }]}
+          >
+            Rethink this day
+          </Text>
+        </Pressable>
+      ) : null}
 
       <View
         className="mx-[22px] overflow-hidden rounded-[16px] border"

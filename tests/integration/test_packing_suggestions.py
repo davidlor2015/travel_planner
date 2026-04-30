@@ -40,6 +40,7 @@ def test_packing_suggestions_use_destination_and_reservations(client, db, user_a
     labels = [item["label"] for item in res.json()]
     assert "Passport" in labels
     assert "Travel adapter" in labels
+    assert all(set(item.keys()) == {"label", "reason"} for item in res.json())
 
 
 def test_packing_suggestions_filter_existing_items(client, db, user_a, auth_headers_user_a, attach_trip_membership):

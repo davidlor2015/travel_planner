@@ -133,6 +133,20 @@ class ItineraryRepository:
             ).all()
         )
 
+    def stop_exists_for_trip(self, trip_id: int, itinerary_event_id: int) -> bool:
+        return (
+            self.db.scalar(
+                select(ItineraryEvent.id)
+                .join(ItineraryDay, ItineraryDay.id == ItineraryEvent.day_id)
+                .where(
+                    ItineraryDay.trip_id == trip_id,
+                    ItineraryEvent.id == itinerary_event_id,
+                )
+                .limit(1)
+            )
+            is not None
+        )
+
     def to_itinerary_response(
         self,
         trip_id: int,

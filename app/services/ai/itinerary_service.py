@@ -6,6 +6,7 @@ import logging
 import re
 from copy import deepcopy
 from datetime import timedelta
+from time import perf_counter
 from typing import AsyncGenerator, Optional
 from sqlalchemy.orm import Session
 
@@ -258,6 +259,7 @@ class ItineraryService:
         variant: Optional[RefinementVariant],
         locked_items: list[ItineraryItemReference],
         favorite_items: list[ItineraryItemReference],
+        user_note: Optional[str] = None,
     ) -> str:
         day = next((d for d in itinerary.days if d.day_number == regenerate_day_number), None)
         if day is None:
@@ -283,6 +285,7 @@ class ItineraryService:
             f"Trip dates: {trip.start_date or 'TBD'} to {trip.end_date or 'TBD'}\n"
             f"Trip notes: {trip.notes or 'No extra notes provided'}\n"
             f"Refine {scope_label}.\n"
+            + (f"User's request: {user_note}\n" if user_note else "")
             + (f"Variant target: {variant}. {variant_guidance[variant]}\n" if variant else "")
             + (
                 "Locked activities that must remain in the refined day exactly as written:\n"
@@ -620,6 +623,7 @@ class ItineraryService:
         variant: Optional[RefinementVariant] = None,
         locked_items: Optional[list[ItineraryItemReference]] = None,
         favorite_items: Optional[list[ItineraryItemReference]] = None,
+        user_note: Optional[str] = None,
     ) -> ItineraryResponse:
         try:
             trip = self.access_service.require_membership(trip_id, user_id).trip
@@ -635,6 +639,7 @@ class ItineraryService:
             variant=variant,
             locked_items=locked_items or [],
             favorite_items=favorite_items or [],
+            user_note=user_note,
         )
 
         try:
@@ -756,6 +761,12 @@ class ItineraryService:
         except Exception as exc:
             raise ValueError("Trip not found.") from exc
 
+        itinerary_payload_json = itinerary.model_dump_json()
+        itinerary_payload_bytes = len(itinerary_payload_json.encode("utf-8"))
+        stop_count = sum(len(day.items) for day in itinerary.days)
+        anchor_count = sum(len(day.anchors) for day in itinerary.days)
+        started_at = perf_counter()
+
         try:
             # Stage the relational rows without committing.
             self.itinerary_repo.save_itinerary(trip_id, itinerary, commit=False)
@@ -772,13 +783,30 @@ class ItineraryService:
             self.db.rollback()
             raise
 
+        elapsed_ms = round((perf_counter() - started_at) * 1000, 2)
         logger.info(
-            "itinerary_applied trip_id=%s user_id=%s days=%s source=%s",
+            (
+                "itinerary_applied trip_id=%s user_id=%s days=%s stops=%s anchors=%s "
+                "payload_bytes=%s elapsed_ms=%s source=%s"
+            ),
             trip_id,
             user_id,
             len(itinerary.days),
+            stop_count,
+            anchor_count,
+            itinerary_payload_bytes,
+            elapsed_ms,
             source or "unknown",
         )
+        if itinerary_payload_bytes > 500_000:
+            logger.warning(
+                "itinerary_apply_large_payload trip_id=%s payload_bytes=%s days=%s stops=%s anchors=%s",
+                trip_id,
+                itinerary_payload_bytes,
+                len(itinerary.days),
+                stop_count,
+                anchor_count,
+            )
         increment("itinerary_applied")
         return updated_trip
 

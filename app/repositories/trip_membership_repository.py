@@ -6,7 +6,7 @@ from __future__ import annotations
 from typing import Optional
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.models.trip import Trip
 from app.models.trip_membership import TripMembership, TripMemberState
@@ -22,6 +22,34 @@ class TripMembershipRepository(BaseRepository[TripMembership]):
             select(TripMembership)
             .options(
                 joinedload(TripMembership.trip).joinedload(Trip.memberships).joinedload(TripMembership.user),
+                joinedload(TripMembership.member_state),
+            )
+            .where(
+                TripMembership.trip_id == trip_id,
+                TripMembership.user_id == user_id,
+            )
+        )
+
+    def get_access_context(self, trip_id: int, user_id: int) -> Optional[TripMembership]:
+        return self.db.scalar(
+            select(TripMembership)
+            .options(
+                joinedload(TripMembership.trip),
+                joinedload(TripMembership.member_state),
+            )
+            .where(
+                TripMembership.trip_id == trip_id,
+                TripMembership.user_id == user_id,
+            )
+        )
+
+    def get_access_context_with_trip_members(self, trip_id: int, user_id: int) -> Optional[TripMembership]:
+        return self.db.scalar(
+            select(TripMembership)
+            .options(
+                selectinload(TripMembership.trip)
+                .selectinload(Trip.memberships)
+                .selectinload(TripMembership.user),
                 joinedload(TripMembership.member_state),
             )
             .where(
@@ -53,10 +81,10 @@ class TripMembershipRepository(BaseRepository[TripMembership]):
             self.db.scalars(
                 select(TripMembership)
                 .options(
-                    joinedload(TripMembership.user),
-                    joinedload(TripMembership.member_state).joinedload(TripMemberState.packing_items),
-                    joinedload(TripMembership.member_state).joinedload(TripMemberState.budget_expenses),
-                    joinedload(TripMembership.member_state).joinedload(TripMemberState.prep_items),
+                    selectinload(TripMembership.user),
+                    selectinload(TripMembership.member_state).selectinload(TripMemberState.packing_items),
+                    selectinload(TripMembership.member_state).selectinload(TripMemberState.budget_expenses),
+                    selectinload(TripMembership.member_state).selectinload(TripMemberState.prep_items),
                 )
                 .where(TripMembership.trip_id == trip_id)
                 .order_by(TripMembership.created_at.asc())

@@ -8,7 +8,7 @@ from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.trip_execution_event import TripExecutionEvent
 
@@ -150,7 +150,9 @@ class TripExecutionRepository:
         )
 
         rows = self.db.scalars(
-            select(TripExecutionEvent).where(TripExecutionEvent.id.in_(latest_id_subq))
+            select(TripExecutionEvent)
+            .options(joinedload(TripExecutionEvent.created_by))
+            .where(TripExecutionEvent.id.in_(latest_id_subq))
         ).all()
 
         return {
@@ -175,6 +177,7 @@ class TripExecutionRepository:
         return list(
             self.db.scalars(
                 select(TripExecutionEvent)
+                .options(joinedload(TripExecutionEvent.created_by))
                 .where(
                     TripExecutionEvent.trip_id == trip_id,
                     TripExecutionEvent.kind == self.UNPLANNED_STOP,
