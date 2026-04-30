@@ -6,9 +6,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 
 import { updateWorkspaceLastSeen } from "@/features/trips/api";
-import type { TripResponse } from "@/features/trips/types";
+import type { TripOnTripSnapshot, TripResponse } from "@/features/trips/types";
 import type { StreamState } from "@/features/ai/useStreamingItinerary";
-import type { TripOnTripSnapshot } from "../types";
 import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
 
 import type {

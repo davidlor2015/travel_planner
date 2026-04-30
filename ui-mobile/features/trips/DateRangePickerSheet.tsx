@@ -120,7 +120,7 @@ export function DateRangePickerSheet({
                 When is your trip?
               </Text>
               <Text className="mt-1 text-sm text-text-muted" style={fontStyles.uiRegular}>
-                Choose the days you'll be away.
+                {`Choose the days you'll be away.`}
               </Text>
             </View>
             <Pressable
@@ -281,11 +281,11 @@ type MonthCell = {
   inCurrentMonth: boolean;
 };
 
-function buildMonthCells(monthDate: Date): Array<MonthCell | null> {
+function buildMonthCells(monthDate: Date): (MonthCell | null)[] {
   const first = startOfMonth(monthDate);
   const leadingEmptyCount = first.getDay();
   const daysInMonth = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
-  const cells: Array<MonthCell | null> = Array.from({ length: leadingEmptyCount }, () => null);
+  const cells: (MonthCell | null)[] = Array.from({ length: leadingEmptyCount }, () => null);
 
   for (let day = 1; day <= daysInMonth; day += 1) {
     const date = new Date(first.getFullYear(), first.getMonth(), day);

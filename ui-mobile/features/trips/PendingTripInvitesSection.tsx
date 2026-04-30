@@ -93,7 +93,7 @@ export function PendingTripInvitesSection({
                     style={fontStyles.uiSemibold}
                     className="text-[15px] leading-[21px] text-espresso"
                   >
-                    You've been invited to {invite.trip_title}
+                    {`You've been invited to ${invite.trip_title}`}
                   </Text>
                   <Text
                     style={fontStyles.uiRegular}

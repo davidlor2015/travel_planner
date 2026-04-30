@@ -172,16 +172,6 @@ function formatShortDate(iso: string | null): string | null {
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-function formatHeaderDate(iso: string | null): string | null {
-  if (!iso) return null;
-  const date = new Date(`${iso}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return null;
-  const weekday = date.toLocaleDateString(undefined, { weekday: "short" });
-  const month = date.toLocaleDateString(undefined, { month: "short" });
-  const day = date.getDate();
-  return `${weekday}, ${month} ${day}`;
-}
-
 function formatStopCount(count: number): string {
   return `${count} ${count === 1 ? "stop" : "stops"}`;
 }
