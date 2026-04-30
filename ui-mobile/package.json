@@ -14,6 +14,7 @@
   },
   "jest": {
     "preset": "jest-expo",
+    "setupFilesAfterEnv": ["<rootDir>/jest.setup.js"],
     "moduleNameMapper": {
       "^@react-native-async-storage/async-storage$": "<rootDir>/node_modules/@react-native-async-storage/async-storage/jest/async-storage-mock",
       "^@/(.*)$": "<rootDir>/$1"
@@ -25,6 +26,7 @@
   "dependencies": {
     "@expo-google-fonts/cormorant-garamond": "^0.4.1",
     "@expo-google-fonts/inter": "^0.4.2",
+    "@expo-google-fonts/italiana": "^0.4.1",
     "@expo-google-fonts/jetbrains-mono": "^0.4.1",
     "@expo-google-fonts/manrope": "^0.4.2",
     "@expo-google-fonts/playfair-display": "^0.4.1",

@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 
 import { confirmPasswordReset, validatePasswordResetToken } from '../../shared/api/auth';
 import { track } from '../../shared/analytics';
-import { SiteFooterLinks, WaypointLogo } from '../../shared/ui';
+import { SiteFooterLinks, RoenLogo } from '../../shared/ui';
 
 export const ResetPasswordPage = () => {
   const [searchParams] = useSearchParams();
@@ -95,7 +95,7 @@ export const ResetPasswordPage = () => {
         </Link>
 
         <div className="text-center mb-7 mt-5">
-          <WaypointLogo variant="mark" className="mb-4" />
+          <RoenLogo variant="mark" className="mb-4" />
           <h1 className="text-2xl sm:text-3xl font-bold text-espresso font-display">Choose a new password</h1>
           <p className="text-sm text-flint mt-1.5">
             This link is secure and only works while the reset token is still valid.

@@ -290,7 +290,7 @@ export default function ProfilePage() {
             <SettingsRow
               icon="chatbubble-outline"
               label="Send feedback"
-              subtext="Help improve Waypoint"
+              subtext="Help improve Roen"
               onPress={() => setOpenSheet("feedback")}
             />
             <RowDivider />

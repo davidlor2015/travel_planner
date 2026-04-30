@@ -2,7 +2,7 @@
 // Summary: Implements travelPrimitives module logic.
 
 import type { ReactNode } from "react";
-import { WaypointLogo } from "./WaypointLogo";
+import { RoenLogo } from "./RoenLogo";
 
 export interface AppTopNavLink {
   id: string;
@@ -38,7 +38,7 @@ export function AppTopNav({
       ].join(" ")}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
-        <WaypointLogo variant="header" className="select-none" />
+        <RoenLogo variant="header" className="select-none" />
 
         {links.length > 0 ? (
           <nav

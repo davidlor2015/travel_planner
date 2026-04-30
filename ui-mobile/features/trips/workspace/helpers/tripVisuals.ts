@@ -56,7 +56,7 @@ export function normalizeDestination(destination: string): string {
  *      supports per-trip custom hero images).
  *   2. Destination catalog match — tested against both the raw destination string
  *      and the normalized form so "Sacramento,CA" and "Sacramento, CA" both hit.
- *   3. Deterministic branded Waypoint fallback — one of four scenic travel images
+ *   3. Deterministic branded Roen fallback — one of four scenic travel images
  *      selected by (trip.id % 4), ensuring the same trip always gets the same image.
  */
 export function getTripImageUrl(trip: {

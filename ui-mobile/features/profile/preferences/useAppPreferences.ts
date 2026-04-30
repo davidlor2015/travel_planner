@@ -22,7 +22,7 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   onTripRemindersEnabled: true,
 };
 
-export const STORAGE_KEY = "waypoint.preferences";
+export const STORAGE_KEY = "roen.preferences";
 
 export type UseAppPreferencesResult = {
   preferences: AppPreferences;

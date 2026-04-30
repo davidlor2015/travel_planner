@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 
 import { confirmEmailVerification, validateEmailVerificationToken } from '../../shared/api/auth';
 import { track } from '../../shared/analytics';
-import { SiteFooterLinks, WaypointLogo } from '../../shared/ui';
+import { SiteFooterLinks, RoenLogo } from '../../shared/ui';
 
 export const VerifyEmailPage = () => {
   const [searchParams] = useSearchParams();
@@ -83,7 +83,7 @@ export const VerifyEmailPage = () => {
         </Link>
 
         <div className="mb-7 mt-5 text-center">
-          <WaypointLogo variant="mark" className="mb-4" />
+          <RoenLogo variant="mark" className="mb-4" />
           <h1 className="font-display text-2xl font-bold text-espresso sm:text-3xl">Confirm your email</h1>
           <p className="mt-1.5 text-sm text-flint">
             Verifying your email protects your account and keeps shared trip access reliable.

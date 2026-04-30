@@ -3,7 +3,7 @@
 
 import React, { useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { WaypointLogo } from "../../../shared/ui/WaypointLogo";
+import { RoenLogo } from "../../../shared/ui/RoenLogo";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   login,
@@ -187,7 +187,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
         {/* Logo */}
         <div className="text-center mb-7">
-          <WaypointLogo variant="mark" className="mb-4" />
+          <RoenLogo variant="mark" className="mb-4" />
 
           <p className="text-sm text-flint mt-1.5">
             {mode === "login"

@@ -5,8 +5,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 
-const ACCESS_TOKEN_KEY = "waypoint.accessToken";
-const REFRESH_TOKEN_KEY = "waypoint.refreshToken";
+const ACCESS_TOKEN_KEY = "roen.accessToken";
+const REFRESH_TOKEN_KEY = "roen.refreshToken";
 
 export type SessionTokens = {
   accessToken: string;

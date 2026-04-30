@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
-import { SiteFooterLinks, WaypointLogo } from "../../shared/ui";
+import { SiteFooterLinks, RoenLogo } from "../../shared/ui";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -156,7 +156,7 @@ export const AppShell = ({
           className={`${isTrips ? "max-w-7xl" : shellWidth} mx-auto flex h-16 items-center justify-between gap-4 px-4 sm:px-6`}
         >
           {/* Logo */}
-          <WaypointLogo
+          <RoenLogo
             variant="header"
             className="flex-shrink-0 select-none"
           />

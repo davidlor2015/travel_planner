@@ -395,7 +395,7 @@ describe("TripFormSheet", () => {
     expect(onSubmit).not.toHaveBeenCalled();
     expect(
       view.getByText(
-        "Choose a destination from the search results so Waypoint knows where to build your trip.",
+        "Choose a destination from the search results so Roen knows where to build your trip.",
       ),
     ).toBeTruthy();
   });

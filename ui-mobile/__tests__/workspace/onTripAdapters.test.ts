@@ -75,6 +75,17 @@ function buildSnapshot(
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe("deriveOnTripViewModel — cross-day guard", () => {
+  beforeEach(() => {
+    // Pin wall clock to 09:00 local on the test's "today" so stops scheduled for
+    // 10:00 / 14:00 are deterministically in the future (not yet "now").
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date(2026, 9, 13, 9, 0, 0));
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it("does NOT surface a next_stop that belongs to a different day in the top card", () => {
     const day4Stop = buildStop({ stop_ref: "stop-day4-a", execution_status: "confirmed" });
     const day5Stop = buildStop({

@@ -1,7 +1,7 @@
 // Path: ui/src/features/landing/LandingNavBar.tsx
 // Summary: Implements LandingNavBar module logic.
 
-import { WaypointLogo } from "../../shared/ui";
+import { RoenLogo } from "../../shared/ui";
 
 interface LandingNavBarProps {
   onGetStarted: () => void;
@@ -13,7 +13,7 @@ export function LandingNavBar({ onGetStarted, onSignIn }: LandingNavBarProps) {
     <header className="sticky top-0 z-40 border-b border-smoke bg-ivory/95 backdrop-blur-md">
       <div className="mx-auto flex h-[68px] max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
         <div className="flex items-center gap-8">
-          <WaypointLogo variant="full" theme="light" className="select-none" />
+          <RoenLogo variant="full" theme="light" className="select-none" />
           <nav
             className="hidden items-center gap-6 sm:flex"
             aria-label="Page navigation"

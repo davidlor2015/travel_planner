@@ -30,7 +30,7 @@ export function OnTripHeader({ eyebrow, dateLabel, onBack, members }: Props) {
         accessibilityRole="button"
         accessibilityLabel="Back to trips"
       >
-        <WaypointMark />
+        <RoenMark />
         <View className="min-w-0 flex-1" style={{ gap: 3 }}>
           <Text
             className="min-w-0"
@@ -69,14 +69,20 @@ export function OnTripHeader({ eyebrow, dateLabel, onBack, members }: Props) {
   );
 }
 
-function WaypointMark() {
+function RoenMark() {
   return (
-    <View
-      className="h-[14px] w-[14px] items-center justify-center rounded-full border"
-      style={{ borderColor: DE.ink }}
+    <Text
+      style={{
+        fontFamily: "Italiana_400Regular",
+        fontSize: 14,
+        lineHeight: 14,
+        color: DE.ink,
+        includeFontPadding: false,
+      }}
+      allowFontScaling={false}
     >
-      <View className="h-[4px] w-[4px] rounded-full" style={{ backgroundColor: DE.ink }} />
-    </View>
+      R
+    </Text>
   );
 }
 

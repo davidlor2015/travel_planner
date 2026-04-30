@@ -97,7 +97,7 @@ export default function RegisterPage() {
               className="text-espresso"
               style={[textScaleStyles.displayXL, { fontSize: 38, lineHeight: 42 }]}
             >
-              {"Join\nWaypoint."}
+              {"Join\\nRoen."}
             </Text>
             <Text className="mt-2 text-sm leading-5 text-muted" style={fontStyles.uiRegular}>
               Use a name your travel group will recognize.

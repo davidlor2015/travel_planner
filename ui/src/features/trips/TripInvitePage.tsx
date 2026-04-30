@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 import { acceptTripInvite, getTripInviteDetail, type TripInviteDetail } from '../../shared/api/trips';
 import type { UserProfile } from '../../shared/api/auth';
 import { track } from '../../shared/analytics';
-import { WaypointLogo } from '../../shared/ui/WaypointLogo';
+import { RoenLogo } from '../../shared/ui/RoenLogo';
 
 interface TripInvitePageProps {
   token: string | null;
@@ -88,7 +88,7 @@ export const TripInvitePage = ({ token, user }: TripInvitePageProps) => {
         className="relative w-full max-w-[520px] bg-white rounded-2xl shadow-xl border border-smoke/60 p-8"
       >
         <div className="text-center mb-7">
-          <WaypointLogo variant="mark" className="mb-4" />
+          <RoenLogo variant="mark" className="mb-4" />
           <h1 className="text-2xl sm:text-3xl font-bold text-espresso font-display">Trip invitation</h1>
           <p className="text-sm text-flint mt-1.5">
             Review the invite details before joining the shared trip workspace.

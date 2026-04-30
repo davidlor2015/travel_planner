@@ -7,7 +7,7 @@ export const PrivacyPage = () => (
   <StaticPageLayout
     eyebrow="Privacy"
     title="Privacy Policy"
-    intro="Waypoint is built to help you plan trips, not to collect more data than needed. This summary explains what we store, why we store it, and the choices you have."
+    intro="Roen is built to help you plan trips, not to collect more data than needed. This summary explains what we store, why we store it, and the choices you have."
   >
     <section>
       <h2 className="text-base font-semibold text-espresso">What we collect</h2>

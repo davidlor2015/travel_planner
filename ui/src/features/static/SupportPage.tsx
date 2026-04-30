@@ -24,7 +24,7 @@ export const SupportPage = () => (
     <section>
       <h2 className="text-base font-semibold text-espresso">Contact</h2>
       <p className="mt-2">
-        For support requests, bug reports, or trust concerns, email <a className="font-semibold text-amber hover:underline" href="mailto:support@waypoint.local">support@waypoint.local</a>.
+        For support requests, bug reports, or trust concerns, email <a className="font-semibold text-amber hover:underline" href="mailto:support@roen.app">support@roen.app</a>.
       </p>
       <p className="mt-2">
         If you are reporting an itinerary or travel-data issue, include the trip destination and the date range so it is easier to reproduce.

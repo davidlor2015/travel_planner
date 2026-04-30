@@ -14,9 +14,9 @@ export interface SessionTokens {
 
 export const ACCESS_TOKEN_KEY = 'access_token';
 export const REFRESH_TOKEN_KEY = 'refresh_token';
-export const USER_KEY = 'waypoint_user';
-export const SESSION_EVENT = 'waypoint-session-updated';
-export const SESSION_CLEARED_EVENT = 'waypoint-session-cleared';
+export const USER_KEY = 'roen_user';
+export const SESSION_EVENT = 'roen-session-updated';
+export const SESSION_CLEARED_EVENT = 'roen-session-cleared';
 
 function isSessionUser(value: unknown): value is SessionUser {
   return (

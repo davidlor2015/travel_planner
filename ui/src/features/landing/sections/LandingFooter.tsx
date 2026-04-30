@@ -1,7 +1,7 @@
 // Path: ui/src/features/landing/sections/LandingFooter.tsx
 // Summary: Implements LandingFooter module logic.
 
-import { SiteFooterLinks, WaypointLogo } from "../../../shared/ui";
+import { SiteFooterLinks, RoenLogo } from "../../../shared/ui";
 
 interface LandingFooterProps {
   onGetStarted: () => void;
@@ -47,7 +47,7 @@ export function LandingFooter({ onGetStarted }: LandingFooterProps) {
       <footer className="border-t border-smoke bg-ivory px-4 py-8 sm:px-6">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-5 sm:flex-row sm:items-center">
           <div className="flex flex-col gap-2 text-center sm:text-left">
-            <WaypointLogo variant="full" theme="light" className="select-none" />
+            <RoenLogo variant="full" theme="light" className="select-none" />
             <p className="max-w-md text-xs leading-relaxed text-muted">
               AI suggestions can be incomplete. Confirm bookings, routes,
               opening hours, and prices before you spend money.
@@ -55,7 +55,7 @@ export function LandingFooter({ onGetStarted }: LandingFooterProps) {
           </div>
           <div className="flex flex-col items-center gap-3 sm:items-end">
             <SiteFooterLinks />
-            <p className="text-xs text-muted">© 2026 Waypoint</p>
+            <p className="text-xs text-muted">© 2026 Roen</p>
           </div>
         </div>
       </footer>

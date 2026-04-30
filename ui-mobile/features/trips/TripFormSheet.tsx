@@ -97,7 +97,7 @@ function validate(
   if (!value.title.trim())       next.title       = "Trip title is required.";
   if (!value.selectedDestination)
     next.destination =
-      "Choose a destination from the search results so Waypoint knows where to build your trip.";
+      "Choose a destination from the search results so Roen knows where to build your trip.";
   if (!value.start_date || !value.end_date) {
     next.start_date = "Choose your trip dates before continuing.";
     return next;
@@ -529,7 +529,7 @@ export function TripFormSheet({
               {mode === "edit" && canDeleteTrip && onDeleteTrip ? (
                 <FormSection
                   eyebrow="Trip settings"
-                  description="Remove this trip from Waypoint when you no longer need it saved."
+                  description="Remove this trip from Roen when you no longer need it saved."
                 >
                   <Pressable
                     onPress={onDeleteTrip}
