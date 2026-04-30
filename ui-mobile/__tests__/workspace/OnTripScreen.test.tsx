@@ -157,12 +157,16 @@ function buildDefaultSnapshotQuery(
     isLoading: boolean;
     isError: boolean;
     data: ReturnType<typeof buildSnapshot> | undefined;
+    dataUpdatedAt: number;
+    refreshFailedWithCache: boolean;
   }> = {},
 ) {
   return {
     isLoading: false,
     isError: false,
     data: buildSnapshot(),
+    dataUpdatedAt: 0,
+    refreshFailedWithCache: false,
     refetch: jest.fn(),
     ...overrides,
   };
@@ -323,8 +327,8 @@ describe("OnTripScreen", () => {
 
   it("shows the last-updated label when lastRefreshedAt is set", () => {
     mockDeriveOnTripViewModel.mockReturnValue(buildVm());
-    mockUseOnTripMutations.mockReturnValue(
-      buildMutations({ lastRefreshedAt: Date.now() }),
+    mockUseOnTripSnapshotQuery.mockReturnValue(
+      buildDefaultSnapshotQuery({ dataUpdatedAt: Date.now() }),
     );
     // Let hasResolvedTodayStop return true so the Today section renders
     // (otherwise showNoStopsToday=true hides the header that holds the label)
@@ -334,18 +338,24 @@ describe("OnTripScreen", () => {
       <OnTripScreen tripId={1} tripTitle="Kyoto" tripDestination="Kyoto, Japan" />,
     );
 
-    expect(getByText(/Updated just now/i)).toBeTruthy();
+    expect(getByText(/Last updated just now/i)).toBeTruthy();
   });
 
-  it("shows stale warning when refreshFailed is true and data is present", () => {
+  it("shows saved-details copy when refresh fails and cached data is present", () => {
     mockDeriveOnTripViewModel.mockReturnValue(buildVm());
-    mockUseOnTripMutations.mockReturnValue(buildMutations({ refreshFailed: true }));
+    mockUseOnTripSnapshotQuery.mockReturnValue(
+      buildDefaultSnapshotQuery({
+        dataUpdatedAt: Date.now(),
+        refreshFailedWithCache: true,
+      }),
+    );
+    mockHasResolvedTodayStop.mockReturnValue(true);
 
     const { getByText, queryByText } = render(
       <OnTripScreen tripId={1} tripTitle="Kyoto" tripDestination="Kyoto, Japan" />,
     );
 
-    expect(getByText(/Couldn't refresh/i)).toBeTruthy();
+    expect(getByText(/Showing saved trip details/i)).toBeTruthy();
     // Full error screen must NOT replace the content
     expect(queryByText(/ScreenError:/i)).toBeNull();
   });

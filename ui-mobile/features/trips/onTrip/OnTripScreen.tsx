@@ -122,9 +122,17 @@ export function OnTripScreen({
   if (!rawSnapshot || !vm || !dayHeader)
     return <ScreenLoading label="Loading your trip..." />;
 
-  const showStaleBanner =
-    mutations.refreshFailed || (snapshotQuery.isError && !!snapshotQuery.data);
-  const displayedRefreshedAt = mutations.lastRefreshedAt;
+  const showSavedDetailsHint =
+    mutations.refreshFailed || snapshotQuery.refreshFailedWithCache;
+  const displayedRefreshedAt =
+    snapshotQuery.dataUpdatedAt > 0
+      ? snapshotQuery.dataUpdatedAt
+      : mutations.lastRefreshedAt;
+  const staleMinutes =
+    displayedRefreshedAt > 0
+      ? Math.floor((Date.now() - displayedRefreshedAt) / 60_000)
+      : 0;
+  const showOlderRefreshFailure = showSavedDetailsHint && staleMinutes >= 30;
 
   const nowKey = vm.now?.key ?? null;
   const nextKey = vm.next?.key ?? null;
@@ -202,8 +210,8 @@ export function OnTripScreen({
         {/* Read-only notice */}
         {vm.isReadOnly ? <ReadOnlyBanner /> : null}
 
-        {/* Stale data notice */}
-        {showStaleBanner ? <StaleBanner /> : null}
+        {/* Stale data notice (only when old + refresh failing) */}
+        {showOlderRefreshFailure ? <StaleBanner /> : null}
 
         {/* NowCard / day-complete state */}
         {focusStop ? (
@@ -286,20 +294,32 @@ export function OnTripScreen({
                 </Text>
               </View>
               {displayedRefreshedAt > 0 ? (
-                <Text
-                  style={[
-                    fontStyles.monoRegular,
-                    {
-                      fontSize: 9,
-                      letterSpacing: 1.2,
-                      color: DE.mutedLight,
-                      marginTop: 2,
-                    },
-                  ]}
-                  accessibilityLabel={formatLastUpdated(displayedRefreshedAt)}
-                >
-                  {formatLastUpdated(displayedRefreshedAt)}
-                </Text>
+                <View className="items-end">
+                  <Text
+                    style={[
+                      fontStyles.monoRegular,
+                      {
+                        fontSize: 9,
+                        letterSpacing: 1.2,
+                        color: DE.mutedLight,
+                        marginTop: 2,
+                      },
+                    ]}
+                    accessibilityLabel={formatLastUpdated(displayedRefreshedAt)}
+                  >
+                    {formatLastUpdated(displayedRefreshedAt)}
+                  </Text>
+                  {showSavedDetailsHint ? (
+                    <Text
+                      style={[
+                        fontStyles.uiRegular,
+                        { fontSize: 10, lineHeight: 14, color: DE.mutedLight },
+                      ]}
+                    >
+                      Showing saved trip details
+                    </Text>
+                  ) : null}
+                </View>
               ) : null}
             </View>
 
@@ -457,9 +477,9 @@ export function OnTripScreen({
 
 function formatLastUpdated(ts: number): string {
   const diffMin = Math.floor((Date.now() - ts) / 60_000);
-  if (diffMin < 1) return "Updated just now";
-  if (diffMin === 1) return "Updated 1 min ago";
-  if (diffMin < 60) return `Updated ${diffMin} min ago`;
+  if (diffMin < 1) return "Last updated just now";
+  if (diffMin === 1) return "Last updated 1 min ago";
+  if (diffMin < 60) return `Last updated ${diffMin} min ago`;
   const time = new Date(ts).toLocaleTimeString(undefined, {
     hour: "numeric",
     minute: "2-digit",
@@ -560,7 +580,7 @@ function StaleBanner() {
           { fontSize: 13, lineHeight: 19, color: DE.muted, flex: 1 },
         ]}
       >
-        Couldn&apos;t refresh. Showing last saved plan.
+        Couldn&apos;t refresh right now. Showing saved trip details.
       </Text>
     </View>
   );

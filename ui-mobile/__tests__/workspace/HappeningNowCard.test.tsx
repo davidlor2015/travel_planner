@@ -51,4 +51,17 @@ describe("HappeningNowCard actor metadata", () => {
 
     expect(getByText("Confirmed by David · 2m ago")).toBeTruthy();
   });
+
+  it("renders explicit Skip and Done labels for status controls", () => {
+    const { getByText } = render(
+      <HappeningNowCard
+        stop={stop({ execution_status: null, effectiveStatus: "planned" })}
+        onConfirm={jest.fn()}
+        onSkip={jest.fn()}
+      />,
+    );
+
+    expect(getByText("Skip")).toBeTruthy();
+    expect(getByText("Done")).toBeTruthy();
+  });
 });
