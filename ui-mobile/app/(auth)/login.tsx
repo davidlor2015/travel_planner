@@ -18,7 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { friendlyError } from "@/shared/api/friendlyError";
 import { useAuth } from "@/providers/AuthProvider";
 import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
-import { RoenLogo } from "@/shared/ui/RoenLogo";
+import { DisplayWordmark } from "@/shared/ui/RoenLogo";
 import { AuthInput, AUTH_PALETTE } from "@/shared/ui/AuthInput";
 
 export default function LoginPage() {
@@ -59,7 +59,7 @@ export default function LoginPage() {
         >
           {/* Logo row */}
           <View className="px-7 pt-10 pb-2">
-            <RoenLogo size={44} />
+            <DisplayWordmark width={168} />
           </View>
 
           <View className="h-10" />

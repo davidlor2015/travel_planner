@@ -203,28 +203,6 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
         compact={resolvedTab === "itinerary"}
       />
 
-      {canOpenLiveView ? (
-        <Pressable
-          onPress={() => router.push(`/(tabs)/trips/${tripId}/live` as Href)}
-          className="mx-4 mt-3 flex-row items-center justify-between rounded-2xl border border-border-ontrip-strong bg-surface-ontrip-raised px-4 py-3 active:opacity-75"
-        >
-          <View>
-            <View className="flex-row items-center gap-2">
-              <View className="h-2 w-2 rounded-full bg-accent-ontrip" />
-              <Text className="text-sm text-ontrip" style={fontStyles.uiSemibold}>
-                Trip in progress
-              </Text>
-            </View>
-            <Text className="mt-0.5 text-xs text-ontrip-muted" style={fontStyles.uiRegular}>
-              Today: stops, status updates, and unplanned moments.
-            </Text>
-          </View>
-          <Text className="ml-3 text-sm text-accent-ontrip" style={fontStyles.uiSemibold}>
-            Live →
-          </Text>
-        </Pressable>
-      ) : null}
-
       <WorkspaceTabBar
         visibleTabs={visibleTabs}
         activeTab={resolvedTab}

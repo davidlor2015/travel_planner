@@ -20,6 +20,7 @@ import { useTripsListModel } from "@/features/trips/useTripsListModel";
 import { useCreateTripMutation } from "@/features/trips/hooks";
 import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
 import { EmptyState } from "@/shared/ui/EmptyState";
+import { RoenMark } from "@/shared/ui/RoenLogo";
 import { ScreenLoading } from "@/shared/ui/ScreenLoading";
 
 // DE.ivory = #F2EBDD
@@ -111,6 +112,7 @@ export default function TripsPage() {
       <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={["top"]}>
         <TripsListHeader subtitle="No journeys ahead." onNewTrip={openCreate} />
         <View className="flex-1 items-center justify-center px-6" style={{ gap: 16 }}>
+          <RoenMark size={32} />
           <Text
             className="text-center"
             style={[fontStyles.headMediumItalic, { fontSize: 28, lineHeight: 33, letterSpacing: -0.3, color: "#231910" }]}

@@ -44,13 +44,14 @@ export function useWorkspaceCollaboration(
   );
 
   const sendInvite = useCallback(
-    async (email: string) => {
+    async (email: string, inviteDisplayLabel?: string | null) => {
       if (typeof tripId !== "number") {
         throw new Error("Trip is not ready yet.");
       }
       return createInviteMutation.mutateAsync({
         tripId,
         email,
+        inviteDisplayLabel,
       });
     },
     [createInviteMutation, tripId],

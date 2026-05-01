@@ -72,9 +72,12 @@ function buildWrapper() {
     },
   });
 
-  return ({ children }: { children: ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
+  function QueryWrapper({ children }: { children: ReactNode }) {
+    return (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+  }
+  return QueryWrapper;
 }
 
 describe("useOnTripSnapshotQuery cache behavior", () => {

@@ -3,7 +3,7 @@
 
 import React, { useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { RoenLogo } from "../../../shared/ui/RoenLogo";
+import { DisplayWordmark } from "../../../shared/ui/RoenLogo";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   login,
@@ -149,14 +149,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   };
 
   return (
-    /* ── Full-page canvas with decorative colour blobs ── */
-    <div className="min-h-screen relative overflow-hidden bg-ivory flex items-center justify-center p-6 font-sans">
-      {/* Background blobs */}
-      <div className="pointer-events-none absolute -top-32 -left-24 w-[500px] h-[500px] rounded-full bg-clay/8 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-24 -right-16 w-[420px] h-[420px] rounded-full bg-amber/8 blur-3xl" />
-      <div className="pointer-events-none absolute top-1/2 right-1/4 w-[240px] h-[240px] rounded-full bg-amber/10 blur-2xl" />
+    <div className="min-h-screen bg-[#F5EFE2] flex flex-col items-center justify-center gap-8 p-6 font-sans">
+      <DisplayWordmark size={58} />
 
-      {/* ── Card ── */}
       <motion.div
         initial={{ opacity: 0, y: 28, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -185,10 +180,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           </button>
         )}
 
-        {/* Logo */}
         <div className="text-center mb-7">
-          <RoenLogo variant="mark" className="mb-4" />
-
           <p className="text-sm text-flint mt-1.5">
             {mode === "login"
               ? "Sign in to manage your trips"

@@ -207,8 +207,15 @@ export function useDeleteTripMutation() {
 export function useCreateInviteMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ tripId, email }: { tripId: number; email: string }) =>
-      createTripInvite(tripId, email),
+    mutationFn: ({
+      tripId,
+      email,
+      inviteDisplayLabel,
+    }: {
+      tripId: number;
+      email: string;
+      inviteDisplayLabel?: string | null;
+    }) => createTripInvite(tripId, email, inviteDisplayLabel),
     onSuccess: (_data, { tripId }) => {
       void queryClient.invalidateQueries({ queryKey: tripKeys.detail(tripId) });
     },

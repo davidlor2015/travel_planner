@@ -115,7 +115,10 @@ export async function getTripOnTripSnapshot(
 export async function createTripInvite(
   tripId: number,
   email: string,
+  inviteDisplayLabel?: string | null,
 ): Promise<TripInviteCreateResponse> {
+  // TODO(trip-collab): send `invite_display_label` once backend request schema supports it.
+  void inviteDisplayLabel;
   return apiRequest<TripInviteCreateResponse>(`/v1/trips/${tripId}/invites`, {
     method: "POST",
     body: { email },
@@ -134,6 +137,7 @@ export async function getTripInviteDetail(
 export async function acceptTripInvite(
   inviteToken: string,
 ): Promise<TripInviteAcceptResponse> {
+  // TODO(trip-collab): include join display name in acceptance request body when API supports it.
   return apiRequest<TripInviteAcceptResponse>(
     `/v1/trip-invites/${encodeURIComponent(inviteToken)}/accept`,
     { method: "POST" },

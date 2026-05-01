@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import type { ReactNode } from "react";
 import { render } from "@testing-library/react-native";
+import { Text, View } from "react-native";
 
 import { OnTripScreen } from "@/features/trips/onTrip/OnTripScreen";
 import type { OnTripViewModel } from "@/features/trips/onTrip/adapters";
@@ -118,21 +119,18 @@ jest.mock("@/features/trips/onTrip/HappeningNowCard", () => ({
   }: {
     stop: { title?: string | null; key: string };
   }) => {
-    const { Text } = require("react-native");
     return <Text>{`NowCard:${stop.key}`}</Text>;
   },
 }));
 
 jest.mock("@/features/trips/onTrip/TimelineRow", () => ({
   TimelineRow: ({ stop }: { stop: { title?: string | null; key: string } }) => {
-    const { Text } = require("react-native");
     return <Text>{`TimelineRow:${stop.key}`}</Text>;
   },
 }));
 
 jest.mock("@/features/trips/onTrip/NeedsAttentionCard", () => ({
   NeedsAttentionCard: ({ blockers }: { blockers: { title: string }[] }) => {
-    const { Text } = require("react-native");
     return <Text>{`NeedsAttention:${blockers[0]?.title ?? ""}`}</Text>;
   },
 }));
@@ -145,7 +143,6 @@ jest.mock("@/features/trips/onTrip/OnTripHeader", () => ({
     eyebrow: string;
     dateLabel?: string | null;
   }) => {
-    const { Text, View } = require("react-native");
     return (
       <View>
         <Text testID="on-trip-header-eyebrow">{eyebrow}</Text>
@@ -167,7 +164,6 @@ jest.mock("@/shared/ui/ScreenLoading", () => ({
 
 jest.mock("@/shared/ui/ScreenError", () => ({
   ScreenError: ({ message }: { message: string }) => {
-    const { Text } = require("react-native");
     return <Text>{`ScreenError:${message}`}</Text>;
   },
 }));
@@ -354,7 +350,7 @@ describe("OnTripScreen", () => {
       />,
     );
 
-    expect(getByText("Log extra stop")).toBeTruthy();
+    expect(getByText("+ Log extra stop")).toBeTruthy();
   });
 
   it("hides the inline log extra stop action when read-only", () => {

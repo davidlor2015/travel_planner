@@ -49,11 +49,7 @@ export type TripWorkspacePendingInviteViewModel = {
   id: number;
   email: string;
   displayLabel: string;
-  emailSecondary: string | null;
-  rolePillLabel: "Can edit";
-  supportingText: string;
   statusLabel: string;
-  expiresAtLabel: string;
 };
 
 export type TripWorkspaceCollaborationViewModel = {
@@ -89,7 +85,7 @@ function tripStatusLabel(status: TripStatus): string {
 }
 
 function inviteStatusLabel(status: string): string {
-  if (status === "pending") return "Pending";
+  if (status === "pending") return "Invite sent";
   if (status === "accepted") return "Accepted";
   if (status === "declined") return "Declined";
   if (status === "expired") return "Expired";
@@ -155,26 +151,23 @@ export function toTripWorkspaceCollaborationViewModel(args: {
       : canInvite
         ? "Track readiness, manage invites, and add travelers to the group."
         : "See who's joined and how ready the group looks from here.",
-    members: trip.members.map((member) => {
+    members: trip.members.filter((member) => isJoinedStatus(member.status)).map((member) => {
       const readinessItem = readinessByUserId.get(member.user_id);
       const isCurrentUser =
         member.email.trim().toLowerCase() === normalizedCurrentUserEmail;
-      const hasJoined = isJoinedStatus(member.status);
       const roleLabel = getTripRoleLabel(member.role, member.status);
       const displayLabel = resolveTravelerDisplayLabel({
         member,
-        hasJoined,
-        isCurrentUser,
+        isCurrentUserEmailMatch: isCurrentUser,
         currentUserDisplayName,
       });
-      const rolePillLabel = hasJoined ? toRolePillLabel(roleLabel, member.role) : "Can edit";
-      const supportingText = hasJoined
-        ? rolePillLabel === "Owner"
+      const rolePillLabel = toRolePillLabel(roleLabel, member.role);
+      const supportingText =
+        rolePillLabel === "Owner"
           ? "Can manage this trip and invite others."
           : rolePillLabel === "Can edit"
-            ? "Can edit itinerary, packing, budget, and reservations."
-            : "Can view the shared trip plan."
-        : "Invite pending · Resend";
+            ? "Can edit the shared trip plan."
+            : "Can view the shared trip plan.";
 
       if (!readinessItem) {
         return {
@@ -232,12 +225,8 @@ export function toTripWorkspaceCollaborationViewModel(args: {
     pendingInvites: trip.pending_invites.map((invite) => ({
       id: invite.id,
       email: invite.email,
-      displayLabel: "Invited traveler",
-      emailSecondary: invite.email || null,
-      rolePillLabel: "Can edit",
-      supportingText: "Invite pending · Resend",
+      displayLabel: asText(invite.invite_display_label) ?? invite.email ?? "Pending invite",
       statusLabel: inviteStatusLabel(invite.status),
-      expiresAtLabel: formatDate(invite.expires_at),
     })),
   };
 }
@@ -250,14 +239,19 @@ function asText(value: unknown): string | null {
 
 function capitalize(value: string): string {
   if (!value) return value;
-  return value[0]!.toUpperCase() + value.slice(1);
+  return value[0]!.toUpperCase() + value.slice(1).toLowerCase();
 }
 
 function displayNameFromEmail(email: string | null): string | null {
   if (!email) return null;
   const local = email.split("@")[0]?.trim();
   if (!local) return null;
-  return capitalize(local);
+  const withoutTrailingNumbers = local.replace(/\d+$/, "");
+  const normalized = withoutTrailingNumbers.trim();
+  if (!normalized) return null;
+  const tokens = normalized.split(/[._-]+/).filter(Boolean);
+  if (tokens.length === 0) return null;
+  return tokens.map((token) => capitalize(token)).join(" ");
 }
 
 function isJoinedStatus(status: string | null | undefined): boolean {
@@ -281,26 +275,27 @@ function toRolePillLabel(
 
 function resolveTravelerDisplayLabel(args: {
   member: TripResponse["members"][number];
-  hasJoined: boolean;
-  isCurrentUser: boolean;
+  isCurrentUserEmailMatch: boolean;
   currentUserDisplayName?: string | null;
 }): string {
-  const { member, hasJoined, isCurrentUser, currentUserDisplayName } = args;
-  const memberDisplayName = asText(member.display_name) ?? asText(member.name);
-  const currentUserName = isCurrentUser ? asText(currentUserDisplayName) : null;
-  const displayName = memberDisplayName ?? currentUserName;
-  if (displayName) {
-    return displayName;
+  const { member, isCurrentUserEmailMatch, currentUserDisplayName } = args;
+  const memberDisplayName = asText(member.display_name);
+  if (memberDisplayName) return memberDisplayName;
+
+  const firstName = asText(member.first_name);
+  const lastName = asText(member.last_name);
+  if (firstName || lastName) {
+    return [firstName, lastName].filter(Boolean).join(" ");
   }
 
-  if (hasJoined) {
-    const emailName = displayNameFromEmail(asText(member.email));
-    if (emailName) return emailName;
-  }
+  const nameField = asText(member.name);
+  if (nameField) return nameField;
 
-  if (!hasJoined) {
-    return "Invited traveler";
-  }
+  const currentUserName = isCurrentUserEmailMatch ? asText(currentUserDisplayName) : null;
+  if (currentUserName) return currentUserName;
+
+  const emailName = displayNameFromEmail(asText(member.email));
+  if (emailName) return emailName;
 
   return "Traveler";
 }

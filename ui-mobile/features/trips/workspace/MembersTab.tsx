@@ -6,6 +6,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { SectionCard } from "@/shared/ui/SectionCard";
 import { fontStyles } from "@/shared/theme/typography";
+import { ApiError } from "@/shared/api/client";
 
 import type {
   TripWorkspaceCollaborationViewModel,
@@ -18,7 +19,7 @@ type Props = {
   trip: TripWorkspaceViewModel;
   collaboration: TripWorkspaceCollaborationViewModel;
   invitePending?: boolean;
-  onInvite: (email: string) => Promise<unknown>;
+  onInvite: (email: string, inviteDisplayLabel?: string | null) => Promise<unknown>;
   memberReadinessError: string | null;
 };
 
@@ -75,8 +76,12 @@ export function MembersTab({
                   <View className="flex-1">
                     <Text className="text-sm text-espresso" style={fontStyles.uiSemibold}>
                       {member.displayLabel}
-                      {member.isCurrentUser ? " · You" : ""}
                     </Text>
+                    {member.isCurrentUser ? (
+                      <Text className="mt-1 text-xs text-text-soft" style={fontStyles.uiRegular}>
+                        You · {member.rolePillLabel}
+                      </Text>
+                    ) : null}
                   </View>
                   <RolePill
                     label={member.rolePillLabel}
@@ -107,24 +112,11 @@ export function MembersTab({
                     key={invite.id}
                     className="rounded-2xl border border-border bg-ivory px-3.5 py-3.5"
                   >
-                    <View className="flex-row items-center justify-between gap-3">
-                      <View className="flex-1">
-                        <Text className="text-sm text-espresso" style={fontStyles.uiSemibold}>
-                          {invite.displayLabel}
-                        </Text>
-                      </View>
-                      <RolePill
-                        label={invite.rolePillLabel}
-                        accessibilityLabel={`${invite.email} role: ${invite.rolePillLabel}`}
-                      />
-                    </View>
-                    {invite.emailSecondary ? (
-                      <Text className="mt-1 text-xs text-text-soft" style={fontStyles.uiRegular}>
-                        {invite.emailSecondary}
-                      </Text>
-                    ) : null}
-                    <Text className="mt-2 text-sm text-text-muted" style={fontStyles.uiRegular}>
-                      {invite.supportingText}
+                    <Text className="text-sm text-espresso" style={fontStyles.uiSemibold}>
+                      {invite.displayLabel}
+                    </Text>
+                    <Text className="mt-1 text-xs text-text-soft" style={fontStyles.uiRegular}>
+                      {invite.statusLabel}
                     </Text>
                   </View>
                 ))}
@@ -147,19 +139,30 @@ export function MembersTab({
           setInviteOpen(false);
           setInviteError(null);
         }}
-        onSubmit={async (email) => {
+        onSubmit={async ({ email, inviteDisplayLabel }) => {
           try {
             setInviteError(null);
-            await onInvite(email);
+            await onInvite(email, inviteDisplayLabel);
             setInviteSuccess(`Invite sent to ${email}.`);
             setInviteOpen(false);
-          } catch {
-            setInviteError("We couldn't send the invite. Try again.");
+          } catch (err) {
+            setInviteError(resolveInviteErrorMessage(err));
           }
         }}
       />
     </>
   );
+}
+
+function resolveInviteErrorMessage(err: unknown): string {
+  if (err instanceof ApiError && err.status === 409) {
+    const detail = (err.detail ?? "").toLowerCase();
+    if (detail.includes("already a trip member")) {
+      return "This traveler is already in the trip.";
+    }
+    return "An invite is already pending for this email.";
+  }
+  return "We couldn't send the invite. Try again.";
 }
 
 type RoleLabel = "Owner" | "Can edit" | "View only";
@@ -189,18 +192,18 @@ function RolePill({
 function roleTone(label: RoleLabel): { pill: string; text: string } {
   if (label === "Owner") {
     return {
-      pill: "border-espresso/20 bg-espresso/10",
+      pill: "border-espresso/15 bg-smoke",
       text: "text-espresso",
     };
   }
   if (label === "Can edit") {
     return {
-      pill: "border-clay/25 bg-clay/10",
+      pill: "border-clay/20 bg-parchment",
       text: "text-clay",
     };
   }
   return {
-    pill: "border-border-strong bg-cream",
+    pill: "border-border bg-ivory",
     text: "text-text-muted",
   };
 }

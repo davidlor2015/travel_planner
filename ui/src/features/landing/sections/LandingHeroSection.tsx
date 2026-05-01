@@ -2,6 +2,7 @@
 // Summary: Implements LandingHeroSection module logic.
 
 import { motion, useReducedMotion } from "framer-motion";
+import { RoenLogo } from "../../../shared/ui";
 
 interface LandingHeroSectionProps {
   onGetStarted: () => void;
@@ -158,6 +159,11 @@ export function LandingHeroSection({ onGetStarted }: LandingHeroSectionProps) {
               <span className="h-px w-5 bg-amber" aria-hidden="true" />
               Operational trip planning
             </p>
+            <RoenLogo
+              variant="display"
+              size={64}
+              className="mt-6"
+            />
 
             <h1 className="mt-4 font-display text-4xl font-semibold leading-[1.06] tracking-[-0.01em] text-espresso sm:text-5xl lg:text-[52px]">
               The trip feels calm

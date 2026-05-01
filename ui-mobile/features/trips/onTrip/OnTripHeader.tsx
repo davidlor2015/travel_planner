@@ -5,6 +5,7 @@ import { Pressable, Text, View } from "react-native";
 
 import { DE } from "@/shared/theme/desertEditorial";
 import { fontStyles } from "@/shared/theme/typography";
+import { RoenMark } from "@/shared/ui/RoenLogo";
 
 type Member = { email: string; tone?: string };
 
@@ -30,7 +31,7 @@ export function OnTripHeader({ eyebrow, dateLabel, onBack, members }: Props) {
         accessibilityRole="button"
         accessibilityLabel="Back to trips"
       >
-        <RoenMark />
+        <RoenMark size={24} />
         <View className="min-w-0 flex-1" style={{ gap: 3 }}>
           <Text
             className="min-w-0"
@@ -66,23 +67,6 @@ export function OnTripHeader({ eyebrow, dateLabel, onBack, members }: Props) {
         </View>
       ) : null}
     </View>
-  );
-}
-
-function RoenMark() {
-  return (
-    <Text
-      style={{
-        fontFamily: "Italiana_400Regular",
-        fontSize: 14,
-        lineHeight: 14,
-        color: DE.ink,
-        includeFontPadding: false,
-      }}
-      allowFontScaling={false}
-    >
-      R
-    </Text>
   );
 }
 

@@ -290,6 +290,35 @@ export const AppShell = ({
         </div>
       </header>
 
+      <header
+        className={`sticky top-0 z-50 border-b px-4 py-3 backdrop-blur-md sm:hidden ${
+          isTrips
+            ? "border-border-ontrip bg-ivory/92"
+            : "border-smoke bg-white/95"
+        }`}
+      >
+        <div className="mx-auto flex max-w-md items-center justify-between">
+          <RoenLogo variant="monogram" size={32} />
+          <button
+            type="button"
+            onClick={onOpenInvites}
+            className="relative flex h-9 w-9 items-center justify-center rounded-full border border-border bg-bg-app text-text-muted"
+            aria-label={
+              pendingInviteCount > 0
+                ? `${pendingInviteCount} pending trip invite${pendingInviteCount === 1 ? "" : "s"}`
+                : "Open trip invites"
+            }
+          >
+            <InviteIcon />
+            {pendingInviteCount > 0 ? (
+              <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-accent px-1.5 py-0.5 text-center text-[10px] font-bold leading-none text-white">
+                {pendingInviteCount}
+              </span>
+            ) : null}
+          </button>
+        </div>
+      </header>
+
       {/* ── Page Content ── */}
       {isTrips ? (
         <div className="flex-1">{children}</div>
@@ -307,8 +336,11 @@ export const AppShell = ({
             className={`${shellWidth} mx-auto flex flex-wrap items-center justify-between gap-3 px-4 py-5 sm:px-6`}
           >
             <p className="text-xs text-muted">
-              Verify AI suggestions, bookings, and schedules before you spend
-              money.
+              <span className="inline-flex items-center gap-2">
+                <RoenLogo variant="monogram" size={20} />
+                Verify AI suggestions, bookings, and schedules before you spend
+                money.
+              </span>
             </p>
             <SiteFooterLinks />
           </div>

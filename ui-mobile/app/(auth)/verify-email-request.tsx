@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRequestEmailVerificationMutation } from "@/features/auth/hooks";
 import { friendlyError } from "@/shared/api/friendlyError";
 import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
+import { DisplayWordmark } from "@/shared/ui/RoenLogo";
 
 export default function VerifyEmailRequestPage() {
   const params = useLocalSearchParams<{ email?: string | string[] }>();
@@ -64,8 +65,12 @@ export default function VerifyEmailRequestPage() {
           </Pressable>
         </View>
 
+        <View className="pt-7">
+          <DisplayWordmark width={148} />
+        </View>
+
         {/* Editorial headline */}
-        <View className="mt-8">
+        <View className="mt-7">
           <Text
             className="mb-1 text-[11px] uppercase tracking-[1.8px] text-amber"
             style={fontStyles.uiMedium}

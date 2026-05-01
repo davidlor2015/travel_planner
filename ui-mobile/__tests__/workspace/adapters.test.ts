@@ -105,7 +105,7 @@ describe("toTripWorkspaceViewModel", () => {
       "Can edit",
       "View only",
     ]);
-    expect(vm.pendingInvites[0]?.statusLabel).toBe("Pending");
+    expect(vm.pendingInvites[0]?.statusLabel).toBe("Invite sent");
   });
 
   it("builds traveler identity fallbacks and concrete collaboration copy", () => {
@@ -124,7 +124,7 @@ describe("toTripWorkspaceViewModel", () => {
         {
           ...baseMember,
           user_id: 2,
-          email: "davidlor2015@gmail.com",
+          email: "david.lor2015@gmail.com",
           role: "editor",
           status: "accepted",
           display_name: null,
@@ -160,14 +160,45 @@ describe("toTripWorkspaceViewModel", () => {
 
     expect(vm.members[0]?.displayLabel).toBe("David");
     expect(vm.members[0]?.supportingText).toBe("Can manage this trip and invite others.");
-    expect(vm.members[1]?.displayLabel).toBe("Davidlor2015");
-    expect(vm.members[1]?.supportingText).toBe(
-      "Can edit itinerary, packing, budget, and reservations.",
-    );
+    expect(vm.members[1]?.displayLabel).toBe("David Lor");
+    expect(vm.members[1]?.supportingText).toBe("Can edit the shared trip plan.");
     expect(vm.members[2]?.displayLabel).toBe("Traveler");
     expect(vm.members[2]?.supportingText).toBe("Can view the shared trip plan.");
-    expect(vm.pendingInvites[0]?.displayLabel).toBe("Invited traveler");
-    expect(vm.pendingInvites[0]?.supportingText).toBe("Invite pending · Resend");
-    expect(vm.pendingInvites[0]?.rolePillLabel).toBe("Can edit");
+    expect(vm.pendingInvites[0]?.displayLabel).toBe("pending@example.com");
+    expect(vm.pendingInvites[0]?.statusLabel).toBe("Invite sent");
+  });
+
+  it("excludes non-accepted memberships from accepted traveler cards", () => {
+    const baseMember = buildTrip().members[0]!;
+    const trip = buildTrip({
+      member_count: 2,
+      members: [
+        {
+          ...baseMember,
+          user_id: 1,
+          email: "owner@example.com",
+          role: "owner",
+          status: "accepted",
+        },
+        {
+          ...baseMember,
+          user_id: 2,
+          email: "pending-member@example.com",
+          role: "member",
+          status: "pending",
+        },
+      ],
+      pending_invites: [],
+    });
+
+    const vm = toTripWorkspaceCollaborationViewModel({
+      trip,
+      currentUserEmail: "owner@example.com",
+      readiness: null,
+      readinessLoading: false,
+    });
+
+    expect(vm.members).toHaveLength(1);
+    expect(vm.members[0]?.email).toBe("owner@example.com");
   });
 });

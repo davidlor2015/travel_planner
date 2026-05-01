@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRegisterMutation } from "@/features/auth/hooks";
 import { friendlyError } from "@/shared/api/friendlyError";
 import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
+import { DisplayWordmark } from "@/shared/ui/RoenLogo";
 
 export default function RegisterPage() {
   const registerMutation = useRegisterMutation();
@@ -87,8 +88,12 @@ export default function RegisterPage() {
             </Pressable>
           </View>
 
+          <View className="px-7 pt-7">
+            <DisplayWordmark width={156} />
+          </View>
+
           {/* Editorial headline */}
-          <View className="mt-8 px-7">
+          <View className="mt-7 px-7">
             <Text
               className="mb-1 text-[11px] uppercase tracking-[1.8px] text-amber"
               style={fontStyles.uiMedium}

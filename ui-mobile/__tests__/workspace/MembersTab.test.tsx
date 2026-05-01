@@ -56,7 +56,7 @@ function collaboration(
         emailSecondary: "editor@example.com",
         roleLabel: "Can edit",
         rolePillLabel: "Can edit",
-        supportingText: "Can edit itinerary, packing, budget, and reservations.",
+        supportingText: "Can edit the shared trip plan.",
         isCurrentUser: false,
         readinessLabel: "Unavailable",
         readinessVariant: "default",
@@ -80,12 +80,8 @@ function collaboration(
       {
         id: 4,
         email: "pending@example.com",
-        displayLabel: "Invited traveler",
-        emailSecondary: "pending@example.com",
-        rolePillLabel: "Can edit",
-        supportingText: "Invite pending · Resend",
-        statusLabel: "Pending",
-        expiresAtLabel: "May 5, 2026",
+        displayLabel: "pending@example.com",
+        statusLabel: "Invite sent",
       },
     ],
     ...overrides,
@@ -111,7 +107,8 @@ describe("MembersTab role labels", () => {
     expect(getAllByText("Owner").length).toBeGreaterThan(0);
     expect(getAllByText("Can edit").length).toBeGreaterThan(0);
     expect(getAllByText("View only").length).toBeGreaterThan(0);
-    expect(getByText("Invited traveler")).toBeTruthy();
-    expect(getByText("Invite pending · Resend")).toBeTruthy();
+    expect(getByText("You · Owner")).toBeTruthy();
+    expect(getByText("pending@example.com")).toBeTruthy();
+    expect(getByText("Invite sent")).toBeTruthy();
   });
 });
