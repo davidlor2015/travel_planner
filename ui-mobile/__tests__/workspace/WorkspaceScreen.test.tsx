@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { act, fireEvent, render } from "@testing-library/react-native";
-import { Pressable, Text, View } from "react-native";
 
 import { WorkspaceScreen } from "@/features/trips/workspace/WorkspaceScreen";
 
@@ -105,6 +104,7 @@ jest.mock("@/features/trips/workspace/useTripWorkspaceModel", () => ({
 
 jest.mock("@/features/trips/workspace/WorkspaceTripHeader", () => ({
   WorkspaceTripHeader: ({ onEditPress }: { onEditPress: () => void }) => {
+    const { Pressable, Text } = jest.requireActual("react-native");
     return (
       <Pressable onPress={onEditPress}>
         <Text>Edit trip details</Text>
@@ -157,6 +157,7 @@ jest.mock("@/features/trips/TripFormSheet", () => ({
     onDeleteTrip?: () => void;
     error?: string | null;
   }) => {
+    const { View, Text, Pressable } = jest.requireActual("react-native");
     if (!visible) return null;
     return (
       <View>

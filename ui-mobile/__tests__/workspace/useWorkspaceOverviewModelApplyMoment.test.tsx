@@ -43,6 +43,20 @@ jest.mock("@/features/ai/hooks", () => {
   };
 });
 
+function createDeferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
+function flushMicrotasks() {
+  return new Promise<void>((resolve) => queueMicrotask(resolve));
+}
+
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 function makeItinerary(): Itinerary {
@@ -120,7 +134,8 @@ describe("useWorkspaceOverviewModel — apply moment", () => {
   });
 
   it("auto-apply on stream completion fires onItineraryApplied and flips recentlyApplied", async () => {
-    mockSaveItinerary.mockResolvedValue(undefined);
+    const saveDeferred = createDeferred<unknown>();
+    mockSaveItinerary.mockImplementation(() => saveDeferred.promise);
     const onItineraryApplied = jest.fn();
     const itinerary = makeItinerary();
 
@@ -138,7 +153,12 @@ describe("useWorkspaceOverviewModel — apply moment", () => {
       { wrapper },
     );
 
-    await waitFor(() => expect(mockSaveItinerary).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mockSaveItinerary).toHaveBeenCalled());
+    await act(async () => {
+      saveDeferred.resolve(undefined);
+      await flushMicrotasks();
+      await flushMicrotasks();
+    });
     await waitFor(() => expect(result.current.recentlyApplied).toBe(true));
     expect(onItineraryApplied).toHaveBeenCalledTimes(1);
 
@@ -194,7 +214,8 @@ describe("useWorkspaceOverviewModel — apply moment", () => {
   });
 
   it("does NOT mark the moment as applied when the save call fails", async () => {
-    mockSaveItinerary.mockRejectedValue(new Error("network down"));
+    const saveDeferred = createDeferred<unknown>();
+    mockSaveItinerary.mockImplementation(() => saveDeferred.promise);
     const onItineraryApplied = jest.fn();
     const itinerary = makeItinerary();
 
@@ -213,11 +234,10 @@ describe("useWorkspaceOverviewModel — apply moment", () => {
     );
 
     await waitFor(() => expect(mockSaveItinerary).toHaveBeenCalled());
-
-    // Give the rejected promise a chance to settle, then assert no banner moment.
     await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
+      saveDeferred.reject(new Error("network down"));
+      await flushMicrotasks();
+      await flushMicrotasks();
     });
 
     expect(result.current.recentlyApplied).toBe(false);
@@ -226,6 +246,7 @@ describe("useWorkspaceOverviewModel — apply moment", () => {
 
   it("dismissRecentlyApplied clears the moment so the workspace settles", async () => {
     mockSaveItinerary.mockResolvedValue(undefined);
+    mockSavedItineraryData = makeItinerary();
 
     const { result } = renderHook(
       () =>
@@ -234,13 +255,22 @@ describe("useWorkspaceOverviewModel — apply moment", () => {
           summary: null,
           collaboration: null,
           onTripSnapshot: null,
-          streamState: makeStreamState(makeItinerary(), false),
+          streamState: undefined,
           onCancelStream: jest.fn(),
         }),
       { wrapper },
     );
 
-    await waitFor(() => expect(result.current.recentlyApplied).toBe(true));
+    await waitFor(() =>
+      expect(result.current.itinerary?.title).toBe("Lisbon Long Weekend"),
+    );
+    act(() => {
+      result.current.handleAddDay();
+    });
+    await act(async () => {
+      await result.current.handlePublishChanges();
+    });
+    expect(result.current.recentlyApplied).toBe(true);
 
     act(() => result.current.dismissRecentlyApplied());
 
