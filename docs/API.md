@@ -227,6 +227,7 @@ Behavior note:
 
 - `GET /` -> `ReservationResponse[]`
 - `POST /` -> `201`, `ReservationResponse`
+- `POST /import` (multipart file upload) -> `ReservationImportResponse`
 - `PATCH /{reservation_id}` -> `ReservationResponse`
 - `DELETE /{reservation_id}` -> `204`
 
@@ -234,6 +235,8 @@ Behavior notes:
 
 - reservations are trip-level/shared
 - budget sync for a reservation is per member-state and controlled by `sync_to_budget`
+- import does not create a reservation record; it only returns extracted normalized fields for frontend review
+- import statuses: `extracted`, `needs_manual_entry`, `needs_image_extraction`, `unsupported_file`
 
 ### Prep (`/v1/trips/{trip_id}/prep/*`)
 

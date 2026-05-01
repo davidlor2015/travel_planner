@@ -36,11 +36,18 @@ const TYPE_CHIPS: TypeChip[] = [
 type Props = {
   visible: boolean;
   onClose: () => void;
-  initialValues?: Reservation;
+  initialValues?: Reservation | ReservationPayload;
+  helperText?: string | null;
   onSave: (payload: ReservationPayload) => Promise<void>;
 };
 
-export function BookingFormSheet({ visible, onClose, initialValues, onSave }: Props) {
+export function BookingFormSheet({
+  visible,
+  onClose,
+  initialValues,
+  helperText = null,
+  onSave,
+}: Props) {
   const isEdit = initialValues !== undefined;
 
   const [title, setTitle] = useState("");
@@ -144,6 +151,14 @@ export function BookingFormSheet({ visible, onClose, initialValues, onSave }: Pr
               <Ionicons name="close" size={22} color="#8A7E74" />
             </Pressable>
           </View>
+
+          {helperText ? (
+            <View className="rounded-xl border border-[#D9CFC4] bg-white px-3.5 py-3">
+              <Text style={fontStyles.uiRegular} className="text-[13px] text-[#4a3f37]">
+                {helperText}
+              </Text>
+            </View>
+          ) : null}
 
           {/* Type chips */}
           <View className="gap-2">

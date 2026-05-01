@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as DocumentPicker from "expo-document-picker";
 
 import { BookingDetailSheet } from "@/features/trips/reservations/BookingDetailSheet";
 import { BookingFormSheet } from "@/features/trips/reservations/BookingFormSheet";
@@ -16,6 +17,11 @@ import {
 } from "@/features/trips/reservations/adapters";
 import type { BookingFilterKey } from "@/features/trips/reservations/adapters";
 import type { Reservation } from "@/features/trips/reservations/api";
+import type { ReservationPayload } from "@/features/trips/reservations/api";
+import {
+  importReservationConfirmation,
+} from "@/features/trips/reservations/api";
+import { mapImportFieldsToReservationPayload } from "@/features/trips/reservations/importMapping";
 import {
   buildDetailViewModel,
   groupReservationsByTime,
@@ -211,7 +217,11 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Reservation | null>(null);
   const [editItem, setEditItem] = useState<Reservation | null>(null);
+  const [addInitialValues, setAddInitialValues] = useState<ReservationPayload | undefined>(undefined);
+  const [addFormHelperText, setAddFormHelperText] = useState<string | null>(null);
   const [mutationError, setMutationError] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importMessage, setImportMessage] = useState<string | null>(null);
 
   if (reservations.loading) {
     return <ScreenLoading label="Loading bookings…" />;
@@ -268,6 +278,55 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
 
   const totalSegments = summary.total;
 
+  const handleUploadConfirmation = async () => {
+    if (isReadOnly || importing) return;
+
+    setImportMessage(null);
+    const result = await DocumentPicker.getDocumentAsync({
+      type: ["application/pdf", "image/*"],
+      multiple: false,
+      copyToCacheDirectory: true,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+
+    const asset = result.assets[0];
+    setImporting(true);
+    try {
+      const response = await importReservationConfirmation(tripId, {
+        uri: asset.uri,
+        name: asset.name,
+        type: asset.mimeType,
+      });
+      if (response.status === "extracted") {
+        setAddInitialValues(mapImportFieldsToReservationPayload(response.fields));
+        setAddFormHelperText("We found these details. Review before saving.");
+        setShowAddSheet(true);
+        return;
+      }
+      if (response.status === "needs_image_extraction") {
+        setImportMessage("We could not read this file yet. You can upload another PDF or type it in manually.");
+        return;
+      }
+      if (response.status === "needs_manual_entry") {
+        setImportMessage("We could not extract the booking details. You can type them in manually.");
+        return;
+      }
+      setImportMessage("This file type is not supported. Try uploading a PDF confirmation.");
+    } catch {
+      setImportMessage("We couldn't process that upload right now. You can type it in manually.");
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleOpenManualEntry = () => {
+    if (isReadOnly) return;
+    setAddInitialValues(undefined);
+    setAddFormHelperText(null);
+    setImportMessage(null);
+    setShowAddSheet(true);
+  };
+
   return (
     <>
       <ScrollView
@@ -295,27 +354,42 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
                 {summary.confirmedLabel}
               </Text>
             </View>
-            <Pressable
-              onPress={() => setShowAddSheet(true)}
-              disabled={isReadOnly}
-              className="flex-row items-center gap-1 pt-1"
-              accessibilityRole="button"
-              accessibilityLabel="Add booking"
-              accessibilityHint={
-                isReadOnly
-                  ? "View-only travelers cannot add bookings."
-                  : undefined
-              }
-              style={isReadOnly ? { opacity: 0.45 } : undefined}
-            >
-              <Ionicons name="add" size={13} color="#B86845" />
-              <Text
-                style={fontStyles.uiMedium}
-                className="text-[12px] text-amber"
+            <View className="items-end">
+              <Pressable
+                onPress={() => void handleUploadConfirmation()}
+                disabled={isReadOnly || importing}
+                className="rounded-full border border-ontrip bg-ontrip px-3 py-1.5"
+                accessibilityRole="button"
+                accessibilityLabel="Upload confirmation"
+                accessibilityHint={
+                  isReadOnly
+                    ? "View-only travelers cannot add bookings."
+                    : undefined
+                }
+                style={isReadOnly ? { opacity: 0.45 } : undefined}
               >
-                Add
+                <Text
+                  style={fontStyles.uiMedium}
+                  className="text-[12px] text-on-dark"
+                >
+                  {importing ? "Extracting…" : "Upload confirmation"}
+                </Text>
+              </Pressable>
+              <Text style={fontStyles.uiRegular} className="pt-1 text-[11px] text-muted">
+                PDF confirmations work best.
               </Text>
-            </Pressable>
+              <Pressable
+                onPress={handleOpenManualEntry}
+                disabled={isReadOnly}
+                accessibilityRole="button"
+                accessibilityLabel="Type it in manually"
+                style={isReadOnly ? { opacity: 0.45 } : undefined}
+              >
+                <Text style={fontStyles.uiMedium} className="pt-1 text-[12px] text-amber">
+                  Type it in manually
+                </Text>
+              </Pressable>
+            </View>
           </View>
 
           {/* Progress bar */}
@@ -392,6 +466,14 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
               className="text-[13px] text-danger"
             >
               {mutationError}
+            </Text>
+          </View>
+        ) : null}
+
+        {importMessage ? (
+          <View className="mx-5 mb-3 rounded-xl border border-[#B86845]/25 bg-[#B86845]/10 px-3.5 py-3">
+            <Text style={fontStyles.uiRegular} className="text-[13px] text-[#7c4a32]">
+              {importMessage}
             </Text>
           </View>
         ) : null}
@@ -520,7 +602,13 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
       {/* ── Add booking sheet ────────────────────────────────────────────────── */}
       <BookingFormSheet
         visible={showAddSheet}
-        onClose={() => setShowAddSheet(false)}
+        initialValues={addInitialValues}
+        helperText={addFormHelperText}
+        onClose={() => {
+          setShowAddSheet(false);
+          setAddInitialValues(undefined);
+          setAddFormHelperText(null);
+        }}
         onSave={async (payload) => {
           await reservations.addReservation(payload);
         }}

@@ -208,7 +208,7 @@ describe("workspace read-only tabs", () => {
     );
 
     expect(getByText("View-only trip")).toBeTruthy();
-    fireEvent.press(getByLabelText("Add booking"));
+    fireEvent.press(getByLabelText("Upload confirmation"));
     expect(queryByText("Save booking")).toBeNull();
   });
 
