@@ -16,6 +16,10 @@ type Props = {
   startDate: string;
   endDate: string;
   initialSelectionMode: SelectionMode;
+  title?: string;
+  subtitle?: string;
+  confirmLabel?: string;
+  showDurationChips?: boolean;
   onConfirm: (range: { startDate: string; endDate: string }) => void;
   onClose: () => void;
 };
@@ -33,6 +37,10 @@ export function DateRangePickerSheet({
   startDate,
   endDate,
   initialSelectionMode,
+  title = "When is your trip?",
+  subtitle = "Choose the days you'll be away.",
+  confirmLabel = "Confirm dates",
+  showDurationChips = true,
   onConfirm,
   onClose,
 }: Props) {
@@ -117,10 +125,10 @@ export function DateRangePickerSheet({
           <View className="flex-row items-start justify-between pb-4">
             <View className="flex-1 pr-4">
               <Text className="text-lg text-text" style={fontStyles.uiSemibold}>
-                When is your trip?
+                {title}
               </Text>
               <Text className="mt-1 text-sm text-text-muted" style={fontStyles.uiRegular}>
-                {`Choose the days you'll be away.`}
+                {subtitle}
               </Text>
             </View>
             <Pressable
@@ -243,25 +251,27 @@ export function DateRangePickerSheet({
             </View>
           </View>
 
-          <View className="mt-3 flex-row flex-wrap gap-2">
-            {DURATION_CHIPS.map((chip) => (
-              <Pressable
-                key={chip.label}
-                onPress={() => handleDurationPress(chip.days)}
-                accessibilityRole="button"
-                accessibilityLabel={`Set trip duration to ${chip.label}`}
-                className="rounded-full border border-border bg-white px-3 py-2 active:opacity-70"
-              >
-                <Text className="text-xs text-text-muted" style={fontStyles.uiSemibold}>
-                  {chip.label}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+          {showDurationChips ? (
+            <View className="mt-3 flex-row flex-wrap gap-2">
+              {DURATION_CHIPS.map((chip) => (
+                <Pressable
+                  key={chip.label}
+                  onPress={() => handleDurationPress(chip.days)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Set trip duration to ${chip.label}`}
+                  className="rounded-full border border-border bg-white px-3 py-2 active:opacity-70"
+                >
+                  <Text className="text-xs text-text-muted" style={fontStyles.uiSemibold}>
+                    {chip.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
 
           <View className="mt-4 gap-2">
             <Button
-              label="Confirm dates"
+              label={confirmLabel}
               onPress={handleConfirm}
               disabled={!draftStart}
               fullWidth

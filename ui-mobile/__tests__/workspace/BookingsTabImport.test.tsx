@@ -85,6 +85,7 @@ describe("BookingsTab import flow", () => {
     });
 
     const { getByLabelText } = render(<BookingsTab tripId={7} />);
+    fireEvent.press(getByLabelText("Add booking"));
     fireEvent.press(getByLabelText("Upload confirmation"));
     await waitFor(() => {
       expect(mockImportReservationConfirmation).toHaveBeenCalledTimes(1);
@@ -115,6 +116,7 @@ describe("BookingsTab import flow", () => {
     });
 
     const { getByLabelText, getByText } = render(<BookingsTab tripId={7} />);
+    fireEvent.press(getByLabelText("Add booking"));
     fireEvent.press(getByLabelText("Upload confirmation"));
 
     await waitFor(() => {
@@ -139,6 +141,7 @@ describe("BookingsTab import flow", () => {
     });
 
     const { getByLabelText, getByText } = render(<BookingsTab tripId={7} />);
+    fireEvent.press(getByLabelText("Add booking"));
     fireEvent.press(getByLabelText("Upload confirmation"));
 
     await waitFor(() => {
@@ -161,6 +164,7 @@ describe("BookingsTab import flow", () => {
     });
 
     const { getByLabelText, getByText } = render(<BookingsTab tripId={7} />);
+    fireEvent.press(getByLabelText("Add booking"));
     fireEvent.press(getByLabelText("Upload confirmation"));
 
     await waitFor(() => {
@@ -171,6 +175,7 @@ describe("BookingsTab import flow", () => {
   it("manual entry opens a blank form", () => {
     const { getByLabelText } = render(<BookingsTab tripId={7} />);
 
+    fireEvent.press(getByLabelText("Add booking"));
     fireEvent.press(getByLabelText("Type it in manually"));
     expect(
       mockBookingFormSheet.mock.calls.some(([props]) =>

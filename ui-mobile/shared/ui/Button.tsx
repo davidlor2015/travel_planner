@@ -18,7 +18,7 @@ type Props = {
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: "bg-accent active:bg-accent-strong",
+  primary: "bg-ontrip active:opacity-90",
   secondary: "border border-border bg-surface-muted active:bg-surface-sunken",
   ghost: "bg-transparent active:bg-surface-sunken",
   danger: "bg-danger active:opacity-90",
@@ -26,7 +26,7 @@ const variantClasses: Record<ButtonVariant, string> = {
 };
 
 const textClasses: Record<ButtonVariant, string> = {
-  primary: "text-white",
+  primary: "text-on-dark",
   secondary: "text-text",
   ghost: "text-text-muted",
   danger: "text-white",
