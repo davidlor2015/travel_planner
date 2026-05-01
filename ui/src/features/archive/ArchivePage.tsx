@@ -21,7 +21,7 @@ import {
 } from "./components";
 import { useArchiveTrips } from "./hooks/useArchiveTrips";
 
-const TRIP_RATINGS_STORAGE_KEY = "waypoint.archive.tripRatings.v1";
+const TRIP_RATINGS_STORAGE_KEY = "roen.archive.tripRatings.v1";
 
 type TripRatingsMap = Record<number, number>;
 

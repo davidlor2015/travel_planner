@@ -28,8 +28,31 @@ class TripInviteRepository(BaseRepository[TripInvite]):
     def get_by_token_hash(self, token_hash: str) -> TripInvite | None:
         return self.db.scalar(
             select(TripInvite)
-            .options(joinedload(TripInvite.trip))
+            .options(joinedload(TripInvite.trip), joinedload(TripInvite.invited_by))
             .where(TripInvite.token_hash == token_hash)
+        )
+
+    def get_by_id_for_email(self, invite_id: int, email: str) -> TripInvite | None:
+        return self.db.scalar(
+            select(TripInvite)
+            .options(joinedload(TripInvite.trip), joinedload(TripInvite.invited_by))
+            .where(
+                TripInvite.id == invite_id,
+                TripInvite.email == email.lower(),
+            )
+        )
+
+    def list_pending_by_email(self, email: str) -> list[TripInvite]:
+        return list(
+            self.db.scalars(
+                select(TripInvite)
+                .options(joinedload(TripInvite.trip), joinedload(TripInvite.invited_by))
+                .where(
+                    TripInvite.email == email.lower(),
+                    TripInvite.status == "pending",
+                )
+                .order_by(TripInvite.created_at.asc())
+            ).all()
         )
 
     def get_pending_by_trip_and_email(self, trip_id: int, email: str) -> TripInvite | None:

@@ -6,6 +6,7 @@ import { executeWithRetry } from "@/shared/api/executeWithRetry";
 
 import type {
   PlaceSearchApiResponse,
+  PendingTripInvite,
   TripCreate,
   TripExecutionEvent,
   TripExecutionSummary,
@@ -73,7 +74,7 @@ export async function searchPlaces(query: string): Promise<PlaceSearchApiRespons
   const normalized = query.trim();
   if (!normalized) return { suggestions: [] };
   return apiRequest<PlaceSearchApiResponse>(
-    `/v1/search/places?q=${encodeURIComponent(normalized)}`,
+    `/v1/destinations/search?q=${encodeURIComponent(normalized)}`,
   );
 }
 
@@ -135,6 +136,28 @@ export async function acceptTripInvite(
 ): Promise<TripInviteAcceptResponse> {
   return apiRequest<TripInviteAcceptResponse>(
     `/v1/trip-invites/${encodeURIComponent(inviteToken)}/accept`,
+    { method: "POST" },
+  );
+}
+
+export async function getPendingTripInvites(): Promise<PendingTripInvite[]> {
+  return apiRequest<PendingTripInvite[]>("/v1/trip-invites/pending");
+}
+
+export async function acceptPendingTripInvite(
+  inviteId: number,
+): Promise<TripInviteAcceptResponse> {
+  return apiRequest<TripInviteAcceptResponse>(
+    `/v1/trip-invites/pending/${inviteId}/accept`,
+    { method: "POST" },
+  );
+}
+
+export async function declinePendingTripInvite(
+  inviteId: number,
+): Promise<TripInviteAcceptResponse> {
+  return apiRequest<TripInviteAcceptResponse>(
+    `/v1/trip-invites/pending/${inviteId}/decline`,
     { method: "POST" },
   );
 }

@@ -4,7 +4,7 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
-import { SiteFooterLinks, WaypointLogo } from '../../shared/ui';
+import { SiteFooterLinks, RoenLogo } from '../../shared/ui';
 
 interface StaticPageLayoutProps {
   title: string;
@@ -18,7 +18,7 @@ export const StaticPageLayout = ({ title, eyebrow, intro, children }: StaticPage
     <header className="border-b border-smoke bg-white/90 backdrop-blur-sm">
       <div className="mx-auto flex h-16 max-w-4xl items-center justify-between px-6">
         <Link to="/" className="inline-flex items-center">
-          <WaypointLogo variant="header" className="select-none" />
+          <RoenLogo variant="header" className="select-none" />
         </Link>
         <SiteFooterLinks className="hidden items-center gap-4 sm:flex" />
       </div>

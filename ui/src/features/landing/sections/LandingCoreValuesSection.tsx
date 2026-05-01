@@ -201,7 +201,7 @@ const CORE_SECTIONS: CoreSection[] = [
   {
     eyebrow: "01 — Readiness + next action",
     heading: "See what matters before it turns stressful.",
-    body: "Waypoint keeps the trip moving with named blockers, confirmation states, and a clear next-action surface. You open the app and know what to do.",
+    body: "Roen keeps the trip moving with named blockers, confirmation states, and a clear next-action surface. You open the app and know what to do.",
     mockPosition: "right",
     mock: <ReadinessMock />,
   },
@@ -215,7 +215,7 @@ const CORE_SECTIONS: CoreSection[] = [
   {
     eyebrow: "03 — Coordination + change awareness",
     heading: "Know what changed without opening a group chat.",
-    body: "For shared trips, Waypoint surfaces who is on track, who still needs to act, and what changed since you last looked — with no extra notifications.",
+    body: "For shared trips, Roen surfaces who is on track, who still needs to act, and what changed since you last looked — with no extra notifications.",
     mockPosition: "right",
     mock: <CoordinationMock />,
   },
@@ -239,7 +239,7 @@ export function LandingCoreValuesSection() {
           <p className="font-display text-2xl font-semibold leading-snug text-espresso sm:text-3xl lg:text-[36px]">
             Most travel apps help you make a plan.
             <br className="hidden sm:block" />{" "}
-            Waypoint helps you keep one.
+            Roen helps you keep one.
           </p>
         </motion.div>
       </section>

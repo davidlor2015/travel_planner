@@ -78,7 +78,7 @@ export function LanguageSheet({ visible, onClose }: Props) {
                 className="text-[13px] leading-[19px] text-flint"
                 style={fontStyles.uiRegular}
               >
-                Waypoint uses your device&apos;s language and region settings for dates, times, and text. To change them, visit your device settings.
+                Roen uses your device&apos;s language and region settings for dates, times, and text. To change them, visit your device settings.
               </Text>
             </View>
 

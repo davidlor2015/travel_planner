@@ -89,7 +89,7 @@ export function EditDisplayNameSheet({ visible, currentName, onClose }: Props) {
                 className="mt-1 text-[13px] leading-5 text-muted"
                 style={fontStyles.uiRegular}
               >
-                This is how you&apos;ll appear across Waypoint.
+                This is how you&apos;ll appear across Roen.
               </Text>
             </View>
 

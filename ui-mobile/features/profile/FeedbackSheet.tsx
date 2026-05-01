@@ -29,7 +29,7 @@ const FEEDBACK_CATEGORIES = [
 
 type FeedbackCategory = (typeof FEEDBACK_CATEGORIES)[number]["key"];
 
-const RECIPIENT = "waypoint@travel-planner.app";
+const RECIPIENT = "roen@travel-planner.app";
 const MESSAGE_MIN = 10;
 
 // ─── Mailto builder ───────────────────────────────────────────────────────────
@@ -41,14 +41,14 @@ function buildMailtoUrl(opts: {
 }): string {
   const categoryLabel =
     FEEDBACK_CATEGORIES.find((c) => c.key === opts.category)?.label ?? "General";
-  const subject = `Waypoint Feedback: ${categoryLabel}`;
+  const subject = `Roen Feedback: ${categoryLabel}`;
   const body = [
     opts.message.trim(),
     "",
     "—",
     `Type: ${categoryLabel}`,
     opts.userEmail ? `From: ${opts.userEmail}` : null,
-    "App: Waypoint Mobile",
+    "App: Roen Mobile",
   ]
     .filter(Boolean)
     .join("\n");

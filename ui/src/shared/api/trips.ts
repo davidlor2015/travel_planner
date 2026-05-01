@@ -40,6 +40,22 @@ export interface TripInviteDetail {
   invited_by_email: string | null;
 }
 
+export interface PendingTripInvite {
+  id: number;
+  trip_id: number;
+  trip_title: string;
+  destination: string;
+  start_date: string;
+  end_date: string;
+  invitee_email: string;
+  role: string;
+  status: string;
+  created_at: string;
+  expires_at: string;
+  invited_by_email: string | null;
+  invited_by_display_name: string | null;
+}
+
 export interface TripInviteAcceptResponse {
   trip_id: number;
   trip_title: string;
@@ -401,6 +417,55 @@ export const acceptTripInvite = async (
   if (!response.ok) {
     const text = await response.text();
     throw new Error(`Failed to accept invite (${response.status}): ${text}`);
+  }
+
+  return response.json();
+};
+
+export const getPendingTripInvites = async (
+  accessToken: string,
+): Promise<PendingTripInvite[]> => {
+  const response = await apiFetch(`${API_URL}/v1/trip-invites/pending`, {
+    token: accessToken,
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to load pending invites (${response.status}): ${text}`);
+  }
+
+  return response.json();
+};
+
+export const acceptPendingTripInvite = async (
+  accessToken: string,
+  inviteId: number,
+): Promise<TripInviteAcceptResponse> => {
+  const response = await apiFetch(`${API_URL}/v1/trip-invites/pending/${inviteId}/accept`, {
+    method: 'POST',
+    token: accessToken,
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to accept invite (${response.status}): ${text}`);
+  }
+
+  return response.json();
+};
+
+export const declinePendingTripInvite = async (
+  accessToken: string,
+  inviteId: number,
+): Promise<TripInviteAcceptResponse> => {
+  const response = await apiFetch(`${API_URL}/v1/trip-invites/pending/${inviteId}/decline`, {
+    method: 'POST',
+    token: accessToken,
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to decline invite (${response.status}): ${text}`);
   }
 
   return response.json();

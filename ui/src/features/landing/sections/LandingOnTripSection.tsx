@@ -133,7 +133,7 @@ export function LandingOnTripSection() {
             the product gets quieter.
           </h2>
           <p className="mt-4 text-base leading-relaxed text-flint">
-            Day-of use should feel light. Open Waypoint and instantly see
+            Day-of use should feel light. Open Roen and instantly see
             where you are, what's next, and whether anyone in the group
             has a problem — without searching through the full workspace.
           </p>

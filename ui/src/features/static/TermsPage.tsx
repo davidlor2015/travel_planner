@@ -7,12 +7,12 @@ export const TermsPage = () => (
   <StaticPageLayout
     eyebrow="Terms"
     title="Terms of Use"
-    intro="Waypoint is provided as a planning tool. The goal is to make trip planning easier, but the final responsibility for travel choices and purchases still belongs to the traveler."
+    intro="Roen is provided as a planning tool. The goal is to make trip planning easier, but the final responsibility for travel choices and purchases still belongs to the traveler."
   >
     <section>
       <h2 className="text-base font-semibold text-espresso">Use of the service</h2>
       <p className="mt-2">
-        You may use Waypoint to create trips, manage planning details, and review itinerary suggestions. Keep your account credentials secure and use the service lawfully and respectfully.
+        You may use Roen to create trips, manage planning details, and review itinerary suggestions. Keep your account credentials secure and use the service lawfully and respectfully.
       </p>
     </section>
     <section>

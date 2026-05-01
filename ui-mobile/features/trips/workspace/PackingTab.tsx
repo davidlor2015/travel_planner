@@ -1,5 +1,4 @@
 // Path: ui-mobile/features/trips/workspace/PackingTab.tsx
-// Summary: Implements PackingTab module logic.
 
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -24,16 +23,24 @@ import {
   type PackingFilterKey,
 } from "@/features/trips/packing/presentation";
 import { fontStyles } from "@/shared/theme/typography";
-import { EmptyState } from "@/shared/ui/EmptyState";
 import { ScreenError } from "@/shared/ui/ScreenError";
 import { ScreenLoading } from "@/shared/ui/ScreenLoading";
 
-type Props = { tripId: number };
+import { ReadOnlyNotice } from "./ReadOnlyNotice";
+
+type Props = { tripId: number; isReadOnly?: boolean };
 
 const SUGGESTIONS_LIMIT = 4;
-const CONTENT_BOTTOM_PADDING = 132;
+const CONTENT_BOTTOM_PADDING = 168;
+const QUICK_ADD_ESSENTIALS = [
+  "Passport",
+  "Charger",
+  "Medication",
+  "Rain jacket",
+  "Walking shoes",
+];
 
-export function PackingTab({ tripId }: Props) {
+export function PackingTab({ tripId, isReadOnly = false }: Props) {
   const packing = usePackingList(tripId);
   const suggestionsQuery = usePackingSuggestionsQuery(tripId, {
     enabled: !packing.loading,
@@ -42,10 +49,13 @@ export function PackingTab({ tripId }: Props) {
   const addInputRef = useRef<TextInput | null>(null);
 
   const [draft, setDraft] = useState("");
-  const [draftCategory, setDraftCategory] = useState<PackingCategoryKey>("essentials");
+  const [draftCategory, setDraftCategory] =
+    useState<PackingCategoryKey>("essentials");
   const [activeFilter, setActiveFilter] = useState<PackingFilterKey>("all");
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [categoryOverrides, setCategoryOverrides] = useState<PackingCategoryOverrides>({});
+  const [isAddExpanded, setIsAddExpanded] = useState(false);
+  const [categoryOverrides, setCategoryOverrides] =
+    useState<PackingCategoryOverrides>({});
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [editingDraft, setEditingDraft] = useState("");
   const [mutationError, setMutationError] = useState<string | null>(null);
@@ -55,6 +65,7 @@ export function PackingTab({ tripId }: Props) {
     setDraftCategory("essentials");
     setActiveFilter("all");
     setShowSuggestions(false);
+    setIsAddExpanded(false);
     setCategoryOverrides({});
     setEditingItemId(null);
     setEditingDraft("");
@@ -62,7 +73,9 @@ export function PackingTab({ tripId }: Props) {
   }, [tripId]);
 
   useEffect(() => {
-    setCategoryOverrides((current) => trimCategoryOverrides(current, packing.items));
+    setCategoryOverrides((current) =>
+      trimCategoryOverrides(current, packing.items),
+    );
   }, [packing.items]);
 
   useEffect(() => {
@@ -79,10 +92,18 @@ export function PackingTab({ tripId }: Props) {
     [packing.items, categoryOverrides],
   );
 
-  const filterChips = useMemo(() => buildPackingFilterChips(packing.items), [packing.items]);
+  const filterChips = useMemo(
+    () => buildPackingFilterChips(packing.items),
+    [packing.items],
+  );
 
   const categoryGroups = useMemo(
-    () => buildPackingCategoryGroups(packing.items, activeFilter, categoryOverrides),
+    () =>
+      buildPackingCategoryGroups(
+        packing.items,
+        activeFilter,
+        categoryOverrides,
+      ),
     [packing.items, activeFilter, categoryOverrides],
   );
 
@@ -119,7 +140,18 @@ export function PackingTab({ tripId }: Props) {
   const hasItems = summary.total > 0;
   const selectedCategory = getPackingCategoryConfig(draftCategory);
 
+  const openAddForm = (category?: PackingCategoryKey) => {
+    if (isReadOnly) return;
+    if (category) setDraftCategory(category);
+    if (isAddExpanded) {
+      addInputRef.current?.focus();
+    } else {
+      setIsAddExpanded(true);
+    }
+  };
+
   const handleAdd = async (label = draft, category = draftCategory) => {
+    if (isReadOnly) return;
     const trimmed = label.trim();
     if (!trimmed) return;
 
@@ -146,6 +178,7 @@ export function PackingTab({ tripId }: Props) {
   };
 
   const handleToggleItem = async (itemId: number) => {
+    if (isReadOnly) return;
     try {
       setMutationError(null);
       await packing.toggleItem(itemId);
@@ -155,6 +188,7 @@ export function PackingTab({ tripId }: Props) {
   };
 
   const handleRemoveItem = async (itemId: number) => {
+    if (isReadOnly) return;
     try {
       setMutationError(null);
       await packing.removeItem(itemId);
@@ -174,6 +208,7 @@ export function PackingTab({ tripId }: Props) {
   };
 
   const handleClearChecked = async () => {
+    if (isReadOnly) return;
     try {
       const checkedItemIds = new Set(
         packing.items.filter((item) => item.checked).map((item) => item.id),
@@ -202,12 +237,14 @@ export function PackingTab({ tripId }: Props) {
   };
 
   const handleStartEdit = (itemId: number, label: string) => {
+    if (isReadOnly) return;
     setEditingItemId(itemId);
     setEditingDraft(label);
   };
 
   const handleSaveEdit = async () => {
     if (editingItemId == null) return;
+    if (isReadOnly) return;
     if (!editingDraft.trim()) {
       setMutationError("Item names cannot be blank.");
       return;
@@ -223,342 +260,584 @@ export function PackingTab({ tripId }: Props) {
     }
   };
 
+  // ── Shared panels ────────────────────────────────────────────
+
+  const suggestionsPanel =
+    !isReadOnly && showSuggestions && visibleSuggestions.length > 0 ? (
+      <View className="mx-4 mt-4 rounded-[16px] border border-smoke bg-ivory px-4 py-4">
+        <View className="flex-row items-center justify-between">
+          <Text
+            style={[
+              fontStyles.uiMedium,
+              { fontSize: 10, letterSpacing: 1.5, color: "#8A7E74" },
+            ]}
+          >
+            TRIP SUGGESTIONS
+          </Text>
+          <Text style={fontStyles.uiRegular} className="text-[10px] text-muted">
+            Add to save
+          </Text>
+        </View>
+        <Text
+          style={fontStyles.uiRegular}
+          className="mt-1 text-[12px] leading-[17px] text-text-muted"
+        >
+          Suggestions are not saved until you add them.
+        </Text>
+        <View className="mt-3 gap-2">
+          {visibleSuggestions.map((suggestion) => (
+            <Pressable
+              key={suggestion.label}
+              onPress={() => void handleAddSuggestion(suggestion.label)}
+              className="flex-row items-center gap-3 rounded-[12px] border border-smoke bg-white px-3.5 py-2.5 active:opacity-75"
+              accessibilityRole="button"
+              accessibilityLabel={`Add suggested item ${suggestion.label}`}
+            >
+              <View className="h-7 w-7 items-center justify-center rounded-[9px] border border-smoke bg-parchment-soft">
+                <Ionicons name="bag-handle-outline" size={13} color="#8A7E74" />
+              </View>
+              <View className="min-w-0 flex-1">
+                <Text
+                  style={fontStyles.uiSemibold}
+                  className="text-[13px] text-espresso"
+                  numberOfLines={1}
+                >
+                  {suggestion.label}
+                </Text>
+                <Text
+                  style={fontStyles.uiRegular}
+                  className="mt-0.5 text-[11px] text-muted"
+                  numberOfLines={1}
+                >
+                  {suggestion.reason}
+                </Text>
+              </View>
+              <Ionicons name="add" size={15} color="#B86845" />
+            </Pressable>
+          ))}
+        </View>
+      </View>
+    ) : null;
+
+  const suggestionsError =
+    !isReadOnly && suggestionsQuery.isError && showSuggestions ? (
+      <View className="mx-4 mt-3 rounded-[12px] border border-border bg-surface-muted px-3.5 py-3">
+        <Text
+          style={fontStyles.uiRegular}
+          className="text-[12px] text-text-soft"
+        >
+          Suggestions are unavailable right now, but you can still add items
+          manually.
+        </Text>
+      </View>
+    ) : null;
+
+  const addItemForm = (
+    <View className="mx-4 mt-4 rounded-[18px] border border-smoke bg-parchment px-4 py-4">
+      <View className="flex-row items-center justify-between">
+        <View className="flex-row items-center gap-1.5">
+          <Ionicons name="add-circle-outline" size={13} color="#B86845" />
+          <Text
+            style={[
+              fontStyles.uiMedium,
+              { fontSize: 10, letterSpacing: 1.5, color: "#B86845" },
+            ]}
+          >
+            ADD ITEM
+          </Text>
+        </View>
+        <Pressable
+          onPress={() => {
+            setIsAddExpanded(false);
+            setDraft("");
+          }}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Close add item form"
+        >
+          <Ionicons name="close" size={16} color="#8A7E74" />
+        </Pressable>
+      </View>
+
+      <Text
+        style={fontStyles.uiRegular}
+        className="mt-1 text-[12px] text-text-muted"
+      >
+        Add item to {selectedCategory.title}
+      </Text>
+
+      <View className="mt-2 flex-row items-center gap-2 rounded-full border border-border bg-white py-1.5 pl-4 pr-1.5">
+        <TextInput
+          ref={addInputRef}
+          value={draft}
+          onChangeText={setDraft}
+          placeholder="Passport, charger, rain jacket"
+          placeholderTextColor="#8A7E74"
+          returnKeyType="done"
+          onSubmitEditing={() => void handleAdd()}
+          autoFocus
+          className="flex-1 py-2 text-[15px] text-text"
+          style={fontStyles.uiRegular}
+        />
+        <Pressable
+          onPress={() => void handleAdd()}
+          disabled={!draft.trim()}
+          className={[
+            "flex-row items-center gap-1 rounded-full px-3 py-2",
+            draft.trim() ? "bg-ontrip" : "bg-smoke",
+          ].join(" ")}
+          accessibilityRole="button"
+          accessibilityLabel={`Add item to ${selectedCategory.title}`}
+        >
+          <Ionicons
+            name="add"
+            size={14}
+            color={draft.trim() ? "#F2EBDD" : "#8A7E74"}
+          />
+          <Text
+            style={fontStyles.uiSemibold}
+            className={[
+              "text-[12px]",
+              draft.trim() ? "text-on-dark" : "text-text-soft",
+            ].join(" ")}
+          >
+            Add
+          </Text>
+        </Pressable>
+      </View>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        className="mt-3"
+        contentContainerStyle={{ gap: 8, paddingRight: 4 }}
+      >
+        {listPackingCategories().map((category) => {
+          const isActive = category.key === draftCategory;
+          return (
+            <Pressable
+              key={category.key}
+              onPress={() => setDraftCategory(category.key)}
+              className={[
+                "rounded-full border px-3 py-1.5",
+                isActive ? "border-ontrip bg-ontrip" : "border-border bg-white",
+              ].join(" ")}
+              accessibilityRole="button"
+              accessibilityLabel={`Select ${category.title} category`}
+            >
+              <Text
+                style={fontStyles.uiMedium}
+                className={[
+                  "text-[12px]",
+                  isActive ? "text-on-dark" : "text-text-soft",
+                ].join(" ")}
+              >
+                {category.title}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={{ paddingBottom: CONTENT_BOTTOM_PADDING }}
     >
-      <View className="px-5 pb-2 pt-5">
-        <Text style={[fontStyles.uiRegular, { fontSize: 11, letterSpacing: 1.76, color: "#8A7E74" }]}>
+      {/* ── Header ─────────────────────────────────────────────── */}
+      <View className="px-5 pb-3 pt-5">
+        <Text
+          style={[
+            fontStyles.uiRegular,
+            { fontSize: 11, letterSpacing: 1.76, color: "#8A7E74" },
+          ]}
+        >
           PACKING
         </Text>
-        <Text style={[fontStyles.displaySemibold, { fontSize: 24, lineHeight: 30, color: "#1C1108" }]}>
-          {summary.checked} / {summary.total} packed
-        </Text>
+        {hasItems ? (
+          <Text
+            style={[
+              fontStyles.displaySemibold,
+              { fontSize: 24, lineHeight: 30, color: "#1C1108" },
+            ]}
+          >
+            {checkedCount} / {summary.total} packed
+          </Text>
+        ) : (
+          <>
+            <Text
+              style={[
+                fontStyles.displaySemibold,
+                { fontSize: 24, lineHeight: 30, color: "#1C1108" },
+              ]}
+            >
+              {isReadOnly ? "Packing list" : "Start your packing list"}
+            </Text>
+            <Text
+              style={[
+                fontStyles.uiRegular,
+                {
+                  fontSize: 13,
+                  lineHeight: 19,
+                  color: "#8A7E74",
+                  marginTop: 4,
+                },
+              ]}
+            >
+              {isReadOnly
+                ? "Only editors can add packing items for this trip."
+                : "Add essentials, clothing, toiletries, and trip-specific items."}
+            </Text>
+          </>
+        )}
       </View>
 
+      {isReadOnly ? <ReadOnlyNotice className="mx-4 mt-1" /> : null}
+
+      {/* ── Mutation error ──────────────────────────────────────── */}
       {mutationError ? (
         <View className="mx-4 rounded-xl border border-danger/25 bg-danger/10 px-3.5 py-3">
           <Text className="text-sm text-danger">{mutationError}</Text>
         </View>
       ) : null}
 
-      <View className="mx-4 mt-4 rounded-[18px] border border-[#D9CFC4] bg-ivory px-4 py-4">
-        <View className="flex-row items-start justify-between gap-3">
-          <View className="min-w-0 flex-1">
-            <Text style={fontStyles.uiSemibold} className="text-[14px] text-espresso">
-              Packing progress
-            </Text>
-            <Text style={fontStyles.uiRegular} className="mt-0.5 text-[12px] leading-[17px] text-muted">
-              {summary.breakdownLabel}
-            </Text>
-          </View>
-
-          {checkedCount > 0 ? (
-            <Pressable
-              onPress={() => void handleClearChecked()}
-              className="rounded-full border border-border bg-white px-3 py-1.5 active:opacity-75"
-              accessibilityRole="button"
-              accessibilityLabel="Clear packed items"
+      {/* ── Empty state ─────────────────────────────────────────── */}
+      {!hasItems && !isReadOnly ? (
+        <>
+          <View className="mx-4 mt-4 rounded-[18px] border border-[#D9CFC4] bg-ivory px-4 py-4">
+            <Text
+              style={[
+                fontStyles.uiMedium,
+                { fontSize: 10, letterSpacing: 1.5, color: "#8A7E74" },
+              ]}
             >
-              <Text style={fontStyles.uiSemibold} className="text-[12px] text-text-soft">
-                Clear packed
-              </Text>
-            </Pressable>
-          ) : null}
-        </View>
+              SUGGESTED ESSENTIALS
+            </Text>
 
-        <View className="mt-3 h-2 overflow-hidden rounded-full bg-smoke">
-          <View className="h-full rounded-full bg-olive" style={{ width: `${summary.progressPct}%` }} />
-        </View>
-
-        <View className="mt-3 flex-row items-center gap-2">
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            className="flex-1"
-            contentContainerStyle={{ gap: 8 }}
-          >
-            {filterChips.map((chip) => {
-              const isActive = activeFilter === chip.key;
-              return (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              className="mt-3"
+              contentContainerStyle={{ gap: 8, paddingRight: 4 }}
+            >
+              {QUICK_ADD_ESSENTIALS.map((label) => (
                 <Pressable
-                  key={chip.key}
-                  onPress={() => setActiveFilter(chip.key)}
-                  className={[
-                    "flex-row items-center gap-1 rounded-full border px-3 py-2",
-                    isActive ? "border-ontrip bg-ontrip" : "border-border bg-white",
-                  ].join(" ")}
+                  key={label}
+                  onPress={() => void handleAddSuggestion(label)}
+                  className="rounded-full border border-[#D9CFC4] bg-parchment px-3.5 py-2 active:opacity-70"
                   accessibilityRole="button"
-                  accessibilityLabel={`Show ${chip.label.toLowerCase()} items`}
+                  accessibilityLabel={`Add ${label} to packing list`}
                 >
                   <Text
                     style={fontStyles.uiMedium}
-                    className={["text-[12px]", isActive ? "text-on-dark" : "text-text-muted"].join(" ")}
+                    className="text-[13px] text-espresso"
                   >
-                    {chip.label}
-                  </Text>
-                  <Text
-                    style={fontStyles.uiSemibold}
-                    className={["text-[12px]", isActive ? "text-on-dark-muted" : "text-text-soft"].join(" ")}
-                  >
-                    {chip.count}
+                    {label}
                   </Text>
                 </Pressable>
-              );
-            })}
-          </ScrollView>
+              ))}
+            </ScrollView>
 
-          {visibleSuggestions.length > 0 ? (
-            <Pressable
-              onPress={() => setShowSuggestions((current) => !current)}
-              className="rounded-full border border-ontrip bg-ontrip px-3 py-2 active:opacity-75"
-              accessibilityRole="button"
-              accessibilityLabel="Suggest from trip"
-            >
-              <Text style={fontStyles.uiSemibold} className="text-[12px] text-on-dark">
-                Suggest from trip
-              </Text>
-            </Pressable>
-          ) : null}
-        </View>
-      </View>
-
-      <View className="mx-4 mt-4 rounded-[18px] border border-smoke bg-parchment px-4 py-4">
-        <View className="flex-row items-center gap-1.5">
-          <Ionicons name="add-circle-outline" size={13} color="#B86845" />
-          <Text style={[fontStyles.uiMedium, { fontSize: 10, letterSpacing: 1.5, color: "#B86845" }]}>
-            ADD ITEM
-          </Text>
-        </View>
-
-        <Text style={fontStyles.uiRegular} className="mt-1 text-[12px] text-text-muted">
-          Add item to {selectedCategory.title}
-        </Text>
-
-        <View className="mt-2 flex-row items-center gap-2 rounded-full border border-border bg-white py-1.5 pl-4 pr-1.5">
-          <TextInput
-            ref={addInputRef}
-            value={draft}
-            onChangeText={setDraft}
-            placeholder="Passport, charger, rain jacket"
-            placeholderTextColor="#8A7E74"
-            returnKeyType="done"
-            onSubmitEditing={() => void handleAdd()}
-            className="flex-1 py-2 text-[15px] text-text"
-          />
-          <Pressable
-            onPress={() => void handleAdd()}
-            disabled={!draft.trim()}
-            className={[
-              "flex-row items-center gap-1 rounded-full px-3 py-2",
-              draft.trim() ? "bg-ontrip" : "bg-smoke",
-            ].join(" ")}
-            accessibilityRole="button"
-            accessibilityLabel={`Add item to ${selectedCategory.title}`}
-          >
-            <Ionicons name="add" size={14} color={draft.trim() ? "#F2EBDD" : "#8A7E74"} />
-            <Text
-              style={fontStyles.uiSemibold}
-              className={["text-[12px]", draft.trim() ? "text-on-dark" : "text-text-soft"].join(" ")}
-            >
-              Add
-            </Text>
-          </Pressable>
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          className="mt-3"
-          contentContainerStyle={{ gap: 8 }}
-        >
-          {listPackingCategories().map((category) => {
-            const isActive = category.key === draftCategory;
-            return (
+            <View className="mt-4 flex-row gap-2 border-t border-smoke pt-4">
+              {visibleSuggestions.length > 0 ? (
+                <Pressable
+                  onPress={() => setShowSuggestions((v) => !v)}
+                  className="flex-1 items-center justify-center rounded-[12px] bg-espresso px-4 py-3 active:opacity-75"
+                  accessibilityRole="button"
+                  accessibilityLabel="Suggest items from trip"
+                >
+                  <Text
+                    style={fontStyles.uiSemibold}
+                    className="text-[13px] text-on-dark"
+                  >
+                    Suggest from trip
+                  </Text>
+                </Pressable>
+              ) : null}
               <Pressable
-                key={category.key}
-                onPress={() => setDraftCategory(category.key)}
+                onPress={() => openAddForm()}
                 className={[
-                  "rounded-full border px-3 py-1.5",
-                  isActive ? "border-ontrip bg-ontrip" : "border-border bg-white",
+                  "items-center justify-center rounded-[12px] border border-border bg-parchment-soft px-4 py-3 active:opacity-75",
+                  visibleSuggestions.length > 0 ? "" : "flex-1",
                 ].join(" ")}
                 accessibilityRole="button"
-                accessibilityLabel={`Select ${category.title} category`}
+                accessibilityLabel="Add a custom packing item"
               >
                 <Text
                   style={fontStyles.uiMedium}
-                  className={[
-                    "text-[12px]",
-                    isActive ? "text-on-dark" : "text-text-soft",
-                  ].join(" ")}
+                  className="text-[13px] text-text-muted"
                 >
-                  {category.title}
+                  Add custom item
                 </Text>
               </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
-
-      {showSuggestions && visibleSuggestions.length > 0 ? (
-        <View className="mx-4 mt-4 rounded-[16px] border border-smoke bg-ivory px-4 py-4">
-          <View className="flex-row items-center justify-between">
-            <Text style={[fontStyles.uiMedium, { fontSize: 10, letterSpacing: 1.5, color: "#8A7E74" }]}>
-              TRIP SUGGESTIONS
-            </Text>
-            <Text style={fontStyles.uiRegular} className="text-[10px] text-muted">
-              Add to save
-            </Text>
-          </View>
-
-          <Text style={fontStyles.uiRegular} className="mt-1 text-[12px] leading-[17px] text-text-muted">
-            Suggestions are not saved until you add them.
-          </Text>
-
-          <View className="mt-3 gap-2">
-            {visibleSuggestions.map((suggestion) => (
-              <Pressable
-                key={suggestion.label}
-                onPress={() => void handleAddSuggestion(suggestion.label)}
-                className="flex-row items-center gap-3 rounded-[12px] border border-smoke bg-white px-3.5 py-2.5 active:opacity-75"
-                accessibilityRole="button"
-                accessibilityLabel={`Add suggested item ${suggestion.label}`}
-              >
-                <View className="h-7 w-7 items-center justify-center rounded-[9px] border border-smoke bg-parchment-soft">
-                  <Ionicons name="bag-handle-outline" size={13} color="#8A7E74" />
-                </View>
-                <View className="min-w-0 flex-1">
-                  <Text style={fontStyles.uiSemibold} className="text-[13px] text-espresso" numberOfLines={1}>
-                    {suggestion.label}
-                  </Text>
-                  <Text style={fontStyles.uiRegular} className="mt-0.5 text-[11px] text-muted" numberOfLines={1}>
-                    {suggestion.reason}
-                  </Text>
-                </View>
-                <Ionicons name="add" size={15} color="#B86845" />
-              </Pressable>
-            ))}
-          </View>
-        </View>
-      ) : null}
-
-      {suggestionsQuery.isError && showSuggestions ? (
-        <View className="mx-4 mt-3 rounded-[12px] border border-border bg-surface-muted px-3.5 py-3">
-          <Text style={fontStyles.uiRegular} className="text-[12px] text-text-soft">
-            Suggestions are unavailable right now, but you can still add items manually.
-          </Text>
-        </View>
-      ) : null}
-
-      {!hasItems ? (
-        <View className="mx-4 mt-4">
-          <EmptyState
-            title="Start your packing list"
-            message="Add essentials, clothing, and trip-specific items so your departure checklist stays clear."
-            action={(
-              <Pressable
-                onPress={() => addInputRef.current?.focus()}
-                className="rounded-full border border-border bg-white px-3 py-2 active:opacity-75"
-                accessibilityRole="button"
-                accessibilityLabel="Add your first packing item"
-              >
-                <Text style={fontStyles.uiSemibold} className="text-[12px] text-text-muted">
-                  Add first item
-                </Text>
-              </Pressable>
-            )}
-          />
-        </View>
-      ) : null}
-
-      {hasItems ? (
-        <View className="mx-4 mt-5 gap-3">
-          {categoryGroups.length === 0 ? (
-            <View className="rounded-[14px] border border-border bg-surface-muted px-4 py-4">
-              <Text style={fontStyles.uiSemibold} className="text-[13px] text-espresso">
-                {activeFilter === "packed" ? "No packed items yet." : "Everything is packed."}
-              </Text>
-              <Text style={fontStyles.uiRegular} className="mt-1 text-[12px] text-muted">
-                {activeFilter === "packed"
-                  ? "Check items as you pack to see them here."
-                  : "Switch to All or Packed to review completed items."}
-              </Text>
             </View>
-          ) : (
-            categoryGroups.map((group) => (
-              <View
-                key={group.key}
-                className="rounded-[18px] border border-[#D9CFC4] bg-parchment px-4 py-4"
-              >
-                <View className="flex-row items-start justify-between gap-3">
-                  <View className="min-w-0 flex-1">
-                    <Text style={[fontStyles.displaySemibold, { fontSize: 20, lineHeight: 24, color: "#1C1108" }]}>
-                      {group.title}
-                    </Text>
-                    <Text style={fontStyles.uiRegular} className="mt-0.5 text-[11px] text-muted">
-                      {group.hint}
-                    </Text>
-                  </View>
+          </View>
 
-                  <View className="items-end gap-1">
-                    <Text style={fontStyles.uiSemibold} className="text-[12px] text-text-soft">
-                      {group.packedCount}/{group.totalCount}
-                    </Text>
-                    {group.isComplete ? (
-                      <View className="rounded-full border border-olive/30 bg-olive/15 px-2 py-0.5">
-                        <Text style={fontStyles.uiSemibold} className="text-[10px] text-olive">
-                          Complete
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
-                </View>
+          {suggestionsPanel}
+          {suggestionsError}
+          {isAddExpanded ? addItemForm : null}
+        </>
+      ) : !hasItems ? (
+        <View className="mx-4 mt-4 rounded-[18px] border border-[#D9CFC4] bg-ivory px-4 py-4">
+          <Text
+            style={fontStyles.uiRegular}
+            className="text-[13px] leading-[19px] text-muted"
+          >
+            No packing items have been added yet.
+          </Text>
+        </View>
+      ) : null}
 
-                <View className="mt-3 overflow-hidden rounded-[14px] border border-border bg-ivory">
-                  {group.visibleItems.map((item, index) => (
-                    <View
-                      key={item.id}
-                      className={index > 0 ? "border-t border-divider" : ""}
-                    >
-                      <PackingItemRow
-                        item={item}
-                        onToggle={() => void handleToggleItem(item.id)}
-                        onDelete={() => void handleRemoveItem(item.id)}
-                        onStartEdit={() => handleStartEdit(item.id, item.label)}
-                        isEditing={editingItemId === item.id}
-                        editDraft={editingDraft}
-                        onEditDraftChange={setEditingDraft}
-                        onSaveEdit={() => void handleSaveEdit()}
-                        onCancelEdit={() => {
-                          setEditingItemId(null);
-                          setEditingDraft("");
-                        }}
-                        variant="embedded"
-                      />
-                    </View>
-                  ))}
-                </View>
-
-                <Pressable
-                  onPress={() => {
-                    setDraftCategory(group.key);
-                    addInputRef.current?.focus();
-                  }}
-                  className="mt-3 flex-row items-center gap-2 rounded-[12px] border border-border bg-parchment-soft px-3 py-2.5 active:opacity-75"
-                  accessibilityRole="button"
-                  accessibilityLabel={`Add item to ${group.title}`}
+      {/* ── Has items ───────────────────────────────────────────── */}
+      {hasItems ? (
+        <>
+          {/* Progress card */}
+          <View className="mx-4 mt-4 rounded-[18px] border border-[#D9CFC4] bg-ivory px-4 py-4">
+            <View className="flex-row items-start justify-between gap-3">
+              <View className="min-w-0 flex-1">
+                <Text
+                  style={fontStyles.uiSemibold}
+                  className="text-[14px] text-espresso"
                 >
-                  <Ionicons name="add-circle-outline" size={15} color="#B86845" />
-                  <Text style={fontStyles.uiMedium} className="text-[12px] text-amber">
-                    Add item to {group.title}
+                  Packing progress
+                </Text>
+                <Text
+                  style={fontStyles.uiRegular}
+                  className="mt-0.5 text-[12px] leading-[17px] text-muted"
+                >
+                  {summary.breakdownLabel}
+                </Text>
+              </View>
+              {checkedCount > 0 && !isReadOnly ? (
+                <Pressable
+                  onPress={() => void handleClearChecked()}
+                  className="rounded-full border border-border bg-white px-3 py-1.5 active:opacity-75"
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear packed items"
+                >
+                  <Text
+                    style={fontStyles.uiSemibold}
+                    className="text-[12px] text-text-soft"
+                  >
+                    Clear packed
                   </Text>
                 </Pressable>
+              ) : null}
+            </View>
+
+            <View className="mt-3 h-2 overflow-hidden rounded-full bg-smoke">
+              <View
+                className="h-full rounded-full bg-olive"
+                style={{ width: `${summary.progressPct}%` }}
+              />
+            </View>
+
+            <View className="mt-3 flex-row items-center gap-2">
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                className="flex-1"
+                contentContainerStyle={{ gap: 8 }}
+              >
+                {filterChips.map((chip) => {
+                  const isActive = activeFilter === chip.key;
+                  return (
+                    <Pressable
+                      key={chip.key}
+                      onPress={() => setActiveFilter(chip.key)}
+                      className={[
+                        "flex-row items-center gap-1 rounded-full border px-3 py-2",
+                        isActive
+                          ? "border-ontrip bg-ontrip"
+                          : "border-border bg-white",
+                      ].join(" ")}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Show ${chip.label.toLowerCase()} items`}
+                    >
+                      <Text
+                        style={fontStyles.uiMedium}
+                        className={[
+                          "text-[12px]",
+                          isActive ? "text-on-dark" : "text-text-muted",
+                        ].join(" ")}
+                      >
+                        {chip.label}
+                      </Text>
+                      <Text
+                        style={fontStyles.uiSemibold}
+                        className={[
+                          "text-[12px]",
+                          isActive ? "text-on-dark-muted" : "text-text-soft",
+                        ].join(" ")}
+                      >
+                        {chip.count}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+
+              {visibleSuggestions.length > 0 && !isReadOnly ? (
+                <Pressable
+                  onPress={() => setShowSuggestions((v) => !v)}
+                  className="rounded-full border border-ontrip bg-ontrip px-3 py-2 active:opacity-75"
+                  accessibilityRole="button"
+                  accessibilityLabel="Suggest from trip"
+                >
+                  <Text
+                    style={fontStyles.uiSemibold}
+                    className="text-[12px] text-on-dark"
+                  >
+                    Suggest from trip
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
+          </View>
+
+          {suggestionsPanel}
+          {suggestionsError}
+
+          {/* Collapsed add row or expanded form */}
+          {!isReadOnly && isAddExpanded ? (
+            addItemForm
+          ) : !isReadOnly ? (
+            <Pressable
+              onPress={() => openAddForm()}
+              className="mx-4 mt-4 flex-row items-center gap-2.5 rounded-[14px] border border-smoke bg-parchment px-4 py-3.5 active:opacity-75"
+              accessibilityRole="button"
+              accessibilityLabel="Add a packing item"
+            >
+              <Ionicons name="add-circle-outline" size={16} color="#B86845" />
+              <Text
+                style={fontStyles.uiMedium}
+                className="text-[13px] text-amber"
+              >
+                Add item
+              </Text>
+            </Pressable>
+          ) : null}
+
+          {/* Category groups */}
+          <View className="mx-4 mt-5 gap-3">
+            {categoryGroups.length === 0 ? (
+              <View className="rounded-[14px] border border-border bg-surface-muted px-4 py-4">
+                <Text
+                  style={fontStyles.uiSemibold}
+                  className="text-[13px] text-espresso"
+                >
+                  {activeFilter === "packed"
+                    ? "No packed items yet."
+                    : "Everything is packed."}
+                </Text>
+                <Text
+                  style={fontStyles.uiRegular}
+                  className="mt-1 text-[12px] text-muted"
+                >
+                  {activeFilter === "packed"
+                    ? "Check items as you pack to see them here."
+                    : "Switch to All or Packed to review completed items."}
+                </Text>
               </View>
-            ))
-          )}
-        </View>
+            ) : (
+              categoryGroups.map((group) => (
+                <View
+                  key={group.key}
+                  className="rounded-[18px] border border-[#D9CFC4] bg-parchment px-4 py-4"
+                >
+                  <View className="flex-row items-start justify-between gap-3">
+                    <View className="min-w-0 flex-1">
+                      <Text
+                        style={[
+                          fontStyles.displaySemibold,
+                          { fontSize: 20, lineHeight: 24, color: "#1C1108" },
+                        ]}
+                      >
+                        {group.title}
+                      </Text>
+                      <Text
+                        style={fontStyles.uiRegular}
+                        className="mt-0.5 text-[11px] text-muted"
+                      >
+                        {group.hint}
+                      </Text>
+                    </View>
+                    <View className="items-end gap-1">
+                      <Text
+                        style={fontStyles.uiSemibold}
+                        className="text-[12px] text-text-soft"
+                      >
+                        {group.packedCount}/{group.totalCount}
+                      </Text>
+                      {group.isComplete ? (
+                        <View className="rounded-full border border-olive/30 bg-olive/15 px-2 py-0.5">
+                          <Text
+                            style={fontStyles.uiSemibold}
+                            className="text-[10px] text-olive"
+                          >
+                            Complete
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  </View>
+
+                  <View className="mt-3 overflow-hidden rounded-[14px] border border-border bg-ivory">
+                    {group.visibleItems.map((item, index) => (
+                      <View
+                        key={item.id}
+                        className={index > 0 ? "border-t border-divider" : ""}
+                      >
+                        <PackingItemRow
+                          item={item}
+                          onToggle={() => void handleToggleItem(item.id)}
+                          onDelete={() => void handleRemoveItem(item.id)}
+                          onStartEdit={() =>
+                            handleStartEdit(item.id, item.label)
+                          }
+                          isEditing={editingItemId === item.id}
+                          editDraft={editingDraft}
+                          onEditDraftChange={setEditingDraft}
+                          onSaveEdit={() => void handleSaveEdit()}
+                          onCancelEdit={() => {
+                            setEditingItemId(null);
+                            setEditingDraft("");
+                          }}
+                          variant="embedded"
+                          isReadOnly={isReadOnly}
+                        />
+                      </View>
+                    ))}
+                  </View>
+
+                  {!isReadOnly ? (
+                    <Pressable
+                      onPress={() => openAddForm(group.key)}
+                      className="mt-3 flex-row items-center gap-2 rounded-[12px] border border-border bg-parchment-soft px-3 py-2.5 active:opacity-75"
+                      accessibilityRole="button"
+                      accessibilityLabel={`Add item to ${group.title}`}
+                    >
+                      <Ionicons
+                        name="add-circle-outline"
+                        size={15}
+                        color="#B86845"
+                      />
+                      <Text
+                        style={fontStyles.uiMedium}
+                        className="text-[12px] text-amber"
+                      >
+                        Add item to {group.title}
+                      </Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              ))
+            )}
+          </View>
+        </>
       ) : null}
     </ScrollView>
   );

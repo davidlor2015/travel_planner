@@ -62,6 +62,7 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
   const isDeletingTrip = workspace.isDeletingTrip;
   const isSoloTrip = workspace.isSolo;
   const canDeleteTrip = trip?.isOwner ?? false;
+  const isReadOnly = trip?.isReadOnly ?? false;
 
   const { streams, start, reset } = useStreamingItinerary();
   const streamState = streams[tripId];
@@ -232,6 +233,8 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
       {(resolvedTab === "overview" || resolvedTab === "itinerary") && (
         <OverviewTab
           trip={trip}
+          tripRaw={tripData}
+          currentUserEmail={user?.email ?? ""}
           summary={workspace.summary}
           collaboration={collaboration}
           onTripSnapshot={onTripSnapshotQuery.data ?? null}
@@ -242,11 +245,15 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
           onOpenTab={setActiveTab}
           onOpenLiveView={() => router.push(`/(tabs)/trips/${tripId}/live` as Href)}
           showItineraryOnly={resolvedTab === "itinerary"}
+          isReadOnly={isReadOnly}
+          activityLoadError={
+            onTripSnapshotQuery.isError ? "Couldn't load recent activity." : null
+          }
         />
       )}
-      {resolvedTab === "bookings" && <BookingsTab tripId={tripId} />}
-      {resolvedTab === "budget" && <BudgetTab tripId={tripId} />}
-      {resolvedTab === "packing" && <PackingTab tripId={tripId} />}
+      {resolvedTab === "bookings" && <BookingsTab tripId={tripId} isReadOnly={isReadOnly} />}
+      {resolvedTab === "budget" && <BudgetTab tripId={tripId} isReadOnly={isReadOnly} />}
+      {resolvedTab === "packing" && <PackingTab tripId={tripId} isReadOnly={isReadOnly} />}
       {resolvedTab === "map" && <MapTab tripId={tripId} />}
       {resolvedTab === "members" && (
         <MembersTab
@@ -302,6 +309,10 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
           setEditError(null);
         }}
         onSubmit={async (value: TripFormValue) => {
+          if (isReadOnly) {
+            setEditError("Only editors can update this trip.");
+            return;
+          }
           try {
             setEditError(null);
             await workspace.updateTrip(value);

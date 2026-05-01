@@ -17,7 +17,7 @@ ALEMBIC := .venv/bin/alembic
         lint lint-backend lint-web lint-mobile \
         docker-up docker-down docker-build
 
-# ── Help ──────────────────────────────────────────────────────────────────────
+# Help
 
 help:
 	@echo ""
@@ -52,7 +52,7 @@ help:
 	@echo "    make docker-build   Rebuild images without cache"
 	@echo ""
 
-# ── Setup ─────────────────────────────────────────────────────────────────────
+# Setup 
 
 setup:
 	python3 -m venv .venv
@@ -71,7 +71,7 @@ seed:
 gen-types:
 	cd ui && npm run gen:types
 
-# ── Dev servers ───────────────────────────────────────────────────────────────
+# Dev servers 
 
 dev-backend:
 	$(UVICORN) app.main:app --reload
@@ -82,7 +82,6 @@ dev-web:
 dev-mobile:
 	cd ui-mobile && npx expo start
 
-# ── Tests ─────────────────────────────────────────────────────────────────────
 
 test: test-backend test-web test-mobile
 
@@ -95,8 +94,7 @@ test-web:
 test-mobile:
 	cd ui-mobile && npm test
 
-# ── Lint ──────────────────────────────────────────────────────────────────────
-
+# Lint 
 lint: lint-backend lint-web lint-mobile
 
 lint-backend:
@@ -109,7 +107,7 @@ lint-web:
 lint-mobile:
 	cd ui-mobile && npx expo lint
 
-# ── Docker ────────────────────────────────────────────────────────────────────
+# Docker 
 
 docker-up:
 	docker compose up

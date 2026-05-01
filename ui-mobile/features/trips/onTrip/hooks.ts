@@ -30,8 +30,26 @@ export type MutationFeedback = {
 };
 
 type OptimisticEntry =
-  | { kind: "pending"; requestId: number; target: TripExecutionStatus }
-  | { kind: "committed"; requestId: number; target: TripExecutionStatus };
+  | {
+      kind: "pending";
+      requestId: number;
+      target: TripExecutionStatus;
+      actor: OptimisticActor;
+      updatedAt: string;
+    }
+  | {
+      kind: "committed";
+      requestId: number;
+      target: TripExecutionStatus;
+      actor: OptimisticActor;
+      updatedAt: string;
+    };
+
+type OptimisticActor = {
+  userId: number | null;
+  displayName: string | null;
+  email: string | null;
+};
 
 type OptimisticState = {
   statusByRef: Record<string, OptimisticEntry>;
@@ -51,10 +69,7 @@ function generateClientRequestId(): string {
 
 // Traveler-facing copy; intentionally avoids HTTP codes, server payloads, and
 // field-level error strings so nothing leaks technical language into the UI.
-export function toFriendlyOnTripError(
-  err: unknown,
-  fallback: string,
-): string {
+export function toFriendlyOnTripError(err: unknown, fallback: string): string {
   if (err instanceof ApiError) {
     if (err.status === 401 || err.status === 403) {
       return "You don't have access to update this trip right now.";
@@ -83,6 +98,11 @@ export type UseOnTripMutationsOptions = {
   tripId: number | null;
   snapshot: TripOnTripSnapshot | null;
   onSnapshotRefresh: (snapshot: TripOnTripSnapshot) => void;
+  currentUser?: {
+    id?: number | null;
+    email?: string | null;
+    display_name?: string | null;
+  } | null;
 };
 
 export type UseOnTripMutationsResult = {
@@ -92,20 +112,31 @@ export type UseOnTripMutationsResult = {
   isLoggingUnplanned: boolean;
   feedback: MutationFeedback | null;
   dismissFeedback: () => void;
-  setStopStatus: (stopRef: string, nextStatus: TripExecutionStatus) => Promise<void>;
+  setStopStatus: (
+    stopRef: string,
+    nextStatus: TripExecutionStatus,
+  ) => Promise<void>;
   logUnplannedStop: (payload: UnplannedStopPayload) => Promise<void>;
   removeUnplannedStop: (eventId: number) => Promise<void>;
+  lastRefreshedAt: number;
+  refreshFailed: boolean;
 };
 
 export function useOnTripMutations({
   tripId,
   snapshot,
   onSnapshotRefresh,
+  currentUser = null,
 }: UseOnTripMutationsOptions): UseOnTripMutationsResult {
   const queryClient = useQueryClient();
-  const [optimistic, setOptimistic] = useState<OptimisticState>(emptyOptimistic);
-  const [pendingCountByRef, setPendingCountByRef] = useState<Record<string, number>>({});
-  const [unplannedPendingIds, setUnplannedPendingIds] = useState<Record<number, boolean>>({});
+  const [optimistic, setOptimistic] =
+    useState<OptimisticState>(emptyOptimistic);
+  const [pendingCountByRef, setPendingCountByRef] = useState<
+    Record<string, number>
+  >({});
+  const [unplannedPendingIds, setUnplannedPendingIds] = useState<
+    Record<number, boolean>
+  >({});
   const [isLoggingUnplanned, setIsLoggingUnplanned] = useState(false);
   const [feedback, setFeedback] = useState<MutationFeedback | null>(null);
 
@@ -114,6 +145,8 @@ export function useOnTripMutations({
   const requestIdRef = useRef(0);
   const lastRefreshAtRef = useRef(0);
   const lastInteractionAtRef = useRef(0);
+  const [lastRefreshedAt, setLastRefreshedAt] = useState(0);
+  const [refreshFailed, setRefreshFailed] = useState(false);
 
   // Auto-dismiss the feedback toast after 3 seconds so the user doesn't have
   // to tap it away after every confirm/skip.
@@ -175,12 +208,15 @@ export function useOnTripMutations({
     if (!tripId) return;
     try {
       const next = await getTripOnTripSnapshot(tripId);
-      lastRefreshAtRef.current = Date.now();
+      const now = Date.now();
+      lastRefreshAtRef.current = now;
+      setLastRefreshedAt(now);
+      setRefreshFailed(false);
       queryClient.setQueryData(tripKeys.onTripSnapshot(tripId), next);
       onSnapshotRefresh(next);
       setOptimistic((prev) => reconcileOptimistic(prev, next));
     } catch {
-      // Non-fatal: retry happens on the next poll tick or foreground event.
+      setRefreshFailed(true);
     }
   }, [tripId, queryClient, onSnapshotRefresh, reconcileOptimistic]);
 
@@ -213,7 +249,10 @@ export function useOnTripMutations({
         void refreshSnapshot();
       }
     };
-    const subscription = AppState.addEventListener("change", handleAppStateChange);
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange,
+    );
     return () => subscription.remove();
   }, [tripId, refreshSnapshot]);
 
@@ -223,12 +262,20 @@ export function useOnTripMutations({
       markInteraction();
       const requestId = ++requestIdRef.current;
       const previousOverride = optimistic.statusByRef[stopRef] ?? null;
+      const actor = buildOptimisticActor(currentUser);
+      const updatedAt = new Date().toISOString();
 
       setOptimistic((prev) => ({
         ...prev,
         statusByRef: {
           ...prev.statusByRef,
-          [stopRef]: { kind: "pending", requestId, target: nextStatus },
+          [stopRef]: {
+            kind: "pending",
+            requestId,
+            target: nextStatus,
+            actor,
+            updatedAt,
+          },
         },
       }));
       setPendingCountByRef((prev) => ({
@@ -238,7 +285,10 @@ export function useOnTripMutations({
 
       const performWrite = async () => {
         try {
-          await postStopStatus(tripId, { stop_ref: stopRef, status: nextStatus });
+          await postStopStatus(tripId, {
+            stop_ref: stopRef,
+            status: nextStatus,
+          });
           setOptimistic((prev) => {
             const current = prev.statusByRef[stopRef];
             if (!current || current.requestId !== requestId) return prev;
@@ -246,12 +296,20 @@ export function useOnTripMutations({
               ...prev,
               statusByRef: {
                 ...prev.statusByRef,
-                [stopRef]: { kind: "committed", requestId, target: nextStatus },
+                [stopRef]: {
+                  kind: "committed",
+                  requestId,
+                  target: nextStatus,
+                  actor,
+                  updatedAt,
+                },
               },
             };
           });
           if (nextStatus === "confirmed") {
-            void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            void Haptics.notificationAsync(
+              Haptics.NotificationFeedbackType.Success,
+            );
           } else if (nextStatus === "skipped") {
             void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }
@@ -270,7 +328,10 @@ export function useOnTripMutations({
           });
           setFeedback({
             kind: "error",
-            message: toFriendlyOnTripError(err, "Couldn't save that update. Try again."),
+            message: toFriendlyOnTripError(
+              err,
+              "Couldn't save that update. Check your connection and try again.",
+            ),
             at: Date.now(),
           });
         }
@@ -296,7 +357,7 @@ export function useOnTripMutations({
         if (queue.get(stopRef) === thisRun) queue.delete(stopRef);
       }
     },
-    [optimistic.statusByRef, refreshSnapshot, tripId, markInteraction],
+    [currentUser, optimistic.statusByRef, refreshSnapshot, tripId, markInteraction],
   );
 
   const logUnplannedStop = useCallback(
@@ -304,14 +365,21 @@ export function useOnTripMutations({
       if (!tripId) return;
       markInteraction();
       setIsLoggingUnplanned(true);
-      const clientRequestId = payload.client_request_id ?? generateClientRequestId();
+      const clientRequestId =
+        payload.client_request_id ?? generateClientRequestId();
       try {
-        await postUnplannedStop(tripId, { ...payload, client_request_id: clientRequestId });
+        await postUnplannedStop(tripId, {
+          ...payload,
+          client_request_id: clientRequestId,
+        });
         await refreshSnapshot();
       } catch (err) {
         setFeedback({
           kind: "error",
-          message: toFriendlyOnTripError(err, "Couldn't log that stop. Try again."),
+          message: toFriendlyOnTripError(
+            err,
+            "Couldn't log that stop. Try again.",
+          ),
           at: Date.now(),
         });
       } finally {
@@ -341,7 +409,10 @@ export function useOnTripMutations({
         });
         setFeedback({
           kind: "error",
-          message: toFriendlyOnTripError(err, "Couldn't remove that stop. Try again."),
+          message: toFriendlyOnTripError(
+            err,
+            "Couldn't remove that stop. Try again.",
+          ),
           at: Date.now(),
         });
       } finally {
@@ -358,10 +429,21 @@ export function useOnTripMutations({
   const viewSnapshot = useMemo<TripOnTripSnapshot | null>(() => {
     if (!snapshot) return null;
     const overrides = optimistic.statusByRef;
-    const overriddenStops = snapshot.today_stops.map<TripOnTripStopSnapshot>((stop) => {
-      const entry = stop.stop_ref ? overrides[stop.stop_ref] : undefined;
-      return entry ? { ...stop, execution_status: entry.target } : stop;
-    });
+    const overriddenStops = snapshot.today_stops.map<TripOnTripStopSnapshot>(
+      (stop) => {
+        const entry = stop.stop_ref ? overrides[stop.stop_ref] : undefined;
+        return entry
+          ? {
+              ...stop,
+              execution_status: entry.target,
+              status_updated_by_user_id: entry.actor.userId,
+              status_updated_by_display_name: entry.actor.displayName,
+              status_updated_by_email: entry.actor.email,
+              status_updated_at: entry.updatedAt,
+            }
+          : stop;
+      },
+    );
     const filteredUnplanned = snapshot.today_unplanned.filter(
       (item) => !optimistic.deletedUnplannedIds[item.event_id],
     );
@@ -373,7 +455,8 @@ export function useOnTripMutations({
         const planStatus = (stop.status ?? "planned").trim().toLowerCase();
         if (planStatus === "skipped") return false;
         const execStatus = stop.execution_status;
-        if (execStatus === "confirmed" || execStatus === "skipped") return false;
+        if (execStatus === "confirmed" || execStatus === "skipped")
+          return false;
         return true;
       }) ?? null;
     return {
@@ -404,5 +487,21 @@ export function useOnTripMutations({
     setStopStatus,
     logUnplannedStop,
     removeUnplannedStop,
+    lastRefreshedAt,
+    refreshFailed,
+  };
+}
+
+function buildOptimisticActor(
+  currentUser: UseOnTripMutationsOptions["currentUser"],
+): OptimisticActor {
+  if (!currentUser) {
+    return { userId: null, displayName: "you", email: null };
+  }
+  return {
+    userId:
+      typeof currentUser.id === "number" ? currentUser.id : null,
+    displayName: "you",
+    email: currentUser.email ?? null,
   };
 }

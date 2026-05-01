@@ -29,7 +29,9 @@ import { EmptyState } from "@/shared/ui/EmptyState";
 import { ScreenError } from "@/shared/ui/ScreenError";
 import { ScreenLoading } from "@/shared/ui/ScreenLoading";
 
-type Props = { tripId: number };
+import { ReadOnlyNotice } from "./ReadOnlyNotice";
+
+type Props = { tripId: number; isReadOnly?: boolean };
 
 // ─── Next Up hero card ───────────────────────────────────────────────────────
 
@@ -180,7 +182,7 @@ function SectionHeader({ label, count }: { label: string; count: number }) {
 
 // ─── Main tab ────────────────────────────────────────────────────────────────
 
-export function BookingsTab({ tripId }: Props) {
+export function BookingsTab({ tripId, isReadOnly = false }: Props) {
   const reservations = useReservations(tripId);
   const [activeFilter, setActiveFilter] = useState<BookingFilterKey>("all");
   const [showAddSheet, setShowAddSheet] = useState(false);
@@ -265,9 +267,14 @@ export function BookingsTab({ tripId }: Props) {
             </View>
             <Pressable
               onPress={() => setShowAddSheet(true)}
+              disabled={isReadOnly}
               className="flex-row items-center gap-1 pt-1"
               accessibilityRole="button"
               accessibilityLabel="Add booking"
+              accessibilityHint={
+                isReadOnly ? "View-only travelers cannot add bookings." : undefined
+              }
+              style={isReadOnly ? { opacity: 0.45 } : undefined}
             >
               <Ionicons name="add" size={13} color="#B86845" />
               <Text style={fontStyles.uiMedium} className="text-[12px] text-amber">
@@ -302,6 +309,8 @@ export function BookingsTab({ tripId }: Props) {
             <View className="mt-3 h-1 rounded-full bg-smoke" />
           )}
         </View>
+
+        {isReadOnly ? <ReadOnlyNotice className="mx-5 mb-3" /> : null}
 
         {/* ── Filter chips ──────────────────────────────────────────────────── */}
         <ScrollView
@@ -375,7 +384,9 @@ export function BookingsTab({ tripId }: Props) {
                     key={r.id}
                     reservation={toReservationViewModel(r)}
                     onPress={() => setSelectedItem(r)}
-                    onDelete={() => void handleRemove(r.id)}
+                    onDelete={
+                      isReadOnly ? undefined : () => void handleRemove(r.id)
+                    }
                   />
                 ))}
               </View>
@@ -388,7 +399,9 @@ export function BookingsTab({ tripId }: Props) {
                     key={r.id}
                     reservation={toReservationViewModel(r)}
                     onPress={() => setSelectedItem(r)}
-                    onDelete={() => void handleRemove(r.id)}
+                    onDelete={
+                      isReadOnly ? undefined : () => void handleRemove(r.id)
+                    }
                   />
                 ))}
               </View>
@@ -403,7 +416,9 @@ export function BookingsTab({ tripId }: Props) {
                     <BookingRow
                       reservation={toReservationViewModel(r)}
                       onPress={() => setSelectedItem(r)}
-                      onDelete={() => void handleRemove(r.id)}
+                      onDelete={
+                        isReadOnly ? undefined : () => void handleRemove(r.id)
+                      }
                     />
                   </View>
                 ))}
@@ -418,14 +433,22 @@ export function BookingsTab({ tripId }: Props) {
         vm={detailVm}
         visible={selectedItem !== null}
         onClose={() => setSelectedItem(null)}
-        onEdit={() => {
-          const item = selectedItem;
-          setSelectedItem(null);
-          setEditItem(item);
-        }}
-        onDelete={async () => {
-          if (selectedItem) await handleRemove(selectedItem.id);
-        }}
+        onEdit={
+          isReadOnly
+            ? undefined
+            : () => {
+                const item = selectedItem;
+                setSelectedItem(null);
+                setEditItem(item);
+              }
+        }
+        onDelete={
+          isReadOnly
+            ? undefined
+            : async () => {
+                if (selectedItem) await handleRemove(selectedItem.id);
+              }
+        }
       />
 
       {/* ── Edit booking sheet ───────────────────────────────────────────────── */}

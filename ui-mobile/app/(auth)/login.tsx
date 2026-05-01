@@ -7,8 +7,8 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -18,7 +18,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { friendlyError } from "@/shared/api/friendlyError";
 import { useAuth } from "@/providers/AuthProvider";
 import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
-import { WaypointLogo } from "@/shared/ui/WaypointLogo";
+import { RoenLogo } from "@/shared/ui/RoenLogo";
+import { AuthInput, AUTH_PALETTE } from "@/shared/ui/AuthInput";
 
 export default function LoginPage() {
   const { signIn } = useAuth();
@@ -45,7 +46,7 @@ export default function LoginPage() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-bg">
+    <SafeAreaView style={s.root}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
@@ -58,23 +59,21 @@ export default function LoginPage() {
         >
           {/* Logo row */}
           <View className="px-7 pt-10 pb-2">
-            <WaypointLogo size={44} />
+            <RoenLogo size={44} />
           </View>
 
-          {/* Fixed gap between logo and headline */}
-          <View className="h-14" />
+          <View className="h-10" />
 
           {/* Editorial headline */}
           <View className="px-7">
             <Text
-              className="mb-1 text-[11px] uppercase tracking-[1.8px] text-amber"
-              style={fontStyles.uiMedium}
+              className="mb-1 text-[11px] uppercase text-amber"
+              style={[fontStyles.uiMedium, { letterSpacing: 1.2 }]}
             >
               Welcome back
             </Text>
             <Text
-              className="text-espresso"
-              style={[textScaleStyles.displayXL, { fontSize: 38, lineHeight: 42 }]}
+              style={[textScaleStyles.displayXL, { fontSize: 38, lineHeight: 42, color: AUTH_PALETTE.text }]}
             >
               {"Sign in."}
             </Text>
@@ -85,20 +84,22 @@ export default function LoginPage() {
 
           {/* Form fields */}
           <View className="mt-8 px-7">
-            <UnderlineField
+            <AuthInput
               label="Email address"
               value={email}
               onChangeText={setEmail}
               placeholder="you@example.com"
               keyboardType="email-address"
+              textContentType="emailAddress"
               autoCapitalize="none"
               autoCorrect={false}
             />
-            <UnderlineField
+            <AuthInput
               label="Password"
               value={password}
               onChangeText={setPassword}
               placeholder="Password"
+              textContentType="password"
               secureTextEntry
               returnKeyType="done"
               onSubmitEditing={() => void handleSubmit()}
@@ -118,17 +119,18 @@ export default function LoginPage() {
             <Pressable
               onPress={() => void handleSubmit()}
               disabled={isSubmitting}
-              className="h-14 items-center justify-center rounded-2xl bg-espresso active:opacity-80"
-              style={isSubmitting ? { opacity: 0.6 } : undefined}
+              style={[s.button, isSubmitting && { opacity: 0.6 }]}
             >
-              <View className="flex-row items-center gap-2">
-                <Text className="text-[15px] text-on-dark" style={fontStyles.uiMedium}>
-                  {isSubmitting ? "Signing in…" : "Sign In"}
-                </Text>
-                {!isSubmitting && (
-                  <Ionicons name="arrow-forward" size={16} color="#F2EBDD" />
-                )}
-              </View>
+              {({ pressed }) => (
+                <View style={[s.buttonInner, pressed && { opacity: 0.82 }]}>
+                  <Text style={[s.buttonLabel, fontStyles.uiMedium]}>
+                    {isSubmitting ? "Signing in…" : "Sign In"}
+                  </Text>
+                  {!isSubmitting && (
+                    <Ionicons name="arrow-forward" size={15} color="#F2EBDD" />
+                  )}
+                </View>
+              )}
             </Pressable>
 
             <Pressable
@@ -137,9 +139,7 @@ export default function LoginPage() {
             >
               <Text className="text-sm text-muted" style={fontStyles.uiRegular}>
                 Forgot password?{" "}
-                <Text className="text-espresso underline" style={fontStyles.uiMedium}>
-                  Reset it
-                </Text>
+                <Text style={[fontStyles.uiMedium, s.link]}>Reset it</Text>
               </Text>
             </Pressable>
             <Pressable
@@ -148,9 +148,7 @@ export default function LoginPage() {
             >
               <Text className="text-sm text-muted" style={fontStyles.uiRegular}>
                 New here?{" "}
-                <Text className="text-espresso underline" style={fontStyles.uiMedium}>
-                  Create an account
-                </Text>
+                <Text style={[fontStyles.uiMedium, s.link]}>Create an account</Text>
               </Text>
             </Pressable>
           </View>
@@ -160,35 +158,30 @@ export default function LoginPage() {
   );
 }
 
-// Underline-style input — editorial feel, auth-screens only
-function UnderlineField({
-  label,
-  error,
-  ...inputProps
-}: {
-  label: string;
-  error?: string | null;
-} & React.ComponentProps<typeof TextInput>) {
-  return (
-    <View className="mb-6">
-      <Text
-        className="mb-1.5 text-[10px] uppercase tracking-[1.8px] text-muted"
-        style={fontStyles.uiMedium}
-      >
-        {label}
-      </Text>
-      <TextInput
-        placeholderTextColor="#8A7E74"
-        selectionColor="#B86845"
-        className="pb-2 text-[18px] text-espresso"
-        style={[fontStyles.uiRegular, { borderBottomWidth: 1.5, borderBottomColor: error ? "#881337" : "#EAE2D6" }]}
-        {...inputProps}
-      />
-      {error ? (
-        <Text className="mt-1 text-xs text-danger" style={fontStyles.uiMedium}>
-          {error}
-        </Text>
-      ) : null}
-    </View>
-  );
-}
+const s = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: AUTH_PALETTE.bg,
+  },
+  button: {
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: AUTH_PALETTE.text,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  buttonInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  buttonLabel: {
+    fontSize: 15,
+    color: "#F2EBDD",
+  },
+  link: {
+    fontSize: 14,
+    color: AUTH_PALETTE.clay,
+  },
+});

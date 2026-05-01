@@ -27,6 +27,7 @@ import {
   JetBrainsMono_400Regular,
   JetBrainsMono_500Medium,
 } from "@expo-google-fonts/jetbrains-mono";
+import { Italiana_400Regular } from "@expo-google-fonts/italiana/400Regular";
 
 import { AuthProvider } from "@/providers/AuthProvider";
 import { QueryProvider } from "@/providers/QueryProvider";
@@ -47,6 +48,7 @@ export default function RootLayout() {
     Manrope_700Bold,
     JetBrainsMono_400Regular,
     JetBrainsMono_500Medium,
+    Italiana_400Regular,
   });
 
   useEffect(() => {

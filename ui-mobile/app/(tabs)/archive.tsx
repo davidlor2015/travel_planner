@@ -196,7 +196,7 @@ function NoArchiveState() {
         No memories yet.
       </Text>
       <Text style={fontStyles.uiRegular} className="text-[14px] text-muted text-center leading-5">
-        Completed trips will appear here after their end date. Waypoint will keep track of what you planned, what you visited, and what changed along the way.
+        Completed trips will appear here after their end date. Roen will keep track of what you planned, what you visited, and what changed along the way.
       </Text>
       <Pressable
         onPress={() => router.push("/(tabs)/trips" as Href)}

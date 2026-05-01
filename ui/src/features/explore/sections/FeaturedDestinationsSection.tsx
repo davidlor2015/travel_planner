@@ -21,7 +21,7 @@ export function FeaturedDestinationsSection({
   return (
     <PageSection
       title="Featured Destinations"
-      subtitle="Two cinematic places to open, shape, and turn into a shared Waypoint trip."
+      subtitle="Two cinematic places to open, shape, and turn into a shared Roen trip."
     >
       <div className="grid gap-6 lg:grid-cols-2">
         {destinations.map((destination) => (

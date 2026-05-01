@@ -20,4 +20,4 @@ export {
 	ViewToggle,
 } from './travelPrimitives';
 export { WishlistButton } from './WishlistButton';
-export { WaypointLogo } from './WaypointLogo';
+export { RoenLogo } from './RoenLogo';

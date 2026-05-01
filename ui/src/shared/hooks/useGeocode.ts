@@ -33,7 +33,7 @@ async function fetchCoords(destination: string): Promise<[number, number] | null
   try {
     const res = await fetch(
       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(destination)}&format=json&limit=1`,
-      { headers: { 'User-Agent': 'WaypointApp/1.0' } },
+      { headers: { 'User-Agent': 'RoenApp/1.0' } },
     );
     if (!res.ok) return null;
     const data: unknown = await res.json();

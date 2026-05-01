@@ -34,6 +34,9 @@ export function HappeningNowCard({
   const stripLabel = tone === "now" ? "Happening now" : "Up next";
   const stopTimeLabel = formatTripStopTime(stop.time);
   const fallbackTimeLabel = formatTripStopTime(localTimeHHMM());
+  const actionMetaLabel =
+    stop.statusActionDetailLabel ??
+    (tone === "now" ? "Needs action" : "Coming up");
 
   const pulseUseNativeDriver = Platform.OS !== "web";
 
@@ -84,7 +87,10 @@ export function HappeningNowCard({
       {/* Status strip */}
       <View
         className="flex-row items-center justify-between px-5 py-3.5"
-        style={{ borderBottomWidth: 1, borderBottomColor: "rgba(242, 235, 221, 0.12)" }}
+        style={{
+          borderBottomWidth: 1,
+          borderBottomColor: "rgba(242, 235, 221, 0.12)",
+        }}
       >
         <View className="flex-row items-center gap-2">
           <View className="h-4 w-4 items-center justify-center">
@@ -106,13 +112,23 @@ export function HappeningNowCard({
           <Text
             style={[
               fontStyles.monoMedium,
-              { fontSize: 10, letterSpacing: 2.2, textTransform: "uppercase", color: DE.claySoft },
+              {
+                fontSize: 10,
+                letterSpacing: 2.2,
+                textTransform: "uppercase",
+                color: DE.claySoft,
+              },
             ]}
           >
             {stripLabel}
           </Text>
         </View>
-        <Text style={[fontStyles.monoRegular, { fontSize: 11, color: DE.mutedLight, letterSpacing: 1.2 }]}>
+        <Text
+          style={[
+            fontStyles.monoRegular,
+            { fontSize: 11, color: DE.mutedLight, letterSpacing: 1.2 },
+          ]}
+        >
           {stop.time ? stopTimeLabel : fallbackTimeLabel}
         </Text>
       </View>
@@ -122,7 +138,12 @@ export function HappeningNowCard({
         <Text
           style={[
             fontStyles.headMediumItalic,
-            { fontSize: 30, lineHeight: 35, color: DE.ivory, letterSpacing: -0.6 },
+            {
+              fontSize: 30,
+              lineHeight: 35,
+              color: DE.ivory,
+              letterSpacing: -0.6,
+            },
           ]}
         >
           {title}
@@ -133,7 +154,11 @@ export function HappeningNowCard({
             className="mt-3"
             style={[
               fontStyles.uiRegular,
-              { fontSize: 13, lineHeight: 20, color: "rgba(242, 235, 221, 0.70)" },
+              {
+                fontSize: 13,
+                lineHeight: 20,
+                color: "rgba(242, 235, 221, 0.70)",
+              },
             ]}
             numberOfLines={2}
           >
@@ -146,18 +171,16 @@ export function HappeningNowCard({
           style={{ backgroundColor: "rgba(242, 235, 221, 0.06)" }}
         >
           <MetaItem
-            label={
-              tone === "now" && stop.time
-                ? `Since ${stopTimeLabel}`
-                : stop.time
-                  ? `At ${stopTimeLabel}`
-                  : "Time TBD"
-            }
+            label={stop.location?.trim() ? "Open route" : "Add location"}
           />
-          <View className="mx-3 h-3 w-px" style={{ backgroundColor: "rgba(242, 235, 221, 0.18)" }} />
-          <MetaItem label={stop.location?.trim() ? "Open route" : "Add location"} />
-          <View className="mx-3 h-3 w-px" style={{ backgroundColor: "rgba(242, 235, 221, 0.18)" }} />
-          <MetaItem label={tone === "now" ? "Needs action" : "Coming up"} accent />
+          <View
+            className="mx-3 h-3 w-px"
+            style={{ backgroundColor: "rgba(242, 235, 221, 0.18)" }}
+          />
+          <MetaItem
+            label={actionMetaLabel}
+            accent
+          />
         </View>
       </View>
 
@@ -172,7 +195,9 @@ export function HappeningNowCard({
             accessibilityLabel="Navigate to current stop"
           >
             <Ionicons name="navigate" size={15} color={DE.ink} />
-            <Text style={[fontStyles.uiSemibold, { fontSize: 15, color: DE.ink }]}>
+            <Text
+              style={[fontStyles.uiSemibold, { fontSize: 15, color: DE.ink }]}
+            >
               Navigate
             </Text>
           </Pressable>
@@ -202,7 +227,10 @@ export function HappeningNowCard({
 function formatCardTitle(title: string | null | undefined): string {
   const raw = title?.trim();
   if (!raw) return "Untitled stop";
-  return raw.replace(/^(breakfast|brunch|lunch|dinner|coffee|drinks|visit|tour|stop)\s+(at|in)\s+/i, "");
+  return raw.replace(
+    /^(breakfast|brunch|lunch|dinner|coffee|drinks|visit|tour|stop)\s+(at|in)\s+/i,
+    "",
+  );
 }
 
 function formatCardDescription(stop: StopVM): string | null {
@@ -216,7 +244,13 @@ function MetaItem({ label, accent }: { label: string; accent?: boolean }) {
   return (
     <Text
       className="min-w-0 flex-1"
-      style={[fontStyles.uiMedium, { fontSize: 12, color: accent ? DE.claySoft : "rgba(242, 235, 221, 0.75)" }]}
+      style={[
+        fontStyles.uiMedium,
+        {
+          fontSize: 12,
+          color: accent ? DE.claySoft : "rgba(242, 235, 221, 0.75)",
+        },
+      ]}
       numberOfLines={2}
     >
       {label}

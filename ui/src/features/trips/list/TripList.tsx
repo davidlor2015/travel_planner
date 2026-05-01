@@ -16,7 +16,7 @@ import { PackingTab } from "../workspace/tabs/PackingTab";
 import { ChatTab } from "../workspace/tabs/ChatTab";
 import { TripActivityDrawer } from "../logistics/activity";
 import { track } from "../../../shared/analytics";
-import { WaypointLogo } from "../../../shared/ui";
+import { RoenLogo } from "../../../shared/ui";
 import { getTripTimelineLabel } from "../workspace/helpers/tripDateUtils";
 import { TripListLoadingSkeleton } from "./TripListLoadingSkeleton";
 import { PlusIcon } from "./tripListIcons";
@@ -119,7 +119,7 @@ export const TripList = ({
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F3EEE7] p-4">
         <div className="w-full max-w-xl rounded-[24px] border border-[#EAE2D6] bg-[#FEFCF9] p-8 shadow-[0_12px_40px_rgba(28,17,8,0.08)]">
-          <WaypointLogo variant="header" />
+          <RoenLogo variant="header" />
           <p className="mt-6 text-[10px] font-bold uppercase tracking-[0.1em] text-[#A39688]">
             Trip Workspace
           </p>
@@ -152,7 +152,7 @@ export const TripList = ({
       <div className="min-h-screen bg-[#F3EEE7]">
         <header className="border-b border-[#EAE2D6] bg-[#FEFCF9]/96 px-4 py-3 backdrop-blur sm:py-4">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 sm:gap-3">
-            <WaypointLogo variant="header" />
+            <RoenLogo variant="header" />
             <motion.button
               type="button"
               whileHover={{ scale: 1.03 }}

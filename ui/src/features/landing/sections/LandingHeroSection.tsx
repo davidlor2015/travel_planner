@@ -145,7 +145,7 @@ export function LandingHeroSection({ onGetStarted }: LandingHeroSectionProps) {
   const reduceMotion = useReducedMotion();
 
   return (
-    <section id="why-waypoint" className="bg-ivory px-4 pb-24 pt-16 sm:px-6 sm:pb-28 sm:pt-20">
+    <section id="why-roen" className="bg-ivory px-4 pb-24 pt-16 sm:px-6 sm:pb-28 sm:pt-20">
       <div className="mx-auto max-w-6xl">
         <div className="grid items-center gap-12 lg:grid-cols-2">
           {/* Left: copy */}
@@ -168,7 +168,7 @@ export function LandingHeroSection({ onGetStarted }: LandingHeroSectionProps) {
             </h1>
 
             <p className="mt-5 max-w-lg text-base leading-relaxed text-flint">
-              Waypoint is where the itinerary becomes usable. See what's
+              Roen is where the itinerary becomes usable. See what's
               happening, who owns what, and what to do next.
             </p>
 

@@ -4,9 +4,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  acceptPendingTripInvite,
   createTrip,
   createTripInvite,
+  declinePendingTripInvite,
   deleteTrip,
+  getPendingTripInvites,
   getTripById,
   getTripExecutionSummary,
   getTripMemberReadiness,
@@ -19,6 +22,7 @@ import type { TripCreate, TripResponse, TripSummary, TripUpdate } from "./types"
 
 export const tripKeys = {
   all: ["trips"] as const,
+  pendingInvites: ["trip-invites", "pending"] as const,
   detail: (tripId: number) => ["trips", tripId] as const,
   executionSummary: (tripId: number) =>
     ["trips", tripId, "execution-summary"] as const,
@@ -50,6 +54,14 @@ export function useTripSummariesQuery(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: tripKeys.summaries,
     queryFn: getTripSummaries,
+    enabled: options?.enabled ?? true,
+  });
+}
+
+export function usePendingTripInvitesQuery(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: tripKeys.pendingInvites,
+    queryFn: getPendingTripInvites,
     enabled: options?.enabled ?? true,
   });
 }
@@ -149,6 +161,29 @@ export function useCreateInviteMutation() {
       createTripInvite(tripId, email),
     onSuccess: (_data, { tripId }) => {
       void queryClient.invalidateQueries({ queryKey: tripKeys.detail(tripId) });
+    },
+  });
+}
+
+export function useAcceptPendingInviteMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (inviteId: number) => acceptPendingTripInvite(inviteId),
+    onSuccess: (result) => {
+      void queryClient.invalidateQueries({ queryKey: tripKeys.pendingInvites });
+      void queryClient.invalidateQueries({ queryKey: tripKeys.all });
+      void queryClient.invalidateQueries({ queryKey: tripKeys.summaries });
+      void queryClient.invalidateQueries({ queryKey: tripKeys.detail(result.trip_id) });
+    },
+  });
+}
+
+export function useDeclinePendingInviteMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (inviteId: number) => declinePendingTripInvite(inviteId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: tripKeys.pendingInvites });
     },
   });
 }

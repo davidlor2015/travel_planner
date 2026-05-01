@@ -6,12 +6,19 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL":"https://trippilot.onrender.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://trippilot.onrender.com"
+      }
+    },
+    "testflight": {
+      "distribution": "store",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://trippilot.onrender.com"
       }
     },
     "production": {
+      "distribution": "store",
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL":"https://trippilot.onrender.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://trippilot.onrender.com"
       }
     }
   },

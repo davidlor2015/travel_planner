@@ -19,6 +19,12 @@ import {
 } from "@/features/profile/preferences/preferencePresentation";
 import { useAppPreferences } from "@/features/profile/preferences/useAppPreferences";
 import { useProfileScreen } from "@/features/profile/useProfileScreen";
+import { PendingTripInvitesSection } from "@/features/trips/PendingTripInvitesSection";
+import {
+  useAcceptPendingInviteMutation,
+  useDeclinePendingInviteMutation,
+  usePendingTripInvitesQuery,
+} from "@/features/trips/hooks";
 import { fontStyles } from "@/shared/theme/typography";
 
 // ─── Row divider ──────────────────────────────────────────────────────────────
@@ -122,7 +128,15 @@ const DEVICE_LABEL = Platform.select({
 export default function ProfilePage() {
   const { displayName, email, signOut } = useProfileScreen();
   const { preferences, update } = useAppPreferences();
+  const pendingInvitesQuery = usePendingTripInvitesQuery();
+  const acceptInviteMutation = useAcceptPendingInviteMutation();
+  const declineInviteMutation = useDeclinePendingInviteMutation();
   const [openSheet, setOpenSheet] = useState<OpenSheet>(null);
+  const [inviteAction, setInviteAction] = useState<{
+    inviteId: number;
+    action: "accept" | "decline";
+  } | null>(null);
+  const [inviteActionError, setInviteActionError] = useState<string | null>(null);
 
   const initials = displayName
     .split(" ")
@@ -133,6 +147,36 @@ export default function ProfilePage() {
   const defaultsSubtext = buildDefaultsSubtext(preferences);
   const notificationsSubtext = buildNotificationsSubtext(preferences);
   const languageSubtext = buildLanguageSubtext();
+  const pendingInvites = pendingInvitesQuery.data ?? [];
+  const inviteBadgeLabel =
+    preferences.inviteAlertsEnabled && pendingInvites.length > 0
+      ? `${pendingInvites.length} invite${pendingInvites.length === 1 ? "" : "s"}`
+      : undefined;
+
+  const handleAcceptInvite = async (inviteId: number) => {
+    try {
+      setInviteActionError(null);
+      setInviteAction({ inviteId, action: "accept" });
+      const result = await acceptInviteMutation.mutateAsync(inviteId);
+      router.push(`/(tabs)/trips/${result.trip_id}`);
+    } catch {
+      setInviteActionError("We couldn't accept that invite. Try again.");
+    } finally {
+      setInviteAction(null);
+    }
+  };
+
+  const handleDeclineInvite = async (inviteId: number) => {
+    try {
+      setInviteActionError(null);
+      setInviteAction({ inviteId, action: "decline" });
+      await declineInviteMutation.mutateAsync(inviteId);
+    } catch {
+      setInviteActionError("We couldn't decline that invite. Try again.");
+    } finally {
+      setInviteAction(null);
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-bg" edges={["top"]}>
@@ -189,6 +233,24 @@ export default function ProfilePage() {
           <Ionicons name="pencil-outline" size={16} color="#C9BCA8" />
         </Pressable>
 
+        {/* ── Trip invites ─────────────────────────────────────────────────── */}
+        <View className="mt-5">
+          <PendingTripInvitesSection
+            invites={pendingInvites}
+            isLoading={pendingInvitesQuery.isLoading}
+            error={
+              inviteActionError ??
+              (pendingInvitesQuery.isError
+                ? "We couldn't load your trip invites. Try again."
+                : null)
+            }
+            action={inviteAction}
+            onAccept={(inviteId) => void handleAcceptInvite(inviteId)}
+            onDecline={(inviteId) => void handleDeclineInvite(inviteId)}
+            onRetry={() => void pendingInvitesQuery.refetch()}
+          />
+        </View>
+
         {/* ── Preferences ──────────────────────────────────────────────────── */}
         <View className="mt-5">
           <Section title="Preferences">
@@ -196,6 +258,7 @@ export default function ProfilePage() {
               icon="notifications-outline"
               label="Notifications"
               subtext={notificationsSubtext}
+              rightLabel={inviteBadgeLabel}
               onPress={() => setOpenSheet("notifications")}
             />
             <RowDivider />
@@ -227,7 +290,7 @@ export default function ProfilePage() {
             <SettingsRow
               icon="chatbubble-outline"
               label="Send feedback"
-              subtext="Help improve Waypoint"
+              subtext="Help improve Roen"
               onPress={() => setOpenSheet("feedback")}
             />
             <RowDivider />

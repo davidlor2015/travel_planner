@@ -62,7 +62,7 @@ describe("BudgetTab", () => {
     expect(getByText("Spent so far")).toBeTruthy();
     expect(getByText("Not set")).toBeTruthy();
     expect(getByRole("button", { name: "Set total budget" })).toBeTruthy();
-    expect(getByRole("button", { name: "+ Add expense" })).toBeTruthy();
+    expect(getByRole("button", { name: "Add expense" })).toBeTruthy();
     expect(
       getByText("Categories and history will appear here once you log an expense."),
     ).toBeTruthy();
@@ -90,11 +90,25 @@ describe("BudgetTab", () => {
 
     const { getByRole, getByText } = render(<BudgetTab tripId={7} />);
 
-    fireEvent.press(getByRole("button", { name: "+ Add expense" }));
+    fireEvent.press(getByRole("button", { name: "Add expense" }));
 
     expect(getByText("Label")).toBeTruthy();
     expect(getByText("Amount")).toBeTruthy();
     expect(getByText("Save expense")).toBeTruthy();
+  });
+
+  it("shows read-only notice and does not open write sheets for view-only users", () => {
+    mockUseBudgetTracker.mockReturnValue(makeBudgetState());
+
+    const { getByRole, getByText, queryByText } = render(
+      <BudgetTab tripId={7} isReadOnly />,
+    );
+
+    expect(getByText("View-only trip")).toBeTruthy();
+    fireEvent.press(getByRole("button", { name: "Set total budget" }));
+    fireEvent.press(getByRole("button", { name: "Add expense" }));
+    expect(queryByText("Save budget")).toBeNull();
+    expect(queryByText("Save expense")).toBeNull();
   });
 
   it("shows category breakdown and recent transactions after expenses exist", () => {

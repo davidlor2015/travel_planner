@@ -11,7 +11,7 @@ import type { BookingIconName, ReservationViewModel } from "./adapters";
 type Props = {
   reservation: ReservationViewModel;
   onPress: () => void;
-  onDelete: () => void;
+  onDelete?: () => void;
 };
 
 function StatusPill({ label, variant }: { label: string; variant: ReservationViewModel["statusVariant"] }) {
@@ -110,15 +110,17 @@ export function BookingRow({ reservation, onPress, onDelete }: Props) {
           </Text>
         ) : null}
         <StatusPill label={reservation.statusLabel} variant={reservation.statusVariant} />
-        <Pressable
-          onPress={(e) => { e.stopPropagation?.(); onDelete(); }}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel={`Delete ${reservation.title}`}
-          className="mt-0.5"
-        >
-          <Ionicons name="trash-outline" size={13} color="#C9BCA8" />
-        </Pressable>
+        {onDelete ? (
+          <Pressable
+            onPress={(e) => { e.stopPropagation?.(); onDelete(); }}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={`Delete ${reservation.title}`}
+            className="mt-0.5"
+          >
+            <Ionicons name="trash-outline" size={13} color="#C9BCA8" />
+          </Pressable>
+        ) : null}
       </View>
     </Pressable>
   );

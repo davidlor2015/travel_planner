@@ -36,6 +36,22 @@ export type TripInviteDetail = {
   invited_by_email: string | null;
 };
 
+export type PendingTripInvite = {
+  id: number;
+  trip_id: number;
+  trip_title: string;
+  destination: string;
+  start_date: string;
+  end_date: string;
+  invitee_email: string;
+  role: string;
+  status: string;
+  created_at: string;
+  expires_at: string;
+  invited_by_email: string | null;
+  invited_by_display_name: string | null;
+};
+
 export type TripInviteAcceptResponse = {
   trip_id: number;
   trip_title: string;
@@ -97,6 +113,23 @@ export type TripExecutionSummary = {
   unplanned_stops_count: number;
 };
 
+export type TripActivityCategory =
+  | "itinerary"
+  | "booking"
+  | "budget"
+  | "packing"
+  | "member"
+  | "execution";
+
+export type TripActivityItem = {
+  id: string;
+  actorName?: string;
+  actionLabel: string;
+  entityLabel?: string;
+  createdAt: string;
+  category?: TripActivityCategory;
+};
+
 export type WorkspaceLastSeenPayload = {
   signature: string;
   snapshot: Record<string, unknown>;
@@ -148,6 +181,10 @@ export type TripOnTripStopSnapshot = {
   confidence: TripOnTripResolutionConfidence;
   stop_ref: string | null;
   execution_status: TripExecutionStatus | null;
+  status_updated_by_user_id?: number | null;
+  status_updated_by_display_name?: string | null;
+  status_updated_by_email?: string | null;
+  status_updated_at?: string | null;
 };
 
 export type TripOnTripUnplannedStop = {
@@ -221,23 +258,39 @@ export type PlaceSuggestion = {
   country_code: string | null;
   latitude: number | null;
   longitude: number | null;
+  source?: string | null;
+};
+
+export type SelectedDestination = {
+  id: string;
+  name: string;
+  displayName: string;
+  latitude?: number;
+  longitude?: number;
+  country?: string;
+  countryCode?: string;
+  region?: string;
+  source?: string;
 };
 
 export type PlaceSearchApiSuggestion = {
   id?: string | number | null;
   place_id?: string | number | null;
   label?: string | null;
+  displayName?: string | null;
   display_name?: string | null;
   name?: string | null;
   city?: string | null;
   region?: string | null;
   state?: string | null;
   country?: string | null;
+  countryCode?: string | null;
   country_code?: string | null;
   latitude?: number | string | null;
   longitude?: number | string | null;
   lat?: number | string | null;
   lon?: number | string | null;
+  source?: string | null;
 };
 
 export type PlaceSearchApiResponse =

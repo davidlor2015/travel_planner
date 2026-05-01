@@ -100,7 +100,7 @@ export function NotificationsSheet({ visible, preferences, onChange, onClose }: 
                 className="mt-1 text-[13px] leading-5 text-muted"
                 style={fontStyles.uiRegular}
               >
-                Choose which alerts Waypoint can send you.
+                Choose which alerts Roen can send you.
               </Text>
             </View>
 
@@ -114,8 +114,8 @@ export function NotificationsSheet({ visible, preferences, onChange, onClose }: 
               />
               <RowDivider />
               <ToggleRow
-                label="Invite alerts"
-                description="When someone invites you to a trip"
+                label="Invite badge"
+                description="Show pending trip invite counts in the app"
                 value={preferences.inviteAlertsEnabled}
                 onValueChange={(v) => onChange({ inviteAlertsEnabled: v })}
               />

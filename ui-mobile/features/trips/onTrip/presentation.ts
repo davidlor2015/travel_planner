@@ -1,13 +1,21 @@
 // Path: ui-mobile/features/trips/onTrip/presentation.ts
 // Summary: Implements presentation module logic.
 
-import type { TripExecutionStatus, TripOnTripBlocker, TripOnTripSnapshot } from "../types";
+import type {
+  TripExecutionStatus,
+  TripOnTripBlocker,
+  TripOnTripSnapshot,
+} from "../types";
 import type { StopVM, TimelineVariant } from "./adapters";
+
+export { splitStopTimeDisplay } from "../stopTime";
+export type { StopTimeDisplay } from "../stopTime";
 
 // ─── Day header ───────────────────────────────────────────────────────────────
 
 export type OnTripDayHeaderVM = {
   eyebrow: string;
+  dateLabel: string | null;
   title: string;
   meta: string;
 };
@@ -28,14 +36,14 @@ export function buildOnTripDayHeader(
   tripDestination?: string,
 ): OnTripDayHeaderVM {
   const dayNumber = snapshot.today.day_number;
-  const dayDate = formatHeaderDate(snapshot.today.day_date);
   const eyebrow =
     typeof dayNumber === "number" && dayNumber > 0
-      ? ["ON TRIP", `DAY ${dayNumber}`, dayDate].filter(Boolean).join(" · ")
+      ? `ON TRIP · DAY ${dayNumber}`
       : "ON TRIP";
+  const dateLabel = formatActiveDayDateLabel(snapshot.today.day_date);
 
   const weekday = formatWeekday(snapshot.today.day_date);
-  const destination = (tripDestination?.trim() || tripTitle.trim()) || "";
+  const destination = tripDestination?.trim() || tripTitle.trim() || "";
   const shortPlace = extractShortDestination(destination);
 
   let title: string;
@@ -54,7 +62,7 @@ export function buildOnTripDayHeader(
     .filter(Boolean)
     .join(" · ");
 
-  return { eyebrow, title, meta };
+  return { eyebrow, dateLabel, title, meta };
 }
 
 /** Takes only the city/region part from "Rome, Italy" → "Rome". */
@@ -74,7 +82,9 @@ export type OnTripBlockerStripVM = {
   actionLabel: string | null;
 };
 
-export function buildBlockerStrip(blockers: TripOnTripBlocker[]): OnTripBlockerStripVM | null {
+export function buildBlockerStrip(
+  blockers: TripOnTripBlocker[],
+): OnTripBlockerStripVM | null {
   const first = blockers[0];
   if (!first) return null;
 
@@ -92,7 +102,11 @@ export function buildBlockerStrip(blockers: TripOnTripBlocker[]): OnTripBlockerS
     title: first.title,
     detail: first.detail?.trim() || null,
     actionLabel:
-      blockers.length > 1 ? `${blockers.length} items` : hasDetail ? "Adjust" : null,
+      blockers.length > 1
+        ? `${blockers.length} items`
+        : hasDetail
+          ? "Adjust"
+          : null,
   };
 }
 
@@ -130,6 +144,20 @@ export function shouldMuteStop(stop: StopVM): boolean {
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
+/**
+ * Formats the active trip day date as "WEDNESDAY · APR 29" — the same uppercase
+ * style that was previously shown on the Trips list header, now moved here so
+ * the label is contextual to the active travel day.
+ */
+function formatActiveDayDateLabel(iso: string | null): string | null {
+  if (!iso) return null;
+  const date = new Date(`${iso}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return null;
+  const weekday = date.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
+  const monthDay = date.toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase();
+  return `${weekday} · ${monthDay}`;
+}
+
 function formatWeekday(iso: string | null): string | null {
   if (!iso) return null;
   const date = new Date(`${iso}T00:00:00`);
@@ -142,16 +170,6 @@ function formatShortDate(iso: string | null): string | null {
   const date = new Date(`${iso}T00:00:00`);
   if (Number.isNaN(date.getTime())) return iso;
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
-
-function formatHeaderDate(iso: string | null): string | null {
-  if (!iso) return null;
-  const date = new Date(`${iso}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return null;
-  const weekday = date.toLocaleDateString(undefined, { weekday: "short" }).toUpperCase();
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = date.toLocaleDateString(undefined, { month: "short" }).toUpperCase();
-  return `${weekday} ${day} ${month}`;
 }
 
 function formatStopCount(count: number): string {

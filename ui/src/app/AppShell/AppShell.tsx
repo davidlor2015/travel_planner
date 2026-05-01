@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
-import { SiteFooterLinks, WaypointLogo } from "../../shared/ui";
+import { SiteFooterLinks, RoenLogo } from "../../shared/ui";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -25,6 +25,8 @@ interface AppShellProps {
   view: AppView;
   onViewChange: (v: AppView, tripId?: number) => void;
   userEmail: string;
+  pendingInviteCount: number;
+  onOpenInvites: () => void;
   onLogout: () => void;
   children: React.ReactNode;
 }
@@ -87,6 +89,18 @@ const ProfileIcon = () => (
   </svg>
 );
 
+const InviteIcon = () => (
+  <svg
+    viewBox="0 0 20 20"
+    className="h-4 w-4"
+    fill="currentColor"
+    aria-hidden="true"
+  >
+    <path d="M2.94 6.34A2 2 0 014.64 5h10.72a2 2 0 011.7 1.34L10 10.42 2.94 6.34z" />
+    <path d="M2.5 7.86V14a2 2 0 002 2h11a2 2 0 002-2V7.86l-7 4.05a1 1 0 01-1 0l-7-4.05z" />
+  </svg>
+);
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const NAV_TABS: NavTab[] = [
@@ -100,6 +114,8 @@ export const AppShell = ({
   view,
   onViewChange,
   userEmail,
+  pendingInviteCount,
+  onOpenInvites,
   onLogout,
   children,
 }: AppShellProps) => {
@@ -140,7 +156,7 @@ export const AppShell = ({
           className={`${isTrips ? "max-w-7xl" : shellWidth} mx-auto flex h-16 items-center justify-between gap-4 px-4 sm:px-6`}
         >
           {/* Logo */}
-          <WaypointLogo
+          <RoenLogo
             variant="header"
             className="flex-shrink-0 select-none"
           />
@@ -184,6 +200,23 @@ export const AppShell = ({
             >
               Help
             </Link>
+            <button
+              type="button"
+              onClick={onOpenInvites}
+              className="relative hidden h-9 w-9 items-center justify-center rounded-full border border-border bg-bg-app text-text-muted transition-colors hover:bg-surface-sunken hover:text-espresso focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/35 sm:flex"
+              aria-label={
+                pendingInviteCount > 0
+                  ? `${pendingInviteCount} pending trip invite${pendingInviteCount === 1 ? "" : "s"}`
+                  : "Open trip invites"
+              }
+            >
+              <InviteIcon />
+              {pendingInviteCount > 0 ? (
+                <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-accent px-1.5 py-0.5 text-center text-[10px] font-bold leading-none text-white">
+                  {pendingInviteCount}
+                </span>
+              ) : null}
+            </button>
             <div className="relative" ref={avatarRef}>
               <button
                 type="button"
@@ -224,6 +257,19 @@ export const AppShell = ({
                       >
                         <ProfileIcon />
                         Profile
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { onOpenInvites(); setAvatarMenuOpen(false); }}
+                        className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-text transition-colors hover:bg-surface-sunken"
+                      >
+                        <InviteIcon />
+                        <span className="flex-1 text-left">Invites</span>
+                        {pendingInviteCount > 0 ? (
+                          <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-white">
+                            {pendingInviteCount}
+                          </span>
+                        ) : null}
                       </button>
                       <button
                         type="button"
@@ -275,7 +321,7 @@ export const AppShell = ({
       >
         <div
           className="mx-auto grid max-w-md gap-1"
-          style={{ gridTemplateColumns: `repeat(${NAV_TABS.length}, minmax(0, 1fr))` }}
+          style={{ gridTemplateColumns: `repeat(${NAV_TABS.length + 1}, minmax(0, 1fr))` }}
         >
           {NAV_TABS.map((tab) => {
             const isActive = view === tab.id;
@@ -298,6 +344,26 @@ export const AppShell = ({
               </button>
             );
           })}
+          <button
+            type="button"
+            onClick={onOpenInvites}
+            className="relative flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl px-1.5 py-2 text-[9px] font-semibold uppercase tracking-[0.04em] transition-colors hover:bg-surface-muted min-[380px]:text-[10px] min-[380px]:tracking-[0.08em]"
+            aria-label={
+              pendingInviteCount > 0
+                ? `${pendingInviteCount} pending trip invite${pendingInviteCount === 1 ? "" : "s"}`
+                : "Open trip invites"
+            }
+          >
+            <span className="text-muted">
+              <InviteIcon />
+            </span>
+            <span className="text-muted">Invites</span>
+            {pendingInviteCount > 0 ? (
+              <span className="absolute right-3 top-2 min-w-5 rounded-full bg-accent px-1.5 py-0.5 text-center text-[10px] font-bold leading-none text-white">
+                {pendingInviteCount}
+              </span>
+            ) : null}
+          </button>
         </div>
       </nav>
     </div>
