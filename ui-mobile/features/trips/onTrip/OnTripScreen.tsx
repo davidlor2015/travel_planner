@@ -48,6 +48,8 @@ type Props = {
   tripId: number;
   tripTitle: string;
   tripDestination?: string;
+  /** Trip calendar start_date when deriving today without snapshot today.day_date */
+  tripStartDate?: string | null;
   members?: TripMember[];
   autoOpenLogComposer?: boolean;
 };
@@ -58,6 +60,7 @@ export function OnTripScreen({
   tripId,
   tripTitle,
   tripDestination,
+  tripStartDate,
   members,
   autoOpenLogComposer = false,
 }: Props) {
@@ -108,9 +111,14 @@ export function OnTripScreen({
   const dayHeader = useMemo(
     () =>
       rawSnapshot
-        ? buildOnTripDayHeader(rawSnapshot, tripTitle, tripDestination)
+        ? buildOnTripDayHeader(
+            rawSnapshot,
+            tripTitle,
+            tripDestination,
+            tripStartDate,
+          )
         : null,
-    [rawSnapshot, tripTitle, tripDestination],
+    [rawSnapshot, tripTitle, tripDestination, tripStartDate],
   );
 
   useEffect(() => {

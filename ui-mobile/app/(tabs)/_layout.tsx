@@ -3,6 +3,7 @@
 
 import { Ionicons } from "@expo/vector-icons";
 import { Redirect, Tabs, router } from "expo-router";
+import { Platform } from "react-native";
 
 import { useAuth } from "@/providers/AuthProvider";
 import { AppFontFamily } from "@/shared/theme/typography";
@@ -18,11 +19,18 @@ function TabsLayoutInner() {
           backgroundColor: "#FEFCF9",
           borderTopColor: "#EAE2D6",
           borderTopWidth: 1,
+          paddingTop: 2,
+        },
+        tabBarIconStyle: {
+          marginBottom: -1,
         },
         tabBarLabelStyle: {
           fontSize: 10,
           fontFamily: AppFontFamily.uiMedium,
           letterSpacing: 0.2,
+          marginTop: -3,
+          lineHeight: 12,
+          ...(Platform.OS === "android" ? { includeFontPadding: false } : {}),
         },
       }}
     >

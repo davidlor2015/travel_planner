@@ -19,6 +19,7 @@ export function TodayScreen() {
         tripId={activeTrip.id}
         tripTitle={activeTrip.title}
         tripDestination={activeTrip.destination}
+        tripStartDate={activeTrip.start_date}
         members={activeTrip.members}
       />
     );

@@ -495,11 +495,9 @@ describe("OnTripScreen", () => {
     expect(queryByText(/NowCard:stop-day4/i)).toBeTruthy();
   });
 
-  it("OnTripHeader receives eyebrow that contains the day number but not the calendar date", () => {
+  it("OnTripHeader eyebrow includes formatted calendar date alongside day index", () => {
     mockDeriveOnTripViewModel.mockReturnValue(buildVm());
-    // snapshot has today.day_date = "2026-10-10" → buildOnTripDayHeader produces
-    // eyebrow "TODAY · DAY 1"; date moves to the separate dateLabel field
-    const { getByTestId } = render(
+    const { getByTestId, queryByTestId } = render(
       <OnTripScreen
         tripId={1}
         tripTitle="Kyoto"
@@ -509,23 +507,38 @@ describe("OnTripScreen", () => {
 
     const eyebrow = getByTestId("on-trip-header-eyebrow").props
       .children as string;
-    expect(eyebrow).toMatch(/DAY 1/i);
-    expect(eyebrow).not.toMatch(/Oct 10/i);
+    const up = eyebrow.toUpperCase();
+    expect(up).toContain("TODAY");
+    expect(up).toContain("DAY 1");
+    expect(up).toContain("OCT");
+    expect(up).toContain("10");
+    expect(queryByTestId("on-trip-header-date-label")).toBeNull();
   });
 
-  it("OnTripHeader receives the active day date in dateLabel", () => {
+  it("OnTripHeader eyebrow derives calendar date from tripStartDate when snapshot today.day_date is null", () => {
     mockDeriveOnTripViewModel.mockReturnValue(buildVm());
-    // snapshot has today.day_date = "2026-10-10" → dateLabel "SATURDAY · OCT 10"
+    mockUseOnTripSnapshotQuery.mockReturnValue(
+      buildDefaultSnapshotQuery({
+        data: buildSnapshot({
+          today: { ...NULL_STOP, day_number: 3, day_date: null },
+        }),
+      }),
+    );
+
     const { getByTestId } = render(
       <OnTripScreen
         tripId={1}
         tripTitle="Kyoto"
         tripDestination="Kyoto, Japan"
+        tripStartDate="2026-04-29"
       />,
     );
 
-    const dateLabel = getByTestId("on-trip-header-date-label").props
+    const eyebrow = getByTestId("on-trip-header-eyebrow").props
       .children as string;
-    expect(dateLabel).toMatch(/OCT 10/i);
+    const up = eyebrow.toUpperCase();
+    expect(up).toContain("DAY 3");
+    expect(up).toContain("MAY");
+    expect(up).toMatch(/\b1\b/);
   });
 });

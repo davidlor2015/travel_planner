@@ -78,6 +78,7 @@ describe("TodayScreen", () => {
         tripId: trip.id,
         tripTitle: trip.title,
         tripDestination: trip.destination,
+        tripStartDate: trip.start_date,
         members: trip.members,
       }),
     );

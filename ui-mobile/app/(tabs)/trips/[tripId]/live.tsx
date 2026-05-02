@@ -58,6 +58,7 @@ export default function LiveViewPage() {
         tripId={tripId}
         tripTitle={title}
         tripDestination={destination}
+        tripStartDate={tripQuery.data?.start_date}
         members={members}
         autoOpenLogComposer={openQuickLog}
       />
