@@ -53,7 +53,7 @@ export function InviteTravelerSheet({
           <View className="max-h-[88%] rounded-t-[28px] bg-bg-app">
             <ScreenHeader
               title="Invite Traveler"
-              subtitle="Send a trip invite by email so they can join this workspace."
+              subtitle="Send a trip invite by email so they can join this trip plan."
               onBack={onClose}
             />
 

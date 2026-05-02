@@ -21,7 +21,7 @@ export type OnTripDayHeaderVM = {
 };
 
 /**
- * Builds the editorial day header for the OnTrip screen.
+ * Builds the editorial day header for the Today execution surface.
  *
  * Title priority:
  *   1. "{Weekday} in {shortDestination}"  — uses trip.destination, never stop locations
@@ -38,8 +38,8 @@ export function buildOnTripDayHeader(
   const dayNumber = snapshot.today.day_number;
   const eyebrow =
     typeof dayNumber === "number" && dayNumber > 0
-      ? `ON TRIP · DAY ${dayNumber}`
-      : "ON TRIP";
+      ? `TODAY · DAY ${dayNumber}`
+      : "TODAY";
   const dateLabel = formatActiveDayDateLabel(snapshot.today.day_date);
 
   const weekday = formatWeekday(snapshot.today.day_date);

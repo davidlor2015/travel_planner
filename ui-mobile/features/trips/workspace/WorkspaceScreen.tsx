@@ -180,7 +180,7 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
         message={
           workspace.isNotFound
             ? "We couldn't find that trip."
-            : "We couldn't load this workspace. Try again in a moment."
+            : "We couldn't load this plan. Try again in a moment."
         }
         onRetry={
           workspace.isNotFound ? undefined : () => void workspace.tripQuery.refetch()
@@ -222,7 +222,7 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
           onStartStream={handleStartStream}
           onCancelStream={handleCancelStream}
           onOpenTab={setActiveTab}
-          onOpenLiveView={() => router.push(`/(tabs)/trips/${tripId}/live` as Href)}
+          onOpenLiveView={() => router.push("/(tabs)/today" as Href)}
           // Park the user on Overview the moment apply succeeds — the saved
           // itinerary is the climax of the create flow, not a side effect.
           onItineraryApplied={() => setActiveTab("overview")}

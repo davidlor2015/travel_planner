@@ -4,7 +4,7 @@
 import { useMemo } from "react";
 import * as Linking from "expo-linking";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { type Href, useRouter } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import {
   SafeAreaView,
@@ -30,6 +30,8 @@ import {
   READ_ONLY_TRIP_BODY,
   READ_ONLY_TRIP_TITLE,
 } from "../workspace/helpers/collaborationGate";
+
+const TODAY_EXECUTION_HREF = "/(tabs)/today" as Href;
 
 type Props = {
   tripId: number;
@@ -96,7 +98,7 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
   const handleStatus = (target: TripExecutionStatus) => {
     if (!stop.stop_ref) return;
     void mutations.setStopStatus(stop.stop_ref, target);
-    router.back();
+    router.replace(TODAY_EXECUTION_HREF);
   };
 
   const statusKicker =
@@ -136,11 +138,11 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
         }}
       >
         <Pressable
-          onPress={() => router.back()}
+          onPress={() => router.replace(TODAY_EXECUTION_HREF)}
           hitSlop={12}
           className="flex-row items-center gap-1.5 active:opacity-70"
           accessibilityRole="button"
-          accessibilityLabel="Back to today's plan"
+          accessibilityLabel="Back to Today"
         >
           <Ionicons name="chevron-back" size={14} color={DE.muted} />
           <Text
@@ -394,7 +396,7 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
                         },
                       ]}
                     >
-                      On trip
+                      Today
                     </Text>
                   </View>
                 </View>
@@ -437,7 +439,7 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
               },
             ]}
           >
-            Plan notes and deeper edits live in the full workspace.
+            Plan notes and deeper edits belong in Plan.
           </Text>
         </View>
       </ScrollView>

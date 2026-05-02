@@ -150,11 +150,11 @@ export default function TripsPage() {
     model.activeTrips.length === 0 &&
     model.upcomingTrips.length === 0;
 
-  // "ON TRIP · DAY 3 OF 9" — pulled from first active trip
+  // "Today · Day 3 of 9" — pulled from first active trip
   const firstActive = model.activeTrips[0];
   const activeTripKicker = firstActive
-    ? `On trip · Day ${firstActive.dayNumber} of ${firstActive.totalDays}`
-    : "On trip";
+    ? `Today · Day ${firstActive.dayNumber} of ${firstActive.totalDays}`
+    : "Today";
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: BG }} edges={["top"]}>
@@ -183,7 +183,7 @@ export default function TripsPage() {
           </View>
         )}
 
-        {/* Active / On-trip section */}
+        {/* Active trips — Today entry */}
         {showActiveSection && (
           <View style={{ gap: 10 }}>
             <SectionKicker label={activeTripKicker} />
@@ -193,7 +193,7 @@ export default function TripsPage() {
                   key={trip.id}
                   trip={trip}
                   onOpenWorkspace={() => router.push(`/(tabs)/trips/${trip.id}` as Href)}
-                  onOpenOnTrip={() => router.push(`/(tabs)/trips/${trip.id}/live` as Href)}
+                  onOpenToday={() => router.push("/(tabs)/today" as Href)}
                 />
               ))}
             </View>

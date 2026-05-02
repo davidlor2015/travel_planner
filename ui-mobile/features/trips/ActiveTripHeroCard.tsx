@@ -14,7 +14,7 @@ import type { ActiveTripViewModel } from "./adapters";
 type Props = {
   trip: ActiveTripViewModel;
   onOpenWorkspace: () => void;
-  onOpenOnTrip: () => void;
+  onOpenToday: () => void;
 };
 
 // DE palette tones for the avatar stack
@@ -82,7 +82,7 @@ function ProgressRing({ pct }: { pct: number }) {
   );
 }
 
-export function ActiveTripHeroCard({ trip, onOpenWorkspace, onOpenOnTrip }: Props) {
+export function ActiveTripHeroCard({ trip, onOpenWorkspace, onOpenToday }: Props) {
   const progressPct = trip.totalDays > 0 ? trip.dayNumber / trip.totalDays : 0;
 
   return (
@@ -146,7 +146,7 @@ export function ActiveTripHeroCard({ trip, onOpenWorkspace, onOpenOnTrip }: Prop
       {/* ── Card body (paper background) ── */}
       <View style={{ paddingHorizontal: 20, paddingTop: 18, paddingBottom: 20, gap: 14, backgroundColor: "#FAF5EA" }}>
 
-        {/* Meta row: clock + dates · divider · avatar stack · LIVE */}
+        {/* Meta row: dates · divider · avatar stack · Today */}
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           {/* Dates */}
           <Text style={[fontStyles.uiRegular, { fontSize: 12.5, color: "#8A7B6A" }]}>
@@ -163,7 +163,7 @@ export function ActiveTripHeroCard({ trip, onOpenWorkspace, onOpenOnTrip }: Prop
             ))}
           </View>
 
-          {/* Live dot + label */}
+          {/* Today dot + label */}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
             <View
               style={
@@ -188,7 +188,7 @@ export function ActiveTripHeroCard({ trip, onOpenWorkspace, onOpenOnTrip }: Prop
               }
             />
             <Text style={[fontStyles.monoMedium, { fontSize: 9, color: "#B85A38", letterSpacing: 1.8 }]}>
-              Live
+              Today
             </Text>
           </View>
         </View>
@@ -197,8 +197,8 @@ export function ActiveTripHeroCard({ trip, onOpenWorkspace, onOpenOnTrip }: Prop
         <View style={{ flexDirection: "row", gap: 8 }}>
           {trip.canOpenOnTrip ? (
             <Pressable
-              onPress={onOpenOnTrip}
-              accessibilityLabel="Open On-Trip"
+              onPress={onOpenToday}
+              accessibilityLabel="Open Today"
               style={{
                 flex: 1,
                 height: 46,
@@ -213,13 +213,13 @@ export function ActiveTripHeroCard({ trip, onOpenWorkspace, onOpenOnTrip }: Prop
             >
               <Ionicons name="arrow-forward" size={13} color="#FEFCF9" />
               <Text style={[fontStyles.uiSemibold, { fontSize: 14, color: "#FEFCF9" }]}>
-                Open On-Trip
+                Open Today
               </Text>
             </Pressable>
           ) : null}
           <Pressable
             onPress={onOpenWorkspace}
-            accessibilityLabel="Open Workspace"
+            accessibilityLabel="Open Plan"
             style={{
               height: 46,
               paddingHorizontal: 18,
@@ -234,7 +234,7 @@ export function ActiveTripHeroCard({ trip, onOpenWorkspace, onOpenOnTrip }: Prop
             className="active:opacity-75"
           >
             <Text style={[fontStyles.uiMedium, { fontSize: 14, color: "#231910" }]}>
-              Workspace
+              Plan
             </Text>
           </Pressable>
         </View>

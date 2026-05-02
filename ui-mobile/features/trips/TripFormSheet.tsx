@@ -359,7 +359,7 @@ export function TripFormSheet({
             >
               <FormSection
                 eyebrow="Core details"
-                description="Destination and dates anchor the workspace."
+                description="Destination and dates anchor your trip plan."
               >
                 <TextInputField
                   label="Trip title"

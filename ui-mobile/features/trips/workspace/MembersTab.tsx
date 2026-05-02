@@ -40,7 +40,7 @@ export function MembersTab({
       <ScrollView contentContainerClassName="gap-4 px-4 pb-8 pt-4">
         {showReadOnlyNotice ? <ReadOnlyNotice className="" /> : null}
         <SectionCard
-          eyebrow="Shared workspace"
+          eyebrow="Shared plan"
           title="Everyone on the trip"
           description="Invite travelers, share the plan, and keep the group moving together."
           action={

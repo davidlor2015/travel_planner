@@ -498,7 +498,7 @@ describe("OnTripScreen", () => {
   it("OnTripHeader receives eyebrow that contains the day number but not the calendar date", () => {
     mockDeriveOnTripViewModel.mockReturnValue(buildVm());
     // snapshot has today.day_date = "2026-10-10" → buildOnTripDayHeader produces
-    // eyebrow "ON TRIP · DAY 1"; date moves to the separate dateLabel field
+    // eyebrow "TODAY · DAY 1"; date moves to the separate dateLabel field
     const { getByTestId } = render(
       <OnTripScreen
         tripId={1}

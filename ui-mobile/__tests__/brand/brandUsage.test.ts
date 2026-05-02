@@ -23,7 +23,7 @@ describe("ROEN brand usage", () => {
     expect(source).not.toContain("LogoOnInk");
   });
 
-  it("keeps On-Trip free of wordmark and lockup primitives", () => {
+  it("keeps trip execution (onTrip) screens free of wordmark and lockup primitives", () => {
     const source = readTsxFiles("features/trips/onTrip");
 
     expect(source).not.toContain("DisplayWordmark");

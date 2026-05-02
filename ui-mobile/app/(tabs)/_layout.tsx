@@ -2,7 +2,7 @@
 // Summary: Implements  layout module logic.
 
 import { Ionicons } from "@expo/vector-icons";
-import { Redirect, Tabs } from "expo-router";
+import { Redirect, Tabs, router } from "expo-router";
 
 import { useAuth } from "@/providers/AuthProvider";
 import { AppFontFamily } from "@/shared/theme/typography";
@@ -28,6 +28,12 @@ function TabsLayoutInner() {
     >
       <Tabs.Screen
         name="trips"
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault();
+            router.replace("/(tabs)/trips");
+          },
+        }}
         options={{
           title: "Trips",
           tabBarIcon: ({ color, size }) => (

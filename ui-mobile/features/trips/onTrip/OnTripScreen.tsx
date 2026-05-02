@@ -129,7 +129,7 @@ export function OnTripScreen({
   if (snapshotQuery.isError && !snapshotQuery.data) {
     return (
       <ScreenError
-        message="We couldn't load your live trip view. Try again in a moment."
+        message="We couldn't load your Today view. Try again in a moment."
         onRetry={() => void snapshotQuery.refetch()}
       />
     );
@@ -442,13 +442,13 @@ export function OnTripScreen({
         {/* Tomorrow peek */}
         {tomorrowStop ? <TomorrowPeek stop={tomorrowStop} /> : null}
 
-        {/* Open workspace link */}
+        {/* Open plan link */}
         <View className="mt-6 items-center">
           <Pressable
             onPress={openFullWorkspace}
             className="flex-row items-center gap-1.5 px-3 py-2 active:opacity-70"
             accessibilityRole="button"
-            accessibilityLabel="Open full trip workspace"
+            accessibilityLabel="Open Plan"
           >
             <Ionicons name="open-outline" size={12} color={DE.muted} />
             <Text
@@ -457,7 +457,7 @@ export function OnTripScreen({
                 { fontSize: 12, lineHeight: 18, color: DE.muted },
               ]}
             >
-              Open full workspace
+              Open Plan
             </Text>
           </Pressable>
         </View>
@@ -786,7 +786,7 @@ function NoStopsTodayCard({
           ]}
         >
           Your saved itinerary does not have resolved stops for today yet. Open
-          the workspace to review the trip plan or adjust the itinerary.
+          Plan to review details or adjust the itinerary.
         </Text>
       </View>
       <Pressable
@@ -794,12 +794,12 @@ function NoStopsTodayCard({
         className="h-11 items-center justify-center rounded-full border px-4 active:opacity-75"
         style={{ backgroundColor: DE.ivory, borderColor: DE.ruleStrong }}
         accessibilityRole="button"
-        accessibilityLabel="Open full trip workspace"
+        accessibilityLabel="Open Plan"
       >
         <Text
           style={[fontStyles.uiSemibold, { fontSize: 13, color: DE.inkSoft }]}
         >
-          Open full workspace
+          Open Plan
         </Text>
       </Pressable>
     </View>

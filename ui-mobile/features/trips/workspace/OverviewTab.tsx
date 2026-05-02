@@ -152,7 +152,7 @@ export function OverviewTab({
 
   if (isReadOnly) {
     if (canOpenLiveView) {
-      primaryLabel = "Open live view";
+      primaryLabel = "Open Today";
       primaryHandler = onOpenLiveView;
     }
   } else if (overview.isStreaming) {
@@ -165,12 +165,12 @@ export function OverviewTab({
     primaryLabel = "Generate with AI";
     primaryHandler = onStartStream;
   } else if (canOpenLiveView) {
-    primaryLabel = "Open live view";
+    primaryLabel = "Open Today";
     primaryHandler = onOpenLiveView;
   }
   const showInlineLiveEntry = isActiveTrip && canOpenLiveView;
   const showPrimaryButton =
-    primaryLabel !== null && (!showInlineLiveEntry || primaryLabel !== "Open live view");
+    primaryLabel !== null && (!showInlineLiveEntry || primaryLabel !== "Open Today");
 
   return (
     <View className="flex-1">
@@ -240,7 +240,7 @@ export function OverviewTab({
                 <Text
                   style={[fontStyles.uiRegular, { fontSize: 13, lineHeight: 18, color: "#8A7B6A", marginTop: 4 }]}
                 >
-                  Your itinerary is in your workspace now.
+                  Your itinerary is in your trip plan now.
                 </Text>
               </View>
             </View>
@@ -273,7 +273,7 @@ export function OverviewTab({
                   </Text>
                 </View>
                 <Text style={[fontStyles.uiRegular, { fontSize: 12, color: "#556A55" }]}>
-                  Use the next action and today live status to keep the day moving.
+                  Use the next action and Today to keep the day moving.
                 </Text>
               </View>
             </View>
@@ -373,7 +373,7 @@ export function OverviewTab({
                   onPress={onOpenLiveView}
                   className="active:opacity-75"
                   accessibilityRole="button"
-                  accessibilityLabel="Open live trip view"
+                  accessibilityLabel="Open Today"
                   style={{
                     borderRadius: 12,
                     borderWidth: 1,
@@ -390,7 +390,7 @@ export function OverviewTab({
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1 }}>
                     <Ionicons name="radio" size={14} color="#4E6D4E" />
                     <Text style={[fontStyles.uiMedium, { fontSize: 13, color: "#2B3F2B" }]}>
-                      Open live view
+                      Open Today
                     </Text>
                   </View>
                   <Ionicons name="chevron-forward" size={14} color="#4E6D4E" />
