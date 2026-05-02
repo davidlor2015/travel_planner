@@ -1397,7 +1397,11 @@ const ss = StyleSheet.create({
 
 const ts = StyleSheet.create({
   backdrop: {
-    flex: 1,
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
     justifyContent: "flex-end",
     backgroundColor: "rgba(0,0,0,0.30)",
   },
@@ -1452,6 +1456,7 @@ const ts = StyleSheet.create({
   },
   nativePicker: {
     alignSelf: "stretch",
+    height: 216,
   },
   summaryCard: {
     marginTop: 12,
@@ -1513,67 +1518,68 @@ function TimePickerSheet({
     if (selected) setDraft(selected);
   };
 
+  if (!visible) return null;
+
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
-      <View style={ts.backdrop}>
-        <View style={ts.sheet}>
-          <View style={ts.handle} />
-          <View style={ts.header}>
-            <View style={{ flex: 1 }}>
-              <Text style={[fontStyles.uiSemibold, ts.title]}>{label}</Text>
-              <Text style={[fontStyles.uiRegular, ts.subtitle]}>
-                Choose the time for this reservation.
-              </Text>
-            </View>
-            <Pressable
-              onPress={onClose}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="Close time picker"
-              style={ts.closeButton}
-            >
-              <Ionicons name="close" size={21} color="#8A7E74" />
-            </Pressable>
-          </View>
-
-          <View style={ts.pickerCard}>
-            <DateTimePicker
-              value={draft}
-              mode="time"
-              display="spinner"
-              onChange={handleChange}
-              textColor={DE.ink}
-              accentColor={DE.clay}
-              style={ts.nativePicker}
-            />
-          </View>
-
-          <View style={ts.summaryCard}>
-            <Text style={[fontStyles.monoMedium, ts.summaryKicker]}>
-              SELECTED TIME
-            </Text>
-            <Text style={[fontStyles.uiSemibold, ts.summaryValue]}>
-              {formatTimeDisplay(formatTimeValue(draft))}
+    <View style={ts.backdrop}>
+      <Pressable
+        style={StyleSheet.absoluteFillObject}
+        onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel="Dismiss time picker"
+      />
+      <View style={ts.sheet}>
+        <View style={ts.handle} />
+        <View style={ts.header}>
+          <View style={{ flex: 1 }}>
+            <Text style={[fontStyles.uiSemibold, ts.title]}>{label}</Text>
+            <Text style={[fontStyles.uiRegular, ts.subtitle]}>
+              Choose the time for this reservation.
             </Text>
           </View>
+          <Pressable
+            onPress={onClose}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Close time picker"
+            style={ts.closeButton}
+          >
+            <Ionicons name="close" size={21} color="#8A7E74" />
+          </Pressable>
+        </View>
 
-          <View style={ts.actions}>
-            <Button
-              label="Confirm time"
-              onPress={() => onConfirm(formatTimeValue(draft))}
-              fullWidth
-              variant="ontrip"
-            />
-            <SecondaryButton label="Cancel" onPress={onClose} fullWidth />
-          </View>
+        <View style={ts.pickerCard}>
+          <DateTimePicker
+            value={draft}
+            mode="time"
+            display="spinner"
+            onChange={handleChange}
+            textColor={DE.ink}
+            accentColor={DE.clay}
+            style={ts.nativePicker}
+          />
+        </View>
+
+        <View style={ts.summaryCard}>
+          <Text style={[fontStyles.monoMedium, ts.summaryKicker]}>
+            SELECTED TIME
+          </Text>
+          <Text style={[fontStyles.uiSemibold, ts.summaryValue]}>
+            {formatTimeDisplay(formatTimeValue(draft))}
+          </Text>
+        </View>
+
+        <View style={ts.actions}>
+          <Button
+            label="Confirm time"
+            onPress={() => onConfirm(formatTimeValue(draft))}
+            fullWidth
+            variant="ontrip"
+          />
+          <SecondaryButton label="Cancel" onPress={onClose} fullWidth />
         </View>
       </View>
-    </Modal>
+    </View>
   );
 }
 

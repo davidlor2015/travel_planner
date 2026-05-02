@@ -58,11 +58,9 @@ export default function LoginPage() {
           showsVerticalScrollIndicator={false}
         >
           {/* Logo row */}
-          <View className="px-7 pt-10 pb-2">
-            <DisplayWordmark width={168} />
+          <View className="items-center px-7 pt-10 pb-4">
+            <DisplayWordmark width={228} />
           </View>
-
-          <View className="h-10" />
 
           {/* Editorial headline */}
           <View className="px-7">
@@ -79,12 +77,6 @@ export default function LoginPage() {
               ]}
             >
               {"Sign in."}
-            </Text>
-            <Text
-              className="mt-2 text-sm leading-5 text-muted"
-              style={fontStyles.uiRegular}
-            >
-              Pick up where you left off.
             </Text>
           </View>
 

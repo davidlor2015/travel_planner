@@ -12,6 +12,9 @@ jest.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 
+jest.mock("@react-native-community/datetimepicker");
+
+
 const dayOptions = [
   { label: "Day 1 · Apr 21 · Tue", value: 0 },
   { label: "Day 2 · Apr 22 · Wed", value: 1 },
@@ -98,12 +101,13 @@ describe("StopFormSheet", () => {
     fireEvent.press(getByLabelText("Choose itinerary day"));
     fireEvent.press(getByText("Day 2 · Apr 22 · Wed"));
     fireEvent.press(getByLabelText("Choose stop time"));
-    fireEvent.press(getByText("8:00 AM"));
+    fireEvent.press(getByLabelText("Stop time picker"));
+    fireEvent.press(getByText("Confirm time"));
     fireEvent.press(getByText("Save stop"));
 
     expect(onSave).toHaveBeenCalledWith({
       dayIndex: 1,
-      time: "8:00 AM",
+      time: "2:30 PM",
       title: "Dinner",
       location: "Night market",
       notes: null,
@@ -138,8 +142,8 @@ describe("StopFormSheet", () => {
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ time: null }));
   });
 
-  it("keeps day and time option lists collapsed until selected", () => {
-    const { getByLabelText, getByText, queryByText } = render(
+  it("keeps day list and time picker collapsed until selected", () => {
+    const { getByLabelText, getByText, queryByLabelText, queryByText } = render(
       <StopFormSheet
         visible
         item={null}
@@ -160,13 +164,106 @@ describe("StopFormSheet", () => {
     expect(getByText("Day 1 · Apr 21 · Tue")).toBeTruthy();
     expect(getByText("No time")).toBeTruthy();
     expect(queryByText("Day 2 · Apr 22 · Wed")).toBeNull();
-    expect(queryByText("8:00 AM")).toBeNull();
+    expect(queryByLabelText("Stop time picker")).toBeNull();
 
     fireEvent.press(getByLabelText("Choose itinerary day"));
     expect(getByText("Day 2 · Apr 22 · Wed")).toBeTruthy();
 
     fireEvent.press(getByLabelText("Choose stop time"));
+    expect(getByLabelText("Stop time picker")).toBeTruthy();
+  });
+
+  it("opens the time picker when the visible time field is pressed", () => {
+    const { getByLabelText, getByText, queryByLabelText } = render(
+      <StopFormSheet
+        visible
+        item={null}
+        initialDayIndex={0}
+        dayOptions={dayOptions}
+        timeOptions={buildTimeOptions(30)}
+        moveAvailability={moveAvailability}
+        onSave={jest.fn()}
+        onDelete={jest.fn()}
+        onMoveUp={jest.fn()}
+        onMoveDown={jest.fn()}
+        onMoveToPreviousDay={jest.fn()}
+        onMoveToNextDay={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(queryByLabelText("Stop time picker")).toBeNull();
+
+    fireEvent.press(getByLabelText("Choose stop time"));
+
+    expect(getByLabelText("Stop time picker")).toBeTruthy();
+    expect(getByText("Confirm time")).toBeTruthy();
+  });
+
+  it("updates the visible time after selecting and confirming a picker value", () => {
+    const onSave = jest.fn();
+    const { getByLabelText, getByText, getByPlaceholderText, queryByLabelText } = render(
+      <StopFormSheet
+        visible
+        item={null}
+        initialDayIndex={0}
+        dayOptions={dayOptions}
+        timeOptions={buildTimeOptions(30)}
+        moveAvailability={moveAvailability}
+        onSave={onSave}
+        onDelete={jest.fn()}
+        onMoveUp={jest.fn()}
+        onMoveDown={jest.fn()}
+        onMoveToPreviousDay={jest.fn()}
+        onMoveToNextDay={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    fireEvent.changeText(getByPlaceholderText("Stop title"), "Dinner");
+    fireEvent.press(getByLabelText("Choose stop time"));
+    fireEvent.press(getByLabelText("Stop time picker"));
+    fireEvent.press(getByText("Confirm time"));
+
+    expect(queryByLabelText("Stop time picker")).toBeNull();
+    expect(getByText("2:30 PM")).toBeTruthy();
+
+    fireEvent.press(getByText("Save stop"));
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ time: "2:30 PM" }));
+  });
+
+  it("keeps the previous time when the picker is cancelled", () => {
+    const onSave = jest.fn();
+    const { getByLabelText, getByText, getByPlaceholderText, queryByLabelText } = render(
+      <StopFormSheet
+        visible
+        item={item()}
+        initialDayIndex={0}
+        dayOptions={dayOptions}
+        timeOptions={buildTimeOptions(30)}
+        moveAvailability={moveAvailability}
+        onSave={onSave}
+        onDelete={jest.fn()}
+        onMoveUp={jest.fn()}
+        onMoveDown={jest.fn()}
+        onMoveToPreviousDay={jest.fn()}
+        onMoveToNextDay={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    fireEvent.changeText(getByPlaceholderText("Stop title"), "Coffee");
+    fireEvent.press(getByLabelText("Choose stop time"));
+    fireEvent.press(getByLabelText("Stop time picker"));
+    fireEvent.press(getByLabelText("Dismiss time picker"));
+
+    expect(queryByLabelText("Stop time picker")).toBeNull();
     expect(getByText("8:00 AM")).toBeTruthy();
+
+    fireEvent.press(getByText("Save stop"));
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ time: "8:00 AM" }));
   });
 
   it("calls onClose when cancel is pressed", () => {

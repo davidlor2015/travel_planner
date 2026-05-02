@@ -36,8 +36,9 @@ type Props = { tripId: number; isReadOnly?: boolean };
 
 function filterLabel(filter: BookingFilterKey): string {
   return (
-    BOOKING_FILTER_CHIPS.find((chip) => chip.key === filter)?.label.toLowerCase() ??
-    "filtered"
+    BOOKING_FILTER_CHIPS.find(
+      (chip) => chip.key === filter,
+    )?.label.toLowerCase() ?? "filtered"
   );
 }
 
@@ -52,7 +53,9 @@ function SectionHeader({ label, count }: { label: string; count: number }) {
       >
         {label}
       </Text>
-      <Text style={[fontStyles.uiRegular, { fontSize: 11, color: DE.muted }]}>{count}</Text>
+      <Text style={[fontStyles.uiRegular, { fontSize: 11, color: DE.muted }]}>
+        {count}
+      </Text>
     </View>
   );
 }
@@ -64,8 +67,12 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
   const [showAddChooser, setShowAddChooser] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Reservation | null>(null);
   const [editItem, setEditItem] = useState<Reservation | null>(null);
-  const [addInitialValues, setAddInitialValues] = useState<ReservationPayload | undefined>(undefined);
-  const [addFormHelperText, setAddFormHelperText] = useState<string | null>(null);
+  const [addInitialValues, setAddInitialValues] = useState<
+    ReservationPayload | undefined
+  >(undefined);
+  const [addFormHelperText, setAddFormHelperText] = useState<string | null>(
+    null,
+  );
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
@@ -132,23 +139,33 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
         type: asset.mimeType,
       });
       if (response.status === "extracted") {
-        setAddInitialValues(mapImportFieldsToReservationPayload(response.fields));
+        setAddInitialValues(
+          mapImportFieldsToReservationPayload(response.fields),
+        );
         setAddFormHelperText("We found these details. Review before saving.");
         setShowAddChooser(false);
         setShowAddSheet(true);
         return;
       }
       if (response.status === "needs_image_extraction") {
-        setImportMessage("We could not read this file yet. You can upload another PDF or type it in manually.");
+        setImportMessage(
+          "We could not read this file yet. You can upload another PDF or type it in manually.",
+        );
         return;
       }
       if (response.status === "needs_manual_entry") {
-        setImportMessage("We could not extract the booking details. You can type them in manually.");
+        setImportMessage(
+          "We could not extract the booking details. You can type them in manually.",
+        );
         return;
       }
-      setImportMessage("This file type is not supported. Try uploading a PDF confirmation.");
+      setImportMessage(
+        "This file type is not supported. Try uploading a PDF confirmation.",
+      );
     } catch {
-      setImportMessage("We couldn't process that upload right now. You can type it in manually.");
+      setImportMessage(
+        "We couldn't process that upload right now. You can type it in manually.",
+      );
     } finally {
       setImporting(false);
     }
@@ -189,9 +206,16 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
           </Text>
 
           <View className="mt-2 flex-row items-center justify-between">
-            <Text style={[fontStyles.headMedium, { fontSize: 28, lineHeight: 30, color: DE.ink }]}>
+            <Text
+              style={[
+                fontStyles.headMedium,
+                { fontSize: 28, lineHeight: 30, color: DE.ink },
+              ]}
+            >
               {allItems.length}{" "}
-              <Text style={[fontStyles.headMediumItalic, { fontSize: 28 }]}>{allItems.length === 1 ? "booking" : "bookings"}</Text>
+              <Text style={[fontStyles.headMediumItalic, { fontSize: 28 }]}>
+                {allItems.length === 1 ? "booking" : "bookings"}
+              </Text>
             </Text>
             <Pressable
               onPress={openAddChooser}
@@ -201,8 +225,19 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
               accessibilityLabel="Add booking"
               style={isReadOnly ? { opacity: 0.45 } : undefined}
             >
-              <Text style={[fontStyles.uiMedium, { fontSize: 15, color: DE.ink }]}>+</Text>
-              <Text style={[fontStyles.headMediumItalic, { fontSize: 20, color: DE.ink }]}>Add</Text>
+              <Text
+                style={[fontStyles.uiMedium, { fontSize: 15, color: DE.ink }]}
+              >
+                +
+              </Text>
+              <Text
+                style={[
+                  fontStyles.headMediumItalic,
+                  { fontSize: 20, color: DE.ink },
+                ]}
+              >
+                Add
+              </Text>
             </Pressable>
           </View>
 
@@ -210,7 +245,11 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
             horizontal
             showsHorizontalScrollIndicator={false}
             style={{ marginLeft: -12 }}
-            contentContainerStyle={{ paddingTop: 10, paddingBottom: 8, paddingRight: 8 }}
+            contentContainerStyle={{
+              paddingTop: 10,
+              paddingBottom: 8,
+              paddingRight: 8,
+            }}
           >
             {BOOKING_FILTER_CHIPS.map((chip) => {
               const isActive = activeFilter === chip.key;
@@ -232,7 +271,7 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
                       },
                     ]}
                   >
-                  {chip.label}
+                    {chip.label}
                   </Text>
                   {isActive ? (
                     <View
@@ -250,7 +289,10 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
 
           {mutationError ? (
             <View className="mb-3 rounded-xl border border-danger/25 bg-danger/10 px-3.5 py-3">
-              <Text style={fontStyles.uiRegular} className="text-[13px] text-danger">
+              <Text
+                style={fontStyles.uiRegular}
+                className="text-[13px] text-danger"
+              >
                 {mutationError}
               </Text>
             </View>
@@ -265,7 +307,12 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
                 backgroundColor: `${DE.clay}1A`,
               }}
             >
-              <Text style={[fontStyles.uiRegular, { fontSize: 13, color: DE.inkSoft }]}>
+              <Text
+                style={[
+                  fontStyles.uiRegular,
+                  { fontSize: 13, color: DE.inkSoft },
+                ]}
+              >
                 {importMessage}
               </Text>
             </View>
@@ -286,13 +333,27 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
               >
                 NO. 01 — BEGIN
               </Text>
-              <Text style={[fontStyles.headMedium, { fontSize: 32, lineHeight: 36, color: DE.ink, marginBottom: 14 }]}>
-                Nothing booked <Text style={[fontStyles.headSemiboldItalic, { fontSize: 32 }]}>yet</Text>.
+              <Text
+                style={[
+                  fontStyles.headMedium,
+                  {
+                    fontSize: 32,
+                    lineHeight: 36,
+                    color: DE.ink,
+                    marginBottom: 14,
+                  },
+                ]}
+              >
+                Nothing booked{" "}
+                <Text style={[fontStyles.headSemiboldItalic, { fontSize: 32 }]}>
+                  yet
+                </Text>
+                .
               </Text>
-              <View className="mb-4 h-px" style={{ backgroundColor: DE.ruleStrong }} />
-              <Text style={[fontStyles.uiRegular, { fontSize: 14, lineHeight: 22, color: DE.muted, maxWidth: 360 }]}>
-                Flight times, hotel addresses, confirmation numbers{"\n"}— keep it all here.
-              </Text>
+              <View
+                className="mb-4 h-px"
+                style={{ backgroundColor: DE.ruleStrong }}
+              />
               <Pressable
                 onPress={openAddChooser}
                 disabled={isReadOnly}
@@ -301,13 +362,32 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
                 accessibilityLabel="Add your first booking"
                 style={isReadOnly ? { opacity: 0.45 } : undefined}
               >
-                <Text style={[fontStyles.headSemiboldItalic, { fontSize: 20, color: DE.ink }]}>Add your first booking</Text>
-                <Text style={[fontStyles.headMedium, { fontSize: 18, color: DE.ink }]}>→</Text>
+                <Text
+                  style={[
+                    fontStyles.headSemiboldItalic,
+                    { fontSize: 20, color: DE.ink },
+                  ]}
+                >
+                  Add your first booking
+                </Text>
+                <Text
+                  style={[
+                    fontStyles.headMedium,
+                    { fontSize: 18, color: DE.ink },
+                  ]}
+                >
+                  →
+                </Text>
               </Pressable>
             </View>
           ) : filteredItems.length === 0 ? (
             <View className="py-8">
-              <Text style={[fontStyles.uiRegular, { fontSize: 13, color: DE.muted }]}>
+              <Text
+                style={[
+                  fontStyles.uiRegular,
+                  { fontSize: 13, color: DE.muted },
+                ]}
+              >
                 No {filterLabel(activeFilter)} bookings yet.
               </Text>
             </View>
@@ -315,14 +395,21 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
             <View className="mt-2 border-t" style={{ borderTopColor: DE.rule }}>
               {groups.upcoming.length > 0 ? (
                 <View>
-                  <SectionHeader label="UPCOMING" count={groups.upcoming.length} />
+                  <SectionHeader
+                    label="UPCOMING"
+                    count={groups.upcoming.length}
+                  />
                   <View className="gap-2.5">
                     {groups.upcoming.map((reservation) => (
                       <BookingRow
                         key={reservation.id}
                         reservation={toReservationViewModel(reservation)}
                         onPress={() => setSelectedItem(reservation)}
-                        onDelete={isReadOnly ? undefined : () => void handleRemove(reservation.id)}
+                        onDelete={
+                          isReadOnly
+                            ? undefined
+                            : () => void handleRemove(reservation.id)
+                        }
                       />
                     ))}
                   </View>
@@ -338,7 +425,11 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
                         <BookingRow
                           reservation={toReservationViewModel(reservation)}
                           onPress={() => setSelectedItem(reservation)}
-                          onDelete={isReadOnly ? undefined : () => void handleRemove(reservation.id)}
+                          onDelete={
+                            isReadOnly
+                              ? undefined
+                              : () => void handleRemove(reservation.id)
+                          }
                         />
                       </View>
                     ))}
@@ -363,8 +454,19 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
             accessibilityLabel="Dismiss add booking options"
           />
           <View className="mb-8 rounded-2xl bg-ivory p-4">
-            <Text style={[fontStyles.headSemibold, { fontSize: 22, color: DE.ink }]}>Add booking</Text>
-            <Text style={[fontStyles.uiRegular, { fontSize: 13, color: DE.muted, marginTop: 4 }]}>Choose how you want to add this reservation.</Text>
+            <Text
+              style={[fontStyles.headSemibold, { fontSize: 22, color: DE.ink }]}
+            >
+              Add booking
+            </Text>
+            <Text
+              style={[
+                fontStyles.uiRegular,
+                { fontSize: 13, color: DE.muted, marginTop: 4 },
+              ]}
+            >
+              Choose how you want to add this reservation.
+            </Text>
 
             <Pressable
               className="mt-4 rounded-xl border border-ontrip bg-ontrip px-4 py-3"
@@ -376,7 +478,12 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
                 void handleUploadConfirmation();
               }}
             >
-              <Text style={[fontStyles.uiSemibold, { fontSize: 13, color: DE.ivory }]}>
+              <Text
+                style={[
+                  fontStyles.uiSemibold,
+                  { fontSize: 13, color: DE.ivory },
+                ]}
+              >
                 {importing ? "Extracting…" : "Upload confirmation"}
               </Text>
             </Pressable>
@@ -390,7 +497,14 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
                 handleOpenManualEntry();
               }}
             >
-              <Text style={[fontStyles.uiMedium, { fontSize: 13, color: DE.inkSoft }]}>Type it in manually</Text>
+              <Text
+                style={[
+                  fontStyles.uiMedium,
+                  { fontSize: 13, color: DE.inkSoft },
+                ]}
+              >
+                Type it in manually
+              </Text>
             </Pressable>
 
             <Pressable
@@ -399,7 +513,14 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
               accessibilityLabel="Cancel"
               onPress={() => setShowAddChooser(false)}
             >
-              <Text style={[fontStyles.uiRegular, { fontSize: 13, color: DE.muted, textAlign: "center" }]}>Cancel</Text>
+              <Text
+                style={[
+                  fontStyles.uiRegular,
+                  { fontSize: 13, color: DE.muted, textAlign: "center" },
+                ]}
+              >
+                Cancel
+              </Text>
             </Pressable>
           </View>
         </View>

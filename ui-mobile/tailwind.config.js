@@ -62,7 +62,7 @@ module.exports = {
         "border-ontrip": "#E4DBCB",
         "border-ontrip-strong": "#C9B99A",
         "border-exec": "#6B5743",
-        "accent-ontrip": "#B85A38",
+        "accent-ontrip": "#1C1A17",
         ontrip: "#231910",
         "ontrip-strong": "#6B5743",
         "ontrip-muted": "#8A7B6A",

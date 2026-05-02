@@ -2,15 +2,19 @@
 // Summary: Implements StopFormSheet module logic.
 
 import { useEffect, useMemo, useState } from "react";
+import DateTimePicker, {
+  DateTimePickerAndroid,
+  type DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 import {
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
   ScrollView,
   Text,
-  useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -60,6 +64,42 @@ function nullableText(value: string): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+function parseTimeValue(value: string | null | undefined): Date {
+  const fallback = new Date(2000, 0, 1, 9, 0, 0, 0);
+  if (!value) return fallback;
+
+  const trimmed = value.trim();
+  const twelveHour = trimmed.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (twelveHour) {
+    const hour = Number(twelveHour[1]);
+    const minute = Number(twelveHour[2]);
+    if (hour >= 1 && hour <= 12 && minute >= 0 && minute <= 59) {
+      const period = twelveHour[3].toUpperCase();
+      const hour24 = (hour % 12) + (period === "PM" ? 12 : 0);
+      return new Date(2000, 0, 1, hour24, minute, 0, 0);
+    }
+  }
+
+  const twentyFourHour = trimmed.match(/^(\d{1,2}):(\d{2})$/);
+  if (twentyFourHour) {
+    const hour = Number(twentyFourHour[1]);
+    const minute = Number(twentyFourHour[2]);
+    if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
+      return new Date(2000, 0, 1, hour, minute, 0, 0);
+    }
+  }
+
+  return fallback;
+}
+
+function formatTimeValue(value: Date): string {
+  const hour24 = value.getHours();
+  const minute = value.getMinutes();
+  const period = hour24 < 12 ? "AM" : "PM";
+  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+  return `${hour12}:${String(minute).padStart(2, "0")} ${period}`;
+}
+
 export function StopFormSheet({
   visible,
   item,
@@ -83,7 +123,6 @@ export function StopFormSheet({
   const [titleError, setTitleError] = useState<string | null>(null);
   const [dayPickerOpen, setDayPickerOpen] = useState(false);
   const [timePickerOpen, setTimePickerOpen] = useState(false);
-  const { height: windowHeight } = useWindowDimensions();
 
   const {
     query: locationQuery,
@@ -144,17 +183,35 @@ export function StopFormSheet({
     ]);
   }
 
+  function openTimePicker() {
+    Keyboard.dismiss();
+    setDayPickerOpen(false);
+
+    if (Platform.OS === "android") {
+      DateTimePickerAndroid.open({
+        value: parseTimeValue(selectedTime),
+        mode: "time",
+        display: "clock",
+        onChange: (event: DateTimePickerEvent, selected?: Date) => {
+          if (event.type === "set" && selected) {
+            setSelectedTime(formatTimeValue(selected));
+          }
+        },
+      });
+      return;
+    }
+
+    setTimePickerOpen(true);
+  }
+
   const isEditMode = Boolean(item);
   const selectedDayLabel =
     dayOptions.find((option) => option.value === selectedDayIndex)?.label ??
     "Choose a day";
   const selectedTimeLabel =
     effectiveTimeOptions.find((option) => option.value === selectedTime)?.label ??
+    selectedTime ??
     "No time";
-  const timeOptionsMaxHeight = Math.min(
-    176,
-    Math.max(132, Math.round(windowHeight * 0.24)),
-  );
   const footerBottomPadding = Math.max(insets.bottom, 16);
   const contentBottomPadding = footerBottomPadding + (isEditMode ? 144 : 112);
 
@@ -172,7 +229,7 @@ export function StopFormSheet({
         <View className="max-h-[90%] rounded-t-[28px] bg-bg pt-4">
           <View className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-border-strong" />
           <ScrollView
-            keyboardShouldPersistTaps="handled"
+            keyboardShouldPersistTaps="always"
             showsVerticalScrollIndicator={false}
             style={{ flexShrink: 1 }}
             contentContainerStyle={{
@@ -253,30 +310,8 @@ export function StopFormSheet({
                     label={selectedTimeLabel}
                     expanded={timePickerOpen}
                     accessibilityLabel="Choose stop time"
-                    onPress={() => setTimePickerOpen((current) => !current)}
+                    onPress={openTimePicker}
                   />
-                  {timePickerOpen ? (
-                    <View className="overflow-hidden rounded-2xl border border-border bg-white">
-                      <ScrollView
-                        nestedScrollEnabled
-                        showsVerticalScrollIndicator={false}
-                        style={{ maxHeight: timeOptionsMaxHeight }}
-                      >
-                        {effectiveTimeOptions.map((option, index) => (
-                          <OptionRow
-                            key={`${option.label}-${option.value ?? "none"}`}
-                            label={option.label}
-                            selected={selectedTime === option.value}
-                            showDivider={index < effectiveTimeOptions.length - 1}
-                            onPress={() => {
-                              setSelectedTime(option.value);
-                              setTimePickerOpen(false);
-                            }}
-                          />
-                        ))}
-                      </ScrollView>
-                    </View>
-                  ) : null}
                 </View>
               </Field>
 
@@ -346,9 +381,94 @@ export function StopFormSheet({
             <Button label="Save stop" onPress={handleSave} variant="ontrip" fullWidth />
             <SecondaryButton label="Cancel" onPress={onClose} fullWidth />
           </View>
+          {Platform.OS === "ios" ? (
+            <StopTimePickerSheet
+              visible={timePickerOpen}
+              value={selectedTime}
+              onConfirm={(value) => {
+                setSelectedTime(value);
+                setTimePickerOpen(false);
+              }}
+              onClear={() => {
+                setSelectedTime(null);
+                setTimePickerOpen(false);
+              }}
+              onClose={() => setTimePickerOpen(false)}
+            />
+          ) : null}
         </View>
       </KeyboardAvoidingView>
     </Modal>
+  );
+}
+
+function StopTimePickerSheet({
+  visible,
+  value,
+  onConfirm,
+  onClear,
+  onClose,
+}: {
+  visible: boolean;
+  value: string | null;
+  onConfirm: (value: string) => void;
+  onClear: () => void;
+  onClose: () => void;
+}) {
+  const [draft, setDraft] = useState<Date>(() => parseTimeValue(value));
+
+  useEffect(() => {
+    if (!visible) return;
+    setDraft(parseTimeValue(value));
+  }, [value, visible]);
+
+  if (!visible) return null;
+
+  return (
+    <View className="absolute inset-0 z-10 justify-end">
+      <Pressable
+        className="absolute inset-0 bg-black/20"
+        onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel="Dismiss time picker"
+      />
+      <View className="rounded-t-[28px] border-t border-border bg-bg px-4 pb-4 pt-4">
+        <View className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-border-strong" />
+        <Text className="text-lg text-text" style={fontStyles.uiSemibold}>
+          Time
+        </Text>
+        <Text className="mt-1 text-sm text-text-muted" style={fontStyles.uiRegular}>
+          Choose the stop time in the trip&apos;s local time.
+        </Text>
+
+        <View className="mt-4 overflow-hidden rounded-2xl border border-border bg-white">
+          <DateTimePicker
+            testID="stop-time-picker"
+            accessibilityLabel="Stop time picker"
+            value={draft}
+            mode="time"
+            display="spinner"
+            onChange={(event: DateTimePickerEvent, selected?: Date) => {
+              if (event.type !== "dismissed" && selected) setDraft(selected);
+            }}
+            textColor="#1C1108"
+            accentColor="#B86845"
+            style={{ alignSelf: "stretch", height: 216 }}
+          />
+        </View>
+
+        <View className="mt-4 gap-3">
+          <Button
+            label="Confirm time"
+            onPress={() => onConfirm(formatTimeValue(draft))}
+            variant="ontrip"
+            fullWidth
+          />
+          <SecondaryButton label="No time" onPress={onClear} fullWidth />
+          <SecondaryButton label="Cancel" onPress={onClose} fullWidth />
+        </View>
+      </View>
+    </View>
   );
 }
 

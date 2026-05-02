@@ -63,8 +63,9 @@ export function DisplayWordmark({
   width,
   size,
 }: WordmarkProps) {
-  const fontSize = size ?? (width ?? 160) / 5.1;
-  const measuredWidth = width ?? fontSize * 5.1;
+  const fontSize = size ?? (width ?? 160) / 4.8;
+  const tracking = fontSize * 0.16;
+  const measuredWidth = width ?? fontSize * 4.4;
   return (
     <Text
       accessibilityLabel="Roen"
@@ -74,9 +75,9 @@ export function DisplayWordmark({
         color,
         fontFamily: "Italiana_400Regular",
         fontSize,
-        letterSpacing: fontSize * 0.5,
-        lineHeight: fontSize,
-        paddingLeft: fontSize * 0.5,
+        letterSpacing: tracking,
+        lineHeight: fontSize * 1.04,
+        paddingLeft: tracking * 0.5,
         width: measuredWidth,
       }}
     >

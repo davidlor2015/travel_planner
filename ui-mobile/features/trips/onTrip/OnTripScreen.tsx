@@ -2,7 +2,6 @@
 // Summary: Implements OnTripScreen module logic.
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import * as Linking from "expo-linking";
 import { Ionicons } from "@expo/vector-icons";
 import { type Href, useRouter } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
@@ -36,7 +35,8 @@ import { useOnTripMutations } from "./hooks";
 import { NeedsAttentionCard } from "./NeedsAttentionCard";
 import { LogStopSheet } from "./LogStopSheet";
 import { OnTripHeader } from "./OnTripHeader";
-import { buildNavigateUrl, buildOnTripDayHeader } from "./presentation";
+import { openStopDirections } from "./mapNavigation";
+import { buildOnTripDayHeader } from "./presentation";
 import { TimelineRow } from "./TimelineRow";
 import { UnplannedStopRow } from "./UnplannedStopRow";
 import {
@@ -178,9 +178,8 @@ export function OnTripScreen({
       vm.timeline.find((item) => item.key === key) ??
       (vm.now?.key === key ? vm.now : null);
     if (!stop) return undefined;
-    const url = buildNavigateUrl(stop);
-    if (!url) return undefined;
-    return () => void Linking.openURL(url);
+    if (!stop.location?.trim()) return undefined;
+    return () => void openStopDirections(stop.location);
   };
 
   const openStopDetail = (stopKey: string) => {
@@ -534,7 +533,9 @@ function ReadOnlyBanner() {
         style={{ marginTop: 1 }}
       />
       <View style={{ flex: 1 }}>
-        <Text style={[fontStyles.uiSemibold, { fontSize: 13, color: DE.inkSoft }]}>
+        <Text
+          style={[fontStyles.uiSemibold, { fontSize: 13, color: DE.inkSoft }]}
+        >
           {READ_ONLY_TRIP_TITLE}
         </Text>
         <Text

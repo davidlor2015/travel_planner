@@ -2,7 +2,6 @@
 // Summary: Implements StopDetailScreen module logic.
 
 import { useMemo } from "react";
-import * as Linking from "expo-linking";
 import { Ionicons } from "@expo/vector-icons";
 import { type Href, useRouter } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
@@ -25,7 +24,10 @@ import { useAuth } from "@/providers/AuthProvider";
 import type { TripExecutionStatus } from "../types";
 import { toStopVmForDetail } from "./adapters";
 import { useOnTripMutations } from "./hooks";
-import { buildNavigateUrl } from "./presentation";
+import {
+  normalizeDirectionsDestination,
+  openStopDirections,
+} from "./mapNavigation";
 import {
   READ_ONLY_TRIP_BODY,
   READ_ONLY_TRIP_TITLE,
@@ -93,7 +95,7 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
   const effectiveStatus = stop.effectiveStatus;
   const isReadOnly = stop.isReadOnly;
   const isPending = stop.isPending;
-  const navigateUrl = buildNavigateUrl(stop);
+  const navigationDestination = normalizeDirectionsDestination(stop.location);
 
   const handleStatus = (target: TripExecutionStatus) => {
     if (!stop.stop_ref) return;
@@ -274,9 +276,9 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
         ) : null}
 
         {/* Primary action: Navigate */}
-        {navigateUrl ? (
+        {navigationDestination ? (
           <Pressable
-            onPress={() => void Linking.openURL(navigateUrl)}
+            onPress={() => void openStopDirections(navigationDestination)}
             className="mb-3 h-[60px] flex-row items-center justify-center gap-2.5 rounded-[14px] active:opacity-90"
             style={{ backgroundColor: DE.ink }}
             accessibilityRole="button"

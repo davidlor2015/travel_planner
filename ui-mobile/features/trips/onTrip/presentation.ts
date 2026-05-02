@@ -112,14 +112,6 @@ export function buildBlockerStrip(
   };
 }
 
-// ─── Navigate URL ─────────────────────────────────────────────────────────────
-
-export function buildNavigateUrl(stop: StopVM): string | null {
-  const location = stop.location?.trim();
-  if (!location) return null;
-  return `https://maps.google.com/?q=${encodeURIComponent(location)}`;
-}
-
 // ─── Status helpers ───────────────────────────────────────────────────────────
 
 export type OnTripStatusTone = "confirmed" | "planned" | "skipped";
