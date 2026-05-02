@@ -24,6 +24,14 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 14
     PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 60
     EMAIL_VERIFICATION_TOKEN_EXPIRE_HOURS: int = 48
+    EMAIL_SMTP_HOST: str = ""
+    EMAIL_SMTP_PORT: int = 587
+    EMAIL_SMTP_USERNAME: str = ""
+    EMAIL_SMTP_PASSWORD: str = ""
+    EMAIL_SMTP_FROM: str = ""
+    EMAIL_SMTP_USE_TLS: bool = True
+    EMAIL_SMTP_USE_SSL: bool = False
+    EMAIL_SMTP_TIMEOUT_SECONDS: int = 10
     TRIP_INVITE_EXPIRE_DAYS: int = 14
     APP_BASE_URL: str = "http://localhost:5173"
     EXPOSE_DEBUG_LINKS: bool = False

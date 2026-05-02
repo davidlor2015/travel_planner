@@ -34,6 +34,7 @@ type Props = {
   onPublish: () => void;
   onRegenerateAll: () => void;
   onCancelStream: () => void;
+  onRethinkDay?: (dayIndex: number) => void;
   isReadOnly?: boolean;
 };
 
@@ -55,6 +56,7 @@ export function ItineraryTabView({
   onPublish,
   onRegenerateAll,
   onCancelStream,
+  onRethinkDay,
   isReadOnly = false,
 }: Props) {
   const scrollRef = useRef<ScrollView>(null);
@@ -210,6 +212,7 @@ export function ItineraryTabView({
               key={day.day.day_number}
               day={day}
               onEditStop={(stopIndex) => onEditStop(day.dayIndex, stopIndex)}
+              onRethinkDay={onRethinkDay ? () => onRethinkDay(day.dayIndex) : undefined}
               isReadOnly={isReadOnly}
             />
           ))}

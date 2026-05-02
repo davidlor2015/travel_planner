@@ -162,6 +162,7 @@ async def refine_trip_plan(
             variant=body.variant,
             locked_items=body.locked_items,
             favorite_items=body.favorite_items,
+            user_note=body.user_note,
         )
     except ValueError as e:
         logger.warning("AI refine failed (trip_id=%s): %s", body.trip_id, e)

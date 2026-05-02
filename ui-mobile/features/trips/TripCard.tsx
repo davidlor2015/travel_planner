@@ -14,7 +14,8 @@ import { getTripImageUrl } from "./workspace/helpers/tripVisuals";
 type Props = {
   trip: TripListItemViewModel;
   onPress: () => void;
-  onOpenLiveView?: () => void;
+  /** Opens the Today tab for active-trip execution. */
+  onOpenToday?: () => void;
 };
 
 function statusVariant(status: TripListItemViewModel["status"]) {
@@ -30,8 +31,8 @@ function readinessDotClass(label: TripCardReadiness["label"]): string {
   return "bg-border-strong";
 }
 
-export function TripCard({ trip, onPress, onOpenLiveView }: Props) {
-  const showLiveCta = trip.status === "active" && Boolean(onOpenLiveView);
+export function TripCard({ trip, onPress, onOpenToday }: Props) {
+  const showTodayCta = trip.status === "active" && Boolean(onOpenToday);
   const readiness   = trip.readiness;
   const imageUri    = getTripImageUrl({ id: trip.id, destination: trip.destination });
 
@@ -92,7 +93,7 @@ export function TripCard({ trip, onPress, onOpenLiveView }: Props) {
           />
         </View>
 
-        {readiness || showLiveCta ? (
+        {readiness || showTodayCta ? (
           <View className="flex-row items-center justify-between gap-3 border-t border-border pt-3">
             {readiness ? (
               <View className="flex-1">
@@ -117,17 +118,19 @@ export function TripCard({ trip, onPress, onOpenLiveView }: Props) {
               <View className="flex-1" />
             )}
 
-            {showLiveCta ? (
+            {showTodayCta ? (
               <Pressable
                 onPress={(event) => {
                   event.stopPropagation();
-                  onOpenLiveView?.();
+                  onOpenToday?.();
                 }}
                 hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Open Today"
                 className="rounded-full border border-accent/25 bg-accent/10 px-3 py-2 active:opacity-80"
               >
                 <Text className="text-xs font-semibold text-accent-ontrip">
-                  Live view
+                  Today
                 </Text>
               </Pressable>
             ) : null}

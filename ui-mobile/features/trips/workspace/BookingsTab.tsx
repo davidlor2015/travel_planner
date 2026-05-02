@@ -2,30 +2,31 @@
 // Summary: Implements BookingsTab module logic.
 
 import { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as DocumentPicker from "expo-document-picker";
 
 import { BookingDetailSheet } from "@/features/trips/reservations/BookingDetailSheet";
 import { BookingFormSheet } from "@/features/trips/reservations/BookingFormSheet";
 import { BookingRow } from "@/features/trips/reservations/BookingRow";
 import {
   BOOKING_FILTER_CHIPS,
-  buildConfirmationSummary,
   filterReservations,
   toReservationViewModel,
 } from "@/features/trips/reservations/adapters";
 import type { BookingFilterKey } from "@/features/trips/reservations/adapters";
 import type { Reservation } from "@/features/trips/reservations/api";
+import type { ReservationPayload } from "@/features/trips/reservations/api";
+import { importReservationConfirmation } from "@/features/trips/reservations/api";
+import { mapImportFieldsToReservationPayload } from "@/features/trips/reservations/importMapping";
 import {
   buildDetailViewModel,
   groupReservationsByTime,
-  openNavigate,
 } from "@/features/trips/reservations/bookingPresentation";
 import type { BookingDetailViewModel } from "@/features/trips/reservations/bookingPresentation";
 import { useReservations } from "@/features/trips/reservations/hooks";
 import { DE } from "@/shared/theme/desertEditorial";
-import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
-import { EmptyState } from "@/shared/ui/EmptyState";
+import { fontStyles } from "@/shared/theme/typography";
 import { ScreenError } from "@/shared/ui/ScreenError";
 import { ScreenLoading } from "@/shared/ui/ScreenLoading";
 
@@ -33,162 +34,48 @@ import { ReadOnlyNotice } from "./ReadOnlyNotice";
 
 type Props = { tripId: number; isReadOnly?: boolean };
 
-// ─── Next Up hero card ───────────────────────────────────────────────────────
-
-function NextUpCard({
-  vm,
-  onPress,
-}: {
-  vm: BookingDetailViewModel;
-  onPress: () => void;
-}) {
-  const [navigating, setNavigating] = useState(false);
-
-  const handleNavigate = async (e: { stopPropagation?: () => void }) => {
-    e.stopPropagation?.();
-    if (!vm.location || navigating) return;
-    setNavigating(true);
-    try {
-      await openNavigate(vm.location);
-    } finally {
-      setNavigating(false);
-    }
-  };
-
+function filterLabel(filter: BookingFilterKey): string {
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`View ${vm.title} details`}
-      className="rounded-[16px] border border-[#D9CFC4] bg-ivory overflow-hidden active:opacity-70"
-    >
-      {/* Amber accent strip */}
-      <View className="h-[3px] w-full bg-amber opacity-70" />
-
-      <View className="px-4 py-4 gap-3">
-        {/* Eyebrow */}
-        <View className="flex-row items-center gap-1.5">
-          <Ionicons name="flash-outline" size={11} color="#B86845" />
-          <Text
-            style={[fontStyles.uiMedium, { fontSize: 10, letterSpacing: 1.4, color: "#B86845" }]}
-          >
-            NEXT UP
-          </Text>
-        </View>
-
-        {/* Main row */}
-        <View className="flex-row items-start gap-3">
-          {/* Icon */}
-          <View className="h-10 w-10 items-center justify-center rounded-[11px] border border-smoke bg-parchment-soft">
-            <Ionicons name={vm.typeIconName} size={17} color="#8A7E74" />
-          </View>
-
-          {/* Content */}
-          <View className="flex-1 gap-[4px]">
-            <Text
-              style={[textScaleStyles.displayL, { fontSize: 17, color: "#1C1108" }]}
-              numberOfLines={1}
-            >
-              {vm.title}
-            </Text>
-            {vm.startLabel ? (
-              <Text style={fontStyles.uiRegular} className="text-[12px] text-muted" numberOfLines={1}>
-                {vm.startLabel}
-              </Text>
-            ) : null}
-            {vm.location ? (
-              <View className="flex-row items-center gap-1">
-                <Ionicons name="location-outline" size={10} color="#8A7E74" />
-                <Text style={fontStyles.uiRegular} className="text-[11px] text-muted" numberOfLines={1}>
-                  {vm.location}
-                </Text>
-              </View>
-            ) : null}
-          </View>
-
-          {/* Right: price + pill */}
-          <View className="items-end gap-1.5">
-            {vm.priceLabel ? (
-              <Text style={fontStyles.uiMedium} className="text-[13px] text-espresso">
-                {vm.priceLabel}
-              </Text>
-            ) : null}
-            <View
-              className={[
-                "rounded-full px-2.5 py-[3px]",
-                vm.statusVariant === "confirmed"
-                  ? "bg-[#dde0cd]"
-                  : vm.statusVariant === "pending"
-                    ? "bg-[#ead7c9]"
-                    : "bg-smoke",
-              ].join(" ")}
-            >
-              <Text
-                style={[
-                  fontStyles.uiMedium,
-                  {
-                    fontSize: 11,
-                    letterSpacing: 0.3,
-                    color:
-                      vm.statusVariant === "confirmed"
-                        ? "#6f7a4a"
-                        : vm.statusVariant === "pending"
-                          ? "#b9714f"
-                          : "#8A7E74",
-                  },
-                ]}
-              >
-                {vm.statusLabel}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Navigate CTA */}
-        {vm.navigateUrl ? (
-          <Pressable
-            onPress={(e) => void handleNavigate(e)}
-            className="flex-row items-center justify-center gap-2 rounded-[10px] border border-ontrip bg-ontrip py-2.5 active:opacity-70"
-            accessibilityRole="button"
-            accessibilityLabel={`Navigate to ${vm.location}`}
-          >
-            <Ionicons name="navigate-outline" size={13} color={DE.ivory} />
-            <Text style={fontStyles.uiSemibold} className="text-[12px] text-on-dark">
-              {navigating ? "Opening Maps…" : "Navigate"}
-            </Text>
-          </Pressable>
-        ) : null}
-      </View>
-    </Pressable>
+    BOOKING_FILTER_CHIPS.find(
+      (chip) => chip.key === filter,
+    )?.label.toLowerCase() ?? "filtered"
   );
 }
 
-// ─── Section header ──────────────────────────────────────────────────────────
-
 function SectionHeader({ label, count }: { label: string; count: number }) {
   return (
-    <View className="flex-row items-center justify-between pt-2 pb-1">
+    <View className="flex-row items-center justify-between pt-3 pb-1.5">
       <Text
-        style={[fontStyles.uiMedium, { fontSize: 10, letterSpacing: 1.5, color: "#8A7E74" }]}
+        style={[
+          fontStyles.monoMedium,
+          { fontSize: 10, letterSpacing: 1.8, color: DE.muted },
+        ]}
       >
         {label}
       </Text>
-      <Text style={fontStyles.uiRegular} className="text-[10px] text-muted">
+      <Text style={[fontStyles.uiRegular, { fontSize: 11, color: DE.muted }]}>
         {count}
       </Text>
     </View>
   );
 }
 
-// ─── Main tab ────────────────────────────────────────────────────────────────
-
 export function BookingsTab({ tripId, isReadOnly = false }: Props) {
   const reservations = useReservations(tripId);
   const [activeFilter, setActiveFilter] = useState<BookingFilterKey>("all");
   const [showAddSheet, setShowAddSheet] = useState(false);
+  const [showAddChooser, setShowAddChooser] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Reservation | null>(null);
   const [editItem, setEditItem] = useState<Reservation | null>(null);
+  const [addInitialValues, setAddInitialValues] = useState<
+    ReservationPayload | undefined
+  >(undefined);
+  const [addFormHelperText, setAddFormHelperText] = useState<string | null>(
+    null,
+  );
   const [mutationError, setMutationError] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importMessage, setImportMessage] = useState<string | null>(null);
 
   if (reservations.loading) {
     return <ScreenLoading label="Loading bookings…" />;
@@ -204,18 +91,8 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
   }
 
   const allItems = reservations.items;
-  const summary = buildConfirmationSummary(allItems);
   const filteredItems = filterReservations(allItems, activeFilter);
   const groups = groupReservationsByTime(filteredItems);
-
-  const heroItem =
-    groups.nextUpcoming?.start_at !== undefined && groups.nextUpcoming?.start_at !== null
-      ? groups.nextUpcoming
-      : null;
-
-  const remainingUpcoming = heroItem
-    ? groups.upcoming.filter((r) => r.id !== heroItem.id)
-    : groups.upcoming;
 
   const detailVm: BookingDetailViewModel | null = selectedItem
     ? buildDetailViewModel(selectedItem)
@@ -230,7 +107,10 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
     }
   };
 
-  const handleEdit = async (item: Reservation, payload: Parameters<typeof reservations.editReservation>[1]) => {
+  const handleEdit = async (
+    item: Reservation,
+    payload: Parameters<typeof reservations.editReservation>[1],
+  ) => {
     try {
       setMutationError(null);
       await reservations.editReservation(item.id, payload);
@@ -239,196 +119,413 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
     }
   };
 
-  const totalSegments = summary.total;
+  const handleUploadConfirmation = async () => {
+    if (isReadOnly || importing) return;
+
+    setImportMessage(null);
+    const result = await DocumentPicker.getDocumentAsync({
+      type: ["application/pdf", "image/*"],
+      multiple: false,
+      copyToCacheDirectory: true,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+
+    const asset = result.assets[0];
+    setImporting(true);
+    try {
+      const response = await importReservationConfirmation(tripId, {
+        uri: asset.uri,
+        name: asset.name,
+        type: asset.mimeType,
+      });
+      if (response.status === "extracted") {
+        setAddInitialValues(
+          mapImportFieldsToReservationPayload(response.fields),
+        );
+        setAddFormHelperText("We found these details. Review before saving.");
+        setShowAddChooser(false);
+        setShowAddSheet(true);
+        return;
+      }
+      if (response.status === "needs_image_extraction") {
+        setImportMessage(
+          "We could not read this file yet. You can upload another PDF or type it in manually.",
+        );
+        return;
+      }
+      if (response.status === "needs_manual_entry") {
+        setImportMessage(
+          "We could not extract the booking details. You can type them in manually.",
+        );
+        return;
+      }
+      setImportMessage(
+        "This file type is not supported. Try uploading a PDF confirmation.",
+      );
+    } catch {
+      setImportMessage(
+        "We couldn't process that upload right now. You can type it in manually.",
+      );
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleOpenManualEntry = () => {
+    if (isReadOnly) return;
+    setAddInitialValues(undefined);
+    setAddFormHelperText(null);
+    setImportMessage(null);
+    setShowAddSheet(true);
+  };
+
+  const openAddChooser = () => {
+    if (isReadOnly) return;
+    setShowAddChooser(true);
+  };
 
   return (
     <>
       <ScrollView
+        style={{ backgroundColor: DE.ivory }}
         contentContainerStyle={{ paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Header ─────────────────────────────────────────────────────────── */}
-        <View className="px-5 pt-5 pb-3">
-          <View className="flex-row items-start justify-between">
-            <View className="gap-[2px]">
-              <Text
-                style={[
-                  fontStyles.uiRegular,
-                  { fontSize: 11, letterSpacing: 1.76, color: "#8A7E74" },
-                ]}
-              >
-                RESERVATIONS
+        <View className="px-5 pt-4">
+          <Text
+            style={[
+              fontStyles.monoMedium,
+              {
+                fontSize: 10,
+                letterSpacing: 2,
+                color: DE.muted,
+              },
+            ]}
+          >
+            RESERVATIONS
+          </Text>
+
+          <View className="mt-2 flex-row items-center justify-between">
+            <Text
+              style={[
+                fontStyles.headMedium,
+                { fontSize: 28, lineHeight: 30, color: DE.ink },
+              ]}
+            >
+              {allItems.length}{" "}
+              <Text style={[fontStyles.headMediumItalic, { fontSize: 28 }]}>
+                {allItems.length === 1 ? "booking" : "bookings"}
               </Text>
-              <Text
-                style={[textScaleStyles.displayL, { fontSize: 22, color: "#1C1108" }]}
-              >
-                {summary.confirmedLabel}
-              </Text>
-            </View>
+            </Text>
             <Pressable
-              onPress={() => setShowAddSheet(true)}
+              onPress={openAddChooser}
               disabled={isReadOnly}
-              className="flex-row items-center gap-1 pt-1"
+              className="flex-row items-center gap-1 pb-1"
               accessibilityRole="button"
               accessibilityLabel="Add booking"
-              accessibilityHint={
-                isReadOnly ? "View-only travelers cannot add bookings." : undefined
-              }
               style={isReadOnly ? { opacity: 0.45 } : undefined}
             >
-              <Ionicons name="add" size={13} color="#B86845" />
-              <Text style={fontStyles.uiMedium} className="text-[12px] text-amber">
+              <Text
+                style={[fontStyles.uiMedium, { fontSize: 15, color: DE.ink }]}
+              >
+                +
+              </Text>
+              <Text
+                style={[
+                  fontStyles.headMediumItalic,
+                  { fontSize: 20, color: DE.ink },
+                ]}
+              >
                 Add
               </Text>
             </Pressable>
           </View>
 
-          {/* Progress bar */}
-          {totalSegments > 0 ? (
-            <View className="mt-3 flex-row gap-2 h-1">
-              {summary.confirmed > 0 ? (
-                <View
-                  className="h-full rounded-full bg-[#6f7a4a]"
-                  style={{ flex: summary.confirmed }}
-                />
-              ) : null}
-              {summary.pending > 0 ? (
-                <View
-                  className="h-full rounded-full bg-[#ead7c9]"
-                  style={{ flex: summary.pending }}
-                />
-              ) : null}
-              {summary.unscheduled > 0 ? (
-                <View
-                  className="h-full rounded-full bg-smoke"
-                  style={{ flex: summary.unscheduled }}
-                />
-              ) : null}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ marginLeft: -12 }}
+            contentContainerStyle={{
+              paddingTop: 10,
+              paddingBottom: 8,
+              paddingRight: 8,
+            }}
+          >
+            {BOOKING_FILTER_CHIPS.map((chip) => {
+              const isActive = activeFilter === chip.key;
+              return (
+                <Pressable
+                  key={chip.key}
+                  onPress={() => setActiveFilter(chip.key)}
+                  className="relative flex-shrink-0 px-3 py-2"
+                  accessibilityRole="button"
+                  accessibilityLabel={chip.label}
+                >
+                  <Text
+                    style={[
+                      isActive ? fontStyles.uiSemibold : fontStyles.uiRegular,
+                      {
+                        fontSize: 14,
+                        lineHeight: 18,
+                        color: isActive ? DE.ink : DE.muted,
+                      },
+                    ]}
+                  >
+                    {chip.label}
+                  </Text>
+                  {isActive ? (
+                    <View
+                      className="absolute bottom-0 left-3 right-3 rounded-full"
+                      style={{ height: 1, backgroundColor: DE.ink }}
+                    />
+                  ) : null}
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+          <View style={{ height: 1, backgroundColor: DE.ruleStrong }} />
+
+          {isReadOnly ? <ReadOnlyNotice className="mb-3" /> : null}
+
+          {mutationError ? (
+            <View className="mb-3 rounded-xl border border-danger/25 bg-danger/10 px-3.5 py-3">
+              <Text
+                style={fontStyles.uiRegular}
+                className="text-[13px] text-danger"
+              >
+                {mutationError}
+              </Text>
             </View>
-          ) : (
-            <View className="mt-3 h-1 rounded-full bg-smoke" />
-          )}
-        </View>
+          ) : null}
 
-        {isReadOnly ? <ReadOnlyNotice className="mx-5 mb-3" /> : null}
+          {importMessage ? (
+            <View
+              className="mb-3 rounded-xl px-3.5 py-3"
+              style={{
+                borderWidth: 1,
+                borderColor: `${DE.clay}40`,
+                backgroundColor: `${DE.clay}1A`,
+              }}
+            >
+              <Text
+                style={[
+                  fontStyles.uiRegular,
+                  { fontSize: 13, color: DE.inkSoft },
+                ]}
+              >
+                {importMessage}
+              </Text>
+            </View>
+          ) : null}
 
-        {/* ── Filter chips ──────────────────────────────────────────────────── */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 12, gap: 8 }}
-        >
-          {BOOKING_FILTER_CHIPS.map((chip) => {
-            const active = activeFilter === chip.key;
-            return (
+          {allItems.length === 0 ? (
+            <View className="mt-6">
+              <Text
+                style={[
+                  fontStyles.monoMedium,
+                  {
+                    fontSize: 10,
+                    letterSpacing: 1.8,
+                    color: DE.muted,
+                    marginBottom: 12,
+                  },
+                ]}
+              >
+                NO. 01 — BEGIN
+              </Text>
+              <Text
+                style={[
+                  fontStyles.headMedium,
+                  {
+                    fontSize: 32,
+                    lineHeight: 36,
+                    color: DE.ink,
+                    marginBottom: 14,
+                  },
+                ]}
+              >
+                Nothing booked{" "}
+                <Text style={[fontStyles.headSemiboldItalic, { fontSize: 32 }]}>
+                  yet
+                </Text>
+                .
+              </Text>
+              <View
+                className="mb-4 h-px"
+                style={{ backgroundColor: DE.ruleStrong }}
+              />
               <Pressable
-                key={chip.key}
-                onPress={() => setActiveFilter(chip.key)}
-                className={[
-                  "rounded-full border px-3.5 py-1.5",
-                  active ? "border-ontrip bg-ontrip" : "border-smoke bg-transparent",
-                ].join(" ")}
+                onPress={openAddChooser}
+                disabled={isReadOnly}
+                className="mt-6 flex-row items-center gap-3"
+                accessibilityRole="button"
+                accessibilityLabel="Add your first booking"
+                style={isReadOnly ? { opacity: 0.45 } : undefined}
               >
                 <Text
-                  style={fontStyles.uiMedium}
-                  className={["text-[11px]", active ? "text-on-dark" : "text-[#4a3f37]"].join(" ")}
+                  style={[
+                    fontStyles.headSemiboldItalic,
+                    { fontSize: 20, color: DE.ink },
+                  ]}
                 >
-                  {chip.label}
+                  Add your first booking
+                </Text>
+                <Text
+                  style={[
+                    fontStyles.headMedium,
+                    { fontSize: 18, color: DE.ink },
+                  ]}
+                >
+                  →
                 </Text>
               </Pressable>
-            );
-          })}
-        </ScrollView>
-
-        {/* ── Mutation error ────────────────────────────────────────────────── */}
-        {mutationError ? (
-          <View className="mx-5 mb-3 rounded-xl border border-danger/25 bg-danger/10 px-3.5 py-3">
-            <Text style={fontStyles.uiRegular} className="text-[13px] text-danger">
-              {mutationError}
-            </Text>
-          </View>
-        ) : null}
-
-        {/* ── Content ──────────────────────────────────────────────────────── */}
-        {allItems.length === 0 ? (
-          <View className="px-5">
-            <EmptyState
-              title="No bookings yet"
-              message="Add flights, stays, and reservations here to keep execution details at your fingertips."
-            />
-          </View>
-        ) : filteredItems.length === 0 ? (
-          <View className="px-5 py-8 items-center">
-            <Text style={fontStyles.uiRegular} className="text-[13px] text-muted text-center">
-              No {activeFilter} bookings yet.
-            </Text>
-          </View>
-        ) : (
-          <View className="px-5 gap-3">
-            {/* Next Up hero */}
-            {heroItem ? (
-              <View className="gap-1">
-                <NextUpCard
-                  vm={buildDetailViewModel(heroItem)}
-                  onPress={() => setSelectedItem(heroItem)}
-                />
-              </View>
-            ) : null}
-
-            {/* Upcoming section */}
-            {remainingUpcoming.length > 0 ? (
-              <View className="gap-2">
-                <SectionHeader label="UPCOMING" count={remainingUpcoming.length} />
-                {remainingUpcoming.map((r) => (
-                  <BookingRow
-                    key={r.id}
-                    reservation={toReservationViewModel(r)}
-                    onPress={() => setSelectedItem(r)}
-                    onDelete={
-                      isReadOnly ? undefined : () => void handleRemove(r.id)
-                    }
+            </View>
+          ) : filteredItems.length === 0 ? (
+            <View className="py-8">
+              <Text
+                style={[
+                  fontStyles.uiRegular,
+                  { fontSize: 13, color: DE.muted },
+                ]}
+              >
+                No {filterLabel(activeFilter)} bookings yet.
+              </Text>
+            </View>
+          ) : (
+            <View className="mt-2 border-t" style={{ borderTopColor: DE.rule }}>
+              {groups.upcoming.length > 0 ? (
+                <View>
+                  <SectionHeader
+                    label="UPCOMING"
+                    count={groups.upcoming.length}
                   />
-                ))}
-              </View>
-            ) : groups.upcoming.length > 0 && !heroItem ? (
-              // Unscheduled upcoming (no start_at) — no hero, show as flat list
-              <View className="gap-2">
-                <SectionHeader label="UPCOMING" count={groups.upcoming.length} />
-                {groups.upcoming.map((r) => (
-                  <BookingRow
-                    key={r.id}
-                    reservation={toReservationViewModel(r)}
-                    onPress={() => setSelectedItem(r)}
-                    onDelete={
-                      isReadOnly ? undefined : () => void handleRemove(r.id)
-                    }
-                  />
-                ))}
-              </View>
-            ) : null}
-
-            {/* Past section */}
-            {groups.past.length > 0 ? (
-              <View className="gap-2">
-                <SectionHeader label="PAST" count={groups.past.length} />
-                {groups.past.map((r) => (
-                  <View key={r.id} style={{ opacity: 0.55 }}>
-                    <BookingRow
-                      reservation={toReservationViewModel(r)}
-                      onPress={() => setSelectedItem(r)}
-                      onDelete={
-                        isReadOnly ? undefined : () => void handleRemove(r.id)
-                      }
-                    />
+                  <View className="gap-2.5">
+                    {groups.upcoming.map((reservation) => (
+                      <BookingRow
+                        key={reservation.id}
+                        reservation={toReservationViewModel(reservation)}
+                        onPress={() => setSelectedItem(reservation)}
+                        onDelete={
+                          isReadOnly
+                            ? undefined
+                            : () => void handleRemove(reservation.id)
+                        }
+                      />
+                    ))}
                   </View>
-                ))}
-              </View>
-            ) : null}
-          </View>
-        )}
+                </View>
+              ) : null}
+
+              {groups.past.length > 0 ? (
+                <View>
+                  <SectionHeader label="PAST" count={groups.past.length} />
+                  <View className="gap-2.5">
+                    {groups.past.map((reservation) => (
+                      <View key={reservation.id} style={{ opacity: 0.58 }}>
+                        <BookingRow
+                          reservation={toReservationViewModel(reservation)}
+                          onPress={() => setSelectedItem(reservation)}
+                          onDelete={
+                            isReadOnly
+                              ? undefined
+                              : () => void handleRemove(reservation.id)
+                          }
+                        />
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              ) : null}
+            </View>
+          )}
+        </View>
       </ScrollView>
 
-      {/* ── Detail sheet ─────────────────────────────────────────────────────── */}
+      <Modal
+        visible={showAddChooser}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowAddChooser(false)}
+      >
+        <View className="flex-1 justify-end px-5">
+          <Pressable
+            className="absolute inset-0 bg-black/25"
+            onPress={() => setShowAddChooser(false)}
+            accessibilityLabel="Dismiss add booking options"
+          />
+          <View className="mb-8 rounded-2xl bg-ivory p-4">
+            <Text
+              style={[fontStyles.headSemibold, { fontSize: 22, color: DE.ink }]}
+            >
+              Add booking
+            </Text>
+            <Text
+              style={[
+                fontStyles.uiRegular,
+                { fontSize: 13, color: DE.muted, marginTop: 4 },
+              ]}
+            >
+              Choose how you want to add this reservation.
+            </Text>
+
+            <Pressable
+              className="mt-4 rounded-xl border border-ontrip bg-ontrip px-4 py-3"
+              accessibilityRole="button"
+              accessibilityLabel="Upload confirmation"
+              disabled={importing}
+              style={importing ? { opacity: 0.65 } : undefined}
+              onPress={() => {
+                void handleUploadConfirmation();
+              }}
+            >
+              <Text
+                style={[
+                  fontStyles.uiSemibold,
+                  { fontSize: 13, color: DE.ivory },
+                ]}
+              >
+                {importing ? "Extracting…" : "Upload confirmation"}
+              </Text>
+            </Pressable>
+
+            <Pressable
+              className="mt-2 rounded-xl border border-smoke px-4 py-3"
+              accessibilityRole="button"
+              accessibilityLabel="Type it in manually"
+              onPress={() => {
+                setShowAddChooser(false);
+                handleOpenManualEntry();
+              }}
+            >
+              <Text
+                style={[
+                  fontStyles.uiMedium,
+                  { fontSize: 13, color: DE.inkSoft },
+                ]}
+              >
+                Type it in manually
+              </Text>
+            </Pressable>
+
+            <Pressable
+              className="mt-2 rounded-xl px-4 py-3"
+              accessibilityRole="button"
+              accessibilityLabel="Cancel"
+              onPress={() => setShowAddChooser(false)}
+            >
+              <Text
+                style={[
+                  fontStyles.uiRegular,
+                  { fontSize: 13, color: DE.muted, textAlign: "center" },
+                ]}
+              >
+                Cancel
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
       <BookingDetailSheet
         vm={detailVm}
         visible={selectedItem !== null}
@@ -451,7 +548,6 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
         }
       />
 
-      {/* ── Edit booking sheet ───────────────────────────────────────────────── */}
       <BookingFormSheet
         visible={editItem !== null}
         initialValues={editItem ?? undefined}
@@ -461,10 +557,15 @@ export function BookingsTab({ tripId, isReadOnly = false }: Props) {
         }}
       />
 
-      {/* ── Add booking sheet ────────────────────────────────────────────────── */}
       <BookingFormSheet
         visible={showAddSheet}
-        onClose={() => setShowAddSheet(false)}
+        initialValues={addInitialValues}
+        helperText={addFormHelperText}
+        onClose={() => {
+          setShowAddSheet(false);
+          setAddInitialValues(undefined);
+          setAddFormHelperText(null);
+        }}
         onSave={async (payload) => {
           await reservations.addReservation(payload);
         }}

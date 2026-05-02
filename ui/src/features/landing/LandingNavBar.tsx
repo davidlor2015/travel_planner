@@ -13,7 +13,10 @@ export function LandingNavBar({ onGetStarted, onSignIn }: LandingNavBarProps) {
     <header className="sticky top-0 z-40 border-b border-smoke bg-ivory/95 backdrop-blur-md">
       <div className="mx-auto flex h-[68px] max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
         <div className="flex items-center gap-8">
-          <RoenLogo variant="full" theme="light" className="select-none" />
+          <div className="flex items-center gap-2.5">
+            <RoenLogo variant="monogram" size={28} />
+            <RoenLogo variant="editorial" size={24} />
+          </div>
           <nav
             className="hidden items-center gap-6 sm:flex"
             aria-label="Page navigation"

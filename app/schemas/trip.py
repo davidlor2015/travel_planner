@@ -172,6 +172,19 @@ class TripSummaryResponse(BaseModel):
     budget_expense_count: int
 
 
+class TripListItemResponse(BaseModel):
+    id: int
+    user_id: int
+    title: str
+    destination: str
+    start_date: date
+    end_date: date
+    created_at: datetime
+    member_count: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class WorkspaceLastSeenUpdateRequest(BaseModel):
     signature: str
     snapshot: dict

@@ -51,7 +51,7 @@ def _make_membership(role: str, has_state: bool = True) -> MagicMock:
 class TestRequireMembership:
 
     def test_nonexistent_trip_raises_404(self, MockRepo):
-        MockRepo.return_value.get_context.return_value = None
+        MockRepo.return_value.get_access_context.return_value = None
         svc = _make_service()
 
         with pytest.raises(HTTPException) as exc:
@@ -60,7 +60,7 @@ class TestRequireMembership:
         assert exc.value.status_code == 404
 
     def test_membership_without_state_raises_404(self, MockRepo):
-        MockRepo.return_value.get_context.return_value = _make_membership("member", has_state=False)
+        MockRepo.return_value.get_access_context.return_value = _make_membership("member", has_state=False)
         svc = _make_service()
 
         with pytest.raises(HTTPException) as exc:
@@ -70,7 +70,7 @@ class TestRequireMembership:
 
     def test_owner_access_default_succeeds(self, MockRepo):
         m = _make_membership("owner")
-        MockRepo.return_value.get_context.return_value = m
+        MockRepo.return_value.get_access_context.return_value = m
         svc = _make_service()
 
         ctx = svc.require_membership(trip_id=1, user_id=1)
@@ -81,7 +81,7 @@ class TestRequireMembership:
 
     def test_member_access_default_succeeds(self, MockRepo):
         m = _make_membership("member")
-        MockRepo.return_value.get_context.return_value = m
+        MockRepo.return_value.get_access_context.return_value = m
         svc = _make_service()
 
         ctx = svc.require_membership(trip_id=1, user_id=2)
@@ -89,7 +89,7 @@ class TestRequireMembership:
         assert ctx.membership is m
 
     def test_owner_only_passes_for_owner(self, MockRepo):
-        MockRepo.return_value.get_context.return_value = _make_membership("owner")
+        MockRepo.return_value.get_access_context.return_value = _make_membership("owner")
         svc = _make_service()
 
         ctx = svc.require_membership(trip_id=1, user_id=1, owner_only=True)
@@ -99,7 +99,7 @@ class TestRequireMembership:
     def test_owner_only_passes_for_trip_creator_without_owner_role(self, MockRepo):
         membership = _make_membership("member")
         membership.trip.user_id = 7
-        MockRepo.return_value.get_context.return_value = membership
+        MockRepo.return_value.get_access_context.return_value = membership
         svc = _make_service()
 
         ctx = svc.require_membership(trip_id=1, user_id=7, owner_only=True)
@@ -107,7 +107,7 @@ class TestRequireMembership:
         assert ctx.membership is membership
 
     def test_owner_only_raises_403_for_member(self, MockRepo):
-        MockRepo.return_value.get_context.return_value = _make_membership("member")
+        MockRepo.return_value.get_access_context.return_value = _make_membership("member")
         svc = _make_service()
 
         with pytest.raises(HTTPException) as exc:
@@ -116,15 +116,25 @@ class TestRequireMembership:
         assert exc.value.status_code == 403
 
     def test_repo_called_with_correct_ids(self, MockRepo):
-        MockRepo.return_value.get_context.return_value = _make_membership("owner")
+        MockRepo.return_value.get_access_context.return_value = _make_membership("owner")
         svc = _make_service()
 
         svc.require_membership(trip_id=42, user_id=7)
 
+        MockRepo.return_value.get_access_context.assert_called_once_with(42, 7)
+
+    def test_full_trip_context_uses_heavy_loader(self, MockRepo):
+        membership = _make_membership("owner")
+        MockRepo.return_value.get_context.return_value = membership
+        svc = _make_service()
+
+        ctx = svc.require_membership(trip_id=42, user_id=7, load_full_trip=True)
+
+        assert ctx.membership is membership
         MockRepo.return_value.get_context.assert_called_once_with(42, 7)
 
     def test_404_detail_message(self, MockRepo):
-        MockRepo.return_value.get_context.return_value = None
+        MockRepo.return_value.get_access_context.return_value = None
         svc = _make_service()
 
         with pytest.raises(HTTPException) as exc:
@@ -133,7 +143,7 @@ class TestRequireMembership:
         assert "not found" in exc.value.detail.lower()
 
     def test_403_detail_message(self, MockRepo):
-        MockRepo.return_value.get_context.return_value = _make_membership("member")
+        MockRepo.return_value.get_access_context.return_value = _make_membership("member")
         svc = _make_service()
 
         with pytest.raises(HTTPException) as exc:

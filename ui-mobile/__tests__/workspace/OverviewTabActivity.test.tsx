@@ -235,4 +235,27 @@ describe("OverviewTab activity strip", () => {
     expect(getByText("Couldn't load recent activity.")).toBeTruthy();
     expect(getByText("NEXT ACTION")).toBeTruthy();
   });
+
+  it("hides recent activity section when there are no meaningful updates", () => {
+    const { queryByText } = render(
+      <OverviewTab
+        trip={buildTripVm()}
+        tripRaw={buildTripRaw()}
+        currentUserEmail="david@example.com"
+        summary={null}
+        collaboration={null}
+        onTripSnapshot={null}
+        canOpenLiveView={false}
+        streamState={undefined}
+        onStartStream={jest.fn()}
+        onCancelStream={jest.fn()}
+        onOpenTab={jest.fn()}
+        onOpenLiveView={jest.fn()}
+      />,
+    );
+
+    expect(queryByText("RECENT ACTIVITY")).toBeNull();
+    expect(queryByText("What changed")).toBeNull();
+    expect(queryByText("No recent changes yet.")).toBeNull();
+  });
 });

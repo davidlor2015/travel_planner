@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Roen",
-    "slug": "roen",
+    "slug": "waypoint",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -26,6 +26,10 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
+    "notification": {
+      "icon": "./assets/images/android-icon-monochrome.png",
+      "color": "#2A231C"
+    },
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
@@ -36,17 +40,18 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
+          "imageWidth": 260,
           "resizeMode": "contain",
-          "backgroundColor": "#EFE7D6",
+          "backgroundColor": "#2A231C",
           "dark": {
-            "backgroundColor": "#241D17"
+            "backgroundColor": "#2A231C"
           }
         }
       ],
       "expo-secure-store",
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,

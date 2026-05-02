@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import type { ReactNode } from "react";
-import { render } from "@testing-library/react-native";
+import { fireEvent, render } from "@testing-library/react-native";
+import { useRouter } from "expo-router";
 
 import { StopDetailScreen } from "@/features/trips/onTrip/StopDetailScreen";
 import type { TripOnTripSnapshot } from "@/features/trips/types";
@@ -55,7 +56,7 @@ function buildSnapshot(isReadOnly: boolean): TripOnTripSnapshot {
 const mockSnapshotData = { current: buildSnapshot(false) };
 
 jest.mock("expo-router", () => ({
-  useRouter: () => ({ back: jest.fn(), push: jest.fn() }),
+  useRouter: jest.fn(),
 }));
 
 jest.mock("react-native-safe-area-context", () => ({
@@ -98,7 +99,45 @@ jest.mock("@/shared/ui/ScreenError", () => ({ ScreenError: () => null }));
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
+const mockedUseRouter = jest.mocked(useRouter);
+type RouterMock = ReturnType<typeof useRouter>;
+
+function createRouterMock(overrides: Partial<RouterMock> = {}): RouterMock {
+  return {
+    back: jest.fn(),
+    canGoBack: jest.fn(() => false),
+    push: jest.fn(),
+    navigate: jest.fn(),
+    replace: jest.fn(),
+    dismiss: jest.fn(),
+    dismissTo: jest.fn(),
+    dismissAll: jest.fn(),
+    canDismiss: jest.fn(() => false),
+    setParams: jest.fn(),
+    reload: jest.fn(),
+    prefetch: jest.fn(),
+    ...overrides,
+  };
+}
+
 describe("StopDetailScreen", () => {
+  beforeEach(() => {
+    mockedUseRouter.mockReturnValue(createRouterMock());
+  });
+
+  it("replaces to Today tab when the header back control is pressed", () => {
+    mockSnapshotData.current = buildSnapshot(false);
+    const replace = jest.fn();
+    mockedUseRouter.mockReturnValue(createRouterMock({ replace }));
+
+    const { getByLabelText } = render(
+      <StopDetailScreen tripId={1} stopKey={STOP_REF} />,
+    );
+    fireEvent.press(getByLabelText("Back to Today"));
+
+    expect(replace).toHaveBeenCalledWith("/(tabs)/today");
+  });
+
   it("does not render the Call venue placeholder tile", () => {
     mockSnapshotData.current = buildSnapshot(false);
     const { queryByText } = render(<StopDetailScreen tripId={1} stopKey={STOP_REF} />);

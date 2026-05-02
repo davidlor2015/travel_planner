@@ -15,6 +15,11 @@ export type LoginResponse = {
   expires_in_seconds: number;
 };
 
+export type EmailVerificationRequestResponse = {
+  ok: boolean;
+  verification_url: string | null;
+};
+
 export type MeResponse = {
   id: number;
   email: string;

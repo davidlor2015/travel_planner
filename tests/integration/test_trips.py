@@ -8,7 +8,7 @@ Trip CRUD integration tests.
 5. Updates only provided fields (partial PATCH)
 6. Delete removes the trip
 """
-from datetime import date, datetime, timezone
+from datetime import date, datetime, time, timedelta, timezone
 
 from app.models.budget_expense import BudgetExpense
 from app.models.itinerary import ItineraryDay, ItineraryEvent
@@ -94,6 +94,142 @@ def test_read_trips_only_returns_current_users_trips(client, db, user_a, user_b,
     assert len(trips) == 1
     assert trips[0]["title"] == "A Trip"
     assert trips[0]["destination"] == "Paris"
+
+
+def test_read_trips_and_detail_response_contract(client, db, user_a, auth_headers_user_a, attach_trip_membership):
+    trip = Trip(
+        user_id=user_a.id,
+        title="Contract Trip",
+        destination="Seoul",
+        description="Trip contract test",
+        notes="notes",
+        start_date=date(2026, 7, 1),
+        end_date=date(2026, 7, 5),
+    )
+    db.add(trip)
+    db.commit()
+    db.refresh(trip)
+    attach_trip_membership(trip, user_a.id)
+
+    list_res = client.get("/v1/trips/", headers=auth_headers_user_a)
+    assert list_res.status_code == 200, list_res.text
+    rows = list_res.json()
+    assert len(rows) == 1
+    row = rows[0]
+    assert set(row.keys()) == {
+        "id",
+        "user_id",
+        "title",
+        "destination",
+        "description",
+        "start_date",
+        "end_date",
+        "notes",
+        "created_at",
+        "member_count",
+        "members",
+        "pending_invites",
+    }
+    assert len(row["members"]) == 1
+    assert set(row["members"][0].keys()) == {
+        "user_id",
+        "email",
+        "role",
+        "joined_at",
+        "status",
+        "workspace_last_seen_signature",
+        "workspace_last_seen_snapshot",
+        "workspace_last_seen_at",
+    }
+
+    detail_res = client.get(f"/v1/trips/{trip.id}", headers=auth_headers_user_a)
+    assert detail_res.status_code == 200, detail_res.text
+    detail = detail_res.json()
+    assert set(detail.keys()) == set(row.keys())
+    assert detail["id"] == trip.id
+    assert detail["title"] == "Contract Trip"
+
+
+def test_read_trips_lite_returns_lean_payload(client, db, user_a, auth_headers_user_a, attach_trip_membership):
+    trip = Trip(
+        user_id=user_a.id,
+        title="Lite Trip",
+        destination="Berlin",
+        description="full details exist but are not needed in list-lite",
+        notes="notes",
+        start_date=date(2026, 7, 1),
+        end_date=date(2026, 7, 10),
+    )
+    db.add(trip)
+    db.commit()
+    db.refresh(trip)
+    attach_trip_membership(trip, user_a.id)
+
+    res = client.get("/v1/trips/lite", headers=auth_headers_user_a)
+    assert res.status_code == 200, res.text
+    rows = res.json()
+    assert len(rows) == 1
+    row = rows[0]
+    assert set(row.keys()) == {
+        "id",
+        "user_id",
+        "title",
+        "destination",
+        "start_date",
+        "end_date",
+        "created_at",
+        "member_count",
+    }
+    assert row["title"] == "Lite Trip"
+    assert row["destination"] == "Berlin"
+
+
+def test_trip_summaries_upcoming_count_includes_later_today_excludes_before_today(
+    client,
+    db,
+    user_a,
+    auth_headers_user_a,
+    attach_trip_membership,
+):
+    today = date.today()
+    trip = Trip(
+        user_id=user_a.id,
+        title="Summary Trip",
+        destination="Madrid",
+        description=None,
+        notes=None,
+        start_date=today,
+        end_date=today + timedelta(days=3),
+    )
+    db.add(trip)
+    db.commit()
+    db.refresh(trip)
+    attach_trip_membership(trip, user_a.id)
+
+    before_today = datetime.combine(today, time.min, tzinfo=timezone.utc) - timedelta(minutes=1)
+    later_today = datetime.combine(today, time.min, tzinfo=timezone.utc) + timedelta(hours=12)
+
+    for title, start_at in (
+        ("Past boundary", before_today),
+        ("Later today", later_today),
+    ):
+        create_res = client.post(
+            f"/v1/trips/{trip.id}/reservations/",
+            json={
+                "title": title,
+                "reservation_type": "other",
+                "start_at": start_at.isoformat().replace("+00:00", "Z"),
+            },
+            headers=auth_headers_user_a,
+        )
+        assert create_res.status_code == 201, create_res.text
+
+    summaries_res = client.get("/v1/trips/summaries", headers=auth_headers_user_a)
+    assert summaries_res.status_code == 200, summaries_res.text
+    summaries = summaries_res.json()
+    summary = [row for row in summaries if row["trip_id"] == trip.id][0]
+    assert summary["reservation_count"] == 2
+    assert summary["reservation_upcoming_count"] == 1
 
 
 def test_read_trip_returns_404_if_not_owned(client, db, user_b, auth_headers_user_a, attach_trip_membership):

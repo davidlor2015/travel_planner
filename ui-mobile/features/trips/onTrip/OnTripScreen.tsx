@@ -1,8 +1,7 @@
 // Path: ui-mobile/features/trips/onTrip/OnTripScreen.tsx
 // Summary: Implements OnTripScreen module logic.
 
-import { useEffect, useMemo, useState } from "react";
-import * as Linking from "expo-linking";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { type Href, useRouter } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
@@ -36,7 +35,8 @@ import { useOnTripMutations } from "./hooks";
 import { NeedsAttentionCard } from "./NeedsAttentionCard";
 import { LogStopSheet } from "./LogStopSheet";
 import { OnTripHeader } from "./OnTripHeader";
-import { buildNavigateUrl, buildOnTripDayHeader } from "./presentation";
+import { openStopDirections } from "./mapNavigation";
+import { buildOnTripDayHeader } from "./presentation";
 import { TimelineRow } from "./TimelineRow";
 import { UnplannedStopRow } from "./UnplannedStopRow";
 import {
@@ -48,7 +48,10 @@ type Props = {
   tripId: number;
   tripTitle: string;
   tripDestination?: string;
+  /** Trip calendar start_date when deriving today without snapshot today.day_date */
+  tripStartDate?: string | null;
   members?: TripMember[];
+  autoOpenLogComposer?: boolean;
 };
 
 const NOW_TICK_INTERVAL_MS = 60_000;
@@ -57,7 +60,9 @@ export function OnTripScreen({
   tripId,
   tripTitle,
   tripDestination,
+  tripStartDate,
   members,
+  autoOpenLogComposer = false,
 }: Props) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -68,6 +73,10 @@ export function OnTripScreen({
     null,
   );
   const [logModalOpen, setLogModalOpen] = useState(false);
+  const [logComposerMode, setLogComposerMode] = useState<"quick" | "full">(
+    autoOpenLogComposer ? "quick" : "full",
+  );
+  const hasAutoOpenedComposerRef = useRef(false);
 
   const [, setMinuteTick] = useState(0);
   useEffect(() => {
@@ -102,10 +111,25 @@ export function OnTripScreen({
   const dayHeader = useMemo(
     () =>
       rawSnapshot
-        ? buildOnTripDayHeader(rawSnapshot, tripTitle, tripDestination)
+        ? buildOnTripDayHeader(
+            rawSnapshot,
+            tripTitle,
+            tripDestination,
+            tripStartDate,
+          )
         : null,
-    [rawSnapshot, tripTitle, tripDestination],
+    [rawSnapshot, tripTitle, tripDestination, tripStartDate],
   );
+
+  useEffect(() => {
+    if (hasAutoOpenedComposerRef.current) return;
+    if (!autoOpenLogComposer) return;
+    if (!vm || vm.isReadOnly) return;
+
+    hasAutoOpenedComposerRef.current = true;
+    setLogComposerMode("quick");
+    setLogModalOpen(true);
+  }, [autoOpenLogComposer, vm]);
 
   if (snapshotQuery.isLoading)
     return <ScreenLoading label="Loading your trip..." />;
@@ -113,7 +137,7 @@ export function OnTripScreen({
   if (snapshotQuery.isError && !snapshotQuery.data) {
     return (
       <ScreenError
-        message="We couldn't load your live trip view. Try again in a moment."
+        message="We couldn't load your Today view. Try again in a moment."
         onRetry={() => void snapshotQuery.refetch()}
       />
     );
@@ -122,9 +146,17 @@ export function OnTripScreen({
   if (!rawSnapshot || !vm || !dayHeader)
     return <ScreenLoading label="Loading your trip..." />;
 
-  const showStaleBanner =
-    mutations.refreshFailed || (snapshotQuery.isError && !!snapshotQuery.data);
-  const displayedRefreshedAt = mutations.lastRefreshedAt;
+  const showSavedDetailsHint =
+    mutations.refreshFailed || snapshotQuery.refreshFailedWithCache;
+  const displayedRefreshedAt =
+    snapshotQuery.dataUpdatedAt > 0
+      ? snapshotQuery.dataUpdatedAt
+      : mutations.lastRefreshedAt;
+  const staleMinutes =
+    displayedRefreshedAt > 0
+      ? Math.floor((Date.now() - displayedRefreshedAt) / 60_000)
+      : 0;
+  const showOlderRefreshFailure = showSavedDetailsHint && staleMinutes >= 30;
 
   const nowKey = vm.now?.key ?? null;
   const nextKey = vm.next?.key ?? null;
@@ -146,9 +178,8 @@ export function OnTripScreen({
       vm.timeline.find((item) => item.key === key) ??
       (vm.now?.key === key ? vm.now : null);
     if (!stop) return undefined;
-    const url = buildNavigateUrl(stop);
-    if (!url) return undefined;
-    return () => void Linking.openURL(url);
+    if (!stop.location?.trim()) return undefined;
+    return () => void openStopDirections(stop.location);
   };
 
   const openStopDetail = (stopKey: string) => {
@@ -202,8 +233,8 @@ export function OnTripScreen({
         {/* Read-only notice */}
         {vm.isReadOnly ? <ReadOnlyBanner /> : null}
 
-        {/* Stale data notice */}
-        {showStaleBanner ? <StaleBanner /> : null}
+        {/* Stale data notice (only when old + refresh failing) */}
+        {showOlderRefreshFailure ? <StaleBanner /> : null}
 
         {/* NowCard / day-complete state */}
         {focusStop ? (
@@ -286,20 +317,32 @@ export function OnTripScreen({
                 </Text>
               </View>
               {displayedRefreshedAt > 0 ? (
-                <Text
-                  style={[
-                    fontStyles.monoRegular,
-                    {
-                      fontSize: 9,
-                      letterSpacing: 1.2,
-                      color: DE.mutedLight,
-                      marginTop: 2,
-                    },
-                  ]}
-                  accessibilityLabel={formatLastUpdated(displayedRefreshedAt)}
-                >
-                  {formatLastUpdated(displayedRefreshedAt)}
-                </Text>
+                <View className="items-end">
+                  <Text
+                    style={[
+                      fontStyles.monoRegular,
+                      {
+                        fontSize: 9,
+                        letterSpacing: 1.2,
+                        color: DE.mutedLight,
+                        marginTop: 2,
+                      },
+                    ]}
+                    accessibilityLabel={formatLastUpdated(displayedRefreshedAt)}
+                  >
+                    {formatLastUpdated(displayedRefreshedAt)}
+                  </Text>
+                  {showSavedDetailsHint ? (
+                    <Text
+                      style={[
+                        fontStyles.uiRegular,
+                        { fontSize: 10, lineHeight: 14, color: DE.mutedLight },
+                      ]}
+                    >
+                      Showing saved trip details
+                    </Text>
+                  ) : null}
+                </View>
               ) : null}
             </View>
 
@@ -366,7 +409,10 @@ export function OnTripScreen({
         {!vm.isReadOnly ? (
           <View className="mx-[22px] mt-6">
             <Pressable
-              onPress={() => setLogModalOpen(true)}
+              onPress={() => {
+                setLogComposerMode("full");
+                setLogModalOpen(true);
+              }}
               className="flex-row items-center gap-3 rounded-[12px] border px-4 py-3.5 active:opacity-70"
               style={{ backgroundColor: DE.paper, borderColor: DE.rule }}
               accessibilityRole="button"
@@ -403,13 +449,13 @@ export function OnTripScreen({
         {/* Tomorrow peek */}
         {tomorrowStop ? <TomorrowPeek stop={tomorrowStop} /> : null}
 
-        {/* Open workspace link */}
+        {/* Open plan link */}
         <View className="mt-6 items-center">
           <Pressable
             onPress={openFullWorkspace}
             className="flex-row items-center gap-1.5 px-3 py-2 active:opacity-70"
             accessibilityRole="button"
-            accessibilityLabel="Open full trip workspace"
+            accessibilityLabel="Open Plan"
           >
             <Ionicons name="open-outline" size={12} color={DE.muted} />
             <Text
@@ -418,7 +464,7 @@ export function OnTripScreen({
                 { fontSize: 12, lineHeight: 18, color: DE.muted },
               ]}
             >
-              Open full workspace
+              Open Plan
             </Text>
           </Pressable>
         </View>
@@ -443,9 +489,11 @@ export function OnTripScreen({
         visible={logModalOpen}
         defaultDate={vm.defaultLogDate}
         disabled={mutations.isLoggingUnplanned}
+        quickMode={logComposerMode === "quick"}
         onClose={() => setLogModalOpen(false)}
         onSubmit={async (payload) => {
           await mutations.logUnplannedStop(payload);
+          setLogComposerMode("full");
           setLogModalOpen(false);
         }}
       />
@@ -457,9 +505,9 @@ export function OnTripScreen({
 
 function formatLastUpdated(ts: number): string {
   const diffMin = Math.floor((Date.now() - ts) / 60_000);
-  if (diffMin < 1) return "Updated just now";
-  if (diffMin === 1) return "Updated 1 min ago";
-  if (diffMin < 60) return `Updated ${diffMin} min ago`;
+  if (diffMin < 1) return "Last updated just now";
+  if (diffMin === 1) return "Last updated 1 min ago";
+  if (diffMin < 60) return `Last updated ${diffMin} min ago`;
   const time = new Date(ts).toLocaleTimeString(undefined, {
     hour: "numeric",
     minute: "2-digit",
@@ -485,7 +533,9 @@ function ReadOnlyBanner() {
         style={{ marginTop: 1 }}
       />
       <View style={{ flex: 1 }}>
-        <Text style={[fontStyles.uiSemibold, { fontSize: 13, color: DE.inkSoft }]}>
+        <Text
+          style={[fontStyles.uiSemibold, { fontSize: 13, color: DE.inkSoft }]}
+        >
           {READ_ONLY_TRIP_TITLE}
         </Text>
         <Text
@@ -560,7 +610,7 @@ function StaleBanner() {
           { fontSize: 13, lineHeight: 19, color: DE.muted, flex: 1 },
         ]}
       >
-        Couldn&apos;t refresh. Showing last saved plan.
+        Couldn&apos;t refresh right now. Showing saved trip details.
       </Text>
     </View>
   );
@@ -745,7 +795,7 @@ function NoStopsTodayCard({
           ]}
         >
           Your saved itinerary does not have resolved stops for today yet. Open
-          the workspace to review the trip plan or adjust the itinerary.
+          Plan to review details or adjust the itinerary.
         </Text>
       </View>
       <Pressable
@@ -753,12 +803,12 @@ function NoStopsTodayCard({
         className="h-11 items-center justify-center rounded-full border px-4 active:opacity-75"
         style={{ backgroundColor: DE.ivory, borderColor: DE.ruleStrong }}
         accessibilityRole="button"
-        accessibilityLabel="Open full trip workspace"
+        accessibilityLabel="Open Plan"
       >
         <Text
           style={[fontStyles.uiSemibold, { fontSize: 13, color: DE.inkSoft }]}
         >
-          Open full workspace
+          Open Plan
         </Text>
       </Pressable>
     </View>

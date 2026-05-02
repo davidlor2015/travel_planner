@@ -6,6 +6,7 @@ from __future__ import annotations
 from datetime import date
 
 from fastapi import HTTPException
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.packing_item import PackingItem
@@ -54,8 +55,8 @@ def _season_suggestions(destination: str, start_date: date | None) -> list[tuple
     ]
 
 
-def _reservation_suggestions(reservations: list[Reservation]) -> list[tuple[str, str]]:
-    types = {reservation.reservation_type for reservation in reservations}
+def _reservation_suggestions(reservation_types: set[str]) -> list[tuple[str, str]]:
+    types = reservation_types
     suggestions: list[tuple[str, str]] = []
     if "flight" in types:
         suggestions.append(("Passport", "Bring your passport for airport check-in and arrival formalities."))
@@ -110,15 +111,19 @@ class PackingService:
             item.label.strip().lower()
             for item in context.member_state.packing_items
         }
-        reservations = (
-            self.db.query(Reservation)
-            .filter(Reservation.trip_id == context.trip.id)
-            .all()
-        )
+        reservation_types = {
+            row[0]
+            for row in self.db.execute(
+                select(Reservation.reservation_type)
+                .where(Reservation.trip_id == context.trip.id)
+                .distinct()
+            ).all()
+            if row[0] is not None
+        }
         raw_suggestions = [
             *_season_suggestions(context.trip.destination, context.trip.start_date),
             *_destination_suggestions(context.trip.destination),
-            *_reservation_suggestions(reservations),
+            *_reservation_suggestions(reservation_types),
         ]
 
         seen: set[str] = set()

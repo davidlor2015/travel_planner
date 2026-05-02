@@ -15,6 +15,7 @@ from app.schemas.trip import (
     TripMemberResponse,
     TripOnTripSnapshotResponse,
     TripResponse,
+    TripListItemResponse,
     TripSummaryResponse,
     TripUpdate,
     WorkspaceLastSeenResponse,
@@ -33,6 +34,11 @@ def create_trip(trip_in: TripCreate, db: SessionDep, current_user: CurrentUser):
 @router.get("/", response_model=List[TripResponse])
 def read_trips(*, db: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100):
     return TripService(db).get_all(current_user.id, skip, limit)
+
+
+@router.get("/lite", response_model=List[TripListItemResponse])
+def read_trips_lite(*, db: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100):
+    return TripService(db).get_all_lite(current_user.id, skip, limit)
 
 
 @router.get("/summaries", response_model=List[TripSummaryResponse])

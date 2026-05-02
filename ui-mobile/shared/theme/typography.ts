@@ -6,7 +6,7 @@ import type { TextStyle } from "react-native";
 /**
  * Desert Editorial type system — three families matching STYLE.MD.md:
  *   HEAD  → Cormorant Garamond  (display titles, editorial headings, italic emphasis)
- *   UI    → Manrope             (body copy, labels, buttons, UI text)
+ *   UI    → Jost                (body copy, labels, buttons, UI text)
  *   MONO  → JetBrains Mono      (kickers, timestamps, metadata, uppercase labels)
  */
 export const AppFontFamily = {
@@ -18,11 +18,11 @@ export const AppFontFamily = {
   headRegular:         "CormorantGaramond_400Regular",
   headRegularItalic:   "CormorantGaramond_400Regular_Italic",
 
-  // UI — Manrope
-  uiRegular:   "Manrope_400Regular",
-  uiMedium:    "Manrope_500Medium",
-  uiSemibold:  "Manrope_600SemiBold",
-  uiBold:      "Manrope_700Bold",
+  // UI — Jost
+  uiRegular:   "Jost_400Regular",
+  uiMedium:    "Jost_500Medium",
+  uiSemibold:  "Jost_600SemiBold",
+  uiBold:      "Jost_700Bold",
 
   // MONO — JetBrains Mono
   monoRegular: "JetBrainsMono_400Regular",

@@ -1,6 +1,7 @@
 // Path: ui-mobile/features/trips/hooks.ts
 // Summary: Implements hooks module logic.
 
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
@@ -19,6 +20,11 @@ import {
   updateTrip,
 } from "./api";
 import type { TripCreate, TripResponse, TripSummary, TripUpdate } from "./types";
+import {
+  type OnTripSnapshotCacheRecord,
+  readOnTripSnapshotCache,
+  writeOnTripSnapshotCache,
+} from "./onTrip/cache";
 
 export const tripKeys = {
   all: ["trips"] as const,
@@ -92,13 +98,57 @@ export function useOnTripSnapshotQuery(
   tripId: number | null,
   options?: { enabled?: boolean },
 ) {
-  return useQuery({
+  const [cachedRecord, setCachedRecord] =
+    useState<OnTripSnapshotCacheRecord | null>(null);
+
+  useEffect(() => {
+    setCachedRecord(null);
+    if (typeof tripId !== "number") return;
+    let cancelled = false;
+    void readOnTripSnapshotCache(tripId).then((record) => {
+      if (!cancelled) setCachedRecord(record);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [tripId]);
+
+  const query = useQuery({
     queryKey: tripKeys.onTripSnapshot(tripId as number),
     queryFn: () => getTripOnTripSnapshot(tripId as number),
     enabled: (options?.enabled ?? true) && typeof tripId === "number",
     refetchInterval: 30_000,
     refetchIntervalInBackground: false,
   });
+
+  useEffect(() => {
+    if (typeof tripId !== "number" || !query.data) return;
+    void writeOnTripSnapshotCache(tripId, query.data).then((record) => {
+      if (record) setCachedRecord(record);
+    });
+  }, [tripId, query.data]);
+
+  const mergedData = useMemo(
+    () => query.data ?? cachedRecord?.snapshot,
+    [query.data, cachedRecord?.snapshot],
+  );
+
+  const dataUpdatedAt = query.data
+    ? query.dataUpdatedAt
+    : cachedRecord?.savedAt ?? 0;
+
+  const hasCachedData = !query.data && !!cachedRecord?.snapshot;
+  const refreshFailedWithCache = query.isError && !!mergedData;
+
+  return {
+    ...query,
+    data: mergedData,
+    isLoading: query.isLoading && !mergedData,
+    isError: query.isError && !mergedData,
+    hasCachedData,
+    refreshFailedWithCache,
+    dataUpdatedAt,
+  };
 }
 
 export function useCreateTripMutation() {
@@ -157,8 +207,15 @@ export function useDeleteTripMutation() {
 export function useCreateInviteMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ tripId, email }: { tripId: number; email: string }) =>
-      createTripInvite(tripId, email),
+    mutationFn: ({
+      tripId,
+      email,
+      inviteDisplayLabel,
+    }: {
+      tripId: number;
+      email: string;
+      inviteDisplayLabel?: string | null;
+    }) => createTripInvite(tripId, email, inviteDisplayLabel),
     onSuccess: (_data, { tripId }) => {
       void queryClient.invalidateQueries({ queryKey: tripKeys.detail(tripId) });
     },

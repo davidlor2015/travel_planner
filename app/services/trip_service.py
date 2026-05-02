@@ -86,62 +86,47 @@ class TripService:
     def get_all(self, user_id: int, skip: int = 0, limit: int = 100) -> list[Trip]:
         return self.repo.get_all_by_user(user_id, skip, limit)
 
+    def get_all_lite(self, user_id: int, skip: int = 0, limit: int = 100) -> list[Trip]:
+        return self.repo.get_all_by_user_lite(user_id, skip, limit)
+
     def get_summaries(self, user_id: int, skip: int = 0, limit: int = 100) -> list[dict[str, object]]:
-        trips = self.repo.get_all_by_user_with_planning(user_id, skip, limit)
-        summaries: list[dict[str, object]] = []
         today = date.today()
-        for trip in trips:
-            membership = next(
-                (member for member in trip.memberships if member.user_id == user_id),
-                None,
-            )
-            state = membership.member_state if membership else None
-            if state is None:
-                continue
-
-            packing_total = len(state.packing_items)
-            packing_checked = sum(1 for item in state.packing_items if item.checked)
+        rows = self.repo.get_summaries_by_user(user_id, today=today, skip=skip, limit=limit)
+        summaries: list[dict[str, object]] = []
+        for row in rows:
+            packing_total = int(row["packing_total"] or 0)
+            packing_checked = int(row["packing_checked"] or 0)
             packing_progress_pct = 0 if packing_total == 0 else round((packing_checked / packing_total) * 100)
-            reservation_count = len(trip.reservations)
-            reservation_upcoming_count = sum(
-                1
-                for reservation in trip.reservations
-                if reservation.start_at is not None and reservation.start_at.date() >= today
-            )
-            prep_total = len(state.prep_items)
-            prep_completed = sum(1 for item in state.prep_items if item.completed)
-            prep_overdue_count = sum(
-                1
-                for item in state.prep_items
-                if not item.completed and item.due_date is not None and item.due_date < today
-            )
-
-            budget_total_spent = float(sum(expense.amount for expense in state.budget_expenses))
+            budget_limit = row["budget_limit"]
+            budget_total_spent = float(row["budget_total_spent"] or 0.0)
             budget_remaining = (
-                float(state.budget_limit - budget_total_spent)
-                if state.budget_limit is not None
+                float(budget_limit - budget_total_spent)
+                if budget_limit is not None
                 else None
             )
             summaries.append({
-                "trip_id": trip.id,
+                "trip_id": int(row["trip_id"]),
                 "packing_total": packing_total,
                 "packing_checked": packing_checked,
                 "packing_progress_pct": packing_progress_pct,
-                "reservation_count": reservation_count,
-                "reservation_upcoming_count": reservation_upcoming_count,
-                "prep_total": prep_total,
-                "prep_completed": prep_completed,
-                "prep_overdue_count": prep_overdue_count,
-                "budget_limit": float(state.budget_limit) if state.budget_limit is not None else None,
+                "reservation_count": int(row["reservation_count"] or 0),
+                "reservation_upcoming_count": int(row["reservation_upcoming_count"] or 0),
+                "prep_total": int(row["prep_total"] or 0),
+                "prep_completed": int(row["prep_completed"] or 0),
+                "prep_overdue_count": int(row["prep_overdue_count"] or 0),
+                "budget_limit": float(budget_limit) if budget_limit is not None else None,
                 "budget_total_spent": budget_total_spent,
                 "budget_remaining": budget_remaining,
                 "budget_is_over": budget_remaining is not None and budget_remaining < 0,
-                "budget_expense_count": len(state.budget_expenses),
+                "budget_expense_count": int(row["budget_expense_count"] or 0),
             })
         return summaries
 
     def get_one(self, trip_id: int, user_id: int) -> Trip:
-        return self.access_service.require_membership(trip_id, user_id).trip
+        trip = self.repo.get_by_id_and_user(trip_id, user_id)
+        if trip is None:
+            raise HTTPException(status_code=404, detail="Trip not found")
+        return trip
 
     def update(self, trip_id: int, user_id: int, trip_in: TripUpdate) -> Trip:
         trip = self.access_service.require_membership(trip_id, user_id).trip
@@ -174,24 +159,27 @@ class TripService:
         ]
 
     def get_member_readiness(self, trip_id: int, user_id: int) -> TripMemberReadinessResponse:
-        context = self.access_service.require_membership(trip_id, user_id)
+        context = self.access_service.require_membership(trip_id, user_id, load_full_trip=True)
         memberships = self.membership_repo.list_with_planning_by_trip(trip_id)
-
-        itinerary = self.itinerary_repo.to_itinerary_response(
-            trip_id=trip_id,
-            title=context.trip.title,
-            summary=context.trip.description or context.trip.notes or "",
-            source="saved_itinerary",
-            source_label="Saved itinerary",
-            fallback_used=False,
-        )
 
         blocker_counts_by_email: dict[str, int] = {}
         start_date = context.trip.start_date
         days_until_start = (start_date - date.today()).days if start_date else None
         blocker_window_active = days_until_start is None or days_until_start <= 14
 
-        if itinerary is not None and blocker_window_active:
+        if blocker_window_active:
+            itinerary = self.itinerary_repo.to_itinerary_response(
+                trip_id=trip_id,
+                title=context.trip.title,
+                summary=context.trip.description or context.trip.notes or "",
+                source="saved_itinerary",
+                source_label="Saved itinerary",
+                fallback_used=False,
+            )
+        else:
+            itinerary = None
+
+        if itinerary is not None:
             for day in itinerary.days:
                 for item in day.items:
                     owner = (item.handled_by or "").strip().lower()
@@ -270,7 +258,11 @@ class TripService:
         user_id: int,
         tz: str | None = None,
     ) -> TripOnTripSnapshotResponse:
-        context = self.access_service.require_membership(trip_id, user_id)
+        context = self.access_service.require_membership(
+            trip_id,
+            user_id,
+            load_trip_members=True,
+        )
         trip = context.trip
         today = self._resolve_today(tz)
         is_active = trip.start_date <= today <= trip.end_date

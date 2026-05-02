@@ -259,6 +259,22 @@ export function useTripWorkspaceModel({
     });
   }, []);
 
+  // The apply confirmation banner is a moment, not a permanent state — it
+  // should fade itself out so the workspace settles into its calm read view.
+  useEffect(() => {
+    if (appliedSuccessIds.size === 0) return;
+    const ids = Array.from(appliedSuccessIds);
+    const timer = setTimeout(() => {
+      setAppliedSuccessIds((prev) => {
+        if (prev.size === 0) return prev;
+        const next = new Set(prev);
+        for (const id of ids) next.delete(id);
+        return next;
+      });
+    }, 4500);
+    return () => clearTimeout(timer);
+  }, [appliedSuccessIds]);
+
   useEffect(() => {
     const updateLayout = () => {
       setIsMobileLayout(window.innerWidth < 640);
@@ -962,6 +978,10 @@ export function useTripWorkspaceModel({
         [tripId]: toApiItinerary(itinerary),
       }));
       setAppliedSuccessIds((prev) => new Set(prev).add(tripId));
+      // The apply moment is the product climax: park the user on Overview
+      // so the saved itinerary is the first thing they see, even if they
+      // were on another tab when they hit Save.
+      setActiveTab("overview");
       track({
         name: "itinerary_applied",
         props: {
@@ -1552,6 +1572,7 @@ export function useTripWorkspaceModel({
       selectedIsRegenerating,
       selectedIsApplying,
       selectedDraftMutationState,
+      selectedAppliedSuccess,
       selectedIsAnyGenerating,
       selectedOnTripSnapshot,
       selectedIsOnTripCompactMode,

@@ -20,4 +20,11 @@ export {
 	ViewToggle,
 } from './travelPrimitives';
 export { WishlistButton } from './WishlistButton';
-export { RoenLogo } from './RoenLogo';
+export {
+	DisplayWordmark,
+	EditorialWordmark,
+	LogoOnInk,
+	ROEN_BRAND,
+	RoenLogo,
+	RoenMark,
+} from './RoenLogo';

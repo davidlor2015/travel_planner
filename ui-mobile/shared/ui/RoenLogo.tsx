@@ -1,46 +1,144 @@
 // Path: ui-mobile/shared/ui/RoenLogo.tsx
-// Summary: Roen "R" mark and wordmark primitives.
+// Summary: Coded ROEN brand primitives for in-app UI.
 
 import { Text, View } from "react-native";
 
-type Props = {
+export const ROEN_BRAND = {
+  ink: "#2A231C",
+  bone: "#EFE7D6",
+  warmIvory: "#F5EFE2",
+  olive: "#6E6A4F",
+  softBrown: "#3D342B",
+} as const;
+
+type BrandColor = (typeof ROEN_BRAND)[keyof typeof ROEN_BRAND] | string;
+
+type MarkProps = {
   size?: number;
-  color?: string;
+  color?: BrandColor;
 };
 
-export function RoenMark({ size = 24, color = "#1C1108" }: Props) {
+type WordmarkProps = {
+  color?: BrandColor;
+  width?: number;
+  size?: number;
+};
+
+type LogoProps = WordmarkProps & {
+  variant?: "display" | "editorial" | "monogram" | "lockupOnInk";
+};
+
+export function RoenMark({ size = 24, color = ROEN_BRAND.ink }: MarkProps) {
+  return (
+    <View
+      accessibilityLabel="Roen"
+      testID="roen-mark"
+      style={{
+        width: size,
+        height: size,
+        borderWidth: 1.5,
+        borderColor: color,
+        borderRadius: size / 2,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Text
+        allowFontScaling={false}
+        style={{
+          color,
+          fontFamily: "Italiana_400Regular",
+          fontSize: size * 0.48,
+          lineHeight: size * 0.52,
+        }}
+      >
+        R
+      </Text>
+    </View>
+  );
+}
+
+export function DisplayWordmark({
+  color = ROEN_BRAND.ink,
+  width,
+  size,
+}: WordmarkProps) {
+  const fontSize = size ?? (width ?? 160) / 4.8;
+  const tracking = fontSize * 0.16;
+  const measuredWidth = width ?? fontSize * 4.4;
   return (
     <Text
-      style={{
-        fontFamily: "Italiana_400Regular",
-        fontSize: size,
-        lineHeight: size * 1.1,
-        color,
-        includeFontPadding: false,
-      }}
+      accessibilityLabel="Roen"
+      testID="roen-display-wordmark"
       allowFontScaling={false}
+      style={{
+        color,
+        fontFamily: "Italiana_400Regular",
+        fontSize,
+        letterSpacing: tracking,
+        lineHeight: fontSize * 1.04,
+        paddingLeft: tracking * 0.5,
+        width: measuredWidth,
+      }}
     >
-      R
+      ROEN
     </Text>
   );
 }
 
-export function RoenLogo({ size = 22, color = "#1C1108" }: Props) {
+export function EditorialWordmark({
+  color = ROEN_BRAND.ink,
+  width,
+  size,
+}: WordmarkProps) {
+  const fontSize = size ?? (width ?? 120) / 4.7;
+  const measuredWidth = width ?? fontSize * 4.7;
   return (
-    <View style={{ flexDirection: "row", alignItems: "baseline", gap: size * 0.2 }}>
-      <Text
-        style={{
-          fontFamily: "Italiana_400Regular",
-          fontSize: size * 1.1,
-          lineHeight: size * 1.2,
-          letterSpacing: size * 0.05,
-          color,
-          includeFontPadding: false,
-        }}
-        allowFontScaling={false}
-      >
-        Roen
-      </Text>
+    <Text
+      accessibilityLabel="Roen"
+      testID="roen-editorial-wordmark"
+      allowFontScaling={false}
+      style={{
+        color,
+        fontFamily: "Italiana_400Regular",
+        fontSize,
+        letterSpacing: fontSize * 0.4,
+        lineHeight: fontSize,
+        paddingLeft: fontSize * 0.4,
+        width: measuredWidth,
+      }}
+    >
+      ROEN
+    </Text>
+  );
+}
+
+export function LogoOnInk() {
+  return (
+    <View testID="roen-logo-on-ink" style={{ alignItems: "center", gap: 32 }}>
+      <RoenMark size={64} color={ROEN_BRAND.bone} />
+      <DisplayWordmark color={ROEN_BRAND.bone} width={260} />
     </View>
   );
+}
+
+export function RoenLogo({
+  variant = "display",
+  width,
+  size,
+  color,
+}: LogoProps) {
+  if (variant === "monogram") {
+    return <RoenMark size={size ?? 24} color={color} />;
+  }
+
+  if (variant === "editorial") {
+    return <EditorialWordmark width={width} size={size} color={color} />;
+  }
+
+  if (variant === "lockupOnInk") {
+    return <LogoOnInk />;
+  }
+
+  return <DisplayWordmark width={width} size={size} color={color} />;
 }

@@ -57,6 +57,12 @@ interface OverviewTabProps {
   draftMutationState?: "idle" | "saving" | "saved";
   /** Shown on the draft panel when publish/assist fails (draft mutations only). */
   draftPublishError?: string | null;
+  /**
+   * Set briefly after the user applies an itinerary so the workspace can
+   * mark the moment with a calm confirmation banner. Auto-clears after a
+   * few seconds via the parent model.
+   */
+  appliedSuccess?: boolean;
   savedItinerary: Itinerary | null;
   pendingItinerary: EditableItinerary | null;
   draftPlanMeta: DraftPlanMeta | null;
@@ -159,6 +165,7 @@ export function OverviewTab({
   isApplying,
   draftMutationState = "idle",
   draftPublishError,
+  appliedSuccess = false,
   savedItinerary,
   pendingItinerary,
   draftPlanMeta,
@@ -212,6 +219,47 @@ export function OverviewTab({
               role="alert"
             >
               {streamError}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {appliedSuccess && savedItinerary && !pendingItinerary && (
+            <motion.div
+              key="apply-success-banner"
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.35, ease: "easeOut" }}
+              role="status"
+              aria-live="polite"
+              data-testid="itinerary-applied-banner"
+              className="flex items-start gap-3 rounded-2xl border border-olive/25 bg-olive/10 px-4 py-3 text-espresso shadow-[0_4px_18px_rgba(28,17,8,0.04)]"
+            >
+              <span
+                aria-hidden="true"
+                className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-olive/20 text-olive"
+              >
+                <svg
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  className="h-4 w-4"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M4.5 10.5l3.5 3.5 7.5-8" />
+                </svg>
+              </span>
+              <div className="min-w-0">
+                <p className="font-display text-base font-semibold leading-snug text-espresso">
+                  Your trip is ready
+                </p>
+                <p className="mt-1 text-[13px] leading-relaxed text-flint">
+                  Your itinerary is in your workspace now.
+                </p>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

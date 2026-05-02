@@ -10,7 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useConfirmEmailVerificationMutation } from "@/features/auth/hooks";
 import { friendlyError } from "@/shared/api/friendlyError";
 import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
-import { RoenLogo } from "@/shared/ui/RoenLogo";
+import { DisplayWordmark } from "@/shared/ui/RoenLogo";
 
 export default function VerifyEmailPage() {
   const params = useLocalSearchParams<{ token?: string | string[] }>();
@@ -44,7 +44,7 @@ export default function VerifyEmailPage() {
       <View className="flex-1 px-7">
         {/* Logo row */}
         <View className="pt-10 pb-2">
-          <RoenLogo size={36} />
+          <DisplayWordmark width={148} />
         </View>
 
         {/* Editorial headline */}

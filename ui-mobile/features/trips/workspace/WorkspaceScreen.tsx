@@ -54,6 +54,7 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
     tripId,
     currentUserEmail: user?.email ?? "",
     currentUserId: user?.id ?? null,
+    currentUserDisplayName: user?.display_name ?? null,
   });
   const tripData = workspace.tripRaw;
   const trip = workspace.trip;
@@ -179,7 +180,7 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
         message={
           workspace.isNotFound
             ? "We couldn't find that trip."
-            : "We couldn't load this workspace. Try again in a moment."
+            : "We couldn't load this plan. Try again in a moment."
         }
         onRetry={
           workspace.isNotFound ? undefined : () => void workspace.tripQuery.refetch()
@@ -202,28 +203,6 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
         compact={resolvedTab === "itinerary"}
       />
 
-      {canOpenLiveView ? (
-        <Pressable
-          onPress={() => router.push(`/(tabs)/trips/${tripId}/live` as Href)}
-          className="mx-4 mt-3 flex-row items-center justify-between rounded-2xl border border-border-ontrip-strong bg-surface-ontrip-raised px-4 py-3 active:opacity-75"
-        >
-          <View>
-            <View className="flex-row items-center gap-2">
-              <View className="h-2 w-2 rounded-full bg-accent-ontrip" />
-              <Text className="text-sm text-ontrip" style={fontStyles.uiSemibold}>
-                Trip in progress
-              </Text>
-            </View>
-            <Text className="mt-0.5 text-xs text-ontrip-muted" style={fontStyles.uiRegular}>
-              Today: stops, status updates, and unplanned moments.
-            </Text>
-          </View>
-          <Text className="ml-3 text-sm text-accent-ontrip" style={fontStyles.uiSemibold}>
-            Live →
-          </Text>
-        </Pressable>
-      ) : null}
-
       <WorkspaceTabBar
         visibleTabs={visibleTabs}
         activeTab={resolvedTab}
@@ -243,7 +222,10 @@ export function WorkspaceScreen({ tripId, autoStartFromCreate = false }: Props) 
           onStartStream={handleStartStream}
           onCancelStream={handleCancelStream}
           onOpenTab={setActiveTab}
-          onOpenLiveView={() => router.push(`/(tabs)/trips/${tripId}/live` as Href)}
+          onOpenLiveView={() => router.push("/(tabs)/today" as Href)}
+          // Park the user on Overview the moment apply succeeds — the saved
+          // itinerary is the climax of the create flow, not a side effect.
+          onItineraryApplied={() => setActiveTab("overview")}
           showItineraryOnly={resolvedTab === "itinerary"}
           isReadOnly={isReadOnly}
           activityLoadError={

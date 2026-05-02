@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRequestEmailVerificationMutation } from "@/features/auth/hooks";
 import { friendlyError } from "@/shared/api/friendlyError";
 import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
+import { DisplayWordmark } from "@/shared/ui/RoenLogo";
 
 export default function VerifyEmailRequestPage() {
   const params = useLocalSearchParams<{ email?: string | string[] }>();
@@ -25,6 +26,7 @@ export default function VerifyEmailRequestPage() {
   const [email, setEmail] = useState(initialEmail ?? "");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [verificationUrl, setVerificationUrl] = useState<string | null>(null);
 
   async function handleSubmit() {
     const trimmedEmail = email.trim().toLowerCase();
@@ -34,7 +36,8 @@ export default function VerifyEmailRequestPage() {
     }
     setErrorMessage(null);
     try {
-      await requestEmailVerificationMutation.mutateAsync(trimmedEmail);
+      const response = await requestEmailVerificationMutation.mutateAsync(trimmedEmail);
+      setVerificationUrl(response.verification_url);
       setSubmitted(true);
     } catch (error) {
       setErrorMessage(friendlyError(error, "auth"));
@@ -64,8 +67,12 @@ export default function VerifyEmailRequestPage() {
           </Pressable>
         </View>
 
+        <View className="pt-7">
+          <DisplayWordmark width={148} />
+        </View>
+
         {/* Editorial headline */}
-        <View className="mt-8">
+        <View className="mt-7">
           <Text
             className="mb-1 text-[11px] uppercase tracking-[1.8px] text-amber"
             style={fontStyles.uiMedium}
@@ -117,10 +124,35 @@ export default function VerifyEmailRequestPage() {
           ) : null}
 
           {submitted ? (
-            <View className="rounded-xl border border-olive/20 bg-olive/10 px-4 py-3">
+            <View className="gap-3 rounded-xl border border-olive/20 bg-olive/10 px-4 py-3">
               <Text className="text-sm text-olive" style={fontStyles.uiMedium}>
                 If that email exists and still needs verification, a link is ready.
               </Text>
+              {verificationUrl ? (
+                <>
+                  <Text className="text-xs uppercase tracking-[1.2px] text-muted" style={fontStyles.uiMedium}>
+                    Verification link
+                  </Text>
+                  <Text className="text-sm text-espresso" style={fontStyles.uiRegular}>
+                    {verificationUrl}
+                  </Text>
+                  <Pressable
+                    onPress={() => {
+                      const token = verificationUrl.split("token=", 2)[1];
+                      if (!token) return;
+                      router.push({
+                        pathname: "/(auth)/verify-email",
+                        params: { token },
+                      });
+                    }}
+                    className="self-start"
+                  >
+                    <Text className="text-sm text-espresso underline" style={fontStyles.uiMedium}>
+                      Verify now
+                    </Text>
+                  </Pressable>
+                </>
+              ) : null}
             </View>
           ) : null}
         </View>

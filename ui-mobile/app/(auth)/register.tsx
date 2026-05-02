@@ -7,8 +7,8 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -18,6 +18,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRegisterMutation } from "@/features/auth/hooks";
 import { friendlyError } from "@/shared/api/friendlyError";
 import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
+import { AuthInput, AUTH_PALETTE } from "@/shared/ui/AuthInput";
+import { DisplayWordmark } from "@/shared/ui/RoenLogo";
 
 export default function RegisterPage() {
   const registerMutation = useRegisterMutation();
@@ -50,14 +52,16 @@ export default function RegisterPage() {
         email: trimmedEmail,
         password,
       });
-      setSuccessMessage("Account created. Verify your email before signing in.");
+      setSuccessMessage(
+        "Account created. Verify your email before signing in.",
+      );
     } catch (error) {
       setErrorMessage(friendlyError(error, "auth"));
     }
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-bg">
+    <SafeAreaView style={s.root}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
@@ -85,8 +89,12 @@ export default function RegisterPage() {
             </Pressable>
           </View>
 
+          <View className="items-center px-7 pt-7">
+            <DisplayWordmark width={156} />
+          </View>
+
           {/* Editorial headline */}
-          <View className="mt-8 px-7">
+          <View className="mt-7 px-7">
             <Text
               className="mb-1 text-[11px] uppercase tracking-[1.8px] text-amber"
               style={fontStyles.uiMedium}
@@ -95,25 +103,25 @@ export default function RegisterPage() {
             </Text>
             <Text
               className="text-espresso"
-              style={[textScaleStyles.displayXL, { fontSize: 38, lineHeight: 42 }]}
+              style={[
+                textScaleStyles.displayXL,
+                { fontSize: 38, lineHeight: 42 },
+              ]}
             >
-              {"Join\\nRoen."}
-            </Text>
-            <Text className="mt-2 text-sm leading-5 text-muted" style={fontStyles.uiRegular}>
-              Use a name your travel group will recognize.
+              Join Roen.
             </Text>
           </View>
 
           {/* Form fields */}
           <View className="mt-8 px-7">
-            <UnderlineField
+            <AuthInput
               label="Display name"
               value={displayName}
               onChangeText={setDisplayName}
               placeholder="e.g. Maya"
               returnKeyType="next"
             />
-            <UnderlineField
+            <AuthInput
               label="Email address"
               value={email}
               onChangeText={setEmail}
@@ -123,7 +131,7 @@ export default function RegisterPage() {
               autoCorrect={false}
               returnKeyType="next"
             />
-            <UnderlineField
+            <AuthInput
               label="Password"
               value={password}
               onChangeText={setPassword}
@@ -131,7 +139,7 @@ export default function RegisterPage() {
               secureTextEntry
               returnKeyType="next"
             />
-            <UnderlineField
+            <AuthInput
               label="Confirm password"
               value={confirmPassword}
               onChangeText={setConfirmPassword}
@@ -143,7 +151,10 @@ export default function RegisterPage() {
 
             {errorMessage ? (
               <View className="mt-1 rounded-xl border border-danger/20 bg-danger/10 px-4 py-3">
-                <Text className="text-sm text-danger" style={fontStyles.uiMedium}>
+                <Text
+                  className="text-sm text-danger"
+                  style={fontStyles.uiMedium}
+                >
                   {errorMessage}
                 </Text>
               </View>
@@ -151,10 +162,20 @@ export default function RegisterPage() {
 
             {successMessage ? (
               <View className="mt-1 gap-3 rounded-xl border border-olive/20 bg-olive/10 px-4 py-3">
-                <Text className="text-sm text-olive" style={fontStyles.uiMedium}>
+                <Text
+                  className="text-sm text-olive"
+                  style={fontStyles.uiMedium}
+                >
                   {successMessage}
                 </Text>
-                <Pressable onPress={() => router.push("./verify-email-request")}>
+                <Pressable
+                  onPress={() =>
+                    router.push({
+                      pathname: "/(auth)/verify-email-request",
+                      params: { email: email.trim().toLowerCase() },
+                    })
+                  }
+                >
                   <Text
                     className="text-sm text-espresso underline"
                     style={fontStyles.uiMedium}
@@ -175,8 +196,13 @@ export default function RegisterPage() {
               style={registerMutation.isPending ? { opacity: 0.6 } : undefined}
             >
               <View className="flex-row items-center gap-2">
-                <Text className="text-[15px] text-on-dark" style={fontStyles.uiMedium}>
-                  {registerMutation.isPending ? "Creating account…" : "Create Account"}
+                <Text
+                  className="text-[15px] text-on-dark"
+                  style={fontStyles.uiMedium}
+                >
+                  {registerMutation.isPending
+                    ? "Creating account…"
+                    : "Create Account"}
                 </Text>
                 {!registerMutation.isPending && (
                   <Ionicons name="arrow-forward" size={16} color="#F2EBDD" />
@@ -190,7 +216,10 @@ export default function RegisterPage() {
             >
               <Text className="text-sm text-muted" style={fontStyles.uiRegular}>
                 Already have an account?{" "}
-                <Text className="text-espresso underline" style={fontStyles.uiMedium}>
+                <Text
+                  className="text-espresso underline"
+                  style={fontStyles.uiMedium}
+                >
                   Sign in
                 </Text>
               </Text>
@@ -202,34 +231,9 @@ export default function RegisterPage() {
   );
 }
 
-function UnderlineField({
-  label,
-  error,
-  ...inputProps
-}: {
-  label: string;
-  error?: string | null;
-} & React.ComponentProps<typeof TextInput>) {
-  return (
-    <View className="mb-6">
-      <Text
-        className="mb-1.5 text-[10px] uppercase tracking-[1.8px] text-muted"
-        style={fontStyles.uiMedium}
-      >
-        {label}
-      </Text>
-      <TextInput
-        placeholderTextColor="#8A7E74"
-        selectionColor="#B86845"
-        className="pb-2 text-[18px] text-espresso"
-        style={[fontStyles.uiRegular, { borderBottomWidth: 1.5, borderBottomColor: error ? "#881337" : "#EAE2D6" }]}
-        {...inputProps}
-      />
-      {error ? (
-        <Text className="mt-1 text-xs text-danger" style={fontStyles.uiMedium}>
-          {error}
-        </Text>
-      ) : null}
-    </View>
-  );
-}
+const s = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: AUTH_PALETTE.bg,
+  },
+});

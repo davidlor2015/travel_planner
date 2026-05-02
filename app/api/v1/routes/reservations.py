@@ -1,18 +1,35 @@
 # Path: app/api/v1/routes/reservations.py
 # Summary: Defines reservations API route handlers.
 
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, File, Response, UploadFile
 
 from app.api.deps import CurrentUser, SessionDep
-from app.schemas.reservation import ReservationCreate, ReservationResponse, ReservationUpdate
+from app.schemas.reservation import (
+    ReservationCreate,
+    ReservationImportResponse,
+    ReservationResponse,
+    ReservationUpdate,
+)
+from app.services.reservation_import_service import ReservationImportService
 from app.services.reservation_service import ReservationService
 
 router = APIRouter()
 
 
 @router.get("/", response_model=list[ReservationResponse])
-def list_reservations(trip_id: int, db: SessionDep, current_user: CurrentUser):
-    return ReservationService(db).list_reservations(trip_id, current_user.id)
+def list_reservations(
+    trip_id: int,
+    db: SessionDep,
+    current_user: CurrentUser,
+    skip: int = 0,
+    limit: int = 100,
+):
+    return ReservationService(db).list_reservations(
+        trip_id,
+        current_user.id,
+        skip=skip,
+        limit=limit,
+    )
 
 
 @router.post("/", response_model=ReservationResponse, status_code=201)
@@ -50,3 +67,17 @@ def delete_reservation(
 ):
     ReservationService(db).delete_reservation(trip_id, current_user.id, reservation_id)
     return Response(status_code=204)
+
+
+@router.post("/import", response_model=ReservationImportResponse)
+async def import_reservation(
+    trip_id: int,
+    db: SessionDep,
+    current_user: CurrentUser,
+    file: UploadFile = File(...),
+):
+    return await ReservationImportService(db).import_reservation(
+        trip_id=trip_id,
+        user_id=current_user.id,
+        upload=file,
+    )

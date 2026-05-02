@@ -207,12 +207,14 @@ export function HappeningNowCard({
           <>
             <IconAction
               icon="close"
+              caption="Skip"
               label="Skip current stop"
               disabled={disableStatus}
               onPress={onSkip}
             />
             <IconAction
               icon="checkmark"
+              caption="Done"
               label="Confirm current stop"
               disabled={disableStatus}
               onPress={onConfirm}
@@ -260,11 +262,13 @@ function MetaItem({ label, accent }: { label: string; accent?: boolean }) {
 
 function IconAction({
   icon,
+  caption,
   label,
   disabled,
   onPress,
 }: {
   icon: React.ComponentProps<typeof Ionicons>["name"];
+  caption: string;
   label: string;
   disabled?: boolean;
   onPress: () => void;
@@ -278,6 +282,7 @@ function IconAction({
         height: 58,
         alignItems: "center",
         justifyContent: "center",
+        gap: 3,
         borderRadius: 12,
         backgroundColor: "rgba(242, 235, 221, 0.10)",
         opacity: disabled ? 0.5 : 1,
@@ -286,6 +291,14 @@ function IconAction({
       accessibilityLabel={label}
     >
       <Ionicons name={icon} size={17} color={DE.ivory} />
+      <Text
+        style={[
+          fontStyles.uiMedium,
+          { fontSize: 10, lineHeight: 12, color: "rgba(242, 235, 221, 0.86)" },
+        ]}
+      >
+        {caption}
+      </Text>
     </Pressable>
   );
 }

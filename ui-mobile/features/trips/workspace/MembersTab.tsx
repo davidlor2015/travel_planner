@@ -5,13 +5,12 @@ import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { SectionCard } from "@/shared/ui/SectionCard";
-import { StatusPill } from "@/shared/ui/StatusPill";
 import { fontStyles } from "@/shared/theme/typography";
+import { ApiError } from "@/shared/api/client";
 
 import type {
   TripWorkspaceCollaborationViewModel,
   TripWorkspaceViewModel,
-  WorkspacePillVariant,
 } from "./adapters";
 import { InviteTravelerSheet } from "./InviteTravelerSheet";
 import { ReadOnlyNotice } from "./ReadOnlyNotice";
@@ -20,7 +19,7 @@ type Props = {
   trip: TripWorkspaceViewModel;
   collaboration: TripWorkspaceCollaborationViewModel;
   invitePending?: boolean;
-  onInvite: (email: string) => Promise<unknown>;
+  onInvite: (email: string, inviteDisplayLabel?: string | null) => Promise<unknown>;
   memberReadinessError: string | null;
 };
 
@@ -34,12 +33,6 @@ export function MembersTab({
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
-  const isSoloTrip = trip.memberCount <= 1;
-  const sectionEyebrow = isSoloTrip ? "Solo planning" : "Shared workspace";
-  const sectionTitle = isSoloTrip ? "Planning solo for now" : "Group";
-  const sectionDescription = isSoloTrip
-    ? "Invite travel companions when you want to coordinate this trip with others."
-    : collaboration.groupDescription;
   const showReadOnlyNotice = trip.isReadOnly;
 
   return (
@@ -47,17 +40,18 @@ export function MembersTab({
       <ScrollView contentContainerClassName="gap-4 px-4 pb-8 pt-4">
         {showReadOnlyNotice ? <ReadOnlyNotice className="" /> : null}
         <SectionCard
-          eyebrow={sectionEyebrow}
-          title={sectionTitle}
-          description={sectionDescription}
+          eyebrow="Shared plan"
+          title="Everyone on the trip"
+          description="Invite travelers, share the plan, and keep the group moving together."
           action={
             collaboration.canInvite ? (
               <Pressable
                 onPress={() => setInviteOpen(true)}
                 accessibilityRole="button"
                 accessibilityLabel="Invite traveler"
+                className="rounded-full border border-clay/20 bg-clay/10 px-3 py-1.5 active:opacity-75"
               >
-                <Text className="text-sm text-accent" style={fontStyles.uiSemibold}>
+                <Text className="text-xs text-clay" style={fontStyles.uiSemibold}>
                   Invite
                 </Text>
               </Pressable>
@@ -65,30 +59,6 @@ export function MembersTab({
           }
         >
           <View className="gap-3">
-            <View className="flex-row flex-wrap gap-2">
-              <StatusPill
-                label={trip.statusLabel}
-                variant={
-                  trip.status === "active"
-                    ? "success"
-                    : trip.status === "upcoming"
-                      ? "warning"
-                      : "default"
-                }
-              />
-              <StatusPill
-                label={trip.currentUserRoleLabel}
-                variant="info"
-                accessibilityLabel={`Your trip role: ${trip.currentUserRoleLabel}`}
-              />
-              {collaboration.pendingInvites.length > 0 ? (
-                <StatusPill
-                  label={`${collaboration.pendingInvites.length} pending invite${collaboration.pendingInvites.length === 1 ? "" : "s"}`}
-                  variant="warning"
-                />
-              ) : null}
-            </View>
-
             {inviteSuccess ? (
               <View className="rounded-2xl border border-olive/20 bg-olive/10 px-3 py-3">
                 <Text className="text-sm text-olive" style={fontStyles.uiMedium}>
@@ -100,30 +70,32 @@ export function MembersTab({
             {collaboration.members.map((member) => (
               <View
                 key={member.userId}
-                className="rounded-2xl border border-border bg-surface-muted px-3 py-3"
+                className="rounded-2xl border border-border bg-ivory px-3.5 py-3.5"
               >
-                <View className="flex-row items-start justify-between gap-3">
+                <View className="flex-row items-center justify-between gap-3">
                   <View className="flex-1">
-                    <View className="flex-row flex-wrap items-center gap-2">
-                      <Text className="text-sm text-text" style={fontStyles.uiMedium}>
-                        {member.email}
-                        {member.isCurrentUser ? " · You" : ""}
-                      </Text>
-                      <StatusPill
-                        label={member.roleLabel}
-                        variant={roleBadgeVariant(member.roleLabel)}
-                        accessibilityLabel={`${member.email} role: ${member.roleLabel}`}
-                      />
-                    </View>
-                    <Text className="mt-2 text-sm text-text-muted" style={fontStyles.uiRegular}>
-                      {member.readinessDetail}
+                    <Text className="text-sm text-espresso" style={fontStyles.uiSemibold}>
+                      {member.displayLabel}
                     </Text>
+                    {member.isCurrentUser ? (
+                      <Text className="mt-1 text-xs text-text-soft" style={fontStyles.uiRegular}>
+                        You · {member.rolePillLabel}
+                      </Text>
+                    ) : null}
                   </View>
-                  <StatusPill
-                    label={member.readinessLabel}
-                    variant={member.readinessVariant}
+                  <RolePill
+                    label={member.rolePillLabel}
+                    accessibilityLabel={`${member.email} role: ${member.rolePillLabel}`}
                   />
                 </View>
+                {member.emailSecondary ? (
+                  <Text className="mt-1 text-xs text-text-soft" style={fontStyles.uiRegular}>
+                    {member.emailSecondary}
+                  </Text>
+                ) : null}
+                <Text className="mt-2 text-sm text-text-muted" style={fontStyles.uiRegular}>
+                  {member.supportingText}
+                </Text>
               </View>
             ))}
 
@@ -138,29 +110,21 @@ export function MembersTab({
                 {collaboration.pendingInvites.map((invite) => (
                   <View
                     key={invite.id}
-                    className="rounded-2xl border border-border bg-white px-3 py-3"
+                    className="rounded-2xl border border-border bg-ivory px-3.5 py-3.5"
                   >
-                    <Text className="text-sm text-text" style={fontStyles.uiMedium}>
-                      {invite.email}
+                    <Text className="text-sm text-espresso" style={fontStyles.uiSemibold}>
+                      {invite.displayLabel}
                     </Text>
-                    <View className="mt-2 flex-row flex-wrap items-center gap-2">
-                      <StatusPill
-                        label={invite.statusLabel}
-                        variant="warning"
-                        accessibilityLabel={`${invite.email} invite status: ${invite.statusLabel}`}
-                      />
-                      <Text className="text-xs text-text-soft" style={fontStyles.uiRegular}>
-                        Expires {invite.expiresAtLabel}
-                      </Text>
-                    </View>
+                    <Text className="mt-1 text-xs text-text-soft" style={fontStyles.uiRegular}>
+                      {invite.statusLabel}
+                    </Text>
                   </View>
                 ))}
               </View>
             ) : null}
-
             {memberReadinessError ? (
-              <Text className="text-sm text-danger" style={fontStyles.uiRegular}>
-                {memberReadinessError}
+              <Text className="text-xs text-text-soft" style={fontStyles.uiRegular}>
+                Some readiness indicators are unavailable right now.
               </Text>
             ) : null}
           </View>
@@ -175,14 +139,14 @@ export function MembersTab({
           setInviteOpen(false);
           setInviteError(null);
         }}
-        onSubmit={async (email) => {
+        onSubmit={async ({ email, inviteDisplayLabel }) => {
           try {
             setInviteError(null);
-            await onInvite(email);
+            await onInvite(email, inviteDisplayLabel);
             setInviteSuccess(`Invite sent to ${email}.`);
             setInviteOpen(false);
-          } catch {
-            setInviteError("We couldn't send the invite. Try again.");
+          } catch (err) {
+            setInviteError(resolveInviteErrorMessage(err));
           }
         }}
       />
@@ -190,9 +154,56 @@ export function MembersTab({
   );
 }
 
-function roleBadgeVariant(label: string): WorkspacePillVariant {
-  if (label === "Owner") return "info";
-  if (label === "Can edit") return "success";
-  if (label === "Pending") return "warning";
-  return "default";
+function resolveInviteErrorMessage(err: unknown): string {
+  if (err instanceof ApiError && err.status === 409) {
+    const detail = (err.detail ?? "").toLowerCase();
+    if (detail.includes("already a trip member")) {
+      return "This traveler is already in the trip.";
+    }
+    return "An invite is already pending for this email.";
+  }
+  return "We couldn't send the invite. Try again.";
+}
+
+type RoleLabel = "Owner" | "Can edit" | "View only";
+
+function RolePill({
+  label,
+  accessibilityLabel,
+}: {
+  label: RoleLabel;
+  accessibilityLabel?: string;
+}) {
+  const tone = roleTone(label);
+  return (
+    <View
+      className={`rounded-full border px-2.5 py-1 ${tone.pill}`}
+      accessible
+      accessibilityRole="text"
+      accessibilityLabel={accessibilityLabel ?? label}
+    >
+      <Text className={`text-xs ${tone.text}`} style={fontStyles.uiSemibold}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+function roleTone(label: RoleLabel): { pill: string; text: string } {
+  if (label === "Owner") {
+    return {
+      pill: "border-espresso/15 bg-smoke",
+      text: "text-espresso",
+    };
+  }
+  if (label === "Can edit") {
+    return {
+      pill: "border-clay/20 bg-parchment",
+      text: "text-clay",
+    };
+  }
+  return {
+    pill: "border-border bg-ivory",
+    text: "text-text-muted",
+  };
 }

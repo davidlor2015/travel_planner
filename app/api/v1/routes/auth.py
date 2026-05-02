@@ -52,7 +52,7 @@ def request_password_reset(payload: PasswordResetRequest, db: Session = Depends(
 
 @router.post("/email-verification/request", response_model=EmailVerificationRequestResponse)
 def request_email_verification(payload: EmailVerificationRequest, db: Session = Depends(get_db)):
-    verification_url = AuthService(db).create_email_verification(payload.email)
+    verification_url = AuthService(db).request_email_verification(payload.email)
     return EmailVerificationRequestResponse(verification_url=verification_url)
 
 

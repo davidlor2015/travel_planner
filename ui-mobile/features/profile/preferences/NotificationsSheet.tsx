@@ -121,7 +121,7 @@ export function NotificationsSheet({ visible, preferences, onChange, onClose }: 
               />
               <RowDivider />
               <ToggleRow
-                label="On-trip reminders"
+                label="Today reminders"
                 description="Stop prompts while a trip is active"
                 value={preferences.onTripRemindersEnabled}
                 onValueChange={(v) => onChange({ onTripRemindersEnabled: v })}

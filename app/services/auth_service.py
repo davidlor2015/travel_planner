@@ -2,6 +2,7 @@
 # Summary: Implements auth service business logic.
 
 from datetime import datetime, timedelta, timezone
+import logging
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from jose import JWTError
@@ -12,12 +13,17 @@ from app.repositories.user_repository import UserRepository
 from app.models.user import User
 from app.schemas.user import UserCreate
 from app.schemas.auth import EmailVerificationTokenStatus, PasswordResetTokenStatus, Token
+from app.services.email_service import EmailService
+
+
+logger = logging.getLogger(__name__)
 
 
 class AuthService:
     def __init__(self, db: Session):
         self.db = db
         self.repo = UserRepository(db)
+        self.email_service = EmailService()
 
     def register(self, user_in: UserCreate) -> User:
         normalized_email = user_in.email.lower()
@@ -29,7 +35,9 @@ class AuthService:
             display_name=cleaned_display_name,
             hashed_password=security.get_password_hash(user_in.password),
         )
-        return self.repo.add(new_user)
+        user = self.repo.add(new_user)
+        self.request_email_verification(user.email)
+        return user
 
     def login(self, email: str, password: str) -> Token:
         user = self.repo.get_by_email(email.lower())
@@ -88,6 +96,19 @@ class AuthService:
             security.password_fingerprint(user.hashed_password),
         )
         return f"{settings.APP_BASE_URL.rstrip('/')}/verify-email?token={token}"
+
+    def request_email_verification(self, email: str) -> str | None:
+        verification_url = self.create_email_verification(email)
+        if verification_url is None:
+            return None
+
+        was_sent = self.email_service.send_email_verification(
+            to_email=email.lower(),
+            verification_url=verification_url,
+        )
+        if not was_sent:
+            logger.info("Email verification link generated but not delivered (email=%s)", email.lower())
+        return verification_url
 
     def validate_email_verification_token(self, token: str) -> EmailVerificationTokenStatus:
         try:

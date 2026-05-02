@@ -24,7 +24,9 @@ const NULL_STOP = {
   execution_status: null,
 };
 
-function buildSnapshot(overrides: Partial<TripOnTripSnapshot> = {}): TripOnTripSnapshot {
+function buildSnapshot(
+  overrides: Partial<TripOnTripSnapshot> = {},
+): TripOnTripSnapshot {
   return {
     generated_at: "2026-10-10T00:00:00Z",
     mode: "active",
@@ -59,14 +61,20 @@ const mockUseOnTripSnapshotQuery = jest.fn();
 const mockUseOnTripMutations = jest.fn();
 
 jest.mock("@/features/trips/onTrip/adapters", () => ({
-  deriveOnTripViewModel: (...args: unknown[]) => mockDeriveOnTripViewModel(...args),
+  deriveOnTripViewModel: (...args: unknown[]) =>
+    mockDeriveOnTripViewModel(...args),
   stopVariant: () => "upcoming" as const,
   todayLocalISODate: () => "2026-10-10",
   currentLocalMinutes: () => 0,
 }));
 
 jest.mock("expo-router", () => ({
-  useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: () => false }),
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    back: jest.fn(),
+    canGoBack: () => false,
+  }),
 }));
 
 jest.mock("expo-linking", () => ({ openURL: jest.fn() }));
@@ -77,7 +85,8 @@ jest.mock("react-native-safe-area-context", () => ({
 }));
 
 jest.mock("@/features/trips/hooks", () => ({
-  useOnTripSnapshotQuery: (...args: unknown[]) => mockUseOnTripSnapshotQuery(...args),
+  useOnTripSnapshotQuery: (...args: unknown[]) =>
+    mockUseOnTripSnapshotQuery(...args),
 }));
 
 jest.mock("@/features/ai/hooks", () => ({
@@ -98,38 +107,51 @@ const mockHasResolvedTodayStop = jest.fn().mockReturnValue(false);
 const mockIsResolvedStop = jest.fn().mockReturnValue(false);
 
 jest.mock("@/features/trips/onTrip/eligibility", () => ({
-  hasResolvedTodayStop: (...args: unknown[]) => mockHasResolvedTodayStop(...args),
+  hasResolvedTodayStop: (...args: unknown[]) =>
+    mockHasResolvedTodayStop(...args),
   isResolvedStop: (...args: unknown[]) => mockIsResolvedStop(...args),
 }));
 
 jest.mock("@/features/trips/onTrip/HappeningNowCard", () => ({
-  HappeningNowCard: ({ stop }: { stop: { title?: string | null; key: string } }) => {
-    const { Text } = require("react-native");
+  HappeningNowCard: ({
+    stop,
+  }: {
+    stop: { title?: string | null; key: string };
+  }) => {
+    const { Text } = jest.requireActual("react-native");
     return <Text>{`NowCard:${stop.key}`}</Text>;
   },
 }));
 
 jest.mock("@/features/trips/onTrip/TimelineRow", () => ({
   TimelineRow: ({ stop }: { stop: { title?: string | null; key: string } }) => {
-    const { Text } = require("react-native");
+    const { Text } = jest.requireActual("react-native");
     return <Text>{`TimelineRow:${stop.key}`}</Text>;
   },
 }));
 
 jest.mock("@/features/trips/onTrip/NeedsAttentionCard", () => ({
   NeedsAttentionCard: ({ blockers }: { blockers: { title: string }[] }) => {
-    const { Text } = require("react-native");
+    const { Text } = jest.requireActual("react-native");
     return <Text>{`NeedsAttention:${blockers[0]?.title ?? ""}`}</Text>;
   },
 }));
 
 jest.mock("@/features/trips/onTrip/OnTripHeader", () => ({
-  OnTripHeader: ({ eyebrow, dateLabel }: { eyebrow: string; dateLabel?: string | null }) => {
-    const { Text, View } = require("react-native");
+  OnTripHeader: ({
+    eyebrow,
+    dateLabel,
+  }: {
+    eyebrow: string;
+    dateLabel?: string | null;
+  }) => {
+    const { Text, View } = jest.requireActual("react-native");
     return (
       <View>
         <Text testID="on-trip-header-eyebrow">{eyebrow}</Text>
-        {dateLabel ? <Text testID="on-trip-header-date-label">{dateLabel}</Text> : null}
+        {dateLabel ? (
+          <Text testID="on-trip-header-date-label">{dateLabel}</Text>
+        ) : null}
       </View>
     );
   },
@@ -145,7 +167,7 @@ jest.mock("@/shared/ui/ScreenLoading", () => ({
 
 jest.mock("@/shared/ui/ScreenError", () => ({
   ScreenError: ({ message }: { message: string }) => {
-    const { Text } = require("react-native");
+    const { Text } = jest.requireActual("react-native");
     return <Text>{`ScreenError:${message}`}</Text>;
   },
 }));
@@ -157,12 +179,16 @@ function buildDefaultSnapshotQuery(
     isLoading: boolean;
     isError: boolean;
     data: ReturnType<typeof buildSnapshot> | undefined;
+    dataUpdatedAt: number;
+    refreshFailedWithCache: boolean;
   }> = {},
 ) {
   return {
     isLoading: false,
     isError: false,
     data: buildSnapshot(),
+    dataUpdatedAt: 0,
+    refreshFailedWithCache: false,
     refetch: jest.fn(),
     ...overrides,
   };
@@ -207,19 +233,25 @@ describe("OnTripScreen", () => {
     mockDeriveOnTripViewModel.mockReturnValue(buildVm({ isReadOnly: true }));
 
     const { getByText } = render(
-      <OnTripScreen tripId={1} tripTitle="Kyoto" tripDestination="Kyoto, Japan" />,
+      <OnTripScreen
+        tripId={1}
+        tripTitle="Kyoto"
+        tripDestination="Kyoto, Japan"
+      />,
     );
 
-    expect(
-      getByText("View-only trip"),
-    ).toBeTruthy();
+    expect(getByText("View-only trip")).toBeTruthy();
   });
 
   it("does not show the read-only banner when isReadOnly is false", () => {
     mockDeriveOnTripViewModel.mockReturnValue(buildVm({ isReadOnly: false }));
 
     const { queryByText } = render(
-      <OnTripScreen tripId={1} tripTitle="Kyoto" tripDestination="Kyoto, Japan" />,
+      <OnTripScreen
+        tripId={1}
+        tripTitle="Kyoto"
+        tripDestination="Kyoto, Japan"
+      />,
     );
 
     expect(queryByText("View-only trip")).toBeNull();
@@ -242,7 +274,11 @@ describe("OnTripScreen", () => {
     );
 
     const { getByText } = render(
-      <OnTripScreen tripId={1} tripTitle="Kyoto" tripDestination="Kyoto, Japan" />,
+      <OnTripScreen
+        tripId={1}
+        tripTitle="Kyoto"
+        tripDestination="Kyoto, Japan"
+      />,
     );
 
     expect(getByText(/NeedsAttention:2 stops still need review/)).toBeTruthy();
@@ -252,7 +288,11 @@ describe("OnTripScreen", () => {
     mockDeriveOnTripViewModel.mockReturnValue(buildVm({ blockers: [] }));
 
     const { queryByText } = render(
-      <OnTripScreen tripId={1} tripTitle="Kyoto" tripDestination="Kyoto, Japan" />,
+      <OnTripScreen
+        tripId={1}
+        tripTitle="Kyoto"
+        tripDestination="Kyoto, Japan"
+      />,
     );
 
     expect(queryByText(/NeedsAttention:/)).toBeNull();
@@ -292,7 +332,11 @@ describe("OnTripScreen", () => {
     );
 
     const { getByText, queryByText } = render(
-      <OnTripScreen tripId={1} tripTitle="Kyoto" tripDestination="Kyoto, Japan" />,
+      <OnTripScreen
+        tripId={1}
+        tripTitle="Kyoto"
+        tripDestination="Kyoto, Japan"
+      />,
     );
 
     expect(getByText("NowCard:stop-abc")).toBeTruthy();
@@ -303,7 +347,11 @@ describe("OnTripScreen", () => {
     mockDeriveOnTripViewModel.mockReturnValue(buildVm({ isReadOnly: false }));
 
     const { getByText } = render(
-      <OnTripScreen tripId={1} tripTitle="Kyoto" tripDestination="Kyoto, Japan" />,
+      <OnTripScreen
+        tripId={1}
+        tripTitle="Kyoto"
+        tripDestination="Kyoto, Japan"
+      />,
     );
 
     expect(getByText("+ Log extra stop")).toBeTruthy();
@@ -313,7 +361,11 @@ describe("OnTripScreen", () => {
     mockDeriveOnTripViewModel.mockReturnValue(buildVm({ isReadOnly: true }));
 
     const { queryByText } = render(
-      <OnTripScreen tripId={1} tripTitle="Kyoto" tripDestination="Kyoto, Japan" />,
+      <OnTripScreen
+        tripId={1}
+        tripTitle="Kyoto"
+        tripDestination="Kyoto, Japan"
+      />,
     );
 
     expect(queryByText("+ Log extra stop")).toBeNull();
@@ -323,29 +375,43 @@ describe("OnTripScreen", () => {
 
   it("shows the last-updated label when lastRefreshedAt is set", () => {
     mockDeriveOnTripViewModel.mockReturnValue(buildVm());
-    mockUseOnTripMutations.mockReturnValue(
-      buildMutations({ lastRefreshedAt: Date.now() }),
+    mockUseOnTripSnapshotQuery.mockReturnValue(
+      buildDefaultSnapshotQuery({ dataUpdatedAt: Date.now() }),
     );
     // Let hasResolvedTodayStop return true so the Today section renders
     // (otherwise showNoStopsToday=true hides the header that holds the label)
     mockHasResolvedTodayStop.mockReturnValue(true);
 
     const { getByText } = render(
-      <OnTripScreen tripId={1} tripTitle="Kyoto" tripDestination="Kyoto, Japan" />,
+      <OnTripScreen
+        tripId={1}
+        tripTitle="Kyoto"
+        tripDestination="Kyoto, Japan"
+      />,
     );
 
-    expect(getByText(/Updated just now/i)).toBeTruthy();
+    expect(getByText(/Last updated just now/i)).toBeTruthy();
   });
 
-  it("shows stale warning when refreshFailed is true and data is present", () => {
+  it("shows saved-details copy when refresh fails and cached data is present", () => {
     mockDeriveOnTripViewModel.mockReturnValue(buildVm());
-    mockUseOnTripMutations.mockReturnValue(buildMutations({ refreshFailed: true }));
+    mockUseOnTripSnapshotQuery.mockReturnValue(
+      buildDefaultSnapshotQuery({
+        dataUpdatedAt: Date.now(),
+        refreshFailedWithCache: true,
+      }),
+    );
+    mockHasResolvedTodayStop.mockReturnValue(true);
 
     const { getByText, queryByText } = render(
-      <OnTripScreen tripId={1} tripTitle="Kyoto" tripDestination="Kyoto, Japan" />,
+      <OnTripScreen
+        tripId={1}
+        tripTitle="Kyoto"
+        tripDestination="Kyoto, Japan"
+      />,
     );
 
-    expect(getByText(/Couldn't refresh/i)).toBeTruthy();
+    expect(getByText(/Showing saved trip details/i)).toBeTruthy();
     // Full error screen must NOT replace the content
     expect(queryByText(/ScreenError:/i)).toBeNull();
   });
@@ -357,7 +423,11 @@ describe("OnTripScreen", () => {
     // deriveOnTripViewModel won't be called; no vm needed
 
     const { getByText } = render(
-      <OnTripScreen tripId={1} tripTitle="Kyoto" tripDestination="Kyoto, Japan" />,
+      <OnTripScreen
+        tripId={1}
+        tripTitle="Kyoto"
+        tripDestination="Kyoto, Japan"
+      />,
     );
 
     expect(getByText(/ScreenError:/i)).toBeTruthy();
@@ -372,7 +442,11 @@ describe("OnTripScreen", () => {
     );
 
     const { getByText } = render(
-      <OnTripScreen tripId={1} tripTitle="Kyoto" tripDestination="Kyoto, Japan" />,
+      <OnTripScreen
+        tripId={1}
+        tripTitle="Kyoto"
+        tripDestination="Kyoto, Japan"
+      />,
     );
 
     expect(getByText(/All planned stops for today are done/i)).toBeTruthy();
@@ -409,7 +483,11 @@ describe("OnTripScreen", () => {
     );
 
     const { queryByText } = render(
-      <OnTripScreen tripId={1} tripTitle="Kyoto" tripDestination="Kyoto, Japan" />,
+      <OnTripScreen
+        tripId={1}
+        tripTitle="Kyoto"
+        tripDestination="Kyoto, Japan"
+      />,
     );
 
     expect(queryByText(/All planned stops for today are done/i)).toBeNull();
@@ -417,27 +495,50 @@ describe("OnTripScreen", () => {
     expect(queryByText(/NowCard:stop-day4/i)).toBeTruthy();
   });
 
-  it("OnTripHeader receives eyebrow that contains the day number but not the calendar date", () => {
+  it("OnTripHeader eyebrow includes formatted calendar date alongside day index", () => {
     mockDeriveOnTripViewModel.mockReturnValue(buildVm());
-    // snapshot has today.day_date = "2026-10-10" → buildOnTripDayHeader produces
-    // eyebrow "ON TRIP · DAY 1"; date moves to the separate dateLabel field
-    const { getByTestId } = render(
-      <OnTripScreen tripId={1} tripTitle="Kyoto" tripDestination="Kyoto, Japan" />,
+    const { getByTestId, queryByTestId } = render(
+      <OnTripScreen
+        tripId={1}
+        tripTitle="Kyoto"
+        tripDestination="Kyoto, Japan"
+      />,
     );
 
-    const eyebrow = getByTestId("on-trip-header-eyebrow").props.children as string;
-    expect(eyebrow).toMatch(/DAY 1/i);
-    expect(eyebrow).not.toMatch(/Oct 10/i);
+    const eyebrow = getByTestId("on-trip-header-eyebrow").props
+      .children as string;
+    const up = eyebrow.toUpperCase();
+    expect(up).toContain("TODAY");
+    expect(up).toContain("DAY 1");
+    expect(up).toContain("OCT");
+    expect(up).toContain("10");
+    expect(queryByTestId("on-trip-header-date-label")).toBeNull();
   });
 
-  it("OnTripHeader receives the active day date in dateLabel", () => {
+  it("OnTripHeader eyebrow derives calendar date from tripStartDate when snapshot today.day_date is null", () => {
     mockDeriveOnTripViewModel.mockReturnValue(buildVm());
-    // snapshot has today.day_date = "2026-10-10" → dateLabel "SATURDAY · OCT 10"
-    const { getByTestId } = render(
-      <OnTripScreen tripId={1} tripTitle="Kyoto" tripDestination="Kyoto, Japan" />,
+    mockUseOnTripSnapshotQuery.mockReturnValue(
+      buildDefaultSnapshotQuery({
+        data: buildSnapshot({
+          today: { ...NULL_STOP, day_number: 3, day_date: null },
+        }),
+      }),
     );
 
-    const dateLabel = getByTestId("on-trip-header-date-label").props.children as string;
-    expect(dateLabel).toMatch(/OCT 10/i);
+    const { getByTestId } = render(
+      <OnTripScreen
+        tripId={1}
+        tripTitle="Kyoto"
+        tripDestination="Kyoto, Japan"
+        tripStartDate="2026-04-29"
+      />,
+    );
+
+    const eyebrow = getByTestId("on-trip-header-eyebrow").props
+      .children as string;
+    const up = eyebrow.toUpperCase();
+    expect(up).toContain("DAY 3");
+    expect(up).toContain("MAY");
+    expect(up).toMatch(/\b1\b/);
   });
 });

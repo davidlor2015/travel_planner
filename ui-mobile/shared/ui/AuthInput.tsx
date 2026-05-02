@@ -99,7 +99,6 @@ export function AuthInput({
         // className targets the injected CSS rules above.
         // autoComplete/spellCheck suppress browser suggestion UI that can also
         // trigger autofill-style tints.
-        // @ts-expect-error — React Native Web forwards className to the <input>
         className={Platform.OS === "web" ? "auth-input" : undefined}
         // ── Shared ───────────────────────────────────────────────────────────
         placeholderTextColor={AUTH_PALETTE.placeholder}

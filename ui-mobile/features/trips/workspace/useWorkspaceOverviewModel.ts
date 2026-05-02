@@ -51,6 +51,11 @@ type Options = {
   onTripSnapshot: TripOnTripSnapshot | null;
   streamState: StreamState | undefined;
   onCancelStream: () => void;
+  /**
+   * Fired after the itinerary is successfully saved to the backend so the
+   * parent screen can park the user on Overview as part of the apply moment.
+   */
+  onItineraryApplied?: () => void;
 };
 
 export type WorkspaceOverviewModel = {
@@ -62,6 +67,7 @@ export type WorkspaceOverviewModel = {
   timeOptions: TimeOption[];
   stopMoveAvailability: ReturnType<typeof getStopMoveAvailability>;
   regeneratingDayIndex: number | null;
+  rethinkingDayIndex: number | null;
   isItineraryLoading: boolean;
   isItineraryMissing: boolean;
   isItineraryDirty: boolean;
@@ -77,6 +83,7 @@ export type WorkspaceOverviewModel = {
   setShowFullItinerary: (value: boolean) => void;
   setEditingStop: (value: { dayIndex: number; stopIndex: number | null } | null) => void;
   setRegeneratingDayIndex: (value: number | null) => void;
+  setRethinkingDayIndex: (value: number | null) => void;
   handleSaveStop: (value: StopFormValue) => void;
   handleDeleteStop: () => void;
   handleAddDay: () => void;
@@ -86,7 +93,14 @@ export type WorkspaceOverviewModel = {
   handleMoveStopToPreviousDay: () => void;
   handleMoveStopToNextDay: () => void;
   handleAcceptRefinement: (refinedItinerary: Itinerary) => void;
+  handleAcceptRethink: (refinedItinerary: Itinerary) => void;
   handlePublishChanges: () => Promise<void>;
+  /**
+   * True briefly after a save succeeds so the OverviewTab can render a calm
+   * "Your trip is ready" confirmation. Auto-clears a few seconds later.
+   */
+  recentlyApplied: boolean;
+  dismissRecentlyApplied: () => void;
 };
 
 export function useWorkspaceOverviewModel({
@@ -96,6 +110,7 @@ export function useWorkspaceOverviewModel({
   onTripSnapshot,
   streamState,
   onCancelStream,
+  onItineraryApplied,
 }: Options): WorkspaceOverviewModel {
   const itineraryQuery = useSavedItineraryQuery(trip.id);
   const { mutateAsync: saveItinerary, isPending: isSavingItinerary } =
@@ -108,9 +123,33 @@ export function useWorkspaceOverviewModel({
     stopIndex: number | null;
   } | null>(null);
   const [regeneratingDayIndex, setRegeneratingDayIndex] = useState<number | null>(null);
+  const [rethinkingDayIndex, setRethinkingDayIndex] = useState<number | null>(null);
   const [itineraryFilter, setItineraryFilter] = useState<ItineraryFilterKey>("all");
   const [showFullItinerary, setShowFullItinerary] = useState(false);
+  const [recentlyApplied, setRecentlyApplied] = useState(false);
   const applyInFlight = useRef(false);
+  const onItineraryAppliedRef = useRef(onItineraryApplied);
+
+  useEffect(() => {
+    onItineraryAppliedRef.current = onItineraryApplied;
+  }, [onItineraryApplied]);
+
+  const markRecentlyApplied = () => {
+    setRecentlyApplied(true);
+    onItineraryAppliedRef.current?.();
+  };
+
+  const dismissRecentlyApplied = () => {
+    setRecentlyApplied(false);
+  };
+
+  // The apply confirmation is a moment, not a permanent state — fade it
+  // out so the workspace settles back into its calm read view.
+  useEffect(() => {
+    if (!recentlyApplied) return;
+    const timer = setTimeout(() => setRecentlyApplied(false), 4500);
+    return () => clearTimeout(timer);
+  }, [recentlyApplied]);
 
   const completedItinerary: Itinerary | null = streamState?.itinerary ?? null;
   const isStillStreaming = streamState?.streaming ?? false;
@@ -165,9 +204,11 @@ export function useWorkspaceOverviewModel({
     setLastSyncedSaved(null);
     setEditingStop(null);
     setRegeneratingDayIndex(null);
+    setRethinkingDayIndex(null);
     setItineraryFilter("all");
     setSaveError(null);
     setShowFullItinerary(false);
+    setRecentlyApplied(false);
     applyInFlight.current = false;
   }, [trip.id]);
 
@@ -198,6 +239,7 @@ export function useWorkspaceOverviewModel({
         setLastSyncedSaved(serializeItinerary(completedItinerary));
         onCancelStream();
         applyInFlight.current = false;
+        markRecentlyApplied();
       })
       .catch(() => {
         setSaveError("We couldn't save the itinerary. Try again.");
@@ -317,6 +359,12 @@ export function useWorkspaceOverviewModel({
     setRegeneratingDayIndex(null);
   }
 
+  function handleAcceptRethink(refinedItinerary: Itinerary) {
+    if (!editableItinerary) return;
+    setEditableItinerary(refinedItinerary);
+    setRethinkingDayIndex(null);
+  }
+
   async function handlePublishChanges() {
     if (!editableItinerary || !isDirty) return;
 
@@ -328,6 +376,7 @@ export function useWorkspaceOverviewModel({
         source: "manual_edit",
       });
       setLastSyncedSaved(serializeItinerary(editableItinerary));
+      markRecentlyApplied();
     } catch {
       setSaveError("We couldn't publish your itinerary changes. Try again.");
     }
@@ -386,6 +435,7 @@ export function useWorkspaceOverviewModel({
     timeOptions,
     stopMoveAvailability,
     regeneratingDayIndex,
+    rethinkingDayIndex,
     isItineraryLoading: itineraryQuery.isLoading,
     isItineraryMissing: isMissing,
     isItineraryDirty: isDirty,
@@ -401,6 +451,7 @@ export function useWorkspaceOverviewModel({
     setShowFullItinerary,
     setEditingStop,
     setRegeneratingDayIndex,
+    setRethinkingDayIndex,
     handleSaveStop,
     handleDeleteStop,
     handleAddDay,
@@ -410,7 +461,10 @@ export function useWorkspaceOverviewModel({
     handleMoveStopToPreviousDay,
     handleMoveStopToNextDay,
     handleAcceptRefinement,
+    handleAcceptRethink,
     handlePublishChanges,
+    recentlyApplied,
+    dismissRecentlyApplied,
   };
 }
 

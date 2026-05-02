@@ -5,6 +5,7 @@ import { Pressable, Text, View } from "react-native";
 
 import { DE } from "@/shared/theme/desertEditorial";
 import { fontStyles } from "@/shared/theme/typography";
+import { RoenMark } from "@/shared/ui/RoenLogo";
 
 type Member = { email: string; tone?: string };
 
@@ -20,69 +21,70 @@ export function OnTripHeader({ eyebrow, dateLabel, onBack, members }: Props) {
 
   return (
     <View
-      className="flex-row items-center justify-between px-[22px] py-3"
+      className="flex-row items-center px-[22px] py-3"
       style={{ backgroundColor: DE.ivory, borderBottomWidth: 1, borderBottomColor: DE.rule }}
     >
-      <Pressable
-        onPress={onBack}
-        hitSlop={12}
-        className="min-w-0 flex-1 flex-row items-start gap-2 active:opacity-70"
-        accessibilityRole="button"
-        accessibilityLabel="Back to trips"
-      >
-        <RoenMark />
-        <View className="min-w-0 flex-1" style={{ gap: 3 }}>
+      {/* Left/right flex 1 vs center flex 2 — wider center lane so TODAY line stays single-line */}
+      <View className="min-w-0 flex-1 flex-row items-center justify-start">
+        <Pressable
+          onPress={onBack}
+          hitSlop={16}
+          className="active:opacity-70"
+          accessibilityRole="button"
+          accessibilityLabel="Back to trips"
+        >
+          <RoenMark size={24} />
+        </Pressable>
+      </View>
+
+      {/* Center: absorbs more width than rails (flex-2) so kicker stays on one row */}
+      <View className="min-w-0 flex-[2] items-center px-1" style={{ gap: 3 }}>
+        <Text
+          style={[
+            fontStyles.monoMedium,
+            {
+              fontSize: 10,
+              letterSpacing: 2,
+              textTransform: "uppercase",
+              color: DE.muted,
+              textAlign: "center",
+            },
+          ]}
+          numberOfLines={1}
+        >
+          {eyebrow}
+        </Text>
+        {dateLabel ? (
           <Text
-            className="min-w-0"
             style={[
-              fontStyles.monoMedium,
-              { fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: DE.muted },
+              fontStyles.monoRegular,
+              {
+                fontSize: 9.5,
+                letterSpacing: 1.5,
+                textTransform: "uppercase",
+                color: DE.mutedLight,
+                textAlign: "center",
+              },
             ]}
             numberOfLines={1}
           >
-            {eyebrow}
+            {dateLabel}
           </Text>
-          {dateLabel ? (
-            <Text
-              style={[
-                fontStyles.monoRegular,
-                { fontSize: 9.5, letterSpacing: 1.5, textTransform: "uppercase", color: DE.mutedLight },
-              ]}
-              numberOfLines={1}
-            >
-              {dateLabel}
-            </Text>
-          ) : null}
-        </View>
-      </Pressable>
+        ) : null}
+      </View>
 
-      {visibleMembers.length > 1 ? (
-        <View className="flex-row">
-          {visibleMembers.map((m, i) => (
-            <View key={i} style={{ marginLeft: i === 0 ? 0 : -7 }}>
-              <MemberAvatar email={m.email} tone={m.tone} />
-            </View>
-          ))}
-        </View>
-      ) : null}
+      <View className="min-w-0 flex-1 flex-row items-center justify-end">
+        {visibleMembers.length > 1 ? (
+          <View className="flex-row">
+            {visibleMembers.map((m, i) => (
+              <View key={i} style={{ marginLeft: i === 0 ? 0 : -7 }}>
+                <MemberAvatar email={m.email} tone={m.tone} />
+              </View>
+            ))}
+          </View>
+        ) : null}
+      </View>
     </View>
-  );
-}
-
-function RoenMark() {
-  return (
-    <Text
-      style={{
-        fontFamily: "Italiana_400Regular",
-        fontSize: 14,
-        lineHeight: 14,
-        color: DE.ink,
-        includeFontPadding: false,
-      }}
-      allowFontScaling={false}
-    >
-      R
-    </Text>
   );
 }
 
@@ -97,9 +99,7 @@ function MemberAvatar({ email, tone }: { email: string; tone?: string }) {
         borderColor: DE.ivory,
       }}
     >
-      <Text
-        style={[fontStyles.uiSemibold, { fontSize: 8, color: DE.ivory }]}
-      >
+      <Text style={[fontStyles.uiSemibold, { fontSize: 8, color: DE.ivory }]}>
         {initials}
       </Text>
     </View>

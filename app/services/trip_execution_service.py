@@ -39,7 +39,7 @@ class TripExecutionService:
         user_id: int,
         payload: TripStopStatusUpdateRequest,
     ) -> TripExecutionEventResponse:
-        self.access_service.require_membership(trip_id, user_id)
+        self.access_service.require_membership_exists(trip_id, user_id)
         self._require_stop_ref_belongs_to_trip(trip_id=trip_id, stop_ref=payload.stop_ref)
         event = self.repo.record_stop_status(
             trip_id=trip_id,
@@ -55,7 +55,7 @@ class TripExecutionService:
         user_id: int,
         payload: TripUnplannedStopRequest,
     ) -> TripExecutionEventResponse:
-        self.access_service.require_membership(trip_id, user_id)
+        self.access_service.require_membership_exists(trip_id, user_id)
         event = self.repo.log_unplanned_stop(
             trip_id=trip_id,
             user_id=user_id,
@@ -102,9 +102,6 @@ class TripExecutionService:
         except (TypeError, ValueError):
             raise HTTPException(status_code=400, detail="Invalid stop_ref")
 
-        days = self.itinerary_repo.get_days_by_trip(trip_id)
-        for day in days:
-            for event in day.events:
-                if event.id == event_id:
-                    return
+        if self.itinerary_repo.stop_exists_for_trip(trip_id, event_id):
+            return
         raise HTTPException(status_code=404, detail="Stop not found in saved itinerary")

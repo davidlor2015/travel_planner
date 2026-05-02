@@ -41,7 +41,7 @@ export function TripSwitcherSheet({
             Switch Trip
           </Text>
           <Text className="mt-1 text-sm text-text-muted" style={fontStyles.uiRegular}>
-            Jump between active workspaces without leaving the trip area.
+            Jump between trip plans without leaving the trip area.
           </Text>
           <ScrollView contentContainerClassName="gap-3 py-4">
             {trips.map((trip) => {

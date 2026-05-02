@@ -16,6 +16,7 @@ import {
   postStopStatus,
   postUnplannedStop,
 } from "../api";
+import { patchOnTripSnapshotCacheStopStatus } from "./cache";
 import type {
   TripExecutionStatus,
   TripOnTripSnapshot,
@@ -313,6 +314,12 @@ export function useOnTripMutations({
           } else if (nextStatus === "skipped") {
             void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }
+          await patchOnTripSnapshotCacheStopStatus(tripId, {
+            stopRef,
+            status: nextStatus,
+            actor,
+            updatedAt,
+          });
           await refreshSnapshot();
         } catch (err) {
           setOptimistic((prev) => {

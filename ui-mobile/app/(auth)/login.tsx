@@ -18,7 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { friendlyError } from "@/shared/api/friendlyError";
 import { useAuth } from "@/providers/AuthProvider";
 import { fontStyles, textScaleStyles } from "@/shared/theme/typography";
-import { RoenLogo } from "@/shared/ui/RoenLogo";
+import { DisplayWordmark } from "@/shared/ui/RoenLogo";
 import { AuthInput, AUTH_PALETTE } from "@/shared/ui/AuthInput";
 
 export default function LoginPage() {
@@ -58,11 +58,9 @@ export default function LoginPage() {
           showsVerticalScrollIndicator={false}
         >
           {/* Logo row */}
-          <View className="px-7 pt-10 pb-2">
-            <RoenLogo size={44} />
+          <View className="items-center px-7 pt-10 pb-4">
+            <DisplayWordmark width={228} />
           </View>
-
-          <View className="h-10" />
 
           {/* Editorial headline */}
           <View className="px-7">
@@ -73,12 +71,12 @@ export default function LoginPage() {
               Welcome back
             </Text>
             <Text
-              style={[textScaleStyles.displayXL, { fontSize: 38, lineHeight: 42, color: AUTH_PALETTE.text }]}
+              style={[
+                textScaleStyles.displayXL,
+                { fontSize: 38, lineHeight: 42, color: AUTH_PALETTE.text },
+              ]}
             >
               {"Sign in."}
-            </Text>
-            <Text className="mt-2 text-sm leading-5 text-muted" style={fontStyles.uiRegular}>
-              Pick up where you left off.
             </Text>
           </View>
 
@@ -107,7 +105,10 @@ export default function LoginPage() {
 
             {errorMessage ? (
               <View className="mt-1 rounded-xl border border-danger/20 bg-danger/10 px-4 py-3">
-                <Text className="text-sm text-danger" style={fontStyles.uiMedium}>
+                <Text
+                  className="text-sm text-danger"
+                  style={fontStyles.uiMedium}
+                >
                   {errorMessage}
                 </Text>
               </View>
@@ -148,7 +149,9 @@ export default function LoginPage() {
             >
               <Text className="text-sm text-muted" style={fontStyles.uiRegular}>
                 New here?{" "}
-                <Text style={[fontStyles.uiMedium, s.link]}>Create an account</Text>
+                <Text style={[fontStyles.uiMedium, s.link]}>
+                  Create an account
+                </Text>
               </Text>
             </Pressable>
           </View>

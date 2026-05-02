@@ -34,8 +34,8 @@
 
   /* ── Text ── */
 
-  --color-espresso:       #1C1108;
-  --color-espresso-dark:  #2E2216;
+  --color-espresso:       #2A231C;
+  --color-espresso-dark:  #3D342B;
   /* Figma \"ink\" token for mobile On-Trip execution */
   --color-ink:            #2A1D13;
 
@@ -47,7 +47,7 @@
   /* ── Surfaces ── */
 
   /* Page background — stone-50 warm ivory */
-  --color-ivory:          #FEFCF9;
+  --color-ivory:          #F5EFE2;
   --color-parchment:      #FAF8F5;
   --color-smoke:          #EAE2D6;
   /* Figma frame 1:243 surface + dividers */
@@ -78,8 +78,8 @@
   /* ── Accent — nature / success ── */
 
   /* Muted olive — lime-800 */
-  --color-olive:          #6A7A43;
-  --color-olive-dark:     #4A6A28;
+  --color-olive:          #6E6A4F;
+  --color-olive-dark:     #54513C;
 
 
   /* ── State ── */
@@ -167,8 +167,8 @@
 
   /* ── Typography ── */
 
-  --font-sans:            'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-display:         'Playfair Display', ui-serif, Georgia, serif;
+  --font-sans:            'Jost', ui-sans-serif, system-ui, sans-serif;
+  --font-display:         'Cormorant Garamond', ui-serif, Georgia, serif;
   --font-italiana:        'Italiana', 'Georgia', serif;
   --font-mono:            'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 

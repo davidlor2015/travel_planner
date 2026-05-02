@@ -16,7 +16,7 @@ import { PackingTab } from "../workspace/tabs/PackingTab";
 import { ChatTab } from "../workspace/tabs/ChatTab";
 import { TripActivityDrawer } from "../logistics/activity";
 import { track } from "../../../shared/analytics";
-import { RoenLogo } from "../../../shared/ui";
+import { RoenLogo, RoenMark } from "../../../shared/ui";
 import { getTripTimelineLabel } from "../workspace/helpers/tripDateUtils";
 import { TripListLoadingSkeleton } from "./TripListLoadingSkeleton";
 import { PlusIcon } from "./tripListIcons";
@@ -185,6 +185,7 @@ export const TripList = ({
               </div>
             </div>
             <div className="px-5 py-7 text-center sm:px-8 sm:py-8">
+              <RoenMark size={32} className="mx-auto mb-5" />
               <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#A39688]">
                 First trip
               </p>
@@ -253,6 +254,7 @@ export const TripList = ({
     selectedIsRegenerating,
     selectedIsApplying,
     selectedDraftMutationState,
+    selectedAppliedSuccess,
     selectedIsAnyGenerating,
     selectedOnTripSnapshot,
     selectedIsOnTripCompactMode,
@@ -539,6 +541,7 @@ export const TripList = ({
                     isApplying={selectedIsApplying}
                     draftMutationState={selectedDraftMutationState}
                     draftPublishError={draftActionError}
+                    appliedSuccess={selectedAppliedSuccess}
                     savedItinerary={selectedSavedItinerary}
                     pendingItinerary={selectedPendingItinerary}
                     draftPlanMeta={selectedDraftPlanMeta}

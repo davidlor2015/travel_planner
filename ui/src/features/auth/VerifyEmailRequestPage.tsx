@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 
 import { requestEmailVerification } from '../../shared/api/auth';
 import { track } from '../../shared/analytics';
-import { SiteFooterLinks, RoenLogo } from '../../shared/ui';
+import { DisplayWordmark, SiteFooterLinks } from '../../shared/ui';
 
 export const VerifyEmailRequestPage = () => {
   const [searchParams] = useSearchParams();
@@ -39,9 +39,8 @@ export const VerifyEmailRequestPage = () => {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-ivory flex items-center justify-center p-6 font-sans">
-      <div className="pointer-events-none absolute -top-32 -left-24 h-[500px] w-[500px] rounded-full bg-clay/8 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-24 -right-16 h-[420px] w-[420px] rounded-full bg-amber/8 blur-3xl" />
+    <div className="min-h-screen bg-[#F5EFE2] flex flex-col items-center justify-center gap-8 p-6 font-sans">
+      <DisplayWordmark size={58} />
 
       <motion.div
         initial={{ opacity: 0, y: 24, scale: 0.98 }}
@@ -54,7 +53,6 @@ export const VerifyEmailRequestPage = () => {
         </Link>
 
         <div className="mb-7 mt-5 text-center">
-          <RoenLogo variant="mark" className="mb-4" />
           <h1 className="font-display text-2xl font-bold text-espresso sm:text-3xl">Verify your email</h1>
           <p className="mt-1.5 text-sm text-flint">
             Enter your account email and we&apos;ll prepare a fresh verification link.

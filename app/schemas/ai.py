@@ -165,6 +165,7 @@ class AIRefineRequest(BaseModel):
     regenerate_day_number: Optional[int] = Field(None, ge=1)
     regenerate_time_block: Optional[RefinementTimeBlock] = None
     variant: Optional[RefinementVariant] = None
+    user_note: Optional[str] = None
 
 
 class AIDayRefinementResponse(BaseModel):

@@ -16,11 +16,18 @@ function parseTripId(value: string | string[] | undefined): number | null {
   return Number.isInteger(n) && n > 0 ? n : null;
 }
 
+function parseBooleanFlag(value: string | string[] | undefined): boolean {
+  const raw = Array.isArray(value) ? value[0] : value;
+  return raw === "1" || raw === "true";
+}
+
 export default function LiveViewPage() {
-  const { tripId: tripIdParam } = useLocalSearchParams<{
+  const { tripId: tripIdParam, quickLog } = useLocalSearchParams<{
     tripId?: string | string[];
+    quickLog?: string | string[];
   }>();
   const tripId = parseTripId(tripIdParam);
+  const openQuickLog = parseBooleanFlag(quickLog);
 
   const tripQuery = useTripDetailQuery(tripId);
   const title = tripQuery.data?.title ?? "Trip";
@@ -47,7 +54,14 @@ export default function LiveViewPage() {
   return (
     <>
       <Tabs.Screen options={{ tabBarStyle: { display: "none" } }} />
-      <OnTripScreen tripId={tripId} tripTitle={title} tripDestination={destination} members={members} />
+      <OnTripScreen
+        tripId={tripId}
+        tripTitle={title}
+        tripDestination={destination}
+        tripStartDate={tripQuery.data?.start_date}
+        members={members}
+        autoOpenLogComposer={openQuickLog}
+      />
     </>
   );
 }

@@ -2,9 +2,8 @@
 // Summary: Implements StopDetailScreen module logic.
 
 import { useMemo } from "react";
-import * as Linking from "expo-linking";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { type Href, useRouter } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import {
   SafeAreaView,
@@ -25,11 +24,16 @@ import { useAuth } from "@/providers/AuthProvider";
 import type { TripExecutionStatus } from "../types";
 import { toStopVmForDetail } from "./adapters";
 import { useOnTripMutations } from "./hooks";
-import { buildNavigateUrl } from "./presentation";
+import {
+  normalizeDirectionsDestination,
+  openStopDirections,
+} from "./mapNavigation";
 import {
   READ_ONLY_TRIP_BODY,
   READ_ONLY_TRIP_TITLE,
 } from "../workspace/helpers/collaborationGate";
+
+const TODAY_EXECUTION_HREF = "/(tabs)/today" as Href;
 
 type Props = {
   tripId: number;
@@ -91,12 +95,12 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
   const effectiveStatus = stop.effectiveStatus;
   const isReadOnly = stop.isReadOnly;
   const isPending = stop.isPending;
-  const navigateUrl = buildNavigateUrl(stop);
+  const navigationDestination = normalizeDirectionsDestination(stop.location);
 
   const handleStatus = (target: TripExecutionStatus) => {
     if (!stop.stop_ref) return;
     void mutations.setStopStatus(stop.stop_ref, target);
-    router.back();
+    router.replace(TODAY_EXECUTION_HREF);
   };
 
   const statusKicker =
@@ -136,11 +140,11 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
         }}
       >
         <Pressable
-          onPress={() => router.back()}
+          onPress={() => router.replace(TODAY_EXECUTION_HREF)}
           hitSlop={12}
           className="flex-row items-center gap-1.5 active:opacity-70"
           accessibilityRole="button"
-          accessibilityLabel="Back to today's plan"
+          accessibilityLabel="Back to Today"
         >
           <Ionicons name="chevron-back" size={14} color={DE.muted} />
           <Text
@@ -272,9 +276,9 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
         ) : null}
 
         {/* Primary action: Navigate */}
-        {navigateUrl ? (
+        {navigationDestination ? (
           <Pressable
-            onPress={() => void Linking.openURL(navigateUrl)}
+            onPress={() => void openStopDirections(navigationDestination)}
             className="mb-3 h-[60px] flex-row items-center justify-center gap-2.5 rounded-[14px] active:opacity-90"
             style={{ backgroundColor: DE.ink }}
             accessibilityRole="button"
@@ -394,7 +398,7 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
                         },
                       ]}
                     >
-                      On trip
+                      Today
                     </Text>
                   </View>
                 </View>
@@ -437,7 +441,7 @@ export function StopDetailScreen({ tripId, stopKey }: Props) {
               },
             ]}
           >
-            Plan notes and deeper edits live in the full workspace.
+            Plan notes and deeper edits belong in Plan.
           </Text>
         </View>
       </ScrollView>

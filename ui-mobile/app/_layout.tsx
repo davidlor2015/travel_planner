@@ -24,6 +24,12 @@ import {
   Manrope_700Bold,
 } from "@expo-google-fonts/manrope";
 import {
+  Jost_400Regular,
+  Jost_500Medium,
+  Jost_600SemiBold,
+  Jost_700Bold,
+} from "@expo-google-fonts/jost";
+import {
   JetBrainsMono_400Regular,
   JetBrainsMono_500Medium,
 } from "@expo-google-fonts/jetbrains-mono";
@@ -46,6 +52,10 @@ export default function RootLayout() {
     Manrope_500Medium,
     Manrope_600SemiBold,
     Manrope_700Bold,
+    Jost_400Regular,
+    Jost_500Medium,
+    Jost_600SemiBold,
+    Jost_700Bold,
     JetBrainsMono_400Regular,
     JetBrainsMono_500Medium,
     Italiana_400Regular,

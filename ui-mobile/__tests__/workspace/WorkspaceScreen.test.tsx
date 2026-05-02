@@ -104,11 +104,11 @@ jest.mock("@/features/trips/workspace/useTripWorkspaceModel", () => ({
 
 jest.mock("@/features/trips/workspace/WorkspaceTripHeader", () => ({
   WorkspaceTripHeader: ({ onEditPress }: { onEditPress: () => void }) => {
-    const { Pressable: P, Text: T } = require("react-native");
+    const { Pressable, Text } = jest.requireActual("react-native");
     return (
-      <P onPress={onEditPress}>
-        <T>Edit trip details</T>
-      </P>
+      <Pressable onPress={onEditPress}>
+        <Text>Edit trip details</Text>
+      </Pressable>
     );
   },
 }));
@@ -157,18 +157,18 @@ jest.mock("@/features/trips/TripFormSheet", () => ({
     onDeleteTrip?: () => void;
     error?: string | null;
   }) => {
-    const { View: V, Text: T, Pressable: P } = require("react-native");
+    const { View, Text, Pressable } = jest.requireActual("react-native");
     if (!visible) return null;
     return (
-      <V>
-        <T>{mode === "edit" ? "Edit trip" : "Create trip"}</T>
+      <View>
+        <Text>{mode === "edit" ? "Edit trip" : "Create trip"}</Text>
         {mode === "edit" && onDeleteTrip ? (
-          <P onPress={onDeleteTrip}>
-            <T>Delete trip</T>
-          </P>
+          <Pressable onPress={onDeleteTrip}>
+            <Text>Delete trip</Text>
+          </Pressable>
         ) : null}
-        {error ? <T>{error}</T> : null}
-      </V>
+        {error ? <Text>{error}</Text> : null}
+      </View>
     );
   },
 }));

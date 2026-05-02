@@ -82,6 +82,7 @@ export function useRefineItineraryMutation() {
         regenerate_day_number: number;
         regenerate_time_block?: RefinementTimeBlock;
         variant?: RefinementVariant;
+        user_note?: string;
       };
       signal?: AbortSignal;
     }) => refineItinerary(tripId, payload, signal),

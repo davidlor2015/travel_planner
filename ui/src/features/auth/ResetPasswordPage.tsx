@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 
 import { confirmPasswordReset, validatePasswordResetToken } from '../../shared/api/auth';
 import { track } from '../../shared/analytics';
-import { SiteFooterLinks, RoenLogo } from '../../shared/ui';
+import { DisplayWordmark, SiteFooterLinks } from '../../shared/ui';
 
 export const ResetPasswordPage = () => {
   const [searchParams] = useSearchParams();
@@ -80,9 +80,8 @@ export const ResetPasswordPage = () => {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-ivory flex items-center justify-center p-6 font-sans">
-      <div className="pointer-events-none absolute -top-32 -left-24 w-[500px] h-[500px] rounded-full bg-clay/8 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-24 -right-16 w-[420px] h-[420px] rounded-full bg-amber/8 blur-3xl" />
+    <div className="min-h-screen bg-[#F5EFE2] flex flex-col items-center justify-center gap-8 p-6 font-sans">
+      <DisplayWordmark size={58} />
 
       <motion.div
         initial={{ opacity: 0, y: 24, scale: 0.98 }}
@@ -95,7 +94,6 @@ export const ResetPasswordPage = () => {
         </Link>
 
         <div className="text-center mb-7 mt-5">
-          <RoenLogo variant="mark" className="mb-4" />
           <h1 className="text-2xl sm:text-3xl font-bold text-espresso font-display">Choose a new password</h1>
           <p className="text-sm text-flint mt-1.5">
             This link is secure and only works while the reset token is still valid.

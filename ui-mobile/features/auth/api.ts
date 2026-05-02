@@ -4,7 +4,12 @@
 import { API_BASE_URL } from "@/shared/api/config";
 import { ApiError, apiRequest } from "@/shared/api/client";
 
-import type { LoginRequest, LoginResponse, MeResponse } from "./types";
+import type {
+  EmailVerificationRequestResponse,
+  LoginRequest,
+  LoginResponse,
+  MeResponse,
+} from "./types";
 
 export async function login(payload: LoginRequest): Promise<LoginResponse> {
   const body = `username=${encodeURIComponent(payload.email)}&password=${encodeURIComponent(payload.password)}`;
@@ -98,8 +103,10 @@ export async function validatePasswordResetToken(
   );
 }
 
-export async function requestEmailVerification(email: string): Promise<void> {
-  await apiRequest<void>("/v1/auth/email-verification/request", {
+export async function requestEmailVerification(
+  email: string,
+): Promise<EmailVerificationRequestResponse> {
+  return apiRequest<EmailVerificationRequestResponse>("/v1/auth/email-verification/request", {
     method: "POST",
     body: { email },
     skipAuth: true,

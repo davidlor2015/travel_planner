@@ -5,7 +5,14 @@ import type { Reservation, ReservationType } from "./api";
 
 // ─── Filter types ────────────────────────────────────────────────────────────
 
-export type BookingFilterKey = "all" | "flights" | "lodging" | "transit" | "activities";
+export type BookingFilterKey =
+  | "all"
+  | "flights"
+  | "lodging"
+  | "dining"
+  | "activities"
+  | "transport"
+  | "other";
 
 export type BookingFilterChip = { key: BookingFilterKey; label: string };
 
@@ -13,16 +20,20 @@ export const BOOKING_FILTER_CHIPS: BookingFilterChip[] = [
   { key: "all", label: "All" },
   { key: "flights", label: "Flights" },
   { key: "lodging", label: "Lodging" },
-  { key: "transit", label: "Transit" },
+  { key: "dining", label: "Restaurants" },
   { key: "activities", label: "Activities" },
+  { key: "transport", label: "Transport" },
+  { key: "other", label: "Other" },
 ];
 
 const FILTER_TYPE_MAP: Record<BookingFilterKey, ReservationType[]> = {
   all: [],
   flights: ["flight"],
   lodging: ["hotel"],
-  transit: ["train", "bus", "car"],
-  activities: ["activity", "restaurant", "other"],
+  dining: ["restaurant"],
+  activities: ["activity"],
+  transport: ["train", "bus", "car"],
+  other: ["other"],
 };
 
 export function filterReservations(

@@ -286,10 +286,12 @@ export function buildWorkspaceCommandModel(args: {
             : trip.status === "active" && activeNextStop
               ? "Next stop"
               : preview?.primaryStop
-                ? trip.status === "past"
+                ? trip.status === "active"
+                  ? "Next stop"
+                  : trip.status === "past"
                   ? "Recent stop"
                   : "Next planned stop"
-                : "Review the workspace";
+                : "Review the plan";
   const nextActionBody =
     itineraryState.isStreaming
       ? "Keep this screen open or cancel generation if the draft is no longer needed."

@@ -130,7 +130,7 @@ export function UpcomingTripRow({ trip, onPress, onOpenWorkspace }: Props) {
               }}
             />
           </View>
-          <Pressable onPress={onOpenWorkspace} hitSlop={8} accessibilityLabel="Open workspace">
+          <Pressable onPress={onOpenWorkspace} hitSlop={8} accessibilityLabel="Open plan">
             <Text
               style={[
                 fontStyles.uiSemibold,

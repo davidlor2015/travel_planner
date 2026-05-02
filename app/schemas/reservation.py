@@ -139,3 +139,71 @@ class ReservationResponse(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ReservationImportFields(BaseModel):
+    type: str | None = None
+    vendor: str | None = None
+    confirmation_number: str | None = None
+    start_date: str | None = None
+    end_date: str | None = None
+    start_time: str | None = None
+    end_time: str | None = None
+    location_name: str | None = None
+    address: str | None = None
+    traveler_names: list[str] | None = None
+    price_total: str | None = None
+    notes: str | None = None
+
+    @field_validator("type")
+    @classmethod
+    def validate_import_type(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip().lower()
+        allowed = {"flight", "lodging", "restaurant", "activity", "other"}
+        if normalized not in allowed:
+            raise ValueError(f"type must be one of: {', '.join(sorted(allowed))}")
+        return normalized
+
+
+class ReservationImportResponse(BaseModel):
+    status: str
+    source_type: str
+    fields: ReservationImportFields
+    confidence: str | None = None
+    message: str | None = None
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        allowed = {
+            "extracted",
+            "needs_manual_entry",
+            "needs_image_extraction",
+            "unsupported_file",
+        }
+        if normalized not in allowed:
+            raise ValueError(f"status must be one of: {', '.join(sorted(allowed))}")
+        return normalized
+
+    @field_validator("source_type")
+    @classmethod
+    def validate_source_type(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        allowed = {"pdf", "image", "unknown"}
+        if normalized not in allowed:
+            raise ValueError(f"source_type must be one of: {', '.join(sorted(allowed))}")
+        return normalized
+
+    @field_validator("confidence")
+    @classmethod
+    def validate_confidence(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip().lower()
+        allowed = {"high", "medium", "low"}
+        if normalized not in allowed:
+            raise ValueError(f"confidence must be one of: {', '.join(sorted(allowed))}")
+        return normalized

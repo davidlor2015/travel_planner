@@ -15,13 +15,17 @@ export type { StopTimeDisplay } from "../stopTime";
 
 export type OnTripDayHeaderVM = {
   eyebrow: string;
+  /** @deprecated Prefer single-line `eyebrow` — kept optional for callers; usually null */
   dateLabel: string | null;
   title: string;
   meta: string;
 };
 
 /**
- * Builds the editorial day header for the OnTrip screen.
+ * Builds the editorial day header for the Today execution surface.
+ *
+ * `eyebrow` is like `TODAY · MAY 1 · DAY 3`: month abbreviation, calendar day number, plus itinerary DAY N — using snapshot
+ * `today.day_date` when present, otherwise `tripStartDate + (day_number - 1)` when both exist, otherwise the device's calendar date.
  *
  * Title priority:
  *   1. "{Weekday} in {shortDestination}"  — uses trip.destination, never stop locations
@@ -34,15 +38,13 @@ export function buildOnTripDayHeader(
   snapshot: TripOnTripSnapshot,
   tripTitle: string,
   tripDestination?: string,
+  tripStartDate?: string | null,
 ): OnTripDayHeaderVM {
-  const dayNumber = snapshot.today.day_number;
-  const eyebrow =
-    typeof dayNumber === "number" && dayNumber > 0
-      ? `ON TRIP · DAY ${dayNumber}`
-      : "ON TRIP";
-  const dateLabel = formatActiveDayDateLabel(snapshot.today.day_date);
+  const resolvedIso = resolveExecutionDayCalendarIso(snapshot, tripStartDate);
+  const eyebrow = formatTodayExecutionEyebrow(resolvedIso, snapshot.today.day_number);
+  const dateLabel: string | null = null;
 
-  const weekday = formatWeekday(snapshot.today.day_date);
+  const weekday = formatWeekday(resolvedIso);
   const destination = tripDestination?.trim() || tripTitle.trim() || "";
   const shortPlace = extractShortDestination(destination);
 
@@ -56,7 +58,7 @@ export function buildOnTripDayHeader(
   }
 
   const meta = [
-    formatShortDate(snapshot.today.day_date),
+    formatShortDate(resolvedIso),
     formatStopCount(snapshot.today_stops.length),
   ]
     .filter(Boolean)
@@ -110,14 +112,6 @@ export function buildBlockerStrip(
   };
 }
 
-// ─── Navigate URL ─────────────────────────────────────────────────────────────
-
-export function buildNavigateUrl(stop: StopVM): string | null {
-  const location = stop.location?.trim();
-  if (!location) return null;
-  return `https://maps.google.com/?q=${encodeURIComponent(location)}`;
-}
-
 // ─── Status helpers ───────────────────────────────────────────────────────────
 
 export type OnTripStatusTone = "confirmed" | "planned" | "skipped";
@@ -144,30 +138,86 @@ export function shouldMuteStop(stop: StopVM): boolean {
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
+/** Parses an ISO calendar day at local noon so the printed day stays stable across timezones. */
+function calendarDate(iso: string): Date {
+  return new Date(`${iso}T12:00:00`);
+}
+
+function isoDatePrefix(value: string | null | undefined): string | null {
+  if (!value?.trim()) return null;
+  const head = value.trim().slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(head) ? head : null;
+}
+
+function formatLocalCalendarIso(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function addLocalCalendarDays(base: Date, offset: number): Date {
+  const d = new Date(base.getTime());
+  d.setDate(d.getDate() + offset);
+  return d;
+}
+
 /**
- * Formats the active trip day date as "WEDNESDAY · APR 29" — the same uppercase
- * style that was previously shown on the Trips list header, now moved here so
- * the label is contextual to the active travel day.
+ * Canonical YYYY-MM-DD for execution "today".
+ * Priority: snapshot `today.day_date` -> trip `start_date` + (`day_number` - 1) -> device calendar day.
  */
-function formatActiveDayDateLabel(iso: string | null): string | null {
-  if (!iso) return null;
-  const date = new Date(`${iso}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return null;
-  const weekday = date.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
-  const monthDay = date.toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase();
-  return `${weekday} · ${monthDay}`;
+function resolveExecutionDayCalendarIso(
+  snapshot: TripOnTripSnapshot,
+  tripStartDate?: string | null,
+): string {
+  const fromSnapshot = isoDatePrefix(snapshot.today.day_date);
+  if (fromSnapshot) {
+    const d = calendarDate(fromSnapshot);
+    if (!Number.isNaN(d.getTime())) return fromSnapshot;
+  }
+
+  const dayNum = snapshot.today.day_number;
+  const start = isoDatePrefix(tripStartDate ?? null);
+  if (start != null && typeof dayNum === "number" && dayNum > 0) {
+    const base = calendarDate(start);
+    if (!Number.isNaN(base.getTime())) {
+      return formatLocalCalendarIso(addLocalCalendarDays(base, dayNum - 1));
+    }
+  }
+
+  return formatLocalCalendarIso(new Date());
+}
+
+/** One-line uppercase kicker, e.g. `TODAY · MAY 1 · DAY 3`. */
+function formatTodayExecutionEyebrow(
+  resolvedIso: string,
+  dayNumber: number | null | undefined,
+): string {
+  const date = calendarDate(resolvedIso);
+  if (Number.isNaN(date.getTime())) {
+    return typeof dayNumber === "number" && dayNumber > 0
+      ? `TODAY · DAY ${dayNumber}`
+      : "TODAY";
+  }
+  const mon = date.toLocaleDateString("en-US", { month: "short" }).toUpperCase();
+  const dom = date.getDate();
+  const cal = `${mon} ${dom}`;
+  if (typeof dayNumber === "number" && dayNumber > 0) {
+    return `TODAY · ${cal} · DAY ${dayNumber}`;
+  }
+  return `TODAY · ${cal}`;
 }
 
 function formatWeekday(iso: string | null): string | null {
   if (!iso) return null;
-  const date = new Date(`${iso}T00:00:00`);
+  const date = calendarDate(iso);
   if (Number.isNaN(date.getTime())) return null;
   return date.toLocaleDateString(undefined, { weekday: "long" });
 }
 
 function formatShortDate(iso: string | null): string | null {
   if (!iso) return null;
-  const date = new Date(`${iso}T00:00:00`);
+  const date = calendarDate(iso);
   if (Number.isNaN(date.getTime())) return iso;
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }

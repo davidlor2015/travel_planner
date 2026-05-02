@@ -1,7 +1,7 @@
 // Path: ui-mobile/features/trips/workspace/OverviewTab.tsx
 // Summary: Implements OverviewTab module logic.
 
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 
@@ -17,6 +17,7 @@ import type {
 } from "./adapters";
 import { ItineraryTabView } from "./ItineraryTabView";
 import { RegenerateSheet } from "./RegenerateSheet";
+import { RethinkDaySheet } from "./RethinkDaySheet";
 import { ReadOnlyNotice } from "./ReadOnlyNotice";
 import { StopFormSheet } from "./StopFormSheet";
 import { useWorkspaceOverviewModel } from "./useWorkspaceOverviewModel";
@@ -40,6 +41,7 @@ type Props = {
   onCancelStream: () => void;
   onOpenTab: (tab: WorkspaceTab) => void;
   onOpenLiveView: () => void;
+  onItineraryApplied?: () => void;
   showItineraryOnly?: boolean;
   isReadOnly?: boolean;
   activityLoadError?: string | null;
@@ -58,6 +60,7 @@ export function OverviewTab({
   onCancelStream,
   onOpenTab,
   onOpenLiveView,
+  onItineraryApplied,
   showItineraryOnly = false,
   isReadOnly = false,
   activityLoadError = null,
@@ -69,10 +72,12 @@ export function OverviewTab({
     onTripSnapshot,
     streamState,
     onCancelStream,
+    onItineraryApplied,
   });
 
   const command = overview.command;
   const previewDays = overview.itineraryDayPreviews;
+  const isActiveTrip = trip.status === "active";
   const showActivity = tripRaw.member_count > 1;
   const [activitySheetOpen, setActivitySheetOpen] = useState(false);
   const [activitySeenState, setActivitySeenState] = useState<{
@@ -135,6 +140,10 @@ export function OverviewTab({
       : overview.isItineraryMissing
         ? "No plan yet"
         : null;
+  const activityError = activityLoadError ?? activityStatusError;
+  const hasActivityItems = activityModel.items.length > 0;
+  const shouldShowActivitySection =
+    showActivity && (hasActivityItems || Boolean(activityError));
 
   let primaryLabel: string | null = null;
   let primaryHandler: (() => void) | null = null;
@@ -143,7 +152,7 @@ export function OverviewTab({
 
   if (isReadOnly) {
     if (canOpenLiveView) {
-      primaryLabel = "Open live view";
+      primaryLabel = "Open Today";
       primaryHandler = onOpenLiveView;
     }
   } else if (overview.isStreaming) {
@@ -156,9 +165,12 @@ export function OverviewTab({
     primaryLabel = "Generate with AI";
     primaryHandler = onStartStream;
   } else if (canOpenLiveView) {
-    primaryLabel = "Open live view";
+    primaryLabel = "Open Today";
     primaryHandler = onOpenLiveView;
   }
+  const showInlineLiveEntry = isActiveTrip && canOpenLiveView;
+  const showPrimaryButton =
+    primaryLabel !== null && (!showInlineLiveEntry || primaryLabel !== "Open Today");
 
   return (
     <View className="flex-1">
@@ -183,44 +195,99 @@ export function OverviewTab({
           onPublish={() => void overview.handlePublishChanges()}
           onRegenerateAll={onStartStream}
           onCancelStream={onCancelStream}
+          onRethinkDay={!isReadOnly ? (dayIndex) => overview.setRethinkingDayIndex(dayIndex) : undefined}
           isReadOnly={isReadOnly}
         />
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
           {isReadOnly ? <ReadOnlyNotice className="mx-[22px] mt-4" /> : null}
 
-          {showActivity ? (
-            <View style={{ paddingTop: 16 }}>
-              <ActivityStrip
-                items={activityModel.items}
-                unseenCount={
-                  activitySeenState.signature &&
-                  activitySeenState.signature !== activityModel.signature
-                    ? activityModel.items.length
-                    : 0
-                }
-                errorMessage={activityLoadError ?? activityStatusError}
-                onPress={() => setActivitySheetOpen(true)}
-              />
+          {overview.recentlyApplied ? (
+            <View
+              testID="itinerary-applied-banner"
+              accessible
+              accessibilityRole="alert"
+              accessibilityLiveRegion="polite"
+              style={{
+                marginHorizontal: 22,
+                marginTop: 16,
+                padding: 16,
+                borderRadius: 16,
+                backgroundColor: "#F2EBDD",
+                borderWidth: 1,
+                borderColor: "rgba(184,90,56,0.22)",
+                flexDirection: "row",
+                alignItems: "flex-start",
+                gap: 12,
+              }}
+            >
+              <View
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 14,
+                  backgroundColor: "rgba(184,90,56,0.15)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Ionicons name="checkmark" size={16} color="#B85A38" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[fontStyles.headSemibold, { fontSize: 16, color: "#231910", lineHeight: 20 }]}>
+                  Your trip is ready
+                </Text>
+                <Text
+                  style={[fontStyles.uiRegular, { fontSize: 13, lineHeight: 18, color: "#8A7B6A", marginTop: 4 }]}
+                >
+                  Your itinerary is in your trip plan now.
+                </Text>
+              </View>
+            </View>
+          ) : null}
+
+          {isActiveTrip ? (
+            <View style={{ paddingHorizontal: 22, paddingTop: 16, paddingBottom: 20 }}>
+              <View
+                style={{
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: "rgba(66,92,66,0.22)",
+                  backgroundColor: "rgba(116,145,112,0.12)",
+                  paddingHorizontal: 16,
+                  paddingVertical: 13,
+                  gap: 4,
+                }}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <View
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: 4,
+                      backgroundColor: "#4E6D4E",
+                    }}
+                  />
+                  <Text style={[fontStyles.uiSemibold, { fontSize: 13.5, color: "#2B3F2B" }]}>
+                    Trip in progress
+                  </Text>
+                </View>
+                <Text style={[fontStyles.uiRegular, { fontSize: 12, color: "#556A55" }]}>
+                  Use the next action and Today to keep the day moving.
+                </Text>
+              </View>
             </View>
           ) : null}
 
           {/* NEXT ACTION ─────────────────────────────────────── */}
-          <View style={{ paddingHorizontal: 22, paddingTop: 20, paddingBottom: 8 }}>
-            <Text style={[textScaleStyles.caption, { color: "#B85A38", letterSpacing: 2.2, fontSize: 9.5 }]}>
-              NEXT ACTION
-            </Text>
-          </View>
+          <OverviewSectionHeading
+            label="NEXT ACTION"
+            topPadding={isActiveTrip ? 0 : 20}
+            accent
+          />
           <View style={{ paddingHorizontal: 22, paddingBottom: 24 }}>
-            <View
-              style={{
-                padding: 20,
-                borderRadius: 16,
-                backgroundColor: "#FAF5EA",
-                borderWidth: 1,
-                borderColor: "rgba(35,25,16,0.10)",
-              }}
-            >
+            <OverviewSurfaceCard>
+              <View style={{ padding: 20 }}>
               {/* Title + pill */}
               <View
                 style={{
@@ -301,10 +368,39 @@ export function OverviewTab({
                 </View>
               ) : null}
 
+              {showInlineLiveEntry ? (
+                <Pressable
+                  onPress={onOpenLiveView}
+                  className="active:opacity-75"
+                  accessibilityRole="button"
+                  accessibilityLabel="Open Today"
+                  style={{
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: "rgba(78,109,78,0.34)",
+                    backgroundColor: "rgba(116,145,112,0.12)",
+                    paddingHorizontal: 14,
+                    paddingVertical: 11,
+                    marginBottom: primaryLabel || ghostLabel ? 12 : 0,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1 }}>
+                    <Ionicons name="radio" size={14} color="#4E6D4E" />
+                    <Text style={[fontStyles.uiMedium, { fontSize: 13, color: "#2B3F2B" }]}>
+                      Open Today
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={14} color="#4E6D4E" />
+                </Pressable>
+              ) : null}
+
               {/* Buttons */}
-              {primaryLabel || ghostLabel ? (
+              {showPrimaryButton || ghostLabel ? (
                 <View style={{ flexDirection: "row", gap: 8 }}>
-                  {primaryLabel && primaryHandler ? (
+                  {showPrimaryButton && primaryLabel && primaryHandler ? (
                     <Pressable
                       onPress={primaryHandler}
                       disabled={overview.isSavingItinerary}
@@ -347,39 +443,24 @@ export function OverviewTab({
                   ) : null}
                 </View>
               ) : null}
-            </View>
+              </View>
+            </OverviewSurfaceCard>
           </View>
 
           {/* NEEDS ATTENTION ─────────────────────────────────── */}
           {command.attentionItems.length > 0 ? (
             <>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "baseline",
-                  justifyContent: "space-between",
-                  paddingHorizontal: 22,
-                  paddingBottom: 8,
-                }}
-              >
-                <Text style={[textScaleStyles.caption, { color: "#8A7B6A", letterSpacing: 2.2, fontSize: 9.5 }]}>
-                  NEEDS ATTENTION
-                </Text>
-                <Text style={[fontStyles.uiMedium, { fontSize: 12, color: "#B85A38" }]}>
-                  {command.attentionItems.length}{" "}
-                  {command.attentionItems.length === 1 ? "item" : "items"}
-                </Text>
-              </View>
+              <OverviewSectionHeading
+                label="NEEDS ATTENTION"
+                trailing={(
+                  <Text style={[fontStyles.uiMedium, { fontSize: 12, color: "#B85A38" }]}>
+                    {command.attentionItems.length}{" "}
+                    {command.attentionItems.length === 1 ? "item" : "items"}
+                  </Text>
+                )}
+              />
               <View style={{ paddingHorizontal: 22, paddingBottom: 28 }}>
-                <View
-                  style={{
-                    borderRadius: 16,
-                    backgroundColor: "#FAF5EA",
-                    borderWidth: 1,
-                    borderColor: "rgba(35,25,16,0.10)",
-                    overflow: "hidden",
-                  }}
-                >
+                <OverviewSurfaceCard overflowHidden>
                   {command.attentionItems.map((item, index) => (
                     <AttentionRow
                       key={`${item.label}-${index}`}
@@ -387,42 +468,26 @@ export function OverviewTab({
                       showBorder={index > 0}
                     />
                   ))}
-                </View>
+                </OverviewSurfaceCard>
               </View>
             </>
           ) : null}
 
           {/* ITINERARY ───────────────────────────────────────── */}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "baseline",
-              justifyContent: "space-between",
-              paddingHorizontal: 22,
-              paddingBottom: 8,
-            }}
-          >
-            <Text style={[textScaleStyles.caption, { color: "#8A7B6A", letterSpacing: 2.2, fontSize: 9.5 }]}>
-              ITINERARY
-            </Text>
-            {previewDays.length > 0 ? (
-              <Pressable onPress={() => onOpenTab("itinerary")} hitSlop={8}>
-                <Text style={[fontStyles.uiMedium, { fontSize: 12, color: "#B85A38" }]}>
-                  Open itinerary ›
-                </Text>
-              </Pressable>
-            ) : null}
-          </View>
+          <OverviewSectionHeading
+            label="ITINERARY"
+            trailing={
+              previewDays.length > 0 ? (
+                <Pressable onPress={() => onOpenTab("itinerary")} hitSlop={8}>
+                  <Text style={[fontStyles.uiMedium, { fontSize: 12, color: "#B85A38" }]}>
+                    Open itinerary ›
+                  </Text>
+                </Pressable>
+              ) : undefined
+            }
+          />
           <View style={{ paddingHorizontal: 22, paddingBottom: 28 }}>
-            <View
-              style={{
-                borderRadius: 16,
-                backgroundColor: "#FAF5EA",
-                borderWidth: 1,
-                borderColor: "rgba(35,25,16,0.10)",
-                paddingVertical: 4,
-              }}
-            >
+            <OverviewSurfaceCard paddingVertical={4}>
               {overview.isItineraryLoading && !overview.isStreaming ? (
                 <ActivityIndicator style={{ paddingVertical: 24 }} />
               ) : overview.isStreaming ? (
@@ -478,16 +543,24 @@ export function OverviewTab({
                   </Text>
                 </View>
               )}
-            </View>
+            </OverviewSurfaceCard>
           </View>
 
           {/* TRIP BASICS ─────────────────────────────────────── */}
-          <View style={{ paddingHorizontal: 22, paddingBottom: 8 }}>
-            <Text style={[textScaleStyles.caption, { color: "#8A7B6A", letterSpacing: 2.2, fontSize: 9.5 }]}>
-              TRIP BASICS
-            </Text>
-          </View>
+          <OverviewSectionHeading label="TRIP BASICS" />
           <TripBasicsGrid trip={trip} />
+
+          {shouldShowActivitySection ? (
+            <>
+              <OverviewSectionHeading label="RECENT ACTIVITY" />
+              <ActivityStrip
+                items={activityModel.items}
+                unseenCount={activityModel.unseenCount}
+                errorMessage={activityError}
+                onPress={() => setActivitySheetOpen(true)}
+              />
+            </>
+          ) : null}
         </ScrollView>
       )}
 
@@ -521,16 +594,88 @@ export function OverviewTab({
             onAccept={overview.handleAcceptRefinement}
             onClose={() => overview.setRegeneratingDayIndex(null)}
           />
+          <RethinkDaySheet
+            visible={!isReadOnly && overview.rethinkingDayIndex !== null}
+            tripId={trip.id}
+            day={
+              overview.rethinkingDayIndex !== null
+                ? (overview.itinerary.days[overview.rethinkingDayIndex] ?? null)
+                : null
+            }
+            currentItinerary={overview.itinerary}
+            onAccept={overview.handleAcceptRethink}
+            onClose={() => overview.setRethinkingDayIndex(null)}
+          />
         </>
       ) : null}
       {showActivity ? (
         <ActivitySheet
           visible={activitySheetOpen}
           items={activityModel.items}
-          errorMessage={activityLoadError ?? activityStatusError}
+          errorMessage={activityError}
           onClose={handleCloseActivitySheet}
         />
       ) : null}
+    </View>
+  );
+}
+
+function OverviewSectionHeading({
+  label,
+  topPadding = 0,
+  accent = false,
+  trailing,
+}: {
+  label: string;
+  topPadding?: number;
+  accent?: boolean;
+  trailing?: ReactNode;
+}) {
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "baseline",
+        justifyContent: "space-between",
+        paddingHorizontal: 22,
+        paddingTop: topPadding,
+        paddingBottom: 8,
+      }}
+    >
+      <Text
+        style={[
+          textScaleStyles.caption,
+          { color: accent ? "#B85A38" : "#8A7B6A", letterSpacing: 2.2, fontSize: 9.5 },
+        ]}
+      >
+        {label}
+      </Text>
+      {trailing}
+    </View>
+  );
+}
+
+function OverviewSurfaceCard({
+  children,
+  overflowHidden = false,
+  paddingVertical = 0,
+}: {
+  children: ReactNode;
+  overflowHidden?: boolean;
+  paddingVertical?: number;
+}) {
+  return (
+    <View
+      style={{
+        borderRadius: 16,
+        backgroundColor: "#FAF5EA",
+        borderWidth: 1,
+        borderColor: "rgba(35,25,16,0.10)",
+        overflow: overflowHidden ? "hidden" : "visible",
+        paddingVertical,
+      }}
+    >
+      {children}
     </View>
   );
 }
