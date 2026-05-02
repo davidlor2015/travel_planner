@@ -8,14 +8,14 @@
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://trippilot.onrender.com",
-        "EXPO_PUBLIC_ENABLE_EXPLORE": "true"
+        "EXPO_PUBLIC_ENABLE_EXPLORE": "false"
       }
     },
     "testflight": {
       "distribution": "store",
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://trippilot.onrender.com",
-        "EXPO_PUBLIC_ENABLE_EXPLORE": "true"
+        "EXPO_PUBLIC_ENABLE_EXPLORE": "false"
       }
     },
     "production": {
